@@ -1,0 +1,75 @@
+components:
+  - name: DeterministicSampler_1
+    kind: DeterministicSampler
+    ports:
+      - name: Input
+        direction: input
+        type: Honeycomb
+      - name: Kept
+        direction: output
+        type: Honeycomb
+      - name: Dropped
+        direction: output
+        type: Honeycomb
+    properties:
+      - name: Environment
+        value: __default__
+        type: string
+      - name: SampleRate
+        value: 10
+        type: number
+  - name: RefineryGRPC_2
+    kind: RefineryGRPC
+    ports:
+      - name: TraceOut
+        direction: output
+        type: Honeycomb
+    properties:
+      - name: Port
+        value: 4317
+        type: number
+  - name: HoneycombExporter_1
+    kind: HoneycombExporter
+    ports:
+      - name: Traces
+        direction: input
+        type: Honeycomb
+    properties:
+      - name: Dataset
+        value: mytraces
+        type: string
+      - name: APIKey
+        value: ${team.HONEYCOMB_APIKEY}
+        type: string
+connections:
+  - source:
+      component: RefineryGRPC_2
+      port: TraceOut
+      type: Honeycomb
+    destination:
+      component: DeterministicSampler_1
+      port: Input
+      type: Honeycomb
+  - source:
+      component: DeterministicSampler_1
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: HoneycombExporter_1
+      port: Traces
+      type: Honeycomb
+layout:
+  frame:
+    width: 1765
+    height: 1097
+  components:
+    - name: DeterministicSampler_1
+      x: 500.66666666666686
+      y: 112.01276041666668
+    - name: RefineryGRPC_2
+      x: 270
+      y: 220
+    - name: HoneycombExporter_1
+      x: 871.333333333333
+      y: 260.6600694444444
+
