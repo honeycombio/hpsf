@@ -1,3 +1,5 @@
+[![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/hpsf)](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
+
 # HPSF -- EXPERIMENTAL!
 
 ## What it is

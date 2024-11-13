@@ -1,0 +1,21 @@
+# Please see the documentation for all configuration options:
+# https://help.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
+
+version: 2
+updates:
+  - package-ecosystem: "gomod" # See documentation for possible values
+    directory: "/" # Location of package manifests
+    schedule:
+      interval: "monthly"
+    labels:
+      - "type: dependencies"
+    reviewers:
+      - "honeycombio/pipeline-team"
+    groups:
+      minor-patch:
+        update-types:
+        - "minor"
+        - "patch"
+    commit-message:
+      prefix: "maint"
+      include: "scope"
