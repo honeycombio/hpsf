@@ -9,3 +9,9 @@ HPSF is an experimental format for a configuration language.
 It will undergo radical changes for a while; please don't depend on it yet.
 
 # hpsf
+
+Here are some sample commands:
+
+* go run ./cmd/hpsf -i examples/hpsf.yaml validate
+* go run ./cmd/hpsf -i examples/hpsf.yaml rRules
+* go run ./cmd/hpsf -i examples/hpsf.yaml rConfig
