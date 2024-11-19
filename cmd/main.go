@@ -144,8 +144,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("error translating refinery config: %v", err)
 		}
-		cfgout := cfg.Render()
-		data, err := y.Marshal(cfgout)
+		data, _, err := cfg.RenderYAML()
 		if err != nil {
 			log.Fatalf("error marshaling output file: %v", err)
 		}
