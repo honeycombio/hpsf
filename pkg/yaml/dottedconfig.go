@@ -1,6 +1,12 @@
 package yaml
 
-import "strings"
+import (
+	"crypto/md5"
+	"encoding/hex"
+	"strings"
+
+	y "gopkg.in/yaml.v3"
+)
 
 // DottedConfig is a map that allows for keys with dots in them;
 // it can convert a regular map into a DottedConfig, and
@@ -30,6 +36,20 @@ func (dc DottedConfig) Render() map[string]any {
 		dc.renderInto(m, k, v)
 	}
 	return m
+}
+
+func (dc DottedConfig) RenderYAML() ([]byte, string, error) {
+	m := dc.Render()
+	data, err := y.Marshal(m)
+	if err != nil {
+		return nil, "", err
+	}
+	// we use md5 here because:
+	// * this is not a security-centric use case, we just want a hash
+	// * it's compatible with command line tools as well as Refinery's existing code
+	h := md5.New()
+	hash := hex.EncodeToString(h.Sum(data))
+	return data, hash, nil
 }
 
 func (dc DottedConfig) Merge(other DottedConfig) DottedConfig {
