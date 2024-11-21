@@ -32,6 +32,17 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type) (yaml.DottedConfig, error) {
 	composite := yaml.DottedConfig{}
+
+	// Add base component to the config so we can make a valid config
+	// this may be temporary until we have a database of components
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+	base := config.RefineryBaseComponent{Component: dummy}
+	cfg, err := base.GenerateConfig(ct)
+	if err != nil {
+		return nil, err
+	}
+	composite.Merge(cfg)
+
 	for _, c := range h.Components {
 		comp, err := t.MakeConfigComponent(c)
 		if err != nil {
