@@ -1,6 +1,6 @@
 module github.com/honeycombio/hpsf
 
-go 1.23.1
+go 1.23.0
 
 require (
 	github.com/jessevdk/go-flags v1.6.1
