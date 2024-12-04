@@ -25,7 +25,7 @@ func NewErrorf(format string, args ...interface{}) error {
 // Validator is an interface that can be implemented by any struct that needs to be validated
 // It returns a list of errors that are encountered during validation; this list may be empty or nil.
 type Validator interface {
-	Validate() error
+	Validate() []error
 }
 
 // this is a brain-dead validator that just tries to unmarshal the input into appropriate forms
