@@ -206,7 +206,7 @@ type HPSF struct {
 
 func (h *HPSF) Validate() error {
 	if h.Components == nil && h.Connections == nil && h.Containers == nil && h.Layout == nil {
-		return errors.New("default HPFS structs are considered invalid")
+		return errors.New("default HPSF structs are considered invalid")
 	}
 
 	results := []error{}
@@ -226,8 +226,8 @@ func (h *HPSF) Validate() error {
 	return errors.Join(results...)
 }
 
-// EnsureHPFS returns an error if the input is not HPFS yaml or invalid HPFS
-func EnsureHPFS(input string) error {
+// EnsureHPSF returns an error if the input is not HPSF yaml or invalid HPSF
+func EnsureHPSF(input string) error {
 	var hpsf HPSF
 	dec := y.NewDecoder(strings.NewReader(input))
 	err := dec.Decode(&hpsf)
