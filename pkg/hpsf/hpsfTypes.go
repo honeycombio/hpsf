@@ -1,7 +1,11 @@
 package hpsf
 
 import (
+	"errors"
+	"strings"
+
 	"github.com/honeycombio/hpsf/pkg/validator"
+	y "gopkg.in/yaml.v3"
 )
 
 type ConnectionType string
@@ -52,7 +56,7 @@ type Component struct {
 	Properties []Property `yaml:"properties,omitempty"`
 }
 
-func (c *Component) Validate() []error {
+func (c *Component) Validate() error {
 	results := []error{}
 	if c.Name == "" {
 		results = append(results, validator.NewError("Component Name must be set"))
@@ -72,7 +76,7 @@ func (c *Component) Validate() []error {
 				"Component %s Property %s Type must be 'Number', 'String', or 'Bool'", c.Name, p.Name))
 		}
 	}
-	return results
+	return errors.Join(results...)
 }
 
 func (c *Component) GetPort(name string) *Port {
@@ -99,7 +103,7 @@ type ConnectionPort struct {
 	Type      ConnectionType `yaml:"type"`
 }
 
-func (cp *ConnectionPort) Validate() []error {
+func (cp *ConnectionPort) Validate() error {
 	results := []error{}
 	if cp.Component == "" {
 		results = append(results, validator.NewError("ConnectionPort Component must be set"))
@@ -110,7 +114,7 @@ func (cp *ConnectionPort) Validate() []error {
 	if cp.Type == "" {
 		results = append(results, validator.NewError("ConnectionPort Type must be set"))
 	}
-	return results
+	return errors.Join(results...)
 }
 
 type Connection struct {
@@ -118,13 +122,13 @@ type Connection struct {
 	Destination ConnectionPort `yaml:"destination"`
 }
 
-func (c *Connection) Validate() []error {
+func (c *Connection) Validate() error {
 	results := []error{}
 	e := c.Source.Validate()
-	results = append(results, e...)
+	results = append(results, e)
 	e = c.Destination.Validate()
-	results = append(results, e...)
-	return results
+	results = append(results, e)
+	return errors.Join(results...)
 }
 
 type PublicPort struct {
@@ -133,7 +137,7 @@ type PublicPort struct {
 	Port      string `yaml:"port"`
 }
 
-func (pp *PublicPort) Validate() []error {
+func (pp *PublicPort) Validate() error {
 	results := []error{}
 	if pp.Name == "" {
 		results = append(results, validator.NewError("PublicPort Name must be set"))
@@ -144,7 +148,7 @@ func (pp *PublicPort) Validate() []error {
 	if pp.Port == "" {
 		results = append(results, validator.NewError("PublicPort Port must be set"))
 	}
-	return results
+	return errors.Join(results...)
 }
 
 type PublicProp struct {
@@ -153,7 +157,7 @@ type PublicProp struct {
 	Property  string `yaml:"property"`
 }
 
-func (pp *PublicProp) Validate() []error {
+func (pp *PublicProp) Validate() error {
 	results := []error{}
 	if pp.Name == "" {
 		results = append(results, validator.NewError("PublicProp Name must be set"))
@@ -164,7 +168,7 @@ func (pp *PublicProp) Validate() []error {
 	if pp.Property == "" {
 		results = append(results, validator.NewError("PublicProp Property must be set"))
 	}
-	return results
+	return errors.Join(results...)
 }
 
 type Container struct {
@@ -174,20 +178,20 @@ type Container struct {
 	Props      []PublicProp `yaml:"props,omitempty"`
 }
 
-func (c *Container) Validate() []error {
+func (c *Container) Validate() error {
 	results := []error{}
 	if c.Name == "" {
 		results = append(results, validator.NewError("Container Name must be set"))
 	}
 	for _, p := range c.Ports {
 		e := p.Validate()
-		results = append(results, e...)
+		results = append(results, e)
 	}
 	for _, p := range c.Props {
 		e := p.Validate()
-		results = append(results, e...)
+		results = append(results, e)
 	}
-	return results
+	return errors.Join(results...)
 }
 
 // placeholder for where we'll store layout information later
@@ -200,20 +204,35 @@ type HPSF struct {
 	Layout      Layout       `yaml:"layout,omitempty"`
 }
 
-func (h *HPSF) Validate() []error {
+func (h *HPSF) Validate() error {
+	if h.Components == nil && h.Connections == nil && h.Containers == nil && h.Layout == nil {
+		return errors.New("default HPSF structs are considered invalid")
+	}
+
 	results := []error{}
 
 	for _, c := range h.Components {
 		e := c.Validate()
-		results = append(results, e...)
+		results = append(results, e)
 	}
 	for _, c := range h.Connections {
 		e := c.Validate()
-		results = append(results, e...)
+		results = append(results, e)
 	}
 	for _, c := range h.Containers {
 		e := c.Validate()
-		results = append(results, e...)
+		results = append(results, e)
 	}
-	return results
+	return errors.Join(results...)
+}
+
+// EnsureHPSF returns an error if the input is not HPSF yaml or invalid HPSF
+func EnsureHPSF(input string) error {
+	var hpsf HPSF
+	dec := y.NewDecoder(strings.NewReader(input))
+	err := dec.Decode(&hpsf)
+	if err != nil {
+		return err
+	}
+	return hpsf.Validate()
 }
