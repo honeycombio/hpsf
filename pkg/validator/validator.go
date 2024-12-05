@@ -29,15 +29,15 @@ type Validator interface {
 }
 
 // this is a brain-dead validator that just tries to unmarshal the input into appropriate forms
-func EnsureYAML(input []byte) error {
-	// validate the input is parseable YAML
+func EnsureYAML(input []byte) (map[string]any, error) {
+	// validate the input is parseable YAML (parses into a map)
 
 	// try unmarshaling into map
 	var hpsfMap map[string]any
 	err := y.Unmarshal(input, &hpsfMap)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return hpsfMap, nil
 }

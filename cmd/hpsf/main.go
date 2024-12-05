@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
+	"github.com/honeycombio/hpsf/pkg/yaml"
 	"github.com/jessevdk/go-flags"
 	y "gopkg.in/yaml.v3"
 )
@@ -104,7 +106,7 @@ func main() {
 		}
 	case "validate":
 		// validate the input file
-		err := validator.EnsureYAML(inputData)
+		_, err := validator.EnsureYAML(inputData)
 		if err != nil {
 			log.Fatalf("error validating input file: %v", err)
 		}
@@ -125,6 +127,21 @@ func main() {
 		}
 
 		log.Printf("HPSF is valid")
+
+	case "dotify":
+		// create a dotted config from the input file and write it to the output
+		m := make(map[string]any)
+		rdr := bytes.NewReader(inputData)
+		dec := y.NewDecoder(rdr)
+		err := dec.Decode(&m)
+		if err != nil {
+			log.Fatalf("error unmarshaling to yaml: %v", err)
+		}
+		dc := yaml.NewDottedConfig(m)
+		for k, v := range dc {
+			fmt.Fprintf(outf, "%s: %v\n", k, v)
+		}
+		os.Exit(0)
 
 	case "rConfig", "rRules", "cConfig":
 		hpsf, err := unmarshalHPSF(inputRdr)
@@ -171,7 +188,7 @@ func readInput(filename string) ([]byte, error) {
 		defer f.Close()
 	}
 
-	// Read the file into an HPSF object
+	// read it into a buffer
 	data, err := io.ReadAll(fIn)
 	if err != nil {
 		return nil, fmt.Errorf("error reading file %s: %v", filename, err)
