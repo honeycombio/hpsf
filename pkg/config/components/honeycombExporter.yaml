@@ -3,8 +3,6 @@ kind: HoneycombExporter
 summary: Export traces to Honeycomb in Honeycomb's event format
 description: |
   This component exports traces to Honeycomb in Honeycomb's event format.
-  Blah, blah, blah.
-  This can go on for a while.
 ports:
   - name: Traces
     direction: input

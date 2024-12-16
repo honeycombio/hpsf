@@ -103,6 +103,7 @@ func yamlf(a any) string {
 }
 
 // The functions below are internal to this file hence the leading underscore.
+// Some of these are currently unused but will likely be used in the future.
 
 // internal function to compare two "any" values for equivalence
 func _equivalent(a, b any) bool {
@@ -113,7 +114,6 @@ func _equivalent(a, b any) bool {
 
 // this formats an integer with underscores for readability.
 // e.g. 1000000 becomes 1_000_000
-// The code sucks but Copilot wrote it and performance doesn't matter.
 func _formatIntWithUnderscores(i int) string {
 	s := fmt.Sprintf("%d", i)
 	var output []string

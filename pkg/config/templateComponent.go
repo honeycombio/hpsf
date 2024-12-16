@@ -10,14 +10,19 @@ import (
 	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
-// This is the Go support for components read from a filesystem.
-// We might replace the filesystem with a database later.
+// This is the Go support for components read as data.
+// Right now we read that data from an embedded filesystem, but
+// the hope is to replace the filesystem with a database later.
 
 // The premise here is that for each component, we have a block of YAML
 // that describes it. This YAML not only contains the component's public
 // list of properties, defaults, and documentation, but also contains
 // Go templates that can be used to generate the actual configurations.
 
+// A TemplatePort describes a "port" on a component. A port is a place for
+// data to flow in or out of the component. A port can be either an input
+// or an output, and has a datatype; at least for now, ports of different
+// types cannot be connected to each other.
 type TemplatePort struct {
 	Name      string              `yaml:"name"`
 	Direction string              `yaml:"direction"`
@@ -25,6 +30,12 @@ type TemplatePort struct {
 	Note      string              `yaml:"note,omitempty"`
 }
 
+// A TemplateProperty describes a property of a component. A property is a
+// user-settable value that can be used to configure the component. Properties
+// have a name, a type (which can be used to validate the value), and a default
+// value. We also allow for validations, which can be used to constrain the
+// value of the property. The property can also have a summary and a
+// description, which are used to document the property.
 type TemplateProperty struct {
 	Name        string        `yaml:"name"`
 	Summary     string        `yaml:"summary,omitempty"`
@@ -34,6 +45,10 @@ type TemplateProperty struct {
 	Default     any           `yaml:"default,omitempty"`
 }
 
+// A TemplateData describes a template for generating configuration data.
+// It's a deliberately simple structure, with a kind (which is the type of
+// configuration data it generates), a name (which is used to identify the
+// template), a format (which is the format of the data), and the data itself.
 type TemplateData struct {
 	Kind   Type
 	Name   string
@@ -41,6 +56,10 @@ type TemplateData struct {
 	Data   []any
 }
 
+// A TemplateComponent is a component that can be described with a template.
+// We're hoping that most components will be described this way, so that we
+// can store most templates in a database and not have to change the code when
+// we add new components.
 type TemplateComponent struct {
 	Name        string             `yaml:"name"`
 	Kind        string             `yaml:"kind"`
