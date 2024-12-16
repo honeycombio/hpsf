@@ -15,3 +15,7 @@ Here are some sample commands:
 * go run ./cmd/hpsf -i examples/hpsf.yaml validate
 * go run ./cmd/hpsf -i examples/hpsf.yaml rRules
 * go run ./cmd/hpsf -i examples/hpsf.yaml rConfig
+
+Here's an example that exercises a separate data table:
+
+go run ./cmd/hpsf -d API_Key=hello -i examples/hpsf2.yaml rConfig

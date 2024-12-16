@@ -14,7 +14,7 @@ type RefineryBaseComponent struct {
 	Component hpsf.Component
 }
 
-func (c RefineryBaseComponent) GenerateConfig(ct Type) (yaml.DottedConfig, error) {
+func (c RefineryBaseComponent) GenerateConfig(ct Type, userdata map[string]any) (yaml.DottedConfig, error) {
 	switch ct {
 	case RefineryConfigType:
 		return yaml.DottedConfig{
@@ -37,7 +37,7 @@ type RefineryInputComponent struct {
 // ensure RefineryInputComponent implements Component
 var _ Component = RefineryInputComponent{}
 
-func (c RefineryInputComponent) GenerateConfig(ct Type) (yaml.DottedConfig, error) {
+func (c RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any) (yaml.DottedConfig, error) {
 	if ct != RefineryConfigType {
 		return nil, nil
 	}
@@ -74,7 +74,7 @@ type DeterministicSampler struct {
 // ensure DeterministicSampler implements Component
 var _ Component = DeterministicSampler{}
 
-func (c DeterministicSampler) GenerateConfig(ct Type) (yaml.DottedConfig, error) {
+func (c DeterministicSampler) GenerateConfig(ct Type, userdata map[string]any) (yaml.DottedConfig, error) {
 	if ct != RefineryRulesType {
 		return nil, nil
 	}

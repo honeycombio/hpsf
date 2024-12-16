@@ -1,0 +1,37 @@
+name: ToHoneycomb
+kind: HoneycombExporter
+summary: Export traces to Honeycomb in Honeycomb's event format
+description: |
+  This component exports traces to Honeycomb in Honeycomb's event format.
+  Blah, blah, blah.
+  This can go on for a while.
+ports:
+  - name: Traces
+    direction: input
+    type: HoneycombTraces
+properties:
+  - name: API_Key
+    summary: The API key to use to authenticate with Honeycomb
+    description: |
+      The API key to use to authenticate with Honeycomb.
+    type: string
+    validations: [nonblank]
+    default: ${HONEYCOMB_TRACES_APIKEY}
+  - name: API_URL
+    summary: The URL of the Honeycomb API
+    description: |
+      The URL of the Honeycomb API.
+      This is normally https://api.honeycomb.io, but can be overridden.
+    type: string
+    validations: [nonblank, url]
+    default: https://api.honeycomb.io
+templates:
+  - kind: refinery_config
+    name: HoneycombExporter_RefineryConfig
+    format: dottedConfig
+    data:
+      - key: Network.HoneycombAPI
+        value: "{{ firstNonblank .User.API_URL .Props.API_URL.Default }}"
+      - key: AccessKeys.SendKey
+        value: "{{ .User.API_Key }}"
+
