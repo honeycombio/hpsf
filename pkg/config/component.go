@@ -19,11 +19,11 @@ const (
 // the values are any valid YAML value.
 // We will need to convert the dotted paths into real ones later.
 type Component interface {
-	GenerateConfig(Type) (yaml.DottedConfig, error)
+	GenerateConfig(Type, map[string]any) (yaml.DottedConfig, error)
 }
 
 type NullComponent struct{}
 
-func (c NullComponent) GenerateConfig(Type) (yaml.DottedConfig, error) {
+func (c NullComponent) GenerateConfig(Type, map[string]any) (yaml.DottedConfig, error) {
 	return nil, nil
 }

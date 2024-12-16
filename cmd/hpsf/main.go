@@ -22,6 +22,7 @@ type Options struct {
 	Input   string   `short:"i" long:"input" description:"input file" default:"-"`
 	Output  string   `short:"o" long:"output" description:"output file" default:"-"`
 	Subs    []string `short:"s" long:"sub" description:"substitutions in the form 'context.varname=value'; can be repeated"`
+	Data    []string `short:"d" long:"data" description:"data in the form 'key=value'; can be repeated"`
 }
 
 func main() {
@@ -49,6 +50,16 @@ func main() {
 	inputData, err := readInput(cmdopts.Input)
 	if err != nil {
 		log.Fatalf("error reading input file: %v", err)
+	}
+
+	// Process the data
+	userdata := make(map[string]any)
+	for _, d := range cmdopts.Data {
+		splits := strings.Split(d, "=")
+		if len(splits) != 2 {
+			log.Fatalf("invalid data: %s", d)
+		}
+		userdata[splits[0]] = splits[1]
 	}
 
 	// Process the substitutions
@@ -86,8 +97,11 @@ func main() {
 		defer f.Close()
 	}
 
-	// create a translator
-	tr := translator.NewTranslator()
+	// create a translator that knows about components
+	tr, err := translator.NewTranslator()
+	if err != nil {
+		log.Fatalf("error creating translator: %v", err)
+	}
 
 	switch cmds[0] {
 	case "format":
@@ -157,7 +171,7 @@ func main() {
 		case "cConfig":
 			ct = config.CollectorConfigType
 		}
-		cfg, err := tr.GenerateConfig(hpsf, ct)
+		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
 		if err != nil {
 			log.Fatalf("error translating refinery config: %v", err)
 		}
