@@ -44,7 +44,14 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	// Add base component to the config so we can make a valid config
 	// this may be temporary until we have a database of components
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
-	base := config.RefineryBaseComponent{Component: dummy}
+	var base config.Component
+	switch ct {
+	case config.RefineryConfigType, config.RefineryRulesType:
+		base = config.RefineryBaseComponent{Component: dummy}
+	case config.CollectorConfigType:
+		base = config.CollectorBaseComponent{Component: dummy}
+	}
+
 	cfg, err := base.GenerateConfig(ct, userdata)
 	if err != nil {
 		return nil, err
