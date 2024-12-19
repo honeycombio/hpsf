@@ -173,7 +173,7 @@ func main() {
 		}
 		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
 		if err != nil {
-			log.Fatalf("error translating refinery config: %v", err)
+			log.Fatalf("error translating config: %v", err)
 		}
 		data, _, err := cfg.RenderYAML()
 		if err != nil {
