@@ -82,7 +82,7 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 
 type dottedConfigTemplateKV struct {
 	key   string
-	value string
+	value any
 }
 
 type dottedConfigTemplate []dottedConfigTemplateKV
@@ -94,7 +94,8 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 		if !ok {
 			return nil, fmt.Errorf("expected map, got %T", v)
 		}
-		var sk, sv string
+		var sk string
+		var sv any
 		if mk, ok := m["key"]; !ok {
 			return nil, fmt.Errorf("missing key in template data")
 		} else {
@@ -106,10 +107,15 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 		if _, ok := m["value"]; !ok {
 			return nil, fmt.Errorf("missing value in template data")
 		} else {
-			if _, ok := m["value"].(string); !ok {
-				return nil, fmt.Errorf("expected string for v, got %T", m["value"])
+			switch val := m["value"].(type) {
+			case string:
+				sv = val
+			case []any:
+				sv = val
+			default:
+				return nil, fmt.Errorf("unexpected type for v, got %T", m["value"])
 			}
-			sv = m["value"].(string)
+
 		}
 		d = append(d, dottedConfigTemplateKV{key: sk, value: sv})
 	}
@@ -137,15 +143,11 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 	return nil, nil
 }
 
-func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]any) (string, error) {
-	if tmplText == "" || !strings.Contains(tmplText, "{{") {
-		return tmplText, nil
-	}
-	tmpl, err := template.New("template").Funcs(helpers()).Parse(tmplText)
+func (t *TemplateComponent) expandTemplateVariable(variable string, userdata map[string]any) (string, error) {
+	tmpl, err := template.New("template").Funcs(helpers()).Parse(variable)
 	if err != nil {
 		return "", fmt.Errorf("error %w parsing template", err)
 	}
-
 	t.User = userdata
 	var b bytes.Buffer
 	err = tmpl.Execute(&b, t)
@@ -155,12 +157,39 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 	return b.String(), nil
 }
 
+func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
+	switch k := tmplVal.(type) {
+	case string:
+		if tmplVal == "" || !strings.Contains(k, "{{") {
+			return k, nil
+		}
+		return t.expandTemplateVariable(k, userdata)
+	case []any:
+		for _, s := range k {
+			stringMap, ok := s.(map[string]any)
+			if !ok {
+				return "", fmt.Errorf("invalid templated variable type %T", s)
+			}
+			for k, v := range stringMap {
+				expandedVariable, err := t.applyTemplate(v, userdata)
+				if err != nil {
+					return "", err
+				}
+				stringMap[k] = expandedVariable
+			}
+		}
+		return k, nil
+	default:
+		return "", fmt.Errorf("invalid templated variable type %T", k)
+	}
+}
+
 func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userdata map[string]any) (yaml.DottedConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	config := make(yaml.DottedConfig)
 	for _, kv := range dct {
-		key, err := t.applyTemplate(kv.key, userdata)
+		key, err := t.expandTemplateVariable(kv.key, userdata)
 		if err != nil {
 			return nil, err
 		}

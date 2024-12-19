@@ -1,0 +1,7 @@
+API_Key: ${HONEYCOMB_TRACES_APIKEY}
+API_URL: https://api.honeycomb.io
+AccessKeys:
+    SendKey: test
+Compression: gzip
+Network:
+    HoneycombAPI: https://api.honeycomb.io
