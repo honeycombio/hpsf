@@ -1,0 +1,10 @@
+API_Key: ${HONEYCOMB_TRACES_APIKEY}
+API_URL: https://api.honeycomb.io
+Compression: gzip
+exporters:
+    otlphttp:
+        compression: gzip
+        endpoint: https://api.honeycomb.io
+        headers:
+            - name: x-honeycomb-team
+              value: test
