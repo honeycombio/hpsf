@@ -1,8 +1,8 @@
 name: ToHoneycomb
 kind: HoneycombExporter
-summary: Export traces to Honeycomb in Honeycomb's event format
+summary: Export telemetry to Honeycomb in Honeycomb's event format.
 description: |
-  This component exports traces to Honeycomb in Honeycomb's event format.
+  This component exports telemetry to Honeycomb in Honeycomb's event format.
 ports:
   - name: Traces
     direction: input
@@ -14,7 +14,7 @@ properties:
       The API key to use to authenticate with Honeycomb.
     type: string
     validations: [nonblank]
-    default: ${HONEYCOMB_TRACE_EXPORTER_APIKEY}
+    default: ${HONEYCOMB_EXPORTER_APIKEY}
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
     description: |
