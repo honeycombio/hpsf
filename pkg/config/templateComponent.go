@@ -159,9 +159,6 @@ func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userd
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	config := make(yaml.DottedConfig)
-	for _, prop := range t.Properties {
-		config[prop.Name] = prop.Default
-	}
 	for _, kv := range dct {
 		key, err := t.applyTemplate(kv.key, userdata)
 		if err != nil {
