@@ -12,5 +12,4 @@ func TestLoadTemplateComponents(t *testing.T) {
 	if len(got) == 0 {
 		t.Errorf("LoadTemplateComponents() = %v, want non-empty", got)
 	}
-	// fmt.Println(got)
 }

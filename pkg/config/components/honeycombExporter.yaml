@@ -8,17 +8,17 @@ ports:
     direction: input
     type: HoneycombTraces
 properties:
-  - name: API_Key
+  - name: APIKey
     summary: The API key to use to authenticate with Honeycomb
     description: |
       The API key to use to authenticate with Honeycomb.
     type: string
     validations: [nonblank]
-    default: ${HONEYCOMB_TRACES_APIKEY}
-  - name: API_URL
-    summary: The URL of the Honeycomb API
+    default: ${HONEYCOMB_TRACE_EXPORTER_APIKEY}
+  - name: APIEndpoint
+    summary: The Endpoint URL of the Honeycomb API
     description: |
-      The URL of the Honeycomb API.
+      The Endpoint URL of the Honeycomb API.
       This is normally https://api.honeycomb.io, but can be overridden.
     type: string
     validations: [nonblank, url]
@@ -29,7 +29,7 @@ templates:
     format: dottedConfig
     data:
       - key: Network.HoneycombAPI
-        value: "{{ firstNonblank .User.API_URL .Props.API_URL.Default }}"
+        value: "{{ firstNonblank .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
-        value: "{{ .User.API_Key }}"
+        value: "{{ .User.APIKey }}"
 
