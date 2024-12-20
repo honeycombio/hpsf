@@ -10,6 +10,8 @@ import (
 //go:embed components/*.yaml
 var componentsFS embed.FS
 
+// This reads the components from the filesystem (in the source, this is the
+// components directory) and loads them into a map of TemplateComponent by name.
 func LoadTemplateComponents() (map[string]TemplateComponent, error) {
 	// Read the components from the filesystem
 	comps, err := componentsFS.ReadDir("components")

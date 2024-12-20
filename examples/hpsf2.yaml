@@ -1,6 +1,11 @@
 components:
   - name: DeterministicSampler_1
     kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 99
+      - name: Environment
+        value: staging
   - name: RefineryGRPC_2
     kind: RefineryGRPC
   - name: HoneycombExporter_1
