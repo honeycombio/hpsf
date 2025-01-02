@@ -1,0 +1,25 @@
+components:
+  - name: DeterministicSampler_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 99
+      - name: Environment
+        value: staging
+  - name: RefineryGRPC_2
+    kind: RefineryGRPC
+  - name: HoneycombExporter_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: RefineryGRPC_2
+      port: TraceOut
+    destination:
+      component: DeterministicSampler_1
+      port: Input
+  - source:
+      component: DeterministicSampler_1
+      port: Kept
+    destination:
+      component: HoneycombExporter_1
+      port: Traces
