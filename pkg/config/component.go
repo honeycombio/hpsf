@@ -1,8 +1,6 @@
 package config
 
-import (
-	"github.com/honeycombio/hpsf/pkg/yaml"
-)
+import "github.com/honeycombio/hpsf/pkg/config/tmpl"
 
 type Type string
 
@@ -19,11 +17,11 @@ const (
 // the values are any valid YAML value.
 // We will need to convert the dotted paths into real ones later.
 type Component interface {
-	GenerateConfig(Type, map[string]any) (yaml.DottedConfig, error)
+	GenerateConfig(Type, map[string]any) (tmpl.TemplateConfig, error)
 }
 
 type NullComponent struct{}
 
-func (c NullComponent) GenerateConfig(Type, map[string]any) (yaml.DottedConfig, error) {
+func (c NullComponent) GenerateConfig(Type, map[string]any) (tmpl.TemplateConfig, error) {
 	return nil, nil
 }

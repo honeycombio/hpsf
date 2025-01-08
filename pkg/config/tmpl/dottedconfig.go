@@ -1,4 +1,4 @@
-package yaml
+package tmpl
 
 import (
 	"crypto/md5"
@@ -52,8 +52,13 @@ func (dc DottedConfig) RenderYAML() ([]byte, string, error) {
 	return data, hash, nil
 }
 
-func (dc DottedConfig) Merge(other DottedConfig) DottedConfig {
-	for k, v := range other {
+func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
+	otherDotted, ok := other.(DottedConfig)
+	if !ok {
+		// if the other TemplateConfig is not a DottedConfig, we can't merge it
+		return dc
+	}
+	for k, v := range otherDotted {
 		dc[k] = v
 	}
 	return dc

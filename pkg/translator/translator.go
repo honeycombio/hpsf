@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
-	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
 type Translator struct {
@@ -38,8 +38,8 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	}
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (yaml.DottedConfig, error) {
-	composite := yaml.DottedConfig{}
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	composite := tmpl.DottedConfig{}
 
 	// Add base component to the config so we can make a valid config
 	// this may be temporary until we have a database of components

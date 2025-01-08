@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
-	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
 // This is the Go support for components read as data.
@@ -119,18 +119,21 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (yaml.DottedConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have find a template with the kind of the config; if it
 	// doesn't exist, we return nil, nil
 	for _, template := range t.Templates {
 		if template.Kind == cfgType {
 			switch template.Format {
-			case "dottedConfig":
+			case "dotted":
 				dct, err := buildDottedConfigTemplate(template.Data)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building dotted config template named %s", err, t.Name)
 				}
 				return t.generateDottedConfig(dct, userdata)
+			case "collector":
+			default:
+				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
 		}
 	}
@@ -155,10 +158,10 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 	return b.String(), nil
 }
 
-func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userdata map[string]any) (yaml.DottedConfig, error) {
+func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userdata map[string]any) (tmpl.DottedConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
-	config := make(yaml.DottedConfig)
+	config := make(tmpl.DottedConfig)
 	for _, kv := range dct {
 		key, err := t.applyTemplate(kv.key, userdata)
 		if err != nil {
@@ -171,4 +174,12 @@ func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userd
 		config[key] = value
 	}
 	return config, nil
+}
+
+type collectorConfigModel struct {
+	receivers  tmpl.DottedConfig
+	processors tmpl.DottedConfig
+	exporters  tmpl.DottedConfig
+	extensions tmpl.DottedConfig
+	service    tmpl.DottedConfig
 }
