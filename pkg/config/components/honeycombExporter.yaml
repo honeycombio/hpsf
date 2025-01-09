@@ -23,6 +23,14 @@ properties:
     type: string
     validations: [nonblank, url]
     default: https://api.honeycomb.io
+  - name: Compression
+    summary: The compression to use when sending data to Honeycomb
+    description: |
+      The compression to use when sending data to Honeycomb.
+      This is normally gzip, but can be overridden.
+    type: string
+    validations: [nonblank]
+    default: gzip
 templates:
   - kind: refinery_config
     name: HoneycombExporter_RefineryConfig
@@ -31,5 +39,17 @@ templates:
       - key: Network.HoneycombAPI
         value: "{{ firstNonblank .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
-        value: "{{ .User.APIKey }}"
-
+        value: "{{ .User.API_Key }}"
+  - kind: collector_config
+    name: HoneycombExporter_CollectorConfig
+    format: dottedConfig
+    data:
+      - key: exporters.otlphttp.endpoint
+        value: "{{ firstNonblank .User.API_URL .Props.API_URL.Default }}"
+      - key: exporters.otlphttp.compression
+        value: "{{ firstNonblank .User.Compression .Props.Compression.Default }}"
+      # TODO: headers must be an array
+      - key: exporters.otlphttp.headers
+        value:
+          - name: x-honeycomb-team
+            value: "{{ .User.API_Key }}"

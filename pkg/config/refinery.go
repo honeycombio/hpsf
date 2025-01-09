@@ -75,10 +75,6 @@ type DeterministicSampler struct {
 var _ Component = DeterministicSampler{}
 
 func (c DeterministicSampler) GenerateConfig(ct Type, userdata map[string]any) (yaml.DottedConfig, error) {
-	if ct != RefineryRulesType {
-		return nil, nil
-	}
-
 	if c.Component.Properties == nil {
 		return nil, nil
 	}
@@ -95,8 +91,18 @@ func (c DeterministicSampler) GenerateConfig(ct Type, userdata map[string]any) (
 	}
 	e := yaml.AsString(env.Value)
 
-	return yaml.DottedConfig{
-		fmt.Sprintf("Samplers.%s.DeterministicSampler.SampleRate", e): r,
-		"Samplers." + e + ".DeterministicSampler.SampleRate":          r,
-	}, nil
+	switch ct {
+	case CollectorConfigType:
+		return yaml.DottedConfig{
+			"probabilistic_sampler": map[string]interface{}{
+				"sampling_percentage": r,
+			},
+		}, nil
+	default:
+		return yaml.DottedConfig{
+			fmt.Sprintf("Samplers.%s.DeterministicSampler.SampleRate", e): r,
+			"Samplers." + e + ".DeterministicSampler.SampleRate":          r,
+		}, nil
+	}
+
 }
