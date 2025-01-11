@@ -35,5 +35,5 @@ templates:
       collectorComponentName: otlp  # required receiver we'll check against configured collector
     data:
       - key: "{{ .ComponentName }}.protocols.grpc.endpoint"
-        value: "{{ firstNonblank .User.Host .Props.Host.Default }}:{{ firstNonblank .User.Port .Props.Port.Default }}"
+        value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.Port .User.Port .Props.Port.Default }}"
       # service is not part of the template, it's generated automatically by the collectorConfig

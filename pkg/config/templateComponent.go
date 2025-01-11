@@ -71,6 +71,24 @@ type TemplateComponent struct {
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"user,omitempty"`
+	hpsf        *hpsf.Component    // the component from the hpsf document
+}
+
+// we're making a copy here to make sure it doesn't get modified
+func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
+	t.hpsf = &c
+}
+
+// HProp is a template helper that gets a map of all properties specified in the hpsf document.
+func (t *TemplateComponent) HProps() map[string]any {
+	props := make(map[string]any)
+	if t.hpsf != nil {
+		for _, name := range t.hpsf.GetPropertyNames() {
+			p := t.hpsf.GetProperty(name)
+			props[p.Name] = p.Value
+		}
+	}
+	return props
 }
 
 // helper for templates

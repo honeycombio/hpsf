@@ -20,7 +20,7 @@ const (
 // the values are any valid YAML value.
 // We will need to convert the dotted paths into real ones later.
 type Component interface {
-	GenerateConfig(Type, map[string]any) (tmpl.TemplateConfig, error)
+	GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error)
 }
 
 type NullComponent struct{}

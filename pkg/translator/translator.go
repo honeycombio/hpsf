@@ -27,6 +27,7 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	// first look in the template components
 	tc, ok := t.templateComponents[component.Kind]
 	if ok {
+		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
