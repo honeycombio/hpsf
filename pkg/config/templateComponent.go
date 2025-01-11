@@ -159,6 +159,16 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 	for _, section := range sectionOrder {
 		svcKey := fmt.Sprintf("pipelines.%s.%s", ct.signalType, section)
 		for _, kv := range ct.kvs[section] {
+			if kv.suppress_if != "" {
+				// if the suppress_if condition is met, we skip this key
+				condition, err := t.applyTemplate(kv.suppress_if, userdata)
+				if err != nil {
+					return nil, err
+				}
+				if condition == "true" {
+					continue
+				}
+			}
 			config.Set("service", svcKey, []string{ct.collectorComponentName})
 			key, err := t.applyTemplate(kv.key, userdata)
 			if err != nil {

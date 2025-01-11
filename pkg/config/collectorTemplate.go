@@ -37,6 +37,12 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 		}
 		kv.value = m["value"].(string)
 	}
+	if _, ok := m["suppress_if"]; ok {
+		if _, ok := m["suppress_if"].(string); !ok {
+			return kv, false
+		}
+		kv.suppress_if = m["suppress_if"].(string)
+	}
 	return kv, true
 }
 
