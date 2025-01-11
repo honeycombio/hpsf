@@ -30,7 +30,6 @@ func LoadTemplateComponents() (map[string]TemplateComponent, error) {
 		var component TemplateComponent
 		err = y.Unmarshal(templateData, &component)
 		if err != nil {
-			fmt.Println(comp.Name(), err)
 			return nil, err
 		}
 

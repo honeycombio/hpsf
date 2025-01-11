@@ -2,9 +2,9 @@ package config
 
 import (
 	"fmt"
-	"html/template"
 	"regexp"
 	"strings"
+	"text/template"
 	"time"
 )
 
@@ -19,7 +19,6 @@ func helpers() template.FuncMap {
 		"comment":       comment,
 		"firstNonblank": firstNonblank,
 		"indent":        indent,
-		"indentRest":    indentRest,
 		"join":          join,
 		"makeSlice":     makeSlice,
 		"meta":          meta,
@@ -29,10 +28,12 @@ func helpers() template.FuncMap {
 	}
 }
 
+// places a comment in the output file, even if the specified comment has multiple lines
 func comment(s string) string {
 	return strings.TrimRight("## "+strings.Replace(s, "\n", "\n## ", -1), " ")
 }
 
+// returns the first non-blank string from the arguments
 func firstNonblank(s ...any) string {
 	for _, v := range s {
 		if v != nil {
@@ -45,32 +46,33 @@ func firstNonblank(s ...any) string {
 	return ""
 }
 
+// indents a string by the specified number of spaces
 func indent(count int, s string) string {
-	return strings.Repeat(" ", count) + indentRest(count, s)
+	return strings.Repeat(" ", count) + _indentRest(count, s)
 }
 
-func indentRest(count int, s string) string {
-	eolpat := regexp.MustCompile(`[ \t]*\n[ \t]*`)
-	return eolpat.ReplaceAllString(s, "\n"+strings.Repeat(" ", count))
-}
-
+// joins a slice of strings with the specified separator
 func join(a []string, sep string) string {
 	return strings.Join(a, sep)
 }
 
+// creates a slice of strings from the arguments
 func makeSlice(a ...string) []string {
 	return a
 }
 
+// wraps a string in "{{" and "}}" to indicate that it's a template variable
 func meta(s string) string {
 	return "{{ " + s + " }}"
 }
 
+// returns the current date and time in UTC
 func now() string {
 	t := time.Now().UTC()
 	return fmt.Sprintf("on %s at %s UTC", t.Format("2006-01-02"), t.Format("15:04:05"))
 }
 
+// splits a string into a slice of strings using the specified separator
 func split(s, sep string) []string {
 	return strings.Split(s, sep)
 }
@@ -125,6 +127,12 @@ func _formatIntWithUnderscores(i int) string {
 	return strings.Join(output, "_")
 }
 
+// indents a string by the specified number of spaces, but only after newlines (used by indent)
+func _indentRest(count int, s string) string {
+	eolpat := regexp.MustCompile(`[ \t]*\n[ \t]*`)
+	return eolpat.ReplaceAllString(s, "\n"+strings.Repeat(" ", count))
+}
+
 func _isZeroValue(value any) bool {
 	switch v := value.(type) {
 	case string:
@@ -169,8 +177,8 @@ func _fetch(data map[string]any, key string) (any, bool) {
 	return nil, false
 }
 
-// Takes a value that is a slice of strings or any and returns a slice of
-// strings.
+// Takes a value that is a slice of strings or a slice of any and returns a
+// slice of strings.
 func _getStringsFrom(value any) []string {
 	result := make([]string, 0)
 

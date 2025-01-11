@@ -68,7 +68,7 @@ properties:
 templates:
   - kind: refinery_rules
     name: EMA_Throughput_Rules
-    format: dottedConfig
+    format: dotted
     data:
       - key: "{{ printf \"Samplers.%s.EMAThroughputSampler.GoalThroughput\" .Props.Environment.Value }}"
         value: "{{ firstNonblank .User.GoalThroughput.Value .Props.GoalThroughput.Default }}"

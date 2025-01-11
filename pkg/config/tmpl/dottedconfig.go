@@ -1,8 +1,6 @@
 package tmpl
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"strings"
 
 	y "gopkg.in/yaml.v3"
@@ -14,6 +12,7 @@ import (
 // This exists because dotted paths are easier to merge.
 type DottedConfig map[string]any
 
+// renderInto is a helper function that recursively renders a DottedConfig into a map.
 func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 	// if the key contains a dot, split it into parts
 	if strings.Contains(key, ".") {
@@ -30,7 +29,8 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 	}
 }
 
-func (dc DottedConfig) Render() map[string]any {
+// RenderToMap renders the config into a map.
+func (dc DottedConfig) RenderToMap() map[string]any {
 	m := make(map[string]any)
 	for k, v := range dc {
 		dc.renderInto(m, k, v)
@@ -38,20 +38,17 @@ func (dc DottedConfig) Render() map[string]any {
 	return m
 }
 
-func (dc DottedConfig) RenderYAML() ([]byte, string, error) {
-	m := dc.Render()
+// RenderYAML renders the config into YAML and returns a hash of it.
+func (dc DottedConfig) RenderYAML() ([]byte, error) {
+	m := dc.RenderToMap()
 	data, err := y.Marshal(m)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
-	// we use md5 here because:
-	// * this is not a security-centric use case, we just want a hash
-	// * it's compatible with command line tools as well as Refinery's existing code
-	h := md5.New()
-	hash := hex.EncodeToString(h.Sum(data))
-	return data, hash, nil
+	return data, nil
 }
 
+// Merge merges two DottedConfigs together.
 func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 	otherDotted, ok := other.(DottedConfig)
 	if !ok {
@@ -59,11 +56,27 @@ func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 		return dc
 	}
 	for k, v := range otherDotted {
-		dc[k] = v
+		if _, ok := dc[k]; !ok {
+			dc[k] = v
+		} else {
+			switch v := v.(type) {
+			case []any:
+				dc[k] = append(dc[k].([]any), v...)
+			case []string:
+				dc[k] = append(dc[k].([]string), v...)
+			case []int:
+				dc[k] = append(dc[k].([]int), v...)
+			case []float64:
+				dc[k] = append(dc[k].([]float64), v...)
+			default:
+				dc[k] = v // overwrite if not a slice
+			}
+		}
 	}
 	return dc
 }
 
+// NewDottedConfig recursively converts a map into a DottedConfig.
 func NewDottedConfig(m map[string]any) DottedConfig {
 	dc := DottedConfig{}
 	for k, v := range m {

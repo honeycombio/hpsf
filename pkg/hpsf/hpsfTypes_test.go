@@ -25,7 +25,7 @@ func TestEnsureHPSF(t *testing.T) {
 			for i, arg := range tt.args {
 				y[arg] = i
 			}
-			text, _, _ := y.RenderYAML()
+			text, _ := y.RenderYAML()
 			if err := EnsureHPSF(string(text)); (err != nil) && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("EnsureHPSF() error = %v, should contain '%v'", err, tt.wantErr)
 			}
