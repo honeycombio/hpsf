@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -54,7 +55,7 @@ type TemplateData struct {
 	Kind   Type
 	Name   string
 	Format string
-	Meta   map[string]string
+	Meta   map[string]any
 	Data   []any
 }
 
@@ -64,6 +65,7 @@ type TemplateData struct {
 // we add new components.
 type TemplateComponent struct {
 	Name        string             `yaml:"name"`
+	CollName    string             `yaml:"collName"`
 	Kind        string             `yaml:"kind"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
@@ -101,6 +103,9 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 }
 
 func (t *TemplateComponent) ComponentName() string {
+	if t.CollName != "" {
+		return t.CollName + "/" + t.Name
+	}
 	return t.Name
 }
 
@@ -154,32 +159,38 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
+	t.CollName = ct.collectorComponentName
 	config := tmpl.NewCollectorConfig()
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
-		svcKey := fmt.Sprintf("pipelines.%s.%s", ct.signalType, section)
-		for _, kv := range ct.kvs[section] {
-			if kv.suppress_if != "" {
-				// if the suppress_if condition is met, we skip this key
-				condition, err := t.applyTemplate(kv.suppress_if, userdata)
+		for _, signalType := range []string{"traces", "logs", "metrics"} {
+			if !slices.Contains(ct.signalTypes, signalType) {
+				continue
+			}
+			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
+			for _, kv := range ct.kvs[section] {
+				if kv.suppress_if != "" {
+					// if the suppress_if condition is met, we skip this key
+					condition, err := t.applyTemplate(kv.suppress_if, userdata)
+					if err != nil {
+						return nil, err
+					}
+					if condition == "true" {
+						continue
+					}
+				}
+				config.Set("service", svcKey, []string{t.ComponentName()})
+				key, err := t.applyTemplate(kv.key, userdata)
 				if err != nil {
 					return nil, err
 				}
-				if condition == "true" {
-					continue
+				key = fmt.Sprintf("%s.%s", section, key)
+				value, err := t.applyTemplate(kv.value, userdata)
+				if err != nil {
+					return nil, err
 				}
+				config.Set(section, key, value)
 			}
-			config.Set("service", svcKey, []string{ct.collectorComponentName})
-			key, err := t.applyTemplate(kv.key, userdata)
-			if err != nil {
-				return nil, err
-			}
-			key = fmt.Sprintf("%s.%s", section, key)
-			value, err := t.applyTemplate(kv.value, userdata)
-			if err != nil {
-				return nil, err
-			}
-			config.Set(section, key, value)
 		}
 	}
 	return config, nil

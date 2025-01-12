@@ -1,8 +1,8 @@
 name: otel_receiver
 kind: OTelReceiver
-summary: Receives OpenTelemetry traces via gRPC or HTTP or both
+summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both
 description: |
-  Imports telemetry to Honeycomb from OpenTelemetry traces via gRPC or HTTP.
+  Imports OTLP signals from OpenTelemetry via gRPC or HTTP.
   This receiver can be configured to listen on both gRPC and HTTP, or just one.
 ports:
   - name: Traces
@@ -18,7 +18,7 @@ properties:
   - name: Host
     summary: The hostname or IP address on which to listen
     description: |
-      Hostname or IP address on which to listen for incoming traces.
+      Hostname or IP address on which to listen for incoming traffic.
       It is recommended not to change the default unless
       you know what you're doing.
     type: string
@@ -27,7 +27,7 @@ properties:
   - name: GRPCPort
     summary: The port on which to listen for gRPC traffic.
     description: |
-      The port on which to listen for incoming gRPC traces.
+      The port on which to listen for incoming gRPC traffic.
       The OTel default is 4317. Set to 0 to disable gRPC.
     type: integer
     validations: [integer]
@@ -35,19 +35,19 @@ properties:
   - name: HTTPPort
     summary: The port on which to listen for HTTP traffic.
     description: |
-      The port on which to listen for incoming HTTP traces.
+      The port on which to listen for incoming HTTP traffic.
       The OTel default is 4318. Set to 0 to disable HTTP.
     type: integer
     validations: [integer]
     default: 4318
 templates:
   - kind: collector_config
-    name: OTelGRPCReceiver_CollectorConfig
+    name: otel_receiver_collector
     format: collector
     meta:
       componentSection: receivers
-      signalType: traces # we'll generate a name for each pipeline if there's more than 1
-      collectorComponentName: otlp  # required receiver we'll check against configured collector
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlp
     data:
       - key: "{{ .ComponentName }}.protocols.grpc.endpoint"
         value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.GRPCPort .User.GRPCPort .Props.GRPCPort.Default }}"
