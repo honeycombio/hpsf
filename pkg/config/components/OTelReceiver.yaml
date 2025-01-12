@@ -11,7 +11,7 @@ ports:
   - name: Metrics
     direction: output
     type: OTelMetrics
-  - name: Traces
+  - name: Logs
     direction: output
     type: OTelLogs
 properties:
