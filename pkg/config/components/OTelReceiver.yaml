@@ -8,6 +8,12 @@ ports:
   - name: Traces
     direction: output
     type: OTelTraces
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+  - name: Traces
+    direction: output
+    type: OTelLogs
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen
