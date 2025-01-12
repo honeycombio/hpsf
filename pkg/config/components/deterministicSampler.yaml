@@ -1,0 +1,44 @@
+kind: DeterministicSampler
+defaultName: deterministic_sampler
+summary: A basic sampler that deterministically samples a fixed fraction of traces based on trace ID
+description: |
+  A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.
+ports:
+  - name: Traces
+    direction: input
+    type: HoneycombTraces
+  - name: SampledOutput
+    direction: output
+    type: HoneycombTraces
+    note: "The traces that are sampled"
+  - name: UnsampledOutput
+    direction: output
+    type: HoneycombTraces
+    note: "The traces that are not sampled"
+properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
+  - name: SampleRate
+    summary: The target SampleRate
+    description: |
+      The target SampleRate. One of every SampleRate traces will be sampled. In other
+      words, a sample rate of 5 means that 1 in 5 traces will be sampled. SampleRate
+      is the inverse of the sampling probability. A sample rate of 1 means that every
+      trace will be sampled.
+    type: int
+    validations:
+      - positive
+    default: 100
+templates:
+  - kind: refinery_rules
+    name: DeterministicSampler_RefineryRules
+    format: dotted
+    data:
+      - key: "{{ printf \"Samplers.%s.DeterministicSampler.GoalThroughput\" .Props.Environment.Value }}"
+        value: "{{ firstNonblank .HProps.SampleRate .User.SampleRate.Value .Props.SampleRate.Default }}"

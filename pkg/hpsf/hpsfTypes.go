@@ -13,11 +13,11 @@ type ConnectionType string
 
 const (
 	CTYPE_UNKNOWN ConnectionType = "unknown"
-	CTYPE_TRACES  ConnectionType = "oteltraces"
-	CTYPE_LOGS    ConnectionType = "otellogs"
-	CTYPE_METRIC  ConnectionType = "otelmetric"
-	CTYPE_EVENT   ConnectionType = "otelevent"
-	CTYPE_HONEY   ConnectionType = "honeycomb"
+	CTYPE_TRACES  ConnectionType = "OTelTraces"
+	CTYPE_LOGS    ConnectionType = "OTelLogs"
+	CTYPE_METRICS ConnectionType = "OTelMetrics"
+	CTYPE_EVENT   ConnectionType = "OTelEvent"
+	CTYPE_HONEY   ConnectionType = "Honeycomb"
 	CTYPE_NUMBER  ConnectionType = "number"
 	CTYPE_STRING  ConnectionType = "string"
 	CTYPE_BOOL    ConnectionType = "bool"
@@ -210,10 +210,10 @@ func (c *Container) Validate() []error {
 type Layout map[string]any
 
 type HPSF struct {
-	Components  []Component  `yaml:"components,omitempty"`
-	Connections []Connection `yaml:"connections,omitempty"`
-	Containers  []Container  `yaml:"containers,omitempty"`
-	Layout      Layout       `yaml:"layout,omitempty"`
+	Components  []Component   `yaml:"components,omitempty"`
+	Connections []*Connection `yaml:"connections,omitempty"`
+	Containers  []Container   `yaml:"containers,omitempty"`
+	Layout      Layout        `yaml:"layout,omitempty"`
 }
 
 func (h *HPSF) Validate() []error {

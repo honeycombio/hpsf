@@ -74,6 +74,7 @@ type TemplateComponent struct {
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"user,omitempty"`
 	hpsf        *hpsf.Component    // the component from the hpsf document
+	connections []*hpsf.Connection `yaml:"connections,omitempty"`
 }
 
 // we're making a copy here to make sure it doesn't get modified
@@ -109,6 +110,21 @@ func (t *TemplateComponent) ComponentName() string {
 	return t.Name
 }
 
+func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool {
+	typeMapping := map[string]hpsf.ConnectionType{
+		"traces":  hpsf.CTYPE_TRACES,
+		"logs":    hpsf.CTYPE_LOGS,
+		"metrics": hpsf.CTYPE_METRICS,
+	}
+	connType := typeMapping[signalType]
+	for _, conn := range t.connections {
+		if conn.Source.Type == connType || conn.Destination.Type == connType {
+			return true
+		}
+	}
+	return false
+}
+
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
@@ -138,6 +154,10 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 	return nil, nil
 }
 
+func (t *TemplateComponent) AddConnection(conn *hpsf.Connection) {
+	t.connections = append(t.connections, conn)
+}
+
 func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]any) (string, error) {
 	if tmplText == "" || !strings.Contains(tmplText, "{{") {
 		return tmplText, nil
@@ -156,6 +176,8 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 	return b.String(), nil
 }
 
+// this is where we do the actual work of generating the config; this thing knows about
+// the structure of the collector config and how to fill it in
 func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
@@ -164,7 +186,12 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
 		for _, signalType := range []string{"traces", "logs", "metrics"} {
+			// if the signal type is not in the list of signal types for this collector, skip it
 			if !slices.Contains(ct.signalTypes, signalType) {
+				continue
+			}
+			// if this template doesn't have a connection for this signal type, skip it
+			if !t.ConnectsUsingAppropriateType(signalType) {
 				continue
 			}
 			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
