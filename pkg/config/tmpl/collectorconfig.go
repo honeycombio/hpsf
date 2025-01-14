@@ -10,11 +10,6 @@ import (
 // YAML configuration files.
 type CollectorConfig struct {
 	Sections map[string]DottedConfig
-	// receivers  DottedConfig
-	// processors DottedConfig
-	// exporters  DottedConfig
-	// extensions DottedConfig
-	// service    DottedConfig
 }
 
 // ensure CollectorConfig implements TemplateConfig
