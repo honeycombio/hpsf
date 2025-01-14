@@ -79,7 +79,7 @@ func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
 	t.hpsf = &c
 }
 
-// HProp is a template helper that gets a map of all properties specified in the hpsf document.
+// HProps is a template helper that gets a map of all properties specified in the hpsf document.
 func (t *TemplateComponent) HProps() map[string]any {
 	props := make(map[string]any)
 	if t.hpsf != nil {
