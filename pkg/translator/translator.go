@@ -4,10 +4,13 @@ import (
 	"fmt"
 
 	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
-	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
+// A Translator is responsible for translating an HPSF document into a
+// collection of components, and then further rendering those into configuration
+// files.
 type Translator struct {
 	templateComponents map[string]config.TemplateComponent
 }
@@ -24,6 +27,7 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	// first look in the template components
 	tc, ok := t.templateComponents[component.Kind]
 	if ok {
+		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
@@ -38,18 +42,15 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	}
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (yaml.DottedConfig, error) {
-	composite := yaml.DottedConfig{}
-
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// Add base component to the config so we can make a valid config
 	// this may be temporary until we have a database of components
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
-	base := config.RefineryBaseComponent{Component: dummy}
-	cfg, err := base.GenerateConfig(ct, userdata)
+	base := config.GenericBaseComponent{Component: dummy}
+	composite, err := base.GenerateConfig(ct, userdata)
 	if err != nil {
 		return nil, err
 	}
-	composite.Merge(cfg)
 
 	for _, c := range h.Components {
 		comp, err := t.MakeConfigComponent(c)

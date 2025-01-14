@@ -9,10 +9,10 @@ import (
 	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
-	"github.com/honeycombio/hpsf/pkg/yaml"
 	"github.com/jessevdk/go-flags"
 	y "gopkg.in/yaml.v3"
 )
@@ -151,7 +151,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("error unmarshaling to yaml: %v", err)
 		}
-		dc := yaml.NewDottedConfig(m)
+		dc := tmpl.NewDottedConfig(m)
 		for k, v := range dc {
 			fmt.Fprintf(outf, "%s: %v\n", k, v)
 		}
@@ -173,9 +173,9 @@ func main() {
 		}
 		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
 		if err != nil {
-			log.Fatalf("error translating refinery config: %v", err)
+			log.Fatalf("error translating config: %v", err)
 		}
-		data, _, err := cfg.RenderYAML()
+		data, err := cfg.RenderYAML()
 		if err != nil {
 			log.Fatalf("error marshaling output file: %v", err)
 		}

@@ -26,10 +26,10 @@ properties:
 templates:
   - kind: refinery_config
     name: HoneycombExporter_RefineryConfig
-    format: dottedConfig
+    format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ firstNonblank .User.APIEndpoint .Props.APIEndpoint.Default }}"
+        value: "{{ firstNonblank HProps.APIEndpoint .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
-        value: "{{ .User.APIKey }}"
+        value: "{{ firstNonblank HProps.APIKey .User.APIKey }}"
 

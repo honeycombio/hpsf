@@ -80,6 +80,7 @@ func (c *Component) Validate() []error {
 	return results
 }
 
+// returns the port with the given name, or nil if not found
 func (c *Component) GetPort(name string) *Port {
 	for _, p := range c.Ports {
 		if p.Name == name {
@@ -89,6 +90,7 @@ func (c *Component) GetPort(name string) *Port {
 	return nil
 }
 
+// returns the property with the given name, or nil if not found
 func (c *Component) GetProperty(name string) *Property {
 	for _, p := range c.Properties {
 		if p.Name == name {
@@ -96,6 +98,15 @@ func (c *Component) GetProperty(name string) *Property {
 		}
 	}
 	return nil
+}
+
+// returns all specified property names as a slice of strings
+func (c *Component) GetPropertyNames() []string {
+	props := make([]string, len(c.Properties))
+	for i, p := range c.Properties {
+		props[i] = p.Name
+	}
+	return props
 }
 
 type ConnectionPort struct {

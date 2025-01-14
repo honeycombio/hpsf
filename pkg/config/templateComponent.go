@@ -6,8 +6,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
-	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
 // This is the Go support for components read as data.
@@ -45,14 +45,16 @@ type TemplateProperty struct {
 	Default     any           `yaml:"default,omitempty"`
 }
 
-// A TemplateData describes a template for generating configuration data.
-// It's a deliberately simple structure, with a kind (which is the type of
+// A TemplateData describes a template for generating configuration data. It's a
+// deliberately simple structure, with a kind (which is the type of
 // configuration data it generates), a name (which is used to identify the
-// template), a format (which is the format of the data), and the data itself.
+// template), a format (which is the format of the data), meta (a map of extra
+// component-level info) and the data itself.
 type TemplateData struct {
 	Kind   Type
 	Name   string
 	Format string
+	Meta   map[string]string
 	Data   []any
 }
 
@@ -69,6 +71,25 @@ type TemplateComponent struct {
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"user,omitempty"`
+	hpsf        *hpsf.Component    // the component from the hpsf document
+}
+
+// SetHPSF stores the original component's details and may modify their contents. To
+// prevent the original being modified, the argument here should never be changed to a pointer.
+func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
+	t.hpsf = &c
+}
+
+// HProps is a template helper that gets a map of all properties specified in the hpsf document.
+func (t *TemplateComponent) HProps() map[string]any {
+	props := make(map[string]any)
+	if t.hpsf != nil {
+		for _, name := range t.hpsf.GetPropertyNames() {
+			p := t.hpsf.GetProperty(name)
+			props[p.Name] = p.Value
+		}
+	}
+	return props
 }
 
 // helper for templates
@@ -80,57 +101,33 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	return props
 }
 
-type dottedConfigTemplateKV struct {
-	key   string
-	value string
-}
-
-type dottedConfigTemplate []dottedConfigTemplateKV
-
-func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
-	var d dottedConfigTemplate
-	for _, v := range data {
-		m, ok := v.(map[string]any)
-		if !ok {
-			return nil, fmt.Errorf("expected map, got %T", v)
-		}
-		var sk, sv string
-		if mk, ok := m["key"]; !ok {
-			return nil, fmt.Errorf("missing key in template data")
-		} else {
-			if _, ok := mk.(string); !ok {
-				return nil, fmt.Errorf("expected string for key, got %T", mk)
-			}
-			sk = mk.(string)
-		}
-		if _, ok := m["value"]; !ok {
-			return nil, fmt.Errorf("missing value in template data")
-		} else {
-			if _, ok := m["value"].(string); !ok {
-				return nil, fmt.Errorf("expected string for v, got %T", m["value"])
-			}
-			sv = m["value"].(string)
-		}
-		d = append(d, dottedConfigTemplateKV{key: sk, value: sv})
-	}
-	return d, nil
+func (t *TemplateComponent) ComponentName() string {
+	return t.Name
 }
 
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (yaml.DottedConfig, error) {
-	// we have find a template with the kind of the config; if it
-	// doesn't exist, we return nil, nil
+func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	// we have to find a template with the kind of the config; if it
+	// doesn't exist, we return an error
 	for _, template := range t.Templates {
 		if template.Kind == cfgType {
 			switch template.Format {
-			case "dottedConfig":
+			case "dotted":
 				dct, err := buildDottedConfigTemplate(template.Data)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building dotted config template named %s", err, t.Name)
 				}
 				return t.generateDottedConfig(dct, userdata)
+			case "collector":
+				ct, err := buildCollectorTemplate(template)
+				if err != nil {
+					return nil, fmt.Errorf("error %w building collector template named %s", err, t.Name)
+				}
+				return t.generateCollectorConfig(ct, userdata)
+			default:
+				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
 		}
 	}
@@ -150,25 +147,31 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 	var b bytes.Buffer
 	err = tmpl.Execute(&b, t)
 	if err != nil {
-		return "", fmt.Errorf("error %w executing template", err)
+		return "", fmt.Errorf("error executing template: %w", err)
 	}
 	return b.String(), nil
 }
 
-func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userdata map[string]any) (yaml.DottedConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
-	config := make(yaml.DottedConfig)
-	for _, kv := range dct {
-		key, err := t.applyTemplate(kv.key, userdata)
-		if err != nil {
-			return nil, err
+	config := tmpl.NewCollectorConfig()
+	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
+	for _, section := range sectionOrder {
+		svcKey := fmt.Sprintf("pipelines.%s.%s", ct.signalType, section)
+		for _, kv := range ct.kvs[section] {
+			config.Set("service", svcKey, []string{ct.collectorComponentName})
+			key, err := t.applyTemplate(kv.key, userdata)
+			if err != nil {
+				return nil, err
+			}
+			key = fmt.Sprintf("%s.%s", section, key)
+			value, err := t.applyTemplate(kv.value, userdata)
+			if err != nil {
+				return nil, err
+			}
+			config.Set(section, key, value)
 		}
-		value, err := t.applyTemplate(kv.value, userdata)
-		if err != nil {
-			return nil, err
-		}
-		config[key] = value
 	}
 	return config, nil
 }

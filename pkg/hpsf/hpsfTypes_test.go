@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/honeycombio/hpsf/pkg/yaml"
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 )
 
 func TestEnsureHPSF(t *testing.T) {
@@ -21,11 +21,11 @@ func TestEnsureHPSF(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			y := yaml.DottedConfig{}
+			y := tmpl.DottedConfig{}
 			for i, arg := range tt.args {
 				y[arg] = i
 			}
-			text, _, _ := y.RenderYAML()
+			text, _ := y.RenderYAML()
 			if err := EnsureHPSF(string(text)); (err != nil) && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("EnsureHPSF() error = %v, should contain '%v'", err, tt.wantErr)
 			}
