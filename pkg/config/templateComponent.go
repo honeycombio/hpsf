@@ -74,7 +74,8 @@ type TemplateComponent struct {
 	hpsf        *hpsf.Component    // the component from the hpsf document
 }
 
-// we're making a copy here to make sure it doesn't get modified
+// SetHPSF is making a copy here (by not taking a pointer argument) to make sure 
+// that the original doesn't get modified.
 func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
 	t.hpsf = &c
 }
