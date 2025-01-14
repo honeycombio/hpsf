@@ -14,7 +14,7 @@ func TestCollectorConfig_RenderYAML(t *testing.T) {
 	want := `
 receivers:
     otlp:
-        Endpoint: localhost
+        endpoint: localhost
         Port: "4317"
 service:
     pipelines:
