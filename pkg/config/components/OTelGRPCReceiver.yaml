@@ -16,7 +16,7 @@ properties:
       you know what you're doing.
     type: string
     validations: [nonblank]
-    default: ${STRAWS_COLLECTOR_POD_IP}
+    default: ${COLLECTOR_POD_IP}
   - name: Port
     summary: The port on which to listen.
     description: |
