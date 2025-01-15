@@ -21,20 +21,34 @@ const (
 // We will need to convert the dotted paths into real ones later.
 type Component interface {
 	GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error)
+	AddConnection(*hpsf.Connection)
 }
 
 type NullComponent struct{}
 
-func (c NullComponent) GenerateConfig(Type, map[string]any) (tmpl.TemplateConfig, error) {
+func NewNullComponent() *NullComponent {
+	return &NullComponent{}
+}
+
+// ensure that NullComponent implements Component
+var _ Component = (*NullComponent)(nil)
+
+func (c *NullComponent) GenerateConfig(Type, map[string]any) (tmpl.TemplateConfig, error) {
 	return nil, nil
 }
+
+func (c *NullComponent) AddConnection(*hpsf.Connection) {}
 
 // This base component is used to make sure that the config will be valid
 // even if it stands alone. This is likely to be a temporary solution until we have a
 // database of components.
 type GenericBaseComponent struct {
-	Component hpsf.Component
+	Component   hpsf.Component
+	Connections []*hpsf.Connection
 }
+
+// ensure that GenericBaseComponent implements Component
+var _ Component = (*GenericBaseComponent)(nil)
 
 func (c GenericBaseComponent) GenerateConfig(ct Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
@@ -52,4 +66,8 @@ func (c GenericBaseComponent) GenerateConfig(ct Type, userdata map[string]any) (
 	default:
 		return nil, nil
 	}
+}
+
+func (c *GenericBaseComponent) AddConnection(conn *hpsf.Connection) {
+	c.Connections = append(c.Connections, conn)
 }

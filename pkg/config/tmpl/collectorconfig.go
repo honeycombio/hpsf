@@ -43,6 +43,18 @@ type collectorConfigFormat struct {
 	Service    collectorConfigService `yaml:"service"`
 }
 
+func dedup[T comparable](slice []T) []T {
+	keys := make(map[T]struct{})
+	list := []T{}
+	for _, entry := range slice {
+		if _, found := keys[entry]; !found {
+			keys[entry] = struct{}{}
+			list = append(list, entry)
+		}
+	}
+	return list
+}
+
 // Set sets a key in the config to a value. If the key already exists, it will
 // append the value to the existing value if it's a slice, or overwrite it if
 // it's not a slice.
@@ -57,13 +69,14 @@ func (cc *CollectorConfig) Set(section string, key string, value any) {
 	} else {
 		switch v := value.(type) {
 		case []any:
-			cc.Sections[section][key] = append(cc.Sections[section][key].([]any), v...)
+			// don't add duplicates
+			cc.Sections[section][key] = dedup(append(cc.Sections[section][key].([]any), v...))
 		case []string:
-			cc.Sections[section][key] = append(cc.Sections[section][key].([]string), v...)
+			cc.Sections[section][key] = dedup(append(cc.Sections[section][key].([]string), v...))
 		case []int:
-			cc.Sections[section][key] = append(cc.Sections[section][key].([]int), v...)
+			cc.Sections[section][key] = dedup(append(cc.Sections[section][key].([]int), v...))
 		case []float64:
-			cc.Sections[section][key] = append(cc.Sections[section][key].([]float64), v...)
+			cc.Sections[section][key] = dedup(append(cc.Sections[section][key].([]float64), v...))
 		default:
 			cc.Sections[section][key] = v // overwrite if not a slice
 		}

@@ -48,7 +48,7 @@ func (dc DottedConfig) RenderYAML() ([]byte, error) {
 	return data, nil
 }
 
-// Merge combines two `DottedConfig` structs together, the values from the
+// Merge combines two `DottedConfig` structs together; the values from the
 // `DottedConfig` passed in will override any values that are not slices.
 func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 	otherDotted, ok := other.(DottedConfig)

@@ -35,16 +35,38 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	switch component.Kind {
 	case "TraceGRPC", "TraceHTTP", "LogGRPC", "LogHTTP", "RefineryGRPC", "RefineryHTTP":
 		return NewInput(component)
-	case "DeterministicSampler":
-		return config.DeterministicSampler{Component: component}, nil
 	default:
 		return nil, fmt.Errorf("unknown component kind: %s", component.Kind)
 	}
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	// Add base component to the config so we can make a valid config
-	// this may be temporary until we have a database of components
+	comps := make(map[string]config.Component)
+	// make all the components
+	for _, c := range h.Components {
+		comp, err := t.MakeConfigComponent(c)
+		if err != nil {
+			return nil, err
+		}
+		comps[c.Name] = comp
+	}
+
+	// now add the connections
+	for _, conn := range h.Connections {
+		comp, ok := comps[conn.Source.Component]
+		if !ok {
+			return nil, fmt.Errorf("unknown source component %s in connection", conn.Source.Component)
+		}
+		comp.AddConnection(conn)
+
+		comp, ok = comps[conn.Destination.Component]
+		if !ok {
+			return nil, fmt.Errorf("unknown target component %s in connection", conn.Destination.Component)
+		}
+		comp.AddConnection(conn)
+	}
+
+	// Start with a base component so we always have a valid config
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 	base := config.GenericBaseComponent{Component: dummy}
 	composite, err := base.GenerateConfig(ct, userdata)
@@ -52,11 +74,8 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		return nil, err
 	}
 
-	for _, c := range h.Components {
-		comp, err := t.MakeConfigComponent(c)
-		if err != nil {
-			return nil, err
-		}
+	// merge in the config from each of the components
+	for _, comp := range comps {
 		refineryConfig, err := comp.GenerateConfig(ct, userdata)
 		if err != nil {
 			return nil, err

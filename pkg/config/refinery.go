@@ -9,13 +9,14 @@ import (
 )
 
 type RefineryInputComponent struct {
-	Component hpsf.Component
+	Component   hpsf.Component
+	Connections []*hpsf.Connection
 }
 
 // ensure RefineryInputComponent implements Component
-var _ Component = RefineryInputComponent{}
+var _ Component = (*RefineryInputComponent)(nil)
 
-func (c RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c *RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	if ct != RefineryConfigType {
 		return nil, nil
 	}
@@ -45,36 +46,10 @@ func (c RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any)
 	}
 }
 
-type DeterministicSampler struct {
-	Component hpsf.Component
+func (c *RefineryInputComponent) AddConnection(conn *hpsf.Connection) {
+	c.Connections = append(c.Connections, conn)
 }
 
-// ensure DeterministicSampler implements Component
-var _ Component = DeterministicSampler{}
-
-func (c DeterministicSampler) GenerateConfig(ct Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	if ct != RefineryRulesType {
-		return nil, nil
-	}
-
-	if c.Component.Properties == nil {
-		return nil, nil
-	}
-
-	rate := c.Component.GetProperty("SampleRate")
-	if rate == nil {
-		return nil, nil
-	}
-	r := yaml.AsInt(rate.Value)
-
-	env := c.Component.GetProperty("Environment")
-	if env == nil {
-		return nil, nil
-	}
-	e := yaml.AsString(env.Value)
-
-	return tmpl.DottedConfig{
-		fmt.Sprintf("Samplers.%s.DeterministicSampler.SampleRate", e): r,
-		"Samplers." + e + ".DeterministicSampler.SampleRate":          r,
-	}, nil
+type DeterministicSampler struct {
+	Component hpsf.Component
 }

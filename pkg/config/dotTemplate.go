@@ -7,8 +7,9 @@ import (
 )
 
 type dottedConfigTemplateKV struct {
-	key   string
-	value string
+	key         string
+	value       string
+	suppress_if string
 }
 
 // dottedConfigTemplate is the type we use for templates that properly modeled by
@@ -23,7 +24,7 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 		if !ok {
 			return nil, fmt.Errorf("expected map, got %T", v)
 		}
-		var sk, sv string
+		var sk, sv, suppr string
 		if mk, ok := m["key"]; !ok {
 			return nil, fmt.Errorf("missing key in template data")
 		} else {
@@ -40,7 +41,13 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 			}
 			sv = m["value"].(string)
 		}
-		d = append(d, dottedConfigTemplateKV{key: sk, value: sv})
+		if _, ok := m["suppress_if"]; ok {
+			if _, ok := m["suppress_if"].(string); !ok {
+				return nil, fmt.Errorf("expected string for suppress_if, got %T", m["suppress_if"])
+			}
+			suppr = m["suppress_if"].(string)
+		}
+		d = append(d, dottedConfigTemplateKV{key: sk, value: sv, suppress_if: suppr})
 	}
 	return d, nil
 }
