@@ -77,12 +77,13 @@ type TemplateComponent struct {
 	connections []*hpsf.Connection `yaml:"connections,omitempty"`
 }
 
-// we're making a copy here to make sure it doesn't get modified
+// SetHPSF stores the original component's details and may modify their contents. To
+// prevent the original being modified, the argument here should never be changed to a pointer.
 func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
 	t.hpsf = &c
 }
 
-// HProp is a template helper that gets a map of all properties specified in the hpsf document.
+// HProps is a template helper that gets a map of all properties specified in the hpsf document.
 func (t *TemplateComponent) HProps() map[string]any {
 	props := make(map[string]any)
 	if t.hpsf != nil {
