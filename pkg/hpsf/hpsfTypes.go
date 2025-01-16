@@ -72,9 +72,18 @@ func (c *Component) Validate() []error {
 		}
 	}
 	for _, p := range c.Properties {
-		if p.Type != PTYPE_NUMBER && p.Type != PTYPE_STRING && p.Type != PTYPE_BOOL {
-			results = append(results, validator.NewErrorf(
-				"Component %s Property %s Type must be 'Number', 'String', or 'Bool'", c.Name, p.Name))
+		if p.Name == "" {
+			results = append(results, validator.NewErrorf("Component %s Property Name must be set", c.Name))
+		}
+		if p.Value == nil {
+			results = append(results, validator.NewErrorf("Component %s Property %s Value must be set", c.Name, p.Name))
+		}
+		switch p.Value.(type) {
+		case string:
+		case int:
+		case bool:
+		default:
+			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, or bool", c.Name, p.Name))
 		}
 	}
 	return results

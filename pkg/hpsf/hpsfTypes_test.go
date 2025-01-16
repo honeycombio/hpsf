@@ -5,6 +5,9 @@ import (
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
+	"github.com/honeycombio/hpsf/pkg/validator"
+	"github.com/stretchr/testify/assert"
+	yaml "gopkg.in/yaml.v3"
 )
 
 func TestEnsureHPSF(t *testing.T) {
@@ -31,4 +34,41 @@ func TestEnsureHPSF(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHPSF_Validate(t *testing.T) {
+	inputData := []byte(`components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: otlp_out
+    kind: OTelGRPCExporter
+    properties:
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces`)
+
+	_, err := validator.EnsureYAML(inputData)
+	assert.NoError(t, err)
+
+	var hpsf HPSF
+	err = yaml.Unmarshal(inputData, &hpsf)
+	assert.NoError(t, err)
+
+	errors := hpsf.Validate()
+	assert.Empty(t, errors)
 }
