@@ -7,9 +7,7 @@ receivers:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
 exporters:
     otlp/otlp_out:
-        protocols:
-            grpc:
-                endpoint: myhost.com:1234
+        endpoint: myhost.com:1234
 service:
     pipelines:
         traces:
