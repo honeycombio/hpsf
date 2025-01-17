@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"os"
 	"strings"
 	"testing"
 
@@ -12,64 +13,17 @@ import (
 )
 
 func TestGenerateConfig(t *testing.T) {
-	const inputData = `components:
-  - name: RefineryGRPC_2
-    kind: RefineryGRPC
-    ports:
-      - name: TraceOut
-        direction: output
-        type: Honeycomb
-    properties:
-      - name: Port
-        value: 4317
-        type: number
-  - name: otlp_in
-    kind: OTelReceiver
-    properties:
-      - name: GRPCPort
-        value: 9922
-      - name: HTTPPort
-        value: 1234
-  - name: otlp_out
-    kind: OTelGRPCExporter
-    properties:
-      - name: Host
-        value: myhost.com
-      - name: Port
-        value: 1234
-connections:
-  - source:
-      component: otlp_in
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: otlp_out
-      port: Traces
-      type: OTelTraces`
+	b, err := os.ReadFile("testdata/simple_hpsf.yaml")
+	require.NoError(t, err)
+	var inputData = string(b)
 
-	const expectedConfig = `receivers:
-    otlp/otlp_in:
-        protocols:
-            grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
-            http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
-exporters:
-    otlp/otlp_out:
-        protocols:
-            grpc:
-                endpoint: myhost.com:1234
-service:
-    pipelines:
-        traces:
-            receivers: [otlp/otlp_in]
-            processors: []
-            exporters: [otlp/otlp_out]
-`
+	b, err = os.ReadFile("testdata/simple_collector_config.yaml")
+	require.NoError(t, err)
+	var expectedConfig = string(b)
 
 	var hpsf *hpsf.HPSF
 	dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-	err := dec.Decode(&hpsf)
+	err = dec.Decode(&hpsf)
 	require.NoError(t, err)
 
 	tlater, err := NewTranslator()
