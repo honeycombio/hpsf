@@ -106,7 +106,7 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 
 func (t *TemplateComponent) ComponentName() string {
 	if t.CollName != "" {
-		return t.CollName + "/" + t.Name
+		return t.CollName + "/" + t.hpsf.Name
 	}
 	return t.Name
 }
