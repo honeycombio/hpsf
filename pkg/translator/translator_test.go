@@ -13,11 +13,11 @@ import (
 )
 
 func TestGenerateConfig(t *testing.T) {
-	b, err := os.ReadFile("testdata/simple_hpsf.yaml")
+	b, err := os.ReadFile("testdata/simple_grpc_hpsf.yaml")
 	require.NoError(t, err)
 	var inputData = string(b)
 
-	b, err = os.ReadFile("testdata/simple_collector_config.yaml")
+	b, err = os.ReadFile("testdata/simple_grpc_collector_config.yaml")
 	require.NoError(t, err)
 	var expectedConfig = string(b)
 
