@@ -38,6 +38,6 @@ templates:
       signalTypes: [traces, metrics, logs] # we'll generate a name for each pipeline if there's more than 1
       collectorComponentName: otlphttp
     data:
-      - key: "{{ .ComponentName }}.protocols.http.endpoint"
+      - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.Port .User.Port .Props.Port.Default }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
