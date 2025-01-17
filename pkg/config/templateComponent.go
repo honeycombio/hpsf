@@ -212,7 +212,6 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 				if err != nil {
 					return nil, err
 				}
-				key = fmt.Sprintf("%s.%s", section, key)
 				value, err := t.applyTemplate(kv.value, userdata)
 				if err != nil {
 					return nil, err
