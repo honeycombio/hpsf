@@ -11,7 +11,7 @@ jobs:
             - v1-go-mod-{{ checksum "go.sum" }}
       - run: make test
       - store_test_results:
-          path: ./unit-tests.xml
+          path: test_results/
       - save_cache:
           key: v1-go-mod-{{ checksum "go.sum" }}
           paths:
