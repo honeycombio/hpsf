@@ -13,27 +13,47 @@ import (
 )
 
 func TestGenerateConfig(t *testing.T) {
-	b, err := os.ReadFile("testdata/simple_grpc_hpsf.yaml")
-	require.NoError(t, err)
-	var inputData = string(b)
+	testCases := []struct {
+		desc                   string
+		inputHPSFTestData      string
+		expectedConfigTestData string
+	}{
+		{
+			desc:                   "GRPC in and out",
+			inputHPSFTestData:      "testdata/simple_grpc_hpsf.yaml",
+			expectedConfigTestData: "testdata/simple_grpc_collector_config.yaml",
+		},
+		{
+			desc:                   "HTTP in and out",
+			inputHPSFTestData:      "testdata/simple_http_hpsf.yaml",
+			expectedConfigTestData: "testdata/simple_http_collector_config.yaml",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			b, err := os.ReadFile(tC.inputHPSFTestData)
+			require.NoError(t, err)
+			var inputData = string(b)
 
-	b, err = os.ReadFile("testdata/simple_grpc_collector_config.yaml")
-	require.NoError(t, err)
-	var expectedConfig = string(b)
+			b, err = os.ReadFile(tC.expectedConfigTestData)
+			require.NoError(t, err)
+			var expectedConfig = string(b)
 
-	var hpsf *hpsf.HPSF
-	dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-	err = dec.Decode(&hpsf)
-	require.NoError(t, err)
+			var hpsf *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+			err = dec.Decode(&hpsf)
+			require.NoError(t, err)
 
-	tlater, err := NewTranslator()
-	require.NoError(t, err)
+			tlater, err := NewTranslator()
+			require.NoError(t, err)
 
-	cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
-	require.NoError(t, err)
+			cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
+			require.NoError(t, err)
 
-	got, err := cfg.RenderYAML()
-	require.NoError(t, err)
+			got, err := cfg.RenderYAML()
+			require.NoError(t, err)
 
-	assert.Equal(t, expectedConfig, string(got))
+			assert.Equal(t, expectedConfig, string(got))
+		})
+	}
 }
