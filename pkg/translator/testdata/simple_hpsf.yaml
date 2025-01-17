@@ -1,0 +1,34 @@
+components:
+  - name: RefineryGRPC_2
+    kind: RefineryGRPC
+    ports:
+      - name: TraceOut
+        direction: output
+        type: Honeycomb
+    properties:
+      - name: Port
+        value: 4317
+        type: number
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: otlp_out
+    kind: OTelGRPCExporter
+    properties:
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
