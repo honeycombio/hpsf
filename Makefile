@@ -1,3 +1,4 @@
+GOCMD = go
 GOTESTCMD = $(if $(shell command -v gotestsum),gotestsum --junitfile ./test_results/$(1).xml --format testname --,go test)
 
 .PHONY: test
@@ -22,3 +23,6 @@ test_all: test_results
 
 test_results:
 	@mkdir -p test_results
+
+tidy:
+	$(GOCMD) mod tidy

@@ -1,0 +1,4 @@
+AccessKeys:
+    SendKey: test
+Network:
+    HoneycombAPI: https://api.honeycomb.io
