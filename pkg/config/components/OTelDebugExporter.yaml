@@ -7,12 +7,9 @@ properties:
   - name: Verbosity
     summary: The verbosity level of the debug output
     description: |
-      The verbosity level of the debug output. The default is "basic".
+      The verbosity level of the debug output. Valid values are basic, normal, or detailed. The default is "basic".
     type: string
-    validations:
-      - basic
-      - normal
-      - detailed
+    validations: [nonblank]
     default: basic
 templates:
   - kind: collector_config
