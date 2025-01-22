@@ -1,0 +1,16 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+exporters:
+    debug/ShowMeTheOlly:
+        verbosity: basic
+service:
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: []
+            exporters: [debug/ShowMeTheOlly]
