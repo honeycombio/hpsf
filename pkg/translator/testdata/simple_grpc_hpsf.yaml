@@ -9,6 +9,8 @@ components:
       - name: Port
         value: 4317
         type: number
+  - name: ShowMeTheOlly
+    kind: OTelDebugExporter
   - name: otlp_in
     kind: OTelReceiver
     properties:
@@ -30,5 +32,13 @@ connections:
       type: OTelTraces
     destination:
       component: otlp_out
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: ShowMeTheOlly
       port: Traces
       type: OTelTraces

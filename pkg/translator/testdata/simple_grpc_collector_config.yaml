@@ -6,6 +6,8 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
 exporters:
+    debug/ShowMeTheOlly:
+        verbosity: basic
     otlp/otlp_out:
         endpoint: myhost.com:1234
 service:
@@ -13,4 +15,4 @@ service:
         traces:
             receivers: [otlp/otlp_in]
             processors: []
-            exporters: [otlp/otlp_out]
+            exporters: [otlp/otlp_out, debug/ShowMeTheOlly]
