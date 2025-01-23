@@ -58,7 +58,7 @@ func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userd
 	config := make(tmpl.DottedConfig)
 	for _, kv := range dct {
 		// do the key
-		key, err := t.applyTemplate(kv.key, userdata)
+		key, err := t.expandTemplateVariable(kv.key, userdata)
 		if err != nil {
 			return nil, err
 		}

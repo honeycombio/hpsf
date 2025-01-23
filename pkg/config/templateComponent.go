@@ -3,6 +3,7 @@ package config
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 	"text/template"
@@ -159,7 +160,7 @@ func (t *TemplateComponent) AddConnection(conn *hpsf.Connection) {
 	t.connections = append(t.connections, conn)
 }
 
-func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]any) (string, error) {
+func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map[string]any) (string, error) {
 	if tmplText == "" || !strings.Contains(tmplText, "{{") {
 		return tmplText, nil
 	}
@@ -175,6 +176,32 @@ func (t *TemplateComponent) applyTemplate(tmplText string, userdata map[string]a
 		return "", fmt.Errorf("error executing template: %w", err)
 	}
 	return b.String(), nil
+}
+
+func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
+	switch k := tmplVal.(type) {
+	case string:
+		if tmplVal == "" || !strings.Contains(k, "{{") {
+			return k, nil
+		}
+		// the content of the template is a single value
+		// if we're just including a specific value, don't expand it
+		// as a string, instead return the value
+		// FIX: this is a hacky way of returning the value rather than
+		//      expanding the template
+		re := regexp.MustCompile(`{{ \.HProps\.(.*) }}`)
+		value := re.FindStringSubmatch(k)
+		if len(value) > 1 {
+			v, ok := t.HProps()[value[1]]
+			if !ok {
+				return nil, nil
+			}
+			return v, nil
+		}
+		return t.expandTemplateVariable(k, userdata)
+	default:
+		return "", fmt.Errorf("invalid templated variable type %T", k)
+	}
 }
 
 // this is where we do the actual work of generating the config; this thing knows about
@@ -208,7 +235,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 					}
 				}
 				config.Set("service", svcKey, []string{t.ComponentName()})
-				key, err := t.applyTemplate(kv.key, userdata)
+				key, err := t.expandTemplateVariable(kv.key, userdata)
 				if err != nil {
 					return nil, err
 				}

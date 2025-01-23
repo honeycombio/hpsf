@@ -8,7 +8,9 @@ receivers:
 exporters:
     otlp/otlp_out:
         endpoint: myhost.com:1234
-        headers: null
+        headers:
+            x-honeycomb-dataset: custom
+            x-honeycomb-team: ${HONEYCOMB_API_KEY}
 service:
     pipelines:
         traces:
