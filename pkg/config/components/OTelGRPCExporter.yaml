@@ -35,8 +35,8 @@ properties:
       Sending data to a backend may require additional headers to be
       configured. This properties supports sending a map of header keys and
       values.
-    type: kvlist
-    validations: [kvlist]
+    type: map
+    validations: [map]
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector

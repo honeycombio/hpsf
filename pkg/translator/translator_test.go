@@ -24,7 +24,7 @@ func TestGenerateConfig(t *testing.T) {
 			expectedConfigTestData: "testdata/simple_grpc_collector_config.yaml",
 		},
 		{
-			desc:                   "GRPC with headers in and out",
+			desc:                   "GRPC in and out with headers",
 			inputHPSFTestData:      "testdata/simple_grpc_hpsf_with_headers.yaml",
 			expectedConfigTestData: "testdata/simple_grpc_collector_config_with_headers.yaml",
 		},
@@ -32,6 +32,11 @@ func TestGenerateConfig(t *testing.T) {
 			desc:                   "OTLP GRPC & HTTP in, HTTP out",
 			inputHPSFTestData:      "testdata/simple_http_hpsf.yaml",
 			expectedConfigTestData: "testdata/simple_http_collector_config.yaml",
+		},
+		{
+			desc:                   "OTLP GRPC & HTTP in, HTTP out with headers",
+			inputHPSFTestData:      "testdata/simple_http_hpsf_with_headers.yaml",
+			expectedConfigTestData: "testdata/simple_http_collector_config_with_headers.yaml",
 		},
 		{
 			desc:                   "OTLP GRPC & HTTP in and a debug exporter",
