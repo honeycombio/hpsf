@@ -8,7 +8,6 @@ receivers:
 exporters:
     otlphttp/otlp_out:
         endpoint: myhost.com:1234
-        headers: null
 service:
     pipelines:
         traces:
