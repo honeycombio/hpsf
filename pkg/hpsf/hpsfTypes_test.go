@@ -52,6 +52,9 @@ func TestHPSF_Validate(t *testing.T) {
         value: myhost.com
       - name: Port
         value: 1234
+      - name: Headers
+        value:
+          "header1": "1234"
 connections:
   - source:
       component: otlp_in
