@@ -29,6 +29,14 @@ properties:
     type: integer
     validations: [integer]
     default: 443
+  - name: Headers
+    summary: Headers to emit when sending HTTP traffic.
+    description: |
+      Sending data to a backend may require additional headers to be
+      configured. This properties supports sending a map of header keys and
+      values.
+    type: map
+    validations: [map]
 templates:
   - kind: collector_config
     name: otel_http_exporter_collector
@@ -40,4 +48,7 @@ templates:
     data:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.Port .User.Port .Props.Port.Default }}"
+      - key: "{{ .ComponentName }}.headers"
+        value: "{{ .HProps.Headers }}"
+        suppress_if: "{{ not .HProps.Headers }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
