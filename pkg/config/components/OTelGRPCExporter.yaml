@@ -50,3 +50,4 @@ templates:
         value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers }}"
+      # service is not part of the template, it's generated automatically by the collectorConfig
