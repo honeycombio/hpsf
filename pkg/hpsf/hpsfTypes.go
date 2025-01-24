@@ -82,8 +82,9 @@ func (c *Component) Validate() []error {
 		case string:
 		case int:
 		case bool:
+		case map[string]any:
 		default:
-			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, or bool", c.Name, p.Name))
+			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, or map[string]any", c.Name, p.Name))
 		}
 	}
 	return results
