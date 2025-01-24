@@ -78,6 +78,8 @@ type TemplateComponent struct {
 	connections []*hpsf.Connection `yaml:"connections,omitempty"`
 }
 
+var re = regexp.MustCompile(`{{ \.HProps\.(.*) }}`)
+
 // SetHPSF stores the original component's details and may modify their contents. To
 // prevent the original being modified, the argument here should never be changed to a pointer.
 func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
@@ -189,7 +191,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 		// as a string, instead return the value
 		// FIX: this is a hacky way of returning the value rather than
 		//      expanding the template
-		re := regexp.MustCompile(`{{ \.HProps\.(.*) }}`)
+
 		value := re.FindStringSubmatch(k)
 		if len(value) > 1 {
 			v, ok := t.HProps()[value[1]]
