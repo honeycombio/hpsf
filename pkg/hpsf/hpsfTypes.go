@@ -16,9 +16,6 @@ components:
   - name: DefaultDeterministicSampler
     kind: DeterministicSampler
     properties:
-      - name: Environment
-        value: test
-        type: string
       - name: SampleRate
         value: 1
         type: number
