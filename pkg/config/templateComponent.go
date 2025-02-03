@@ -45,7 +45,6 @@ type TemplateProperty struct {
 	Type        hpsf.PropType `yaml:"type"`
 	Validations []string      `yaml:"validation,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
-	Value       any           `yaml:"value,omitempty"`
 }
 
 // A TemplateData describes a template for generating configuration data. It's a
