@@ -40,5 +40,5 @@ templates:
     name: DeterministicSampler_RefineryRules
     format: dotted
     data:
-      - key: "{{ printf \"Samplers.%s.DeterministicSampler.GoalThroughput\" .Props.Environment.Value }}"
+      - key: "Samplers.{{ firstNonblank .Props.Environment.Value .Props.Environment.Default }}.DeterministicSampler.GoalThroughput"
         value: "{{ firstNonblank .HProps.SampleRate .User.SampleRate.Value .Props.SampleRate.Default }}"
