@@ -1,1 +1,5 @@
 RulesVersion: 2
+Samplers:
+    test:
+        DeterministicSampler:
+            GoalThroughput: "1"
