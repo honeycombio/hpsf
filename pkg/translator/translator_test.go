@@ -72,3 +72,52 @@ func TestGenerateConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestDefaultHPSF(t *testing.T) {
+	testCases := []struct {
+		desc                   string
+		ct                     config.Type
+		inputHPSFTestData      string
+		expectedConfigTestData string
+	}{
+		{
+			desc:                   "Refinery Config",
+			ct:                     config.RefineryConfigType,
+			expectedConfigTestData: "testdata/default_refinery_config.yaml",
+		},
+		{
+			desc:                   "Refinery Rules",
+			ct:                     config.RefineryRulesType,
+			expectedConfigTestData: "testdata/default_refinery_rules.yaml",
+		},
+		{
+			desc:                   "Collector Config",
+			ct:                     config.CollectorConfigType,
+			expectedConfigTestData: "testdata/default_collector_config.yaml",
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+
+			b, err := os.ReadFile(tC.expectedConfigTestData)
+			require.NoError(t, err)
+			var expectedConfig = string(b)
+
+			var h *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(hpsf.DefaultConfiguration))
+			err = dec.Decode(&h)
+			require.NoError(t, err)
+
+			tlater, err := NewTranslator()
+			require.NoError(t, err)
+
+			cfg, err := tlater.GenerateConfig(h, tC.ct, nil)
+			require.NoError(t, err)
+
+			got, err := cfg.RenderYAML()
+			require.NoError(t, err)
+
+			assert.Equal(t, expectedConfig, string(got))
+		})
+	}
+}

@@ -7,6 +7,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -74,4 +75,8 @@ connections:
 
 	errors := hpsf.Validate()
 	assert.Empty(t, errors)
+}
+
+func TestDefaultConfigurationIsValidYAML(t *testing.T) {
+	require.NoError(t, EnsureHPSF(DefaultConfiguration))
 }
