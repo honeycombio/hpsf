@@ -70,9 +70,9 @@ templates:
     name: EMA_Throughput_Rules
     format: dotted
     data:
-      - key: "{{ printf \"Samplers.%s.EMAThroughputSampler.GoalThroughput\" .Props.Environment.Value }}"
-        value: "{{ firstNonblank .HProps.GoalThroughput .User.GoalThroughput.Value .Props.GoalThroughput.Default }}"
-      - key: "{{ printf \"Samplers.%s.EMAThroughputSampler.AdjustmentInterval\" .Props.Environment.Value }}"
-        value: "{{ firstNonblank .HProps.AdjustmentInterval .User.AdjustmentInterval.Value .Props.AdjustmentInterval.Default }}"
-      - key: "{{ printf \"Samplers.%s.EMAThroughputSampler.FieldList\" .Props.Environment.Value }}"
-        value: "{{ firstNonblank .HProps.FieldList .User.FieldList.Value .Props.FieldList.Default }}"
+      - key: "Samplers.{{ firstNonblank .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.GoalThroughput"
+        value: "{{ firstNonblank .HProps.GoalThroughput .User.GoalThroughput .Props.GoalThroughput.Default }}"
+      - key: "Samplers.{{ firstNonblank .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.AdjustmentInterval"
+        value: "{{ firstNonblank .HProps.AdjustmentInterval .User.AdjustmentInterval .Props.AdjustmentInterval.Default }}"
+      - key: "Samplers.{{ firstNonblank .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.FieldList"
+        value: "{{ firstNonblank .HProps.FieldList .User.FieldList .Props.FieldList.Default }}"
