@@ -1,0 +1,5 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        DeterministicSampler:
+            GoalThroughput: "1"

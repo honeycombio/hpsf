@@ -9,6 +9,18 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
+// DefaultConfiguration is the default HPSF configuration that includes a
+// simple Refinery configuration with a determinisic sampler.
+const DefaultConfiguration = `
+components:
+  - name: DefaultDeterministicSampler
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 1
+        type: number
+`
+
 type ConnectionType string
 
 const (
