@@ -44,10 +44,15 @@ func TestTemplateComponents(t *testing.T) {
 			wantOutput: "DeterministicSampler_output_refinery_rules.yaml",
 		},
 		{
-			name:       "EMAThroughputSampler to refinery rules",
-			kind:       "EMAThroughput",
-			cType:      RefineryRulesType,
-			config:     map[string]any{"Environment": "staging", "GoalThroughput": 42, "AdjustmentInterval": 120, "FieldList": []string{"test"}},
+			name:  "EMAThroughputSampler to refinery rules",
+			kind:  "EMAThroughput",
+			cType: RefineryRulesType,
+			config: map[string]any{
+				"Environment":        "staging",
+				"GoalThroughput":     42,
+				"AdjustmentInterval": 120,
+				"FieldList":          []string{"http.method", "http.status_code"},
+			},
 			wantOutput: "EmaThroughput_output_refinery_rules.yaml",
 		},
 	}
