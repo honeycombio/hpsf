@@ -21,4 +21,4 @@ templates:
       collectorComponentName: debug
     data:
       - key: "{{ .ComponentName }}.verbosity"
-        value: "{{ firstNonblank .HProps.Verbosity .User.Verbosity .Props.Verbosity.Default }}"
+        value: "{{ firstNonZero .HProps.Verbosity .User.Verbosity .Props.Verbosity.Default }}"

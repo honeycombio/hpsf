@@ -16,15 +16,15 @@ import (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"comment":       comment,
-		"firstNonblank": firstNonblank,
-		"indent":        indent,
-		"join":          join,
-		"makeSlice":     makeSlice,
-		"meta":          meta,
-		"now":           now,
-		"split":         split,
-		"yamlf":         yamlf,
+		"comment":      comment,
+		"firstNonZero": firstNonzero,
+		"indent":       indent,
+		"join":         join,
+		"makeSlice":    makeSlice,
+		"meta":         meta,
+		"now":          now,
+		"split":        split,
+		"yamlf":        yamlf,
 	}
 }
 
@@ -33,13 +33,27 @@ func comment(s string) string {
 	return strings.TrimRight("## "+strings.Replace(s, "\n", "\n## ", -1), " ")
 }
 
-// returns the first non-blank string from the arguments
-func firstNonblank(s ...any) string {
+// returns the first non-zero-valued item from the arguments
+// []any is special-cased to return a YAML array -- but it's not actually
+// rendered that way. It's used to signal to the YAML serializer that the
+// value is an array.
+// If we eventually feel like the [,] syntax is failing to handle some special
+// cases, we can change it to use some other syntax that's less likely to occur
+// in real data.
+func firstNonzero(s ...any) string {
 	for _, v := range s {
-		if v != nil {
-			s := fmt.Sprintf("%v", v)
-			if s != "" {
-				return s
+		if !_isZeroValue(v) {
+			switch vt := v.(type) {
+			case string:
+				return fmt.Sprintf("%v", vt)
+			case []any:
+				ss := make([]string, len(vt))
+				for i, vv := range vt {
+					ss[i] = fmt.Sprintf("%v", vv)
+				}
+				return "[" + strings.Join(ss, ", ") + "]"
+			default:
+				return fmt.Sprintf("%v", vt)
 			}
 		}
 	}
@@ -81,10 +95,12 @@ func split(s, sep string) []string {
 func yamlf(a any) string {
 	switch v := a.(type) {
 	case string:
+		// if it's a plain string, return it as a string
 		pat := regexp.MustCompile("^[a-zA-z0-9]+$")
 		if pat.MatchString(v) {
 			return v
 		}
+		// play some games with quotes to make it look better
 		hasSingleQuote := strings.Contains(v, "'")
 		hasDoubleQuote := strings.Contains(v, `"`)
 		switch {
@@ -147,10 +163,14 @@ func _isZeroValue(value any) bool {
 		return !v
 	case []string:
 		return len(v) == 0
+	case []any:
+		return len(v) == 0
 	case map[string]string:
 		return len(v) == 0
 	case map[string]any:
 		return len(v) == 0
+	case nil:
+		return true
 	default:
 		return false
 	}

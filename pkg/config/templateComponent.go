@@ -3,7 +3,6 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"slices"
 	"strings"
 	"text/template"
@@ -70,6 +69,7 @@ type TemplateComponent struct {
 	Kind        string             `yaml:"kind"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
+	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
@@ -77,8 +77,6 @@ type TemplateComponent struct {
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection `yaml:"connections,omitempty"`
 }
-
-var re = regexp.MustCompile(`{{ \.HProps\.(.*) }}`)
 
 // SetHPSF stores the original component's details and may modify their contents. To
 // prevent the original being modified, the argument here should never be changed to a pointer.
@@ -186,21 +184,32 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 		if tmplVal == "" || !strings.Contains(k, "{{") {
 			return k, nil
 		}
-		// the content of the template is a single value
-		// if we're just including a specific value, don't expand it
-		// as a string, instead return the value
-		// FIX: this is a hacky way of returning the value rather than
-		//      expanding the template
 
-		value := re.FindStringSubmatch(k)
-		if len(value) > 1 {
-			v, ok := t.HProps()[value[1]]
-			if !ok {
-				return nil, nil
-			}
-			return v, nil
+		// expand the template, but before we return it we need to check if
+		// it needs extra handling
+		value, err := t.expandTemplateVariable(k, userdata)
+		if err != nil {
+			return nil, err
 		}
-		return t.expandTemplateVariable(k, userdata)
+
+		// if the value is of the form "[ item1, item2, item3 ]", we want to return a slice
+		// of strings, not a single string so that the YAML system will render it
+		// as a list.
+		if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
+			value = strings.TrimPrefix(value, "[")
+			value = strings.TrimSuffix(value, "]")
+			items := strings.Split(value, ",")
+			for i, item := range items {
+				// if the item is empty, skip it
+				v := strings.TrimSpace(item)
+				if v == "" {
+					continue
+				}
+				items[i] = strings.TrimSpace(item)
+			}
+			return items, nil
+		}
+		return value, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}
