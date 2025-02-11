@@ -41,7 +41,48 @@ const (
 	PTYPE_NUMBER PropType = "number"
 	PTYPE_STRING PropType = "string"
 	PTYPE_BOOL   PropType = "bool"
+	PTYPE_ARRSTR PropType = "stringarray"
 )
+
+func (p PropType) Validate() error {
+	switch p {
+	case PTYPE_NUMBER:
+	case PTYPE_STRING:
+	case PTYPE_BOOL:
+	case PTYPE_ARRSTR:
+	default:
+		return errors.New("invalid PropType '" + string(p) + "'")
+	}
+	return nil
+}
+
+func (p PropType) Conforms(a any) error {
+	// null proptype means anything goes
+	if p == "" {
+		return nil
+	}
+	switch p {
+	case PTYPE_NUMBER:
+		if _, ok := a.(int); !ok {
+			return errors.New("expected int, got " + a.(string))
+		}
+	case PTYPE_STRING:
+		if _, ok := a.(string); !ok {
+			return errors.New("expected string, got " + a.(string))
+		}
+	case PTYPE_BOOL:
+		if _, ok := a.(bool); !ok {
+			return errors.New("expected bool, got " + a.(string))
+		}
+	case PTYPE_ARRSTR:
+		if _, ok := a.([]string); !ok {
+			return errors.New("expected []string, got " + a.(string))
+		}
+	default:
+		return errors.New("invalid PropType '" + string(p) + "'")
+	}
+	return nil
+}
 
 type Direction string
 
@@ -90,13 +131,33 @@ func (c *Component) Validate() []error {
 		if p.Value == nil {
 			results = append(results, validator.NewErrorf("Component %s Property %s Value must be set", c.Name, p.Name))
 		}
+		if p.Type != "" {
+			if err := p.Type.Validate(); err != nil {
+				results = append(results, validator.NewErrorf("Component %s Property %s Type %s", c.Name, p.Name, err))
+			}
+		}
+
 		switch p.Value.(type) {
 		case string:
 		case int:
 		case bool:
 		case map[string]any:
+		case []any:
+			sa := make([]string, len(p.Value.([]any)))
+			for i, v := range p.Value.([]any) {
+				if _, ok := v.(string); !ok {
+					results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, []any, or map[string]any", c.Name, p.Name))
+				}
+				sa[i] = v.(string)
+			}
+			p.Value = sa
 		default:
-			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, or map[string]any", c.Name, p.Name))
+			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, []any, or map[string]any", c.Name, p.Name))
+		}
+
+		err := p.Type.Conforms(p.Value)
+		if err != nil {
+			results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
 		}
 	}
 	return results

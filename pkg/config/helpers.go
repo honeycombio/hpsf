@@ -34,10 +34,8 @@ func comment(s string) string {
 }
 
 // returns the first non-zero-valued item from the arguments
-// []any is special-cased to return a YAML array -- but it's not actually
-// rendered that way. It's used to signal to the YAML serializer that the
-// value is an array.
-// If we eventually feel like the [,] syntax is failing to handle some special
+// []any is special-cased to return a comma-separated set of strings.
+// If we eventually feel like the comma syntax is failing to handle some special
 // cases, we can change it to use some other syntax that's less likely to occur
 // in real data.
 func firstNonzero(s ...any) string {
@@ -51,7 +49,7 @@ func firstNonzero(s ...any) string {
 				for i, vv := range vt {
 					ss[i] = fmt.Sprintf("%v", vv)
 				}
-				return "[" + strings.Join(ss, ", ") + "]"
+				return strings.Join(ss, ", ")
 			default:
 				return fmt.Sprintf("%v", vt)
 			}

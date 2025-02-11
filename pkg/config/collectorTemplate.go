@@ -23,6 +23,8 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 	if !ok {
 		return kv, false
 	}
+
+	// keys must be strings
 	if mk, ok := m["key"]; !ok {
 		return kv, false
 	} else {
@@ -31,6 +33,8 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 		}
 		kv.key = mk.(string)
 	}
+
+	// values can be strings, ints, bools, []string, map[string]string, []any, or map[string]any
 	if _, ok := m["value"]; !ok {
 		return kv, false
 	} else {
@@ -67,6 +71,9 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 			return kv, false
 		}
 	}
+
+	// suppress_if specifies a condition under which the key-value pair should be suppressed
+	// if it evaluates to 'true' then it's suppressed
 	if _, ok := m["suppress_if"]; ok {
 		if _, ok := m["suppress_if"].(string); !ok {
 			return kv, false

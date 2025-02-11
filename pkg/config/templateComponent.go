@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -34,7 +35,9 @@ type TemplatePort struct {
 // A TemplateProperty describes a property of a component. A property is a
 // user-settable value that can be used to configure the component. Properties
 // have a name, a type (which can be used to validate the value), and a default
-// value. We also allow for validations, which can be used to constrain the
+// value. The advanced flag can be used to indicate that the property should be
+// suppressed by default in the UI (only shown if the user selects an "advanced"
+// option). We also allow for validations, which can be used to constrain the
 // value of the property. The property can also have a summary and a
 // description, which are used to document the property.
 type TemplateProperty struct {
@@ -42,6 +45,7 @@ type TemplateProperty struct {
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
+	Advanced    bool          `yaml:"advanced,omitempty"`
 	Validations []string      `yaml:"validation,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
 }
@@ -178,6 +182,55 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 	return b.String(), nil
 }
 
+// undecorate removes type decorations from strings and returns the desired type.
+// Since everything that comes out of a template is a string, for things that
+// needed to not be strings, we flagged them with a decoration indicating the
+// desired type. Now we need to do some extra work to make sure that we return
+// the indicated type. If it can't be converted to the desired type, we return
+// the string as is.
+//
+// Prefixes we support:
+// - "int:" for integers
+// - "bool:" for booleans
+// - "float:" for floats
+// - "arr:" for arrays of strings, comma-separated
+func undecorate(s string) any {
+	switch {
+	case strings.HasPrefix(s, "int:"):
+		s := strings.TrimPrefix(s, "int:")
+		i, err := strconv.Atoi(s)
+		if err == nil {
+			return i
+		}
+	case strings.HasPrefix(s, "bool:"):
+		s := strings.TrimPrefix(s, "bool:")
+		b, err := strconv.ParseBool(s)
+		if err == nil {
+			return b
+		}
+	case strings.HasPrefix(s, "float:"):
+		s := strings.TrimPrefix(s, "float:")
+		f, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			return f
+		}
+	case strings.HasPrefix(s, "arr:"):
+		s := strings.TrimPrefix(s, "arr:")
+		items := strings.Split(s, ",")
+		// we need to trim the spaces from the items and we don't want blanks
+		// in the array
+		var arr []string
+		for _, item := range items {
+			item = strings.TrimSpace(item)
+			if item != "" {
+				arr = append(arr, item)
+			}
+		}
+		return arr
+	}
+	return s
+}
+
 func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
 	switch k := tmplVal.(type) {
 	case string:
@@ -192,24 +245,8 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 			return nil, err
 		}
 
-		// if the value is of the form "[ item1, item2, item3 ]", we want to return a slice
-		// of strings, not a single string so that the YAML system will render it
-		// as a list.
-		if strings.HasPrefix(value, "[") && strings.HasSuffix(value, "]") {
-			value = strings.TrimPrefix(value, "[")
-			value = strings.TrimSuffix(value, "]")
-			items := strings.Split(value, ",")
-			for i, item := range items {
-				// if the item is empty, skip it
-				v := strings.TrimSpace(item)
-				if v == "" {
-					continue
-				}
-				items[i] = strings.TrimSpace(item)
-			}
-			return items, nil
-		}
-		return value, nil
+		result := undecorate(value)
+		return result, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}
