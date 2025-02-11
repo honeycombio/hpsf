@@ -43,6 +43,11 @@ func TestGenerateConfig(t *testing.T) {
 			inputHPSFTestData:      "testdata/otlp_with_debug_exporter_hpsf.yaml",
 			expectedConfigTestData: "testdata/otlp_with_debug_exporter_collector_config.yaml",
 		},
+		{
+			desc:                   "Collector with filtering processor",
+			inputHPSFTestData:      "testdata/http_hpsf_with_filtering.yaml",
+			expectedConfigTestData: "testdata/http_collector_config_with_filter_processor.yaml",
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {

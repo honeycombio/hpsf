@@ -1,0 +1,50 @@
+components:
+  - name: RefineryGRPC_2
+    kind: RefineryGRPC
+    ports:
+      - name: TraceOut
+        direction: output
+        type: Honeycomb
+    properties:
+      - name: Port
+        value: 4317
+        type: number
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: otlp_out
+    kind: OTelHTTPExporter
+    properties:
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+  - name: drop_container_1
+    kind: FilterProcessor
+    properties:
+      - name: Rules
+        value:
+          traces:
+            span:
+            - 'attributes["container.name"] == "container_1"'
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: drop_container_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: drop_container_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
