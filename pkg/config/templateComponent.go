@@ -227,6 +227,20 @@ func undecorate(s string) any {
 			}
 		}
 		return arr
+	case strings.HasPrefix(s, "map:"):
+		s := strings.TrimPrefix(s, "map:")
+		result := make(map[string]string)
+		items := strings.Split(s, "_|_")
+		// the last item is always blank, so < 2 is what we want
+		if len(items) < 2 {
+			return result
+		}
+		items = items[:len(items)-1]
+		for _, i := range items {
+			sp := strings.Split(i, ":")
+			result[sp[0]] = sp[1]
+		}
+		return result
 	}
 	return s
 }

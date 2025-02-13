@@ -2,5 +2,7 @@ Samplers:
     staging:
         EMAThroughputSampler:
             AdjustmentInterval: 120
-            FieldList: ["http.method", "http.status_code"]
-            GoalThroughput: "42"
+            FieldList:
+                - http.method
+                - http.status_code
+            GoalThroughput: 42

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
@@ -21,6 +22,7 @@ func helpers() template.FuncMap {
 		"indent":       indent,
 		"join":         join,
 		"makeSlice":    makeSlice,
+		"mapify":       mapify,
 		"meta":         meta,
 		"now":          now,
 		"split":        split,
@@ -50,6 +52,8 @@ func firstNonzero(s ...any) string {
 					ss[i] = fmt.Sprintf("%v", vv)
 				}
 				return strings.Join(ss, ", ")
+			case []string:
+				return strings.Join(vt, ", ")
 			default:
 				return fmt.Sprintf("%v", vt)
 			}
@@ -71,6 +75,21 @@ func join(a []string, sep string) string {
 // creates a slice of strings from the arguments
 func makeSlice(a ...string) []string {
 	return a
+}
+
+// mapify takes a map and returns a string intended to be expanded
+// later into a map when it's rendered to YAML.
+// The result looks like "map:a:1_|_b:2_|_"
+func mapify(a map[string]any) string {
+	buf := bytes.Buffer{}
+	buf.WriteString("map:")
+	for k, v := range a {
+		buf.WriteString(k)
+		buf.WriteRune(':')
+		buf.WriteString(fmt.Sprintf("%v", v))
+		buf.WriteString("_|_")
+	}
+	return buf.String()
 }
 
 // wraps a string in "{{" and "}}" to indicate that it's a template variable

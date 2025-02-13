@@ -33,7 +33,7 @@ properties:
     summary: Headers to emit when sending gRPC traffic.
     description: |
       Sending data to a backend may require additional headers to be
-      configured. This properties supports sending a map of header keys and
+      configured. This property supports sending a map of header keys and
       values.
     type: map
     validations: [map]
@@ -49,6 +49,6 @@ templates:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.headers"
-        value: "{{ .HProps.Headers }}"
+        value: "{{ mapify .HProps.Headers }}"
         suppress_if: "{{ not .HProps.Headers }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
