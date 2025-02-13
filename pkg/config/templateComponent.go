@@ -230,7 +230,7 @@ func undecorate(s string) any {
 	case strings.HasPrefix(s, "map:"):
 		s := strings.TrimPrefix(s, "map:")
 		result := make(map[string]string)
-		items := strings.Split(s, "_|_")
+		items := strings.Split(s, RecordSeparator)
 		// the last item is always blank, so < 2 is what we want
 		if len(items) < 2 {
 			return result

@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	RecordSeparator = "\x1e" // ASCII code 30, the record separator
+)
+
 // This file contains template helper functions, which must be listed in this
 // map if they're going to be available to the template.
 // The map key is the name of the function as it will be used in the template,
@@ -79,7 +83,7 @@ func makeSlice(a ...string) []string {
 
 // mapify takes a map and returns a string intended to be expanded
 // later into a map when it's rendered to YAML.
-// The result looks like "map:a:1_|_b:2_|_"
+// The result looks like "map:a:1\x1eb:2\x1e"
 func mapify(a map[string]any) string {
 	buf := bytes.Buffer{}
 	buf.WriteString("map:")
@@ -87,7 +91,7 @@ func mapify(a map[string]any) string {
 		buf.WriteString(k)
 		buf.WriteRune(':')
 		buf.WriteString(fmt.Sprintf("%v", v))
-		buf.WriteString("_|_")
+		buf.WriteString(RecordSeparator)
 	}
 	return buf.String()
 }
