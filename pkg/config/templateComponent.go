@@ -216,7 +216,7 @@ func undecorate(s string) any {
 		}
 	case strings.HasPrefix(s, "arr:"):
 		s := strings.TrimPrefix(s, "arr:")
-		items := strings.Split(s, ",")
+		items := strings.Split(s, FieldSeparator)
 		// we need to trim the spaces from the items and we don't want blanks
 		// in the array
 		var arr []string
@@ -237,7 +237,7 @@ func undecorate(s string) any {
 		}
 		items = items[:len(items)-1]
 		for _, i := range items {
-			sp := strings.Split(i, ":")
+			sp := strings.Split(i, FieldSeparator)
 			result[sp[0]] = sp[1]
 		}
 		return result

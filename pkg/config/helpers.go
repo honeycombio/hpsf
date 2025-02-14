@@ -11,6 +11,7 @@ import (
 
 const (
 	RecordSeparator = "\x1e" // ASCII code 30, the record separator
+	FieldSeparator  = "\x1f" // ASCII code 31, the unit (field) separator
 )
 
 // This file contains template helper functions, which must be listed in this
@@ -55,9 +56,9 @@ func firstNonzero(s ...any) string {
 				for i, vv := range vt {
 					ss[i] = fmt.Sprintf("%v", vv)
 				}
-				return strings.Join(ss, ", ")
+				return strings.Join(ss, FieldSeparator)
 			case []string:
-				return strings.Join(vt, ", ")
+				return strings.Join(vt, FieldSeparator)
 			default:
 				return fmt.Sprintf("%v", vt)
 			}
@@ -89,7 +90,7 @@ func mapify(a map[string]any) string {
 	buf.WriteString("map:")
 	for k, v := range a {
 		buf.WriteString(k)
-		buf.WriteRune(':')
+		buf.WriteString(FieldSeparator)
 		buf.WriteString(fmt.Sprintf("%v", v))
 		buf.WriteString(RecordSeparator)
 	}
