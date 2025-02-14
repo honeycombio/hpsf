@@ -29,7 +29,7 @@ templates:
     format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ firstNonblank .HProps.APIEndpoint .User.APIEndpoint .Props.APIEndpoint.Default }}"
+        value: "{{ firstNonZero .HProps.APIEndpoint .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
-        value: "{{ firstNonblank .HProps.APIKey .User.APIKey }}"
+        value: "{{ firstNonZero .HProps.APIKey .User.APIKey }}"
 

@@ -3,8 +3,8 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -35,7 +35,9 @@ type TemplatePort struct {
 // A TemplateProperty describes a property of a component. A property is a
 // user-settable value that can be used to configure the component. Properties
 // have a name, a type (which can be used to validate the value), and a default
-// value. We also allow for validations, which can be used to constrain the
+// value. The advanced flag can be used to indicate that the property should be
+// suppressed by default in the UI (only shown if the user selects an "advanced"
+// option). We also allow for validations, which can be used to constrain the
 // value of the property. The property can also have a summary and a
 // description, which are used to document the property.
 type TemplateProperty struct {
@@ -43,6 +45,7 @@ type TemplateProperty struct {
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
+	Advanced    bool          `yaml:"advanced,omitempty"`
 	Validations []string      `yaml:"validation,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
 }
@@ -70,6 +73,7 @@ type TemplateComponent struct {
 	Kind        string             `yaml:"kind"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
+	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
@@ -77,8 +81,6 @@ type TemplateComponent struct {
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection `yaml:"connections,omitempty"`
 }
-
-var re = regexp.MustCompile(`{{ \.HProps\.(.*) }}`)
 
 // SetHPSF stores the original component's details and may modify their contents. To
 // prevent the original being modified, the argument here should never be changed to a pointer.
@@ -180,27 +182,79 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 	return b.String(), nil
 }
 
+// undecorate removes type decorations from strings and returns the desired type.
+// Since everything that comes out of a template is a string, for things that
+// needed to not be strings, we flagged them with a decoration indicating the
+// desired type. Now we need to do some extra work to make sure that we return
+// the indicated type. If it can't be converted to the desired type, we return
+// the string as is.
+func undecorate(s string) any {
+	switch {
+	case strings.HasPrefix(s, IntPrefix):
+		s := strings.TrimPrefix(s, IntPrefix)
+		i, err := strconv.Atoi(s)
+		if err == nil {
+			return i
+		}
+	case strings.HasPrefix(s, BoolPrefix):
+		s := strings.TrimPrefix(s, BoolPrefix)
+		b, err := strconv.ParseBool(s)
+		if err == nil {
+			return b
+		}
+	case strings.HasPrefix(s, FloatPrefix):
+		s := strings.TrimPrefix(s, FloatPrefix)
+		f, err := strconv.ParseFloat(s, 64)
+		if err == nil {
+			return f
+		}
+	case strings.HasPrefix(s, ArrPrefix):
+		s := strings.TrimPrefix(s, ArrPrefix)
+		items := strings.Split(s, FieldSeparator)
+		// we need to trim the spaces from the items and we don't want blanks
+		// in the array
+		var arr []string
+		for _, item := range items {
+			item = strings.TrimSpace(item)
+			if item != "" {
+				arr = append(arr, item)
+			}
+		}
+		return arr
+	case strings.HasPrefix(s, MapPrefix):
+		s := strings.TrimPrefix(s, MapPrefix)
+		result := make(map[string]string)
+		items := strings.Split(s, RecordSeparator)
+		// the last item is always blank, so < 2 is what we want
+		if len(items) < 2 {
+			return result
+		}
+		items = items[:len(items)-1]
+		for _, i := range items {
+			sp := strings.Split(i, FieldSeparator)
+			result[sp[0]] = sp[1]
+		}
+		return result
+	}
+	return s
+}
+
 func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
 	switch k := tmplVal.(type) {
 	case string:
 		if tmplVal == "" || !strings.Contains(k, "{{") {
 			return k, nil
 		}
-		// the content of the template is a single value
-		// if we're just including a specific value, don't expand it
-		// as a string, instead return the value
-		// FIX: this is a hacky way of returning the value rather than
-		//      expanding the template
 
-		value := re.FindStringSubmatch(k)
-		if len(value) > 1 {
-			v, ok := t.HProps()[value[1]]
-			if !ok {
-				return nil, nil
-			}
-			return v, nil
+		// expand the template, but before we return it we need to check if
+		// it needs extra handling
+		value, err := t.expandTemplateVariable(k, userdata)
+		if err != nil {
+			return nil, err
 		}
-		return t.expandTemplateVariable(k, userdata)
+
+		result := undecorate(value)
+		return result, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}

@@ -8,7 +8,7 @@ import (
 
 type dottedConfigTemplateKV struct {
 	key         string
-	value       string
+	value       any
 	suppress_if string
 }
 

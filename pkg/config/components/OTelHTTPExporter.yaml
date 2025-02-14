@@ -47,8 +47,8 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ firstNonblank .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonblank .HProps.Port .User.Port .Props.Port.Default }}"
+        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.headers"
-        value: "{{ .HProps.Headers }}"
+        value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
