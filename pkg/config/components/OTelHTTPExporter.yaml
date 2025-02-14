@@ -49,6 +49,6 @@ templates:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.headers"
-        value: "{{ mapify .HProps.Headers }}"
+        value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
       # service is not part of the template, it's generated automatically by the collectorConfig

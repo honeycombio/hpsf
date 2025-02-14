@@ -41,4 +41,4 @@ templates:
     format: dotted
     data:
       - key: "Samplers.{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}.DeterministicSampler.GoalThroughput"
-        value: "{{ firstNonZero .HProps.SampleRate .User.SampleRate .Props.SampleRate.Default }}"
+        value: "{{ firstNonZero .HProps.SampleRate .User.SampleRate .Props.SampleRate.Default | encodeAsInt }}"

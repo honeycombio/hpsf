@@ -71,8 +71,8 @@ templates:
     format: dotted
     data:
       - key: "Samplers.{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.GoalThroughput"
-        value: "int:{{ firstNonZero .HProps.GoalThroughput .User.GoalThroughput .Props.GoalThroughput.Default }}"
+        value: "{{ firstNonZero .HProps.GoalThroughput .User.GoalThroughput .Props.GoalThroughput.Default | encodeAsInt }}"
       - key: "Samplers.{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.AdjustmentInterval"
-        value: "int:{{ firstNonZero .HProps.AdjustmentInterval .User.AdjustmentInterval .Props.AdjustmentInterval.Default }}"
+        value: "{{ firstNonZero .HProps.AdjustmentInterval .User.AdjustmentInterval .Props.AdjustmentInterval.Default | encodeAsInt }}"
       - key: "Samplers.{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}.EMAThroughputSampler.FieldList"
-        value: "arr:{{ firstNonZero .HProps.FieldList .User.FieldList .Props.FieldList.Default }}"
+        value: "{{ firstNonZero .HProps.FieldList .User.FieldList .Props.FieldList.Default | encodeAsArray }}"

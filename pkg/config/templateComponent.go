@@ -188,34 +188,28 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 // desired type. Now we need to do some extra work to make sure that we return
 // the indicated type. If it can't be converted to the desired type, we return
 // the string as is.
-//
-// Prefixes we support:
-// - "int:" for integers
-// - "bool:" for booleans
-// - "float:" for floats
-// - "arr:" for arrays of strings, comma-separated
 func undecorate(s string) any {
 	switch {
-	case strings.HasPrefix(s, "int:"):
-		s := strings.TrimPrefix(s, "int:")
+	case strings.HasPrefix(s, IntPrefix):
+		s := strings.TrimPrefix(s, IntPrefix)
 		i, err := strconv.Atoi(s)
 		if err == nil {
 			return i
 		}
-	case strings.HasPrefix(s, "bool:"):
-		s := strings.TrimPrefix(s, "bool:")
+	case strings.HasPrefix(s, BoolPrefix):
+		s := strings.TrimPrefix(s, BoolPrefix)
 		b, err := strconv.ParseBool(s)
 		if err == nil {
 			return b
 		}
-	case strings.HasPrefix(s, "float:"):
-		s := strings.TrimPrefix(s, "float:")
+	case strings.HasPrefix(s, FloatPrefix):
+		s := strings.TrimPrefix(s, FloatPrefix)
 		f, err := strconv.ParseFloat(s, 64)
 		if err == nil {
 			return f
 		}
-	case strings.HasPrefix(s, "arr:"):
-		s := strings.TrimPrefix(s, "arr:")
+	case strings.HasPrefix(s, ArrPrefix):
+		s := strings.TrimPrefix(s, ArrPrefix)
 		items := strings.Split(s, FieldSeparator)
 		// we need to trim the spaces from the items and we don't want blanks
 		// in the array
@@ -227,8 +221,8 @@ func undecorate(s string) any {
 			}
 		}
 		return arr
-	case strings.HasPrefix(s, "map:"):
-		s := strings.TrimPrefix(s, "map:")
+	case strings.HasPrefix(s, MapPrefix):
+		s := strings.TrimPrefix(s, MapPrefix)
 		result := make(map[string]string)
 		items := strings.Split(s, RecordSeparator)
 		// the last item is always blank, so < 2 is what we want

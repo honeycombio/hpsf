@@ -9,29 +9,47 @@ import (
 	"time"
 )
 
+// We use GroupSeparator, FieldSeparator, and RecordSeparator as delimiters so
+// that we are unlikely to see a false positive with user data. We probably
+// could have done this with a more sophisticated encoding/decoding but we don't
+// think it matters in the context of templated configuration files.
 const (
+	GroupSeparator  = "\x1d" // ASCII code 29, the group separator
 	RecordSeparator = "\x1e" // ASCII code 30, the record separator
 	FieldSeparator  = "\x1f" // ASCII code 31, the unit (field) separator
+)
+
+// Prefixes we support:
+const (
+	IntPrefix   = "int" + GroupSeparator
+	BoolPrefix  = "bool" + GroupSeparator
+	FloatPrefix = "float" + GroupSeparator
+	ArrPrefix   = "arr" + GroupSeparator
+	MapPrefix   = "map" + GroupSeparator
 )
 
 // This file contains template helper functions, which must be listed in this
 // map if they're going to be available to the template.
 // The map key is the name of the function as it will be used in the template,
 // and the value is the function itself.
-// The function must return a string, and may take any number of arguments.
+// The function can return a value of any type, and may take any number of arguments.
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"comment":      comment,
-		"firstNonZero": firstNonzero,
-		"indent":       indent,
-		"join":         join,
-		"makeSlice":    makeSlice,
-		"mapify":       mapify,
-		"meta":         meta,
-		"now":          now,
-		"split":        split,
-		"yamlf":        yamlf,
+		"comment":       comment,
+		"encodeAsArray": encodeAsArray,
+		"encodeAsBool":  encodeAsBool,
+		"encodeAsInt":   encodeAsInt,
+		"encodeAsFloat": encodeAsFloat,
+		"encodeAsMap":   encodeAsMap,
+		"firstNonZero":  firstNonzero,
+		"indent":        indent,
+		"join":          join,
+		"makeSlice":     makeSlice,
+		"meta":          meta,
+		"now":           now,
+		"split":         split,
+		"yamlf":         yamlf,
 	}
 }
 
@@ -40,12 +58,132 @@ func comment(s string) string {
 	return strings.TrimRight("## "+strings.Replace(s, "\n", "\n## ", -1), " ")
 }
 
-// returns the first non-zero-valued item from the arguments
-// []any is special-cased to return a comma-separated set of strings.
-// If we eventually feel like the comma syntax is failing to handle some special
-// cases, we can change it to use some other syntax that's less likely to occur
-// in real data.
-func firstNonzero(s ...any) string {
+// encodeAsArray takes a slice and returns a string intended to be expanded
+// later into an array when it's rendered to YAML.
+// The result looks like "arr\x1dA:1\x1fB:2"
+func encodeAsArray(arr any) string {
+	switch a := arr.(type) {
+	case []string:
+		return ArrPrefix + strings.Join(a, FieldSeparator)
+	case []any:
+		return ArrPrefix + strings.Join(_getStringsFrom(arr), FieldSeparator)
+	default:
+		return ""
+	}
+}
+
+// encodeAsBool takes any value and returns a string with the appropriate marker
+// so that it will be expanded later into a bool when it's rendered to YAML.
+// Numbers are interpreted as true if they are not zero.
+func encodeAsBool(a any) string {
+	value := "false"
+	switch v := a.(type) {
+	case bool:
+		if v {
+			value = "true"
+		}
+	case int:
+		if v != 0 {
+			value = "true"
+		}
+	case float64:
+		if v != 0 {
+			value = "true"
+		}
+	case string:
+		if v == "true" {
+			value = "true"
+		}
+	}
+	return BoolPrefix + value
+}
+
+// encodeAsFloat takes a string and returns a string with the appropriate marker
+// so that it will be expanded later into a float when it's rendered to YAML.
+func encodeAsFloat(a any) string {
+	value := "0"
+	switch v := a.(type) {
+	case int:
+		value = fmt.Sprintf("%d", v)
+	case float64:
+		value = fmt.Sprintf("%f", v)
+	case string:
+		value = v
+	case bool:
+		if v {
+			value = "1"
+		}
+	}
+	return FloatPrefix + value
+}
+
+// encodeAsInt takes a string and returns a string with the appropriate marker
+// so that it will be expanded later into an integer when it's rendered to YAML.
+func encodeAsInt(a any) string {
+	value := "0"
+	switch v := a.(type) {
+	case int:
+		value = fmt.Sprintf("%d", v)
+	case float64:
+		value = fmt.Sprintf("%f", v)
+	case string:
+		value = v
+	case bool:
+		if v {
+			value = "1"
+		}
+	}
+	return IntPrefix + value
+}
+
+// encodeAsMap takes a map and returns a string intended to be expanded
+// later into a map when it's rendered to YAML.
+// The result looks like "map\x1dA\x1f1\x1eb\x1f2\x1e"
+func encodeAsMap(a map[string]any) string {
+	buf := bytes.Buffer{}
+	buf.WriteString(MapPrefix)
+	for k, v := range a {
+		buf.WriteString(k)
+		buf.WriteString(FieldSeparator)
+		buf.WriteString(fmt.Sprintf("%v", v))
+		buf.WriteString(RecordSeparator)
+	}
+	return buf.String()
+}
+
+func firstNonzero(s ...any) any {
+	// returns the first non-zero-valued item from the arguments
+	// []any is special-cased to return a comma-separated set of strings.
+	// If we eventually feel like the comma syntax is failing to handle some special
+	// cases, we can change it to use some other syntax that's less likely to occur
+	// in real data.
+	for _, v := range s {
+		if !_isZeroValue(v) {
+			switch vt := v.(type) {
+			case string:
+				return vt
+			case []any:
+				return vt
+			case []string:
+				return vt
+			case int:
+				return vt
+			case float64:
+				return vt
+			default:
+				return fmt.Sprintf("%v", vt)
+			}
+		}
+	}
+	return ""
+}
+
+func firstNonzerOld(s ...any) string {
+	// returns the first non-zero-valued item from the arguments
+	// []any is special-cased to return a comma-separated set of strings.
+	// If we eventually feel like the comma syntax is failing to handle some special
+	// cases, we can change it to use some other syntax that's less likely to occur
+	// in real data.
 	for _, v := range s {
 		if !_isZeroValue(v) {
 			switch vt := v.(type) {
@@ -80,21 +218,6 @@ func join(a []string, sep string) string {
 // creates a slice of strings from the arguments
 func makeSlice(a ...string) []string {
 	return a
-}
-
-// mapify takes a map and returns a string intended to be expanded
-// later into a map when it's rendered to YAML.
-// The result looks like "map:a:1\x1eb:2\x1e"
-func mapify(a map[string]any) string {
-	buf := bytes.Buffer{}
-	buf.WriteString("map:")
-	for k, v := range a {
-		buf.WriteString(k)
-		buf.WriteString(FieldSeparator)
-		buf.WriteString(fmt.Sprintf("%v", v))
-		buf.WriteString(RecordSeparator)
-	}
-	return buf.String()
 }
 
 // wraps a string in "{{" and "}}" to indicate that it's a template variable
