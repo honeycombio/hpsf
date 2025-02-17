@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strings"
@@ -136,19 +137,14 @@ func encodeAsInt(a any) string {
 	return IntPrefix + value
 }
 
-// encodeAsMap takes a map and returns a string intended to be expanded
-// later into a map when it's rendered to YAML.
-// The result looks like "map\x1dA\x1f1\x1eb\x1f2\x1e"
+// encodeAsMap takes a map (which may contain nested maps) and returns a string
+// intended to be expanded later into the same map when it's rendered to YAML.
+// We encode to JSON because it's fast and easy.
 func encodeAsMap(a map[string]any) string {
 	buf := bytes.Buffer{}
-	buf.WriteString(MapPrefix)
-	for k, v := range a {
-		buf.WriteString(k)
-		buf.WriteString(FieldSeparator)
-		buf.WriteString(fmt.Sprintf("%v", v))
-		buf.WriteString(RecordSeparator)
-	}
-	return buf.String()
+	j := json.NewEncoder(&buf)
+	_ = j.Encode(a)
+	return MapPrefix + buf.String()
 }
 
 func firstNonzero(s ...any) any {

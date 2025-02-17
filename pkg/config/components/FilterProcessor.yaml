@@ -31,5 +31,5 @@ templates:
       collectorComponentName: filter
     data:
       - key: "{{ .ComponentName }}"
-        value: "{{ .HProps.Rules }}"
+        value: "{{ .HProps.Rules | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Rules }}"

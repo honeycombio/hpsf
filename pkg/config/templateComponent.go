@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"strconv"
@@ -223,18 +224,10 @@ func undecorate(s string) any {
 		return arr
 	case strings.HasPrefix(s, MapPrefix):
 		s := strings.TrimPrefix(s, MapPrefix)
-		result := make(map[string]string)
-		items := strings.Split(s, RecordSeparator)
-		// the last item is always blank, so < 2 is what we want
-		if len(items) < 2 {
-			return result
-		}
-		items = items[:len(items)-1]
-		for _, i := range items {
-			sp := strings.Split(i, FieldSeparator)
-			result[sp[0]] = sp[1]
-		}
-		return result
+		// s is encoded as a JSON map, so we need to decode it
+		var m map[string]any
+		json.Unmarshal([]byte(s), &m)
+		return m
 	}
 	return s
 }
