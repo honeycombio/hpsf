@@ -1,0 +1,58 @@
+name: EMA Throughput Sampling
+description: |
+  Limit the throughput of traces to Honeycomb using an EMA sampler. This template
+  accepts traces from an OTel receiver, converts them to Honeycomb format, and
+  then samples them using an EMA throughput sampler before exporting them to
+  Honeycomb. Control the volume of traces by modifying the GoalThroughput value in
+  the properties section of the EMAThroughputSampler component.
+components:
+  - name: TraceGRPC_1
+    kind: TraceGRPC
+  - name: TraceConverter_1
+    kind: TraceConverter
+  - name: EMAThroughputSampler_1
+    kind: EMAThroughputSampler
+  - name: HoneycombExporter_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: TraceGRPC_1
+      port: TraceOut
+      type: OTelTraces
+    destination:
+      component: TraceConverter_1
+      port: Input
+      type: OTelTraces
+  - source:
+      component: TraceConverter_1
+      port: Output
+      type: Honeycomb
+    destination:
+      component: EMAThroughputSampler_1
+      port: Input
+      type: Honeycomb
+  - source:
+      component: EMAThroughputSampler_1
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: HoneycombExporter_1
+      port: Traces
+      type: Honeycomb
+layout:
+  frame:
+    width: 1835
+    height: 1491
+  components:
+    - name: EMAThroughputSampler_1
+      x: 606
+      y: 208
+    - name: HoneycombExporter_1
+      x: 1032
+      y: 191
+    - name: TraceConverter_1
+      x: 358
+      y: 195
+    - name: TraceGRPC_1
+      x: 120
+      y: 169
