@@ -226,6 +226,9 @@ func undecorate(s string) any {
 		s := strings.TrimPrefix(s, MapPrefix)
 		// s is encoded as a JSON map, so we need to decode it
 		var m map[string]any
+		// we ignore the error here because the input string
+		// was marshalled by us and we know it's valid JSON,
+		// and there's nothing we can do with it anyway.
 		json.Unmarshal([]byte(s), &m)
 		return m
 	}

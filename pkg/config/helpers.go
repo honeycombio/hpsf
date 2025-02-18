@@ -143,6 +143,10 @@ func encodeAsInt(a any) string {
 func encodeAsMap(a map[string]any) string {
 	buf := bytes.Buffer{}
 	j := json.NewEncoder(&buf)
+	// There's no model for returning an error, but also...
+	// we know the data we're encoding was valid YAML and we're writing
+	// to a buffer, so there doesn't seem to be an error we
+	// could encounter that would be meaningful.
 	_ = j.Encode(a)
 	return MapPrefix + buf.String()
 }
