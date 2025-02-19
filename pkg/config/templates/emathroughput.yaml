@@ -6,17 +6,17 @@ description: |
   Honeycomb. Control the volume of traces by modifying the GoalThroughput value in
   the properties section of the EMAThroughputSampler component.
 components:
-  - name: TraceGRPC_1
-    kind: TraceGRPC
+  - name: OTelReceiver_1
+    kind: OTelReceiver
   - name: TraceConverter_1
     kind: TraceConverter
-  - name: EMAThroughputSampler_1
-    kind: EMAThroughputSampler
+  - name: EMAThroughput_1
+    kind: EMAThroughput
   - name: HoneycombExporter_1
     kind: HoneycombExporter
 connections:
   - source:
-      component: TraceGRPC_1
+      component: OTelReceiver_1
       port: TraceOut
       type: OTelTraces
     destination:
@@ -28,11 +28,11 @@ connections:
       port: Output
       type: Honeycomb
     destination:
-      component: EMAThroughputSampler_1
+      component: EMAThroughput_1
       port: Input
       type: Honeycomb
   - source:
-      component: EMAThroughputSampler_1
+      component: EMAThroughput_1
       port: Kept
       type: Honeycomb
     destination:
@@ -44,15 +44,15 @@ layout:
     width: 1835
     height: 1491
   components:
-    - name: EMAThroughputSampler_1
-      x: 606
-      y: 208
-    - name: HoneycombExporter_1
-      x: 1032
-      y: 191
+    - name: OTelReceiver_1
+      x: 253
+      y: 223
     - name: TraceConverter_1
-      x: 358
-      y: 195
-    - name: TraceGRPC_1
-      x: 120
-      y: 169
+      x: 439
+      y: 227
+    - name: HoneycombExporter_1
+      x: 938
+      y: 210
+    - name: EMAThroughput_1
+      x: 676
+      y: 228

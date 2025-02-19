@@ -1,63 +1,46 @@
 name: Basic proxy
 description: |
-  This is a basic proxy that forwards traces, metrics, and logs from the OpenTelemetry gRPC
-  components to the OpenTelemetry exporters. This is useful for testing and debugging, or
+  This is a basic proxy that forwards traces, metrics, and logs received via OpenTelemetry
+  components to the OpenTelemetry GRPC exporter. This is useful for testing and debugging, or
   as a starting point for more complex configurations.
 components:
-  - name: TraceGRPC_1
-    kind: TraceGRPC
-  - name: OTelTraceExporter_1
-    kind: OTelTraceExporter
-  - name: MetricsGRPC_1
-    kind: MetricsGRPC
-  - name: OTelMetricsExporter_1
-    kind: OTelMetricsExporter
-  - name: LogsGRPC_1
-    kind: LogsGRPC
-  - name: OTelLogsExporter_1
-    kind: OTelLogsExporter
+  - name: OTelReceiver_1
+    kind: OTelReceiver
+  - name: OTelGRPCExporter_1
+    kind: OTelGRPCExporter
 connections:
   - source:
-      component: TraceGRPC_1
-      port: TraceOut
+      component: OTelReceiver_1
+      port: Traces
       type: OTelTraces
     destination:
-      component: OTelTraceExporter_1
+      component: OTelGRPCExporter_1
       port: Traces
       type: OTelTraces
   - source:
-      component: MetricsGRPC_1
-      port: MetricsOut
+      component: OTelReceiver_1
+      port: Metrics
       type: OTelMetrics
     destination:
-      component: OTelMetricsExporter_1
+      component: OTelGRPCExporter_1
       port: Metrics
       type: OTelMetrics
   - source:
-      component: LogsGRPC_1
-      port: LogsOut
+      component: OTelReceiver_1
+      port: Logs
       type: OTelLogs
     destination:
-      component: OTelLogsExporter_1
+      component: OTelGRPCExporter_1
       port: Logs
       type: OTelLogs
 layout:
+  frame:
+    width: 1835
+    height: 1491
   components:
-    - name: TraceGRPC_1
+    - name: OTelReceiver_1
       x: 260
       y: 182
-    - name: OTelTraceExporter_1
+    - name: OTelGRPCExporter_1
       x: 642
       y: 182
-    - name: MetricsGRPC_1
-      x: 260
-      y: 320
-    - name: OTelMetricsExporter_1
-      x: 642
-      y: 320
-    - name: LogsGRPC_1
-      x: 260
-      y: 460
-    - name: OTelLogsExporter_1
-      x: 642
-      y: 460
