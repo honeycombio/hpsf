@@ -17,7 +17,7 @@ components:
 connections:
   - source:
       component: OTelReceiver_1
-      port: TraceOut
+      port: Traces
       type: OTelTraces
     destination:
       component: TraceConverter_1
