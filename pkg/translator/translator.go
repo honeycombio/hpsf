@@ -15,12 +15,41 @@ type Translator struct {
 	templateComponents map[string]config.TemplateComponent
 }
 
+// Deprecated: use NewEmptyTranslator and InstallComponents instead
 func NewTranslator() (*Translator, error) {
+	tr := &Translator{}
+	// autoload the template components because we don't want to break existing code
+	err := tr.LoadEmbeddedComponents()
+	return tr, err
+}
+
+// Creates a translator with no components loaded.
+func NewEmptyTranslator() *Translator {
+	tr := &Translator{templateComponents: make(map[string]config.TemplateComponent)}
+	return tr
+}
+
+// InstallComponents installs the given components into the translator.
+func (t *Translator) InstallComponents(components map[string]config.TemplateComponent) {
+	// copy components into the templateComponents map, overwriting any duplicates
+	for k, v := range components {
+		t.templateComponents[k] = v
+	}
+}
+
+// Loads the embedded components into the translator.
+// Deprecated: use InstallComponents instead
+func (t *Translator) LoadEmbeddedComponents() error {
+	// load the embedded components
 	tcs, err := config.LoadTemplateComponents()
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return &Translator{templateComponents: tcs}, nil
+	// overwrite anything in the templateComponents map with the embedded components
+	for k, v := range tcs {
+		t.templateComponents[k] = v
+	}
+	return nil
 }
 
 func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Component, error) {

@@ -64,7 +64,10 @@ func TestGenerateConfig(t *testing.T) {
 			err = dec.Decode(&hpsf)
 			require.NoError(t, err)
 
-			tlater, err := NewTranslator()
+			tlater := NewEmptyTranslator()
+			comps, err := config.LoadTemplateComponents()
+			require.NoError(t, err)
+			tlater.InstallComponents(comps)
 			require.NoError(t, err)
 
 			cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
@@ -113,8 +116,10 @@ func TestDefaultHPSF(t *testing.T) {
 			err = dec.Decode(&h)
 			require.NoError(t, err)
 
-			tlater, err := NewTranslator()
+			tlater := NewEmptyTranslator()
+			comps, err := config.LoadTemplateComponents()
 			require.NoError(t, err)
+			tlater.InstallComponents(comps)
 
 			cfg, err := tlater.GenerateConfig(h, tC.ct, nil)
 			require.NoError(t, err)

@@ -98,10 +98,15 @@ func main() {
 	}
 
 	// create a translator that knows about components
-	tr, err := translator.NewTranslator()
+	tr := translator.NewEmptyTranslator()
+	// for this command line app, we load the embedded components, but
+	// a real app should load them from a database
+	components, err := config.LoadTemplateComponents()
 	if err != nil {
-		log.Fatalf("error creating translator: %v", err)
+		log.Fatalf("error loading embedded components: %v", err)
 	}
+	// install the components
+	tr.InstallComponents(components)
 
 	switch cmds[0] {
 	case "format":
