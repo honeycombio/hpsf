@@ -26,3 +26,21 @@ test_results:
 
 tidy:
 	$(GOCMD) mod tidy
+
+TEMPLATE ?= pkg/config/templates/emathroughput
+.PHONY: test_template
+#: generate config from template (usage: make test_template TEMPLATE=pkg/config/templates/proxy)
+test_template:
+	@echo
+	@echo "+++ generating config from template $(TEMPLATE)"
+	@echo
+	./testTemplate.sh $(TEMPLATE)
+
+CONFIG ?= examples/hpsf.yaml
+.PHONY: validate
+#: validate provided config (usage: make validate CONFIG=examples/hpsf2.yaml)
+validate:
+	@echo
+	@echo "+++ validating config $(CONFIG)"
+	@echo
+	go run ./cmd/hpsf -i $(CONFIG) validate
