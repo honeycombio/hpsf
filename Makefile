@@ -45,6 +45,9 @@ validate:
 	@echo
 	go run ./cmd/hpsf -i $(CONFIG) validate
 	for format in rConfig rRules cConfig ; do \
+		echo; \
+		echo "+++ validating config generation for $${format} with config $(CONFIG)"; \
+		echo; \
 		go run ./cmd/hpsf -i $(CONFIG) $${format} || exit 1; \
 	done
 
