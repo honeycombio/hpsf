@@ -44,6 +44,9 @@ validate:
 	@echo "+++ validating config $(CONFIG)"
 	@echo
 	go run ./cmd/hpsf -i $(CONFIG) validate
+	for format in rConfig rRules cConfig ; do \
+		go run ./cmd/hpsf -i $(CONFIG) $${format} || exit 1; \
+	done
 
 .PHONY: validate_all
 validate_all: examples/*
