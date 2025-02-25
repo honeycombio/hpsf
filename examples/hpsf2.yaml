@@ -14,12 +14,16 @@ connections:
   - source:
       component: RefineryGRPC_2
       port: TraceOut
+      type: Honeycomb
     destination:
       component: DeterministicSampler_1
       port: Input
+      type: Honeycomb
   - source:
       component: DeterministicSampler_1
       port: Kept
+      type: Honeycomb
     destination:
       component: HoneycombExporter_1
       port: Traces
+      type: Honeycomb

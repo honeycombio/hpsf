@@ -9,32 +9,6 @@ components:
       - name: Port
         value: 8080
         type: number
-  - name: LogSplitter_1
-    kind: LogSplitter
-    ports:
-      - name: Input
-        direction: input
-        type: OTelLogs
-      - name: Has TraceID
-        direction: output
-        type: OTelTraces
-      - name: No TraceID
-        direction: output
-        type: OTelLogs
-    properties:
-      - name: TraceIDField
-        value: trace.trace_id
-        type: string
-  - name: LogsHTTP_1
-    kind: LogsHTTP
-    ports:
-      - name: LogsOut
-        direction: output
-        type: OTelLogs
-    properties:
-      - name: Port
-        value: 8080
-        type: number
   - name: DeterministicSampler_1
     kind: DeterministicSampler
     ports:
@@ -79,14 +53,6 @@ components:
         type: string
 connections:
   - source:
-      component: LogsHTTP_1
-      port: LogsOut
-      type: OTelLogs
-    destination:
-      component: LogSplitter_1
-      port: Input
-      type: OTelLogs
-  - source:
       component: RefineryHTTP_1
       port: TraceOut
       type: Honeycomb
@@ -94,14 +60,6 @@ connections:
       component: DeterministicSampler_1
       port: Input
       type: Honeycomb
-  - source:
-      component: LogSplitter_1
-      port: Has TraceID
-      type: OTelTraces
-    destination:
-      component: TraceConverter_1
-      port: Input
-      type: OTelTraces
   - source:
       component: TraceConverter_1
       port: Output
@@ -126,12 +84,6 @@ layout:
     - name: RefineryHTTP_1
       x: 108.66666666666676
       y: 91.34878472222204
-    - name: LogSplitter_1
-      x: 322.6666666666667
-      y: 387.31024305555565
-    - name: LogsHTTP_1
-      x: 99.99999999999994
-      y: 373.31206597222234
     - name: DeterministicSampler_1
       x: 760.6666666666663
       y: 223.99817708333333
