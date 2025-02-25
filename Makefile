@@ -44,3 +44,9 @@ validate:
 	@echo "+++ validating config $(CONFIG)"
 	@echo
 	go run ./cmd/hpsf -i $(CONFIG) validate
+
+.PHONY: validate_all
+validate_all: examples/*
+	for file in $^ ; do \
+		$(MAKE) validate CONFIG=$${file} ; \
+	done
