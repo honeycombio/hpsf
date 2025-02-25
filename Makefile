@@ -48,5 +48,5 @@ validate:
 .PHONY: validate_all
 validate_all: examples/*
 	for file in $^ ; do \
-		$(MAKE) validate CONFIG=$${file} ; \
+		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done
