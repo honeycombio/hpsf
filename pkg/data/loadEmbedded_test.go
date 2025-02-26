@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLoadLocalComponents(t *testing.T) {
+func TestLoadEmbeddedComponents(t *testing.T) {
 	got, err := LoadEmbeddedComponents()
 	if err != nil {
 		t.Errorf("LoadEmbeddedComponents() error = '%v', want nil", err)
@@ -70,6 +70,41 @@ func TestTemplateComponents(t *testing.T) {
 			got, err := conf.RenderYAML()
 			require.NoError(t, err)
 			require.Equal(t, string(want), string(got))
+		})
+	}
+}
+
+func TestLoadTemplates(t *testing.T) {
+	templates, err := LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	require.NotEmpty(t, templates)
+
+	tests := []struct {
+		name string
+		kind string
+	}{
+		{
+			name: "EMA Throughput Sampling",
+			kind: "TemplateEMAThroughput",
+		},
+		{
+			name: "Basic Proxy",
+			kind: "TemplateProxy",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpl, ok := templates[tt.kind]
+			require.True(t, ok)
+			require.NotNil(t, tmpl)
+			require.Equal(t, tt.kind, tmpl.Kind)
+			require.Equal(t, tt.name, tmpl.Name)
+			require.NotEmpty(t, tmpl.Components)
+			require.NotEmpty(t, tmpl.Version)
+			require.NotEmpty(t, tmpl.Summary)
+			require.NotEmpty(t, tmpl.Description)
+			require.Empty(t, tmpl.Validate())
 		})
 	}
 }

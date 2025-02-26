@@ -293,6 +293,11 @@ func (c *Container) Validate() []error {
 type Layout map[string]any
 
 type HPSF struct {
+	Kind        string        `yaml:"kind"`
+	Version     string        `yaml:"version"`
+	Name        string        `yaml:"name"`
+	Summary     string        `yaml:"summary"`
+	Description string        `yaml:"description"`
 	Components  []Component   `yaml:"components,omitempty"`
 	Connections []*Connection `yaml:"connections,omitempty"`
 	Containers  []Container   `yaml:"containers,omitempty"`

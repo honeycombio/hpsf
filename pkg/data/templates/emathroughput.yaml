@@ -1,4 +1,7 @@
 name: EMA Throughput Sampling
+kind: TemplateEMAThroughput
+version: v0.1.0
+summary: Limit the throughput of traces to Honeycomb using an EMA sampler
 description: |
   Limit the throughput of traces to Honeycomb using an EMA sampler. This template
   accepts traces from an OTel receiver, converts them to Honeycomb format, and

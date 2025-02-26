@@ -1,4 +1,7 @@
-name: Basic proxy
+name: Basic Proxy
+kind: TemplateProxy
+version: v0.1.0
+summary: A basic proxy that receives traces, metrics, and logs and forwards them to the OpenTelemetry GRPC exporter.
 description: |
   This is a basic proxy that forwards traces, metrics, and logs received via OpenTelemetry
   components to the OpenTelemetry GRPC exporter. This is useful for testing and debugging, or
