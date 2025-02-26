@@ -1,5 +1,6 @@
 kind: OTelReceiver
 name: otel_receiver
+version: v0.1.0
 summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both
 description: |
   Imports OTLP signals from OpenTelemetry via gRPC or HTTP.

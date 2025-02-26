@@ -1,5 +1,6 @@
 kind: FilterProcessor
 name: FilterProcessor
+version: v0.1.0
 summary: Processor that can be used to filter telemetry.
 description: |
   Filters traces, metrics, and logs based on rules defined
