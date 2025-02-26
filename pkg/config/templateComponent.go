@@ -68,10 +68,21 @@ type TemplateData struct {
 // We're hoping that most components will be described this way, so that we
 // can store most templates in a database and not have to change the code when
 // we add new components.
+//
+// A few notes on the fields:
+//   - Kind is the kind of component, e.g. "TraceGRPC", "LogHTTP", etc. The combination of
+//     Kind and Version is used to uniquely identify a component.
+//   - Version is the version of the component as a semver string.
+//   - Name is the name of the component. In a templateComponent, it is used to suggest a name that the
+//     end user might want to call the component. It is not used to identify the component in a template,
+//     but is used to identify the component in the UI.
+//   - CollName is the name of the OTel collector component that this component is associated with; it may
+//     be empty if the component is not associated with a collector.
 type TemplateComponent struct {
+	Kind        string             `yaml:"kind"`
+	Version     string             `yaml:"version"`
 	Name        string             `yaml:"name"`
 	CollName    string             `yaml:"collName"`
-	Kind        string             `yaml:"kind"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
@@ -144,13 +155,15 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 			case "dotted":
 				dct, err := buildDottedConfigTemplate(template.Data)
 				if err != nil {
-					return nil, fmt.Errorf("error %w building dotted config template named %s", err, t.Name)
+					return nil, fmt.Errorf("error %w building dotted config template for %s",
+						err, t.Kind)
 				}
 				return t.generateDottedConfig(dct, userdata)
 			case "collector":
 				ct, err := buildCollectorTemplate(template)
 				if err != nil {
-					return nil, fmt.Errorf("error %w building collector template named %s", err, t.Name)
+					return nil, fmt.Errorf("error %w building collector template for %s",
+						err, t.Kind)
 				}
 				return t.generateCollectorConfig(ct, userdata)
 			default:

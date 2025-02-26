@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -65,7 +66,7 @@ func TestGenerateConfig(t *testing.T) {
 			require.NoError(t, err)
 
 			tlater := NewEmptyTranslator()
-			comps, err := config.LoadTemplateComponents()
+			comps, err := data.LoadEmbeddedComponents()
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 			require.NoError(t, err)
@@ -117,7 +118,7 @@ func TestDefaultHPSF(t *testing.T) {
 			require.NoError(t, err)
 
 			tlater := NewEmptyTranslator()
-			comps, err := config.LoadTemplateComponents()
+			comps, err := data.LoadEmbeddedComponents()
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
