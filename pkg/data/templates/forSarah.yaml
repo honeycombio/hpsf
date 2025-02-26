@@ -1,0 +1,66 @@
+components:
+  - name: OTelReceiver_1
+    kind: OTelReceiver
+  - name: TraceConverter_1
+    kind: TraceConverter
+  - name: EMAThroughput_1
+    kind: EMAThroughput
+    properties:
+      - name: GoalThroughput
+        value: 600
+      - name: Environment
+        value: production
+      - name: FieldList
+        value:
+          - http.status_code
+          - http.path
+          - http.method
+  - name: HoneycombExporter_1
+    kind: HoneycombExporter
+    properties:
+      - name: APIKey
+        value: ${HONEYCOMB_APIKEY}
+      - name: APIEndpoint
+        value: https://api.honeycomb.io
+connections:
+  - source:
+      component: TraceConverter_1
+      port: Output
+      type: Honeycomb
+    destination:
+      component: EMAThroughput_1
+      port: Input
+      type: Honeycomb
+  - source:
+      component: EMAThroughput_1
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: HoneycombExporter_1
+      port: Traces
+      type: Honeycomb
+  - source:
+      component: OTelReceiver_1
+      port: TraceOut
+      type: OTelTraces
+    destination:
+      component: TraceConverter_1
+      port: Input
+      type: OTelTraces
+layout:
+  frame:
+    width: 1835
+    height: 1491
+  components:
+    - name: OTelReceiver_1
+      x: 253
+      y: 223
+    - name: TraceConverter_1
+      x: 439
+      y: 227
+    - name: HoneycombExporter_1
+      x: 938
+      y: 210
+    - name: EMAThroughput_1
+      x: 676
+      y: 228
