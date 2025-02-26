@@ -1,5 +1,5 @@
 kind: HoneycombExporter
-defaultName: HoneycombExporter
+name: HoneycombExporter
 summary: Export telemetry to Honeycomb in Honeycomb's event format.
 description: |
   This component exports telemetry to Honeycomb in Honeycomb's event format.

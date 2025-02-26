@@ -1,5 +1,5 @@
 kind: DeterministicSampler
-defaultName: DeterministicSampler
+name: DeterministicSampler
 summary: A basic sampler that deterministically samples a fixed fraction of traces based on trace ID
 description: |
   A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.

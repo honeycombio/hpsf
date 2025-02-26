@@ -1,5 +1,5 @@
 kind: OTelHTTPExporter
-defaultName: otel_http_exporter
+name: otel_http_exporter
 summary: Exports OTLP (OpenTelemetry) traffic via HTTP
 description: |
   Exports OpenTelemetry signals using OTLP via HTTP.

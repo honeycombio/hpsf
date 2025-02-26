@@ -1,5 +1,5 @@
 kind: OTelDebugExporter
-defaultName: otel_debug_exporter
+name: otel_debug_exporter
 summary: Exports pipeline signal traffic to stdout
 description: |
   Exports signal data in a pipeline to stdout.

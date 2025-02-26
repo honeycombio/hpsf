@@ -1,5 +1,5 @@
 kind: FilterProcessor
-defaultName: FilterProcessor
+name: FilterProcessor
 summary: Processor that can be used to filter telemetry.
 description: |
   Filters traces, metrics, and logs based on rules defined
