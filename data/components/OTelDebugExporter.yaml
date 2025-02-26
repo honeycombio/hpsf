@@ -1,0 +1,24 @@
+kind: OTelDebugExporter
+defaultName: otel_debug_exporter
+summary: Exports pipeline signal traffic to stdout
+description: |
+  Exports signal data in a pipeline to stdout.
+properties:
+  - name: Verbosity
+    summary: The verbosity level of the debug output
+    description: |
+      The verbosity level of the debug output. Valid values are basic, normal, or detailed. The default is "basic".
+    type: string
+    validations: [nonblank]
+    default: basic
+templates:
+  - kind: collector_config
+    name: otel_debug_exporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs] # we'll generate a name for each pipeline if there's more than 1
+      collectorComponentName: debug
+    data:
+      - key: "{{ .ComponentName }}.verbosity"
+        value: "{{ firstNonZero .HProps.Verbosity .User.Verbosity .Props.Verbosity.Default }}"

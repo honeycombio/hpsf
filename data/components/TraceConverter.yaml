@@ -1,0 +1,59 @@
+kind: TraceConverter
+defaultName: TraceConverter
+summary: Receives traffic for Refinery via gRPC or HTTP and converts it to Honeycomb's event format.
+description: |
+  Imports OTel telemetry via gRPC or HTTP.
+  This receiver can be configured to listen on both gRPC and HTTP, or just one.
+  It forwards the data to Refinery for processing.
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Events
+    direction: output
+    type: HoneycombEvents
+properties:
+  - name: Host
+    summary: The hostname or IP address on which to listen
+    description: |
+      Hostname or IP address on which to listen for incoming traffic.
+      It is recommended not to change the default unless
+      you know what you're doing.
+    type: string
+    validations: [nonblank]
+    default: ${STRAWS_REFINERY_POD_IP}
+  - name: GRPCPort
+    summary: The port on which Refinery is listening for gRPC traffic.
+    description: |
+      The port on which Refinery listens for incoming gRPC traffic.
+      The OTel default is 4317. Set to 0 to disable gRPC.
+    type: integer
+    validations: [integer]
+    default: 4317
+  - name: HTTPPort
+    summary: The port on which Refinery is listening for HTTP traffic.
+    description: |
+      The port on which Refinery listens for incoming HTTP traffic.
+      The OTel default is 4318. Set to 0 to disable HTTP.
+    type: integer
+    validations: [integer]
+    default: 4318
+templates:
+  - kind: collector_config
+    name: otel_receiver_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlp
+    data:
+      - key: "{{ .ComponentName }}.grpc.endpoint"
+        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.GRPCPort .User.GRPCPort .Props.GRPCPort.Default }}"
+        suppress_if: "{{ eq .HProps.GRPCPort 0 }}"
+      - key: "{{ .ComponentName }}.http.endpoint"
+        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.HTTPPort .User.HTTPPort .Props.HTTPPort.Default }}"
+        suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
+      # service is not part of the template, it's generated automatically by the collectorConfig
