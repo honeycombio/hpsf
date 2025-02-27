@@ -1,5 +1,5 @@
 kind: EMAThroughput
-name: EMA_Throughput_Sampler
+name: EMA Throughput Sampler
 version: v0.1.0
 summary: An EMA sampler designed to achieve a target throughput (in events per second)
 description: |

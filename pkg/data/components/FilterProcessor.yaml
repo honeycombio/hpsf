@@ -1,5 +1,5 @@
 kind: FilterProcessor
-name: FilterProcessor
+name: Filter Processor
 version: v0.1.0
 summary: Processor that can be used to filter telemetry.
 description: |

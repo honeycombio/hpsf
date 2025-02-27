@@ -5,41 +5,41 @@ summary: Limit the throughput of traces to Honeycomb using an EMA sampler
 description: |
   Limit the throughput of traces to Honeycomb using an EMA sampler. This template
   accepts traces from an OTel receiver, converts them to Honeycomb format, and
-  then samples them using an EMA throughput sampler before exporting them to
+  then samples them using an EMA Throughput Sampler before exporting them to
   Honeycomb. Control the volume of traces by modifying the GoalThroughput value in
   the properties section of the EMAThroughputSampler component.
 components:
-  - name: OTelReceiver_1
+  - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: TraceConverter_1
+  - name: Trace Converter 1
     kind: TraceConverter
-  - name: EMAThroughput_1
+  - name: EMA Throughput 1
     kind: EMAThroughput
-  - name: HoneycombExporter_1
+  - name: Honeycomb Exporter 1
     kind: HoneycombExporter
 connections:
   - source:
-      component: OTelReceiver_1
+      component: OTel Receiver 1
       port: Traces
       type: OTelTraces
     destination:
-      component: TraceConverter_1
+      component: Trace Converter 1
       port: Input
       type: OTelTraces
   - source:
-      component: TraceConverter_1
+      component: Trace Converter 1
       port: Output
       type: Honeycomb
     destination:
-      component: EMAThroughput_1
+      component: EMA Throughput 1
       port: Input
       type: Honeycomb
   - source:
-      component: EMAThroughput_1
+      component: EMA Throughput 1
       port: Kept
       type: Honeycomb
     destination:
-      component: HoneycombExporter_1
+      component: Honeycomb Exporter 1
       port: Traces
       type: Honeycomb
 layout:
@@ -47,15 +47,15 @@ layout:
     width: 1835
     height: 1491
   components:
-    - name: OTelReceiver_1
+    - name: OTel Receiver 1
       x: 253
       y: 223
-    - name: TraceConverter_1
+    - name: Trace Converter 1
       x: 439
       y: 227
-    - name: HoneycombExporter_1
+    - name: Honeycomb Exporter 1
       x: 938
       y: 210
-    - name: EMAThroughput_1
+    - name: EMA Throughput 1
       x: 676
       y: 228
