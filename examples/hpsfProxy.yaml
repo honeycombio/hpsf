@@ -3,7 +3,7 @@ components:
     kind: OTelReceiver
     properties:
       - name: Host
-        value: http://localhost
+        value: localhost
       - name: GRPCPort
         value: 4227
       - name: HTTPPort
@@ -12,7 +12,7 @@ components:
     kind: OTelGRPCExporter
     properties:
       - name: Host
-        value: http://localhost
+        value: localhost
       - name: Port
         value: 1234
       - name: Headers
@@ -22,7 +22,7 @@ components:
     kind: OTelHTTPExporter
     properties:
       - name: Host
-        value: http://localhost
+        value: localhost
       - name: Port
         value: 1234
       - name: Headers
