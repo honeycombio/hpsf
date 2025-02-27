@@ -2,8 +2,5 @@ package data
 
 import "embed"
 
-//go:embed components/*.yaml
-var ComponentsFS embed.FS
-
-//go:embed templates/*.yaml
-var TemplatesFS embed.FS
+//go:embed components/*.yaml templates/*.yaml
+var EmbeddedFS embed.FS
