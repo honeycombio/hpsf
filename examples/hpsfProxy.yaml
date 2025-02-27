@@ -1,5 +1,5 @@
 components:
-  - name: MyCompany OTel Receiver
+  - name: MyCompany_OTel_Receiver
     kind: OTelReceiver
     properties:
       - name: Host
@@ -8,7 +8,7 @@ components:
         value: 4227
       - name: HTTPPort
         value: 4228
-  - name: MyCompany gRPC Exporter
+  - name: MyCompany_gRPC_Exporter
     kind: OTelGRPCExporter
     properties:
       - name: Host
@@ -18,7 +18,7 @@ components:
       - name: Headers
         value:
           x-honeycomb-team: my-grpc-key
-  - name: MyCompany HTTP Exporter
+  - name: MyCompany_HTTP_Exporter
     kind: OTelHTTPExporter
     properties:
       - name: Host
@@ -30,26 +30,26 @@ components:
           x-honeycomb-team: my-http-key
 connections:
   - source:
-      component: MyCompany OTel Receiver
+      component: MyCompany_OTel_Receiver
       port: Traces
       type: OTelTraces
     destination:
-      component: MyCompany gRPC Exporter
+      component: MyCompany_gRPC_Exporter
       port: Traces
       type: OTelTraces
   - source:
-      component: MyCompany OTel Receiver
+      component: MyCompany_OTel_Receiver
       port: Metrics
       type: OTelMetrics
     destination:
-      component: MyCompany HTTP Exporter
+      component: MyCompany_HTTP_Exporter
       port: Metrics
       type: OTelMetrics
   - source:
-      component: MyCompany OTel Receiver
+      component: MyCompany_OTel_Receiver
       port: Logs
       type: OTelLogs
     destination:
-      component: MyCompany gRPC Exporter
+      component: MyCompany_gRPC_Exporter
       port: Logs
       type: OTelLogs
