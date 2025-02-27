@@ -1,0 +1,55 @@
+components:
+  - name: MyCompany OTel Receiver
+    kind: OTelReceiver
+    properties:
+      - name: Host
+        value: http://localhost
+      - name: GRPCPort
+        value: 4227
+      - name: HTTPPort
+        value: 4228
+  - name: MyCompany gRPC Exporter
+    kind: OTelGRPCExporter
+    properties:
+      - name: Host
+        value: http://localhost
+      - name: Port
+        value: 1234
+      - name: Headers
+        value:
+          x-honeycomb-team: my-grpc-key
+  - name: MyCompany HTTP Exporter
+    kind: OTelHTTPExporter
+    properties:
+      - name: Host
+        value: http://localhost
+      - name: Port
+        value: 1234
+      - name: Headers
+        value:
+          x-honeycomb-team: my-http-key
+connections:
+  - source:
+      component: MyCompany OTel Receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: MyCompany gRPC Exporter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: MyCompany OTel Receiver
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: MyCompany HTTP Exporter
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: MyCompany OTel Receiver
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: MyCompany gRPC Exporter
+      port: Logs
+      type: OTelLogs
