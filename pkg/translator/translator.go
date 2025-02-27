@@ -5,6 +5,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
+	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 )
 
@@ -41,7 +42,7 @@ func (t *Translator) InstallComponents(components map[string]config.TemplateComp
 // Deprecated: use InstallComponents instead
 func (t *Translator) LoadEmbeddedComponents() error {
 	// load the embedded components
-	tcs, err := config.LoadTemplateComponents()
+	tcs, err := data.LoadEmbeddedComponents()
 	if err != nil {
 		return err
 	}

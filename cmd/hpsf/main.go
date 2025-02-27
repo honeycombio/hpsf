@@ -10,6 +10,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
+	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
@@ -101,7 +102,7 @@ func main() {
 	tr := translator.NewEmptyTranslator()
 	// for this command line app, we load the embedded components, but
 	// a real app should load them from a database
-	components, err := config.LoadTemplateComponents()
+	components, err := data.LoadEmbeddedComponents()
 	if err != nil {
 		log.Fatalf("error loading embedded components: %v", err)
 	}

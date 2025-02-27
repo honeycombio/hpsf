@@ -1,8 +1,9 @@
-name: otel_http_exporter
-kind: OTelHTTPExporter
-summary: Exports OTLP (OpenTelemetry) traffic via HTTP
+kind: OTelGRPCExporter
+name: OTel gRPC Exporter
+version: v0.1.0
+summary: Exports OTLP (OpenTelemetry) traffic via gRPC
 description: |
-  Exports OpenTelemetry signals using OTLP via HTTP.
+  Exports OpenTelemetry signals using OTLP via gRPC.
 ports:
   - name: Traces
     direction: input
@@ -17,34 +18,34 @@ properties:
   - name: Host
     summary: The hostname or IP address to send data to
     description: |
-      Hostname or IP address on which to send outgoing HTTP traffic.
+      Hostname or IP address on which to send outgoing GRPC traffic.
     type: string
     validations: [nonblank]
     default: https://api.honeycomb.io
   - name: Port
-    summary: The port on which to send HTTP traffic.
+    summary: The port on which to send gRPC traffic.
     description: |
-      The port on which to send outgoing HTTP traffic. Default is 443, which is
-      the value expected by Honeycomb. The OTel standard for HTTP is 4318.
+      The port on which to send outgoing gRPC traffic. Default is 443, which is
+      the value expected by Honeycomb. The OTel standard for gRPC is 4317.
     type: integer
     validations: [integer]
     default: 443
   - name: Headers
-    summary: Headers to emit when sending HTTP traffic.
+    summary: Headers to emit when sending gRPC traffic.
     description: |
       Sending data to a backend may require additional headers to be
-      configured. This properties supports sending a map of header keys and
+      configured. This property supports sending a map of header keys and
       values.
     type: map
     validations: [map]
 templates:
   - kind: collector_config
-    name: otel_http_exporter_collector
+    name: otel_grpc_exporter_collector
     format: collector
     meta:
       componentSection: exporters
       signalTypes: [traces, metrics, logs] # we'll generate a name for each pipeline if there's more than 1
-      collectorComponentName: otlphttp
+      collectorComponentName: otlp
     data:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"

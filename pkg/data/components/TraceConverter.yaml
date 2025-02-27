@@ -1,5 +1,6 @@
-name: TraceConverter_1
 kind: TraceConverter
+name: Trace Converter
+version: v0.1.0
 summary: Receives traffic for Refinery via gRPC or HTTP and converts it to Honeycomb's event format.
 description: |
   Imports OTel telemetry via gRPC or HTTP.

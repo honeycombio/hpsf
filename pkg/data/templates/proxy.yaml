@@ -1,36 +1,39 @@
-name: Basic proxy
+name: Basic Proxy
+kind: TemplateProxy
+version: v0.1.0
+summary: A basic proxy that receives traces, metrics, and logs and forwards them to the OpenTelemetry GRPC exporter.
 description: |
   This is a basic proxy that forwards traces, metrics, and logs received via OpenTelemetry
   components to the OpenTelemetry GRPC exporter. This is useful for testing and debugging, or
   as a starting point for more complex configurations.
 components:
-  - name: OTelReceiver_1
+  - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: OTelGRPCExporter_1
+  - name: OTel gRPC Exporter 1
     kind: OTelGRPCExporter
 connections:
   - source:
-      component: OTelReceiver_1
+      component: OTel Receiver 1
       port: Traces
       type: OTelTraces
     destination:
-      component: OTelGRPCExporter_1
+      component: OTel gRPC Exporter 1
       port: Traces
       type: OTelTraces
   - source:
-      component: OTelReceiver_1
+      component: OTel Receiver 1
       port: Metrics
       type: OTelMetrics
     destination:
-      component: OTelGRPCExporter_1
+      component: OTel gRPC Exporter 1
       port: Metrics
       type: OTelMetrics
   - source:
-      component: OTelReceiver_1
+      component: OTel Receiver 1
       port: Logs
       type: OTelLogs
     destination:
-      component: OTelGRPCExporter_1
+      component: OTel gRPC Exporter 1
       port: Logs
       type: OTelLogs
 layout:
@@ -38,9 +41,9 @@ layout:
     width: 1835
     height: 1491
   components:
-    - name: OTelReceiver_1
+    - name: OTel Receiver 1
       x: 260
       y: 182
-    - name: OTelGRPCExporter_1
+    - name: OTel gRPC Exporter 1
       x: 642
       y: 182
