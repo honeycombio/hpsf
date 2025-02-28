@@ -138,7 +138,15 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	f.Extensions["honeycomb"] = map[string]any{
 		"opampextensionID": "opamp",
 	}
-	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+
+	if f.Service == nil {
+		f.Service = &collectorConfigService{}
+	}
+	if f.Service.Extensions == nil {
+		f.Service.Extensions = []string{"honeycomb"}
+	} else {
+		f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+	}
 
 	if f.Processors == nil {
 		f.Processors = make(map[string]any)

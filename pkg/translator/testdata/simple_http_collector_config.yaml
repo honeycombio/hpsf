@@ -5,12 +5,19 @@ receivers:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+processors:
+    usage:
+        honeycombextensionID: honeycomb
 exporters:
     otlphttp/otlp_out:
         endpoint: myhost.com:1234
+extensions:
+    honeycomb:
+        opampextensionID: opamp
 service:
+    extensions: [honeycomb]
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: []
+            processors: [usage]
             exporters: [otlphttp/otlp_out]

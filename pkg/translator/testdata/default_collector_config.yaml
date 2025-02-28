@@ -1,2 +1,9 @@
+processors:
+    usage:
+        honeycombextensionID: honeycomb
+extensions:
+    honeycomb:
+        opampextensionID: opamp
 service:
+    extensions: [honeycomb]
     pipelines: {}
