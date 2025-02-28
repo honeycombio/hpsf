@@ -29,18 +29,18 @@ type signalPipeline struct {
 
 // collectorConfigService is a struct that represents the service section of the collector config.
 type collectorConfigService struct {
-	Extensions []string                  `yaml:"extensions,omitempty,flow"`
-	Pipelines  map[string]signalPipeline `yaml:"pipelines"`
+	Extensions []string                   `yaml:"extensions,omitempty,flow"`
+	Pipelines  map[string]*signalPipeline `yaml:"pipelines"`
 }
 
 // collectorConfigFormat is a struct that represents the collector config in a
 // format and ordering that's idiomatic for the collector.
 type collectorConfigFormat struct {
-	Receivers  map[string]any         `yaml:"receivers,omitempty"`
-	Processors map[string]any         `yaml:"processors,omitempty"`
-	Exporters  map[string]any         `yaml:"exporters,omitempty"`
-	Extensions map[string]any         `yaml:"extensions,omitempty"`
-	Service    collectorConfigService `yaml:"service"`
+	Receivers  map[string]any          `yaml:"receivers,omitempty"`
+	Processors map[string]any          `yaml:"processors,omitempty"`
+	Exporters  map[string]any          `yaml:"exporters,omitempty"`
+	Extensions map[string]any          `yaml:"extensions,omitempty"`
+	Service    *collectorConfigService `yaml:"service"`
 }
 
 func dedup[T comparable](slice []T) []T {
@@ -129,6 +129,25 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	err = y.Unmarshal(data, &f)
 	if err != nil {
 		return nil, err
+	}
+
+	// Add our custom components
+	if f.Extensions == nil {
+		f.Extensions = make(map[string]any)
+	}
+	f.Extensions["honeycomb"] = map[string]any{
+		"opampextensionID": "opamp",
+	}
+	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+
+	if f.Processors == nil {
+		f.Processors = make(map[string]any)
+	}
+	f.Processors["usage"] = map[string]any{
+		"honeycombextensionID": "honeycomb",
+	}
+	for _, x := range f.Service.Pipelines {
+		x.Processors = append([]string{"usage"}, x.Processors...)
 	}
 
 	// now marshal from the struct to yaml
