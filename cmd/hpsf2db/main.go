@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"maps"
@@ -73,7 +72,7 @@ func main() {
 		// and we print them in sorted order so they're easily comparable
 		keys := slices.Sorted(maps.Keys(checksums))
 		for _, k := range keys {
-			fmt.Printf("%s  %s\n", checksums[k], k)
+			log.Printf("%s  %s", checksums[k], k)
 		}
 		// and we're done
 		os.Exit(0)
@@ -102,25 +101,25 @@ func main() {
 
 		added, removed, changed := diffMaps(checksums, inputChecksums)
 		if len(added) > 0 {
-			fmt.Println("added:")
+			log.Println("added:")
 			for k, v := range added {
-				fmt.Printf("%s  %s\n", v, k)
+				log.Printf("%s  %s\n", v, k)
 			}
 		}
 		if len(removed) > 0 {
-			fmt.Println("removed:")
+			log.Println("removed:")
 			for k, v := range removed {
-				fmt.Printf("%s  %s\n", v, k)
+				log.Printf("%s  %s\n", v, k)
 			}
 		}
 		if len(changed) > 0 {
-			fmt.Println("changed:")
+			log.Println("changed:")
 			for k, v := range changed {
-				fmt.Printf("%s  %s\n", v, k)
+				log.Printf("%s  %s\n", v, k)
 			}
 		}
 		if len(added) == 0 && len(removed) == 0 && len(changed) == 0 {
-			fmt.Println("no changes")
+			log.Println("no changes")
 			// we return 0 to indicate that the checksums match
 			os.Exit(0)
 		} else {
