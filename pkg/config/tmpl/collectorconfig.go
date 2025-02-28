@@ -29,18 +29,45 @@ type signalPipeline struct {
 
 // collectorConfigService is a struct that represents the service section of the collector config.
 type collectorConfigService struct {
-	Extensions []string                  `yaml:"extensions,omitempty,flow"`
-	Pipelines  map[string]signalPipeline `yaml:"pipelines"`
+	Extensions []string                   `yaml:"extensions,omitempty,flow"`
+	Pipelines  map[string]*signalPipeline `yaml:"pipelines"`
 }
 
 // collectorConfigFormat is a struct that represents the collector config in a
 // format and ordering that's idiomatic for the collector.
 type collectorConfigFormat struct {
-	Receivers  map[string]any         `yaml:"receivers,omitempty"`
-	Processors map[string]any         `yaml:"processors,omitempty"`
-	Exporters  map[string]any         `yaml:"exporters,omitempty"`
-	Extensions map[string]any         `yaml:"extensions,omitempty"`
-	Service    collectorConfigService `yaml:"service"`
+	Receivers  map[string]any          `yaml:"receivers,omitempty"`
+	Processors map[string]any          `yaml:"processors,omitempty"`
+	Exporters  map[string]any          `yaml:"exporters,omitempty"`
+	Extensions map[string]any          `yaml:"extensions,omitempty"`
+	Service    *collectorConfigService `yaml:"service"`
+}
+
+// injectHoneycombUsageComponents ensures the collector configuration always has the necessary honeycomb
+// components for measuring usage.
+func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
+	if f.Service == nil {
+		f.Service = &collectorConfigService{}
+	}
+
+	// ensure the honeycombextension is configured
+	if f.Extensions == nil {
+		f.Extensions = make(map[string]any)
+	}
+	f.Extensions["honeycomb"] = map[string]any{}
+	if f.Service.Extensions == nil {
+		f.Service.Extensions = make([]string, 0, 1)
+	}
+	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+
+	// ensure the usageprocessor is configured for all pipelines
+	if f.Processors == nil {
+		f.Processors = make(map[string]any)
+	}
+	f.Processors["usage"] = map[string]any{}
+	for _, x := range f.Service.Pipelines {
+		x.Processors = append([]string{"usage"}, x.Processors...)
+	}
 }
 
 func dedup[T comparable](slice []T) []T {
@@ -130,6 +157,8 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	f.injectHoneycombUsageComponents()
 
 	// now marshal from the struct to yaml
 	data, err = y.Marshal(f)

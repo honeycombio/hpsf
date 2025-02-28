@@ -5,12 +5,17 @@ receivers:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+processors:
+    usage: {}
 exporters:
     debug/ShowMeTheOlly:
         verbosity: basic
+extensions:
+    honeycomb: {}
 service:
+    extensions: [honeycomb]
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: []
+            processors: [usage]
             exporters: [debug/ShowMeTheOlly]

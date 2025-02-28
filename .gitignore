@@ -2,3 +2,7 @@
 .vscode
 test_results/
 tmp/
+
+# GoLand IDEA
+/.idea/
+*.iml
