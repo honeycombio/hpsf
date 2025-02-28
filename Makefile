@@ -65,7 +65,7 @@ smoke:
 	@echo
 	mkdir -p tmp
 	go run ./cmd/hpsf -i ./examples/hpsfProxy.yaml -o tmp/hpsfProxy.cconfig.yaml cConfig
-	docker run --rm -d \
+	docker run --rm -it \
 		--name smoke-proxy \
     -p 4227-4228:4227-4228 \
 		-v ./tmp/hpsfProxy.cconfig.yaml:/etc/otelcol/config.yaml \
