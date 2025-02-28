@@ -43,6 +43,33 @@ type collectorConfigFormat struct {
 	Service    *collectorConfigService `yaml:"service"`
 }
 
+// injectHoneycombUsageComponents ensures the collector configuration always has the necessary honeycomb
+// components for measuring usage.
+func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
+	if f.Service == nil {
+		f.Service = &collectorConfigService{}
+	}
+
+	// ensure the honeycombextension is configured
+	if f.Extensions == nil {
+		f.Extensions = make(map[string]any)
+	}
+	f.Extensions["honeycomb"] = map[string]any{}
+	if f.Service.Extensions == nil {
+		f.Service.Extensions = make([]string, 0, 1)
+	}
+	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+
+	// ensure the usageprocessor is configured for all pipelines
+	if f.Processors == nil {
+		f.Processors = make(map[string]any)
+	}
+	f.Processors["usage"] = map[string]any{}
+	for _, x := range f.Service.Pipelines {
+		x.Processors = append([]string{"usage"}, x.Processors...)
+	}
+}
+
 func dedup[T comparable](slice []T) []T {
 	keys := make(map[T]struct{})
 	list := []T{}
@@ -131,7 +158,7 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 		return nil, err
 	}
 
-	f = injectHoneycombUsageComponents(f)
+	f.injectHoneycombUsageComponents()
 
 	// now marshal from the struct to yaml
 	data, err = y.Marshal(f)
@@ -161,33 +188,4 @@ func (cc *CollectorConfig) Merge(other TemplateConfig) TemplateConfig {
 func NewCollectorConfig() *CollectorConfig {
 	cc := CollectorConfig{Sections: make(map[string]DottedConfig)}
 	return &cc
-}
-
-// injectHoneycombUsageComponents ensures the collector configuration always has the necessary honeycomb
-// components for measuring usage.
-func injectHoneycombUsageComponents(f collectorConfigFormat) collectorConfigFormat {
-	if f.Service == nil {
-		f.Service = &collectorConfigService{}
-	}
-
-	// ensure the honeycombextension is configured
-	if f.Extensions == nil {
-		f.Extensions = make(map[string]any)
-	}
-	f.Extensions["honeycomb"] = map[string]any{}
-	if f.Service.Extensions == nil {
-		f.Service.Extensions = make([]string, 0, 1)
-	}
-	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
-
-	// ensure the usageprocessor is configured for all pipelines
-	if f.Processors == nil {
-		f.Processors = make(map[string]any)
-	}
-	f.Processors["usage"] = map[string]any{}
-	for _, x := range f.Service.Pipelines {
-		x.Processors = append([]string{"usage"}, x.Processors...)
-	}
-
-	return f
 }
