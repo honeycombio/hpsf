@@ -18,11 +18,9 @@ receivers:
         endpoint: localhost
         port: "4317"
 processors:
-    usage:
-        honeycombextensionID: honeycomb
+    usage: {}
 extensions:
-    honeycomb:
-        opampextensionID: opamp
+    honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:

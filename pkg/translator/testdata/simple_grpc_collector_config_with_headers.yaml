@@ -6,8 +6,7 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
 processors:
-    usage:
-        honeycombextensionID: honeycomb
+    usage: {}
 exporters:
     otlp/otlp_out:
         endpoint: myhost.com:1234
@@ -15,8 +14,7 @@ exporters:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
 extensions:
-    honeycomb:
-        opampextensionID: opamp
+    honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:

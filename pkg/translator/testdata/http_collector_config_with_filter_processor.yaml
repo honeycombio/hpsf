@@ -10,14 +10,12 @@ processors:
         traces:
             span:
                 - attributes["container.name"] == "container_1"
-    usage:
-        honeycombextensionID: honeycomb
+    usage: {}
 exporters:
     otlphttp/otlp_out:
         endpoint: myhost.com:1234
 extensions:
-    honeycomb:
-        opampextensionID: opamp
+    honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:

@@ -6,14 +6,12 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
 processors:
-    usage:
-        honeycombextensionID: honeycomb
+    usage: {}
 exporters:
     debug/ShowMeTheOlly:
         verbosity: basic
 extensions:
-    honeycomb:
-        opampextensionID: opamp
+    honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:
