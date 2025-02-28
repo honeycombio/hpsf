@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"maps"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/data"
@@ -22,13 +24,35 @@ type Options struct {
 	CalculateChecksums bool `short:"x" long:"calculate-checksum" description:"calculate checksums for the specified data, print to stdout, and exit"`
 }
 
+func diffMaps(orig, update map[string]string) (added, removed, changed map[string]string) {
+	added = make(map[string]string)
+	removed = make(map[string]string)
+	changed = make(map[string]string)
+
+	for k, v := range orig {
+		if _, ok := update[k]; !ok {
+			removed[k] = v
+		} else if update[k] != v {
+			changed[k] = v
+		}
+	}
+
+	for k, v := range update {
+		if _, ok := orig[k]; !ok {
+			added[k] = v
+		}
+	}
+
+	return added, removed, changed
+}
+
 func main() {
 	// Parse the command line arguments
 	cmdopts := &Options{}
 	parser := flags.NewParser(cmdopts, flags.Default)
 
-	// read the command line and envvars into cmdargs
-	cmdargs, err := parser.Parse()
+	// read the command line
+	_, err := parser.Parse()
 	if err != nil {
 		switch flagsErr := err.(type) {
 		case *flags.Error:
@@ -39,52 +63,69 @@ func main() {
 		log.Fatalf("error reading command line: %v", err)
 	}
 
-	if len(cmdargs) == 0 {
-		log.Fatalf("no command specified -- valid commands are 'templates' and 'components' (or both)")
+	checksums, err := data.CalculateChecksums()
+	if err != nil {
+		log.Fatalf("error calculating checksums from embedded data: %v", err)
 	}
 
-	for _, cmd := range cmdargs {
-		checksums, err := data.CalculateChecksums(cmd)
-		if err != nil {
-			log.Fatalf("error calculating checksums from embedded data: %v", err)
+	if cmdopts.CalculateChecksums {
+		// we print them checksum first because that's what the sha1sum command does
+		// and we print them in sorted order so they're easily comparable
+		keys := slices.Sorted(maps.Keys(checksums))
+		for _, k := range keys {
+			fmt.Printf("%s  %s\n", checksums[k], k)
 		}
-		if cmdopts.CalculateChecksums {
-			// we print them checksum first because that's what the sha1sum command does
-			for k, v := range checksums {
+		// and we're done
+		os.Exit(0)
+	}
+
+	if cmdopts.VerifyCheckums {
+		// read checksums from stdin in the format "sha1  filename"
+		// and verify that they match the embedded templates
+
+		inputChecksums := make(map[string]string)
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatalf("error reading checksums from stdin: %v", err)
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			if line == "" {
+				continue
+			}
+			splits := strings.Split(line, "  ")
+			if len(splits) != 2 {
+				log.Fatalf("invalid checksum line: %s", line)
+			}
+			inputChecksums[splits[1]] = splits[0]
+		}
+
+		added, removed, changed := diffMaps(checksums, inputChecksums)
+		if len(added) > 0 {
+			fmt.Println("added:")
+			for k, v := range added {
 				fmt.Printf("%s  %s\n", v, k)
 			}
 		}
-		if cmdopts.VerifyCheckums {
-			// read checksums from stdin in the format "sha1  filename"
-			// and verify that they match the embedded templates
-
-			inputChecksums := make(map[string]string)
-			data, err := io.ReadAll(os.Stdin)
-			if err != nil {
-				log.Fatalf("error reading checksums from stdin: %v", err)
+		if len(removed) > 0 {
+			fmt.Println("removed:")
+			for k, v := range removed {
+				fmt.Printf("%s  %s\n", v, k)
 			}
-			lines := strings.Split(string(data), "\n")
-			for _, line := range lines {
-				if line == "" {
-					continue
-				}
-				splits := strings.Split(line, "  ")
-				if len(splits) != 2 {
-					log.Fatalf("invalid checksum line: %s", line)
-				}
-				inputChecksums[splits[1]] = splits[0]
+		}
+		if len(changed) > 0 {
+			fmt.Println("changed:")
+			for k, v := range changed {
+				fmt.Printf("%s  %s\n", v, k)
 			}
-
-			// we only compare the ones that we read from this directory (stdin might have extra files)
-			for k, v := range checksums {
-				ck, ok := inputChecksums[k]
-				if !ok {
-					log.Fatalf("checksum for %s not found in stdin -- new file?", k)
-				}
-				if ck != v {
-					log.Fatalf("checksum mismatch for %s: %s != %s", k, ck, v)
-				}
-			}
+		}
+		if len(added) == 0 && len(removed) == 0 && len(changed) == 0 {
+			fmt.Println("no changes")
+			// we return 0 to indicate that the checksums match
+			os.Exit(0)
+		} else {
+			// we return 1 to indicate that the checksums do not match
+			os.Exit(1)
 		}
 	}
 }

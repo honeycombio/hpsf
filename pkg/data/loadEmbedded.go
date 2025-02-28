@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"fmt"
 	"path"
+	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
@@ -76,13 +77,36 @@ func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	return templates, nil
 }
 
-// CalculateChecksums reads the templates in a directory in the embedded
+// CalculateChecksums reads the components and templates in the non-test
+// subdirectories in the embedded filesystem and returns all the checksums in a
+// map.
+func CalculateChecksums() (map[string]string, error) {
+	dirs, err := EmbeddedFS.ReadDir(".")
+	if err != nil {
+		return nil, err
+	}
+	results := make(map[string]string)
+	for _, dir := range dirs {
+		if dir.IsDir() && !strings.HasPrefix(dir.Name(), "test") {
+			checksums, err := calculateChecksums(dir.Name())
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range checksums {
+				results[k] = v
+			}
+		}
+	}
+	return results, nil
+}
+
+// calculateChecksums reads the templates in a directory in the embedded
 // filesystem and calculates a sha1 checksum of the contents. It will generate
 // the same results as doing `sha1sum subdir/*` from the data directory. This
 // is used to verify that the templates have not changed since the last release.
 // Yes, we know that sha1 is not a secure hash, but we're not using it for security,
 // and compatibility with a well-known command line tool is a feature.
-func CalculateChecksums(subdir string) (map[string]string, error) {
+func calculateChecksums(subdir string) (map[string]string, error) {
 	// Read the components from the filesystem
 	temps, err := EmbeddedFS.ReadDir(subdir)
 	if err != nil {
