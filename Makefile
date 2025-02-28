@@ -56,3 +56,24 @@ validate_all: examples/*
 	for file in $^ ; do \
 		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done
+
+.PHONY: smoke
+smoke:
+	@echo
+	@echo "+++ basic smoke test - does it start?"
+	@echo "+++ if so, make unsmoke after this"
+	@echo
+	mkdir -p tmp
+	go run ./cmd/hpsf -i ./examples/hpsfProxy.yaml -o tmp/hpsfProxy.cconfig.yaml cConfig
+	docker run --rm -it \
+		--name smoke-proxy \
+    -p 4227-4228:4227-4228 \
+		-v ./tmp/hpsfProxy.cconfig.yaml:/etc/otelcol/config.yaml \
+		otel/opentelemetry-collector:latest
+
+.PHONY: unsmoke
+unsmoke:
+	@echo
+	@echo "+++ stopping smoke test"
+	@echo
+	docker stop smoke-proxy
