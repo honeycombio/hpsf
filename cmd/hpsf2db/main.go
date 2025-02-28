@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"maps"
@@ -21,6 +22,13 @@ import (
 type Options struct {
 	VerifyCheckums     bool `short:"v" long:"verify-checksums" description:"verify checksums in stdin against the embedded templates and exit"`
 	CalculateChecksums bool `short:"x" long:"calculate-checksum" description:"calculate checksums for the specified data, print to stdout, and exit"`
+}
+
+func (o *Options) validate() error {
+	if o.VerifyCheckums && o.CalculateChecksums || !o.VerifyCheckums && !o.CalculateChecksums {
+		return fmt.Errorf("you must specify one of -v (--calculate-checksum) or -x (--verify-checksums). See --help for more information")
+	}
+	return nil
 }
 
 func diffMaps(orig, update map[string]string) (added, removed, changed map[string]string) {
@@ -60,6 +68,10 @@ func main() {
 			}
 		}
 		log.Fatalf("error reading command line: %v", err)
+	}
+	err = cmdopts.validate()
+	if err != nil {
+		log.Fatalf("error validating command line options: %v", err)
 	}
 
 	checksums, err := data.CalculateChecksums()
