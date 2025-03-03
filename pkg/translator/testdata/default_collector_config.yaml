@@ -1,2 +1,7 @@
+processors:
+    usage: {}
+extensions:
+    honeycomb: {}
 service:
+    extensions: [honeycomb]
     pipelines: {}
