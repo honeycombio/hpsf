@@ -92,6 +92,7 @@ func TestComponent_GetSafeName(t *testing.T) {
 		{"a b c", "a_b_c"},
 		{"a#@#$%^&*()b", "a_b"},
 		{"Deterministic Sampler", "Deterministic_Sampler"},
+		{"Deterministic_Sampler", "Deterministic_Sampler"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

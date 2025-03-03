@@ -179,13 +179,17 @@ func (c *Component) Validate() []error {
 	return results
 }
 
+func safeName(s string) string {
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	return re.ReplaceAllString(s, "_")
+}
+
 // Returns the safe name of the component (no spaces or special characters)
 // This has potential to cause a problem if the resulting name is not unique -- so uniqueness
 // should be tested with this name, not the original name.
 // we replace any runs of characters not in [a-zA-Z0-9] with an underscore
 func (c *Component) GetSafeName() string {
-	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
-	return re.ReplaceAllString(c.Name, "_")
+	return safeName(c.Name)
 }
 
 // returns the port with the given name, or nil if not found
@@ -221,6 +225,10 @@ type ConnectionPort struct {
 	Component string         `yaml:"component"`
 	PortName  string         `yaml:"port"`
 	Type      ConnectionType `yaml:"type"`
+}
+
+func (cp *ConnectionPort) GetSafeName() string {
+	return safeName(cp.Component)
 }
 
 func (cp *ConnectionPort) Validate() []error {
