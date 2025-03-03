@@ -9,6 +9,7 @@ func TestCollectorConfig_RenderYAML(t *testing.T) {
 	cc := NewCollectorConfig()
 	cc.Set("receivers", "otlp.port", "4317")
 	cc.Set("receivers", "otlp.endpoint", "localhost")
+	cc.Set("processors", "batch", map[string]any{})
 	cc.Set("service", "pipelines.traces.receivers", []string{"otlp"})
 	cc.Set("service", "pipelines.traces.processors", []string{"batch"})
 	// NOTE: this "want" string is indented with spaces, not tabs; the YAML renderer uses spaces.
@@ -18,6 +19,7 @@ receivers:
         endpoint: localhost
         port: "4317"
 processors:
+    batch: {}
     usage: {}
 extensions:
     honeycomb: {}
