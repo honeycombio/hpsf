@@ -30,7 +30,7 @@ func TestEnsureHPSF(t *testing.T) {
 				y[arg] = i
 			}
 			text, _ := y.RenderYAML()
-			if err := EnsureHPSF(string(text)); (err != nil) && !strings.Contains(err.Error(), tt.wantErr) {
+			if err := EnsureHPSFYAML(string(text)); (err != nil) && !strings.Contains(err.Error(), tt.wantErr) {
 				t.Errorf("EnsureHPSF() error = %v, should contain '%v'", err, tt.wantErr)
 			}
 		})
@@ -78,5 +78,27 @@ connections:
 }
 
 func TestDefaultConfigurationIsValidYAML(t *testing.T) {
-	require.NoError(t, EnsureHPSF(DefaultConfiguration))
+	err := EnsureHPSFYAML(DefaultConfiguration)
+	require.NoError(t, err)
+}
+
+func TestComponent_GetSafeName(t *testing.T) {
+	tests := []struct {
+		name string
+		want string
+	}{
+		{"a", "a"},
+		{"a b", "a_b"},
+		{"a b c", "a_b_c"},
+		{"a#@#$%^&*()b", "a_b"},
+		{"Deterministic Sampler", "Deterministic_Sampler"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := &Component{Name: tt.name}
+			if got := c.GetSafeName(); got != tt.want {
+				t.Errorf("Component.GetSafeName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }

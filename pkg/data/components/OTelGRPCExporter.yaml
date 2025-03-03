@@ -27,8 +27,8 @@ properties:
     description: |
       The port on which to send outgoing gRPC traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for gRPC is 4317.
-    type: integer
-    validations: [integer]
+    type: int
+    validations: []
     default: 443
   - name: Headers
     summary: Headers to emit when sending gRPC traffic.
@@ -37,7 +37,7 @@ properties:
       configured. This property supports sending a map of header keys and
       values.
     type: map
-    validations: [map]
+    validations: []
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector

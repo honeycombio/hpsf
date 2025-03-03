@@ -78,7 +78,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		if err != nil {
 			return nil, err
 		}
-		comps[c.Name] = comp
+		comps[c.GetSafeName()] = comp
 	}
 
 	// now add the connections
