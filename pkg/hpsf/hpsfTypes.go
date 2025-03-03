@@ -2,6 +2,9 @@ package hpsf
 
 import (
 	"errors"
+	"fmt"
+	"reflect"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -18,7 +21,7 @@ components:
     properties:
       - name: SampleRate
         value: 1
-        type: number
+        type: int
 `
 
 type ConnectionType string
@@ -38,45 +41,57 @@ const (
 type PropType string
 
 const (
-	PTYPE_NUMBER PropType = "number"
+	PTYPE_INT    PropType = "int"
+	PTYPE_FLOAT  PropType = "float"
 	PTYPE_STRING PropType = "string"
 	PTYPE_BOOL   PropType = "bool"
 	PTYPE_ARRSTR PropType = "stringarray"
+	PTYPE_MAPSTR PropType = "map" // map[string]any
 )
 
 func (p PropType) Validate() error {
 	switch p {
-	case PTYPE_NUMBER:
+	case PTYPE_INT:
+	case PTYPE_FLOAT:
 	case PTYPE_STRING:
 	case PTYPE_BOOL:
 	case PTYPE_ARRSTR:
+	case PTYPE_MAPSTR:
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
 	return nil
 }
 
-func (p PropType) Conforms(a any) error {
+func (p PropType) ValueConforms(a any) error {
 	// null proptype means anything goes
 	if p == "" {
 		return nil
 	}
 	switch p {
-	case PTYPE_NUMBER:
+	case PTYPE_INT:
 		if _, ok := a.(int); !ok {
-			return errors.New("expected int, got " + a.(string))
+			return errors.New("expected int, got " + fmt.Sprint(a))
+		}
+	case PTYPE_FLOAT:
+		if _, ok := a.(float64); !ok {
+			return errors.New("expected float, got " + fmt.Sprint(a))
 		}
 	case PTYPE_STRING:
 		if _, ok := a.(string); !ok {
-			return errors.New("expected string, got " + a.(string))
+			return errors.New("expected string, got " + fmt.Sprint(a))
 		}
 	case PTYPE_BOOL:
 		if _, ok := a.(bool); !ok {
-			return errors.New("expected bool, got " + a.(string))
+			return errors.New("expected bool, got " + fmt.Sprint(a))
 		}
 	case PTYPE_ARRSTR:
 		if _, ok := a.([]string); !ok {
-			return errors.New("expected []string, got " + a.(string))
+			return errors.New("expected []string, got " + fmt.Sprint(a))
+		}
+	case PTYPE_MAPSTR:
+		if _, ok := a.(map[string]any); !ok {
+			return errors.New("expected map[string]any, got " + fmt.Sprint(a))
 		}
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
@@ -140,6 +155,7 @@ func (c *Component) Validate() []error {
 		switch p.Value.(type) {
 		case string:
 		case int:
+		case float64:
 		case bool:
 		case map[string]any:
 		case []any:
@@ -155,12 +171,25 @@ func (c *Component) Validate() []error {
 			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, []any, or map[string]any", c.Name, p.Name))
 		}
 
-		err := p.Type.Conforms(p.Value)
+		err := p.Type.ValueConforms(p.Value)
 		if err != nil {
 			results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
 		}
 	}
 	return results
+}
+
+func safeName(s string) string {
+	re := regexp.MustCompile(`[^a-zA-Z0-9]+`)
+	return re.ReplaceAllString(s, "_")
+}
+
+// Returns the safe name of the component (no spaces or special characters)
+// This has potential to cause a problem if the resulting name is not unique -- so uniqueness
+// should be tested with this name, not the original name.
+// we replace any runs of characters not in [a-zA-Z0-9] with an underscore
+func (c *Component) GetSafeName() string {
+	return safeName(c.Name)
 }
 
 // returns the port with the given name, or nil if not found
@@ -196,6 +225,10 @@ type ConnectionPort struct {
 	Component string         `yaml:"component"`
 	PortName  string         `yaml:"port"`
 	Type      ConnectionType `yaml:"type"`
+}
+
+func (cp *ConnectionPort) GetSafeName() string {
+	return safeName(cp.Component)
 }
 
 func (cp *ConnectionPort) Validate() []error {
@@ -304,11 +337,30 @@ type HPSF struct {
 	Layout      Layout        `yaml:"layout,omitempty"`
 }
 
+// use reflect to generate a list of valid yaml tags in a pointer to
+// a struct
+func getValidKeys(p any) []string {
+	keys := []string{}
+	v := reflect.ValueOf(p).Elem()
+	for i := range v.NumField() {
+		f := v.Type().Field(i)
+		yamltag := f.Tag.Get("yaml")
+		if yamltag != "" {
+			// ignore any options like "omitempty"
+			if strings.Contains(yamltag, ",") {
+				yamltag = strings.Split(yamltag, ",")[0]
+			}
+			keys = append(keys, yamltag)
+		}
+	}
+	return keys
+}
+
 func (h *HPSF) Validate() []error {
 	results := []error{}
 
 	if h.Components == nil && h.Connections == nil && h.Containers == nil && h.Layout == nil {
-		results = append(results, errors.New("default HPSF structs are considered invalid"))
+		results = append(results, errors.New("empty and default HPSF structs are considered invalid"))
 	}
 
 	for _, c := range h.Components {
@@ -326,8 +378,8 @@ func (h *HPSF) Validate() []error {
 	return results
 }
 
-// EnsureHPSF returns an error if the input is not HPSF yaml or invalid HPSF
-func EnsureHPSF(input string) error {
+// EnsureHPSFYAML returns an error if the input is not HPSF yaml or invalid HPSF
+func EnsureHPSFYAML(input string) error {
 	m, err := validator.EnsureYAML([]byte(input))
 	if err != nil {
 		return err
@@ -337,12 +389,17 @@ func EnsureHPSF(input string) error {
 		return errors.New("HPSF yaml is empty")
 	}
 
-	// check to see if it has only expected keys
-	keys := []string{"components", "connections", "containers", "layout"}
+	// check to see if it has only expected top-level keys
+	// (it would be interesting to do this recursively someday, but it's a lot)
+	keys := getValidKeys(&HPSF{})
+	badkeys := make([]string, 0)
 	for k := range m {
 		if !slices.Contains(keys, k) {
-			return errors.New("HPSF yaml contains unexpected keys")
+			badkeys = append(badkeys, k)
 		}
+	}
+	if len(badkeys) > 0 {
+		return errors.New("HPSF yaml contains unexpected keys: " + strings.Join(badkeys, ", "))
 	}
 
 	var hpsf HPSF
@@ -351,8 +408,13 @@ func EnsureHPSF(input string) error {
 	if err != nil {
 		return err
 	}
-	if len(hpsf.Validate()) != 0 {
-		return errors.New("HPSF validation failed")
+	validations := hpsf.Validate()
+	if len(validations) != 0 {
+		v := make([]string, len(validations))
+		for i, e := range validations {
+			v[i] = e.Error()
+		}
+		return errors.New("HPSF validation failed: " + strings.Join(v, ", "))
 	}
 	return nil
 }

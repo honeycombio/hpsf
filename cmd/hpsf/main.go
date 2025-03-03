@@ -131,6 +131,11 @@ func main() {
 			log.Fatalf("error validating input file: %v", err)
 		}
 
+		err = hpsf.EnsureHPSFYAML(string(inputData))
+		if err != nil {
+			log.Fatalf("input file is not hpsf: %v", err)
+		}
+
 		var hpsf hpsf.HPSF
 		err = y.Unmarshal(inputData, &hpsf)
 		if err != nil {

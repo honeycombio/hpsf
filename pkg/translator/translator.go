@@ -78,18 +78,18 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		if err != nil {
 			return nil, err
 		}
-		comps[c.Name] = comp
+		comps[c.GetSafeName()] = comp
 	}
 
 	// now add the connections
 	for _, conn := range h.Connections {
-		comp, ok := comps[conn.Source.Component]
+		comp, ok := comps[conn.Source.GetSafeName()]
 		if !ok {
 			return nil, fmt.Errorf("unknown source component %s in connection", conn.Source.Component)
 		}
 		comp.AddConnection(conn)
 
-		comp, ok = comps[conn.Destination.Component]
+		comp, ok = comps[conn.Destination.GetSafeName()]
 		if !ok {
 			return nil, fmt.Errorf("unknown target component %s in connection", conn.Destination.Component)
 		}

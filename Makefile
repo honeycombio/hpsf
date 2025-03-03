@@ -52,7 +52,7 @@ validate:
 	done
 
 .PHONY: validate_all
-validate_all: examples/*
+validate_all: examples/hpsf* pkg/data/templates/*
 	for file in $^ ; do \
 		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done

@@ -31,16 +31,16 @@ properties:
     description: |
       The port on which Refinery listens for incoming gRPC traffic.
       The OTel default is 4317. Set to 0 to disable gRPC.
-    type: integer
-    validations: [integer]
+    type: int
+    validations: [int]
     default: 4317
   - name: HTTPPort
     summary: The port on which Refinery is listening for HTTP traffic.
     description: |
       The port on which Refinery listens for incoming HTTP traffic.
       The OTel default is 4318. Set to 0 to disable HTTP.
-    type: integer
-    validations: [integer]
+    type: int
+    validations: [int]
     default: 4318
 templates:
   - kind: collector_config

@@ -27,8 +27,8 @@ properties:
     description: |
       The port on which to send outgoing HTTP traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for HTTP is 4318.
-    type: integer
-    validations: [integer]
+    type: int
+    validations: [int]
     default: 443
   - name: Headers
     summary: Headers to emit when sending HTTP traffic.
@@ -37,7 +37,7 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
-    validations: [map]
+    validations: []
 templates:
   - kind: collector_config
     name: otel_http_exporter_collector
