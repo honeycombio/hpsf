@@ -1,7 +1,10 @@
 package data
 
 import (
+	"crypto/sha1"
 	"fmt"
+	"path"
+	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
@@ -12,7 +15,7 @@ import (
 // data/components directory) and loads them into a map of TemplateComponent by name.
 func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	// Read the components from the filesystem
-	comps, err := ComponentsFS.ReadDir("components")
+	comps, err := EmbeddedFS.ReadDir("components")
 	if err != nil {
 		return nil, err
 	}
@@ -20,7 +23,7 @@ func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	// Load each template
 	components := make(map[string]config.TemplateComponent)
 	for _, comp := range comps {
-		templateData, err := ComponentsFS.ReadFile("components/" + comp.Name())
+		templateData, err := EmbeddedFS.ReadFile(path.Join("components", comp.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -45,7 +48,7 @@ func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 // data/templates directory) and loads them into a map of TemplateComponent by name.
 func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	// Read the components from the filesystem
-	temps, err := TemplatesFS.ReadDir("templates")
+	temps, err := EmbeddedFS.ReadDir("templates")
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +56,7 @@ func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	// Load each template
 	templates := make(map[string]hpsf.HPSF)
 	for _, comp := range temps {
-		templateData, err := TemplatesFS.ReadFile("templates/" + comp.Name())
+		templateData, err := EmbeddedFS.ReadFile(path.Join("templates", comp.Name()))
 		if err != nil {
 			return nil, err
 		}
@@ -72,4 +75,61 @@ func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	}
 
 	return templates, nil
+}
+
+// CalculateChecksums reads the components and templates in the non-test
+// subdirectories in the embedded filesystem and returns all the checksums in a
+// map.
+func CalculateChecksums() (map[string]string, error) {
+	dirs, err := EmbeddedFS.ReadDir(".")
+	if err != nil {
+		return nil, err
+	}
+	results := make(map[string]string)
+	for _, dir := range dirs {
+		if dir.IsDir() && !strings.HasPrefix(dir.Name(), "test") {
+			checksums, err := calculateChecksums(dir.Name())
+			if err != nil {
+				return nil, err
+			}
+			for k, v := range checksums {
+				results[k] = v
+			}
+		}
+	}
+	return results, nil
+}
+
+// calculateChecksums reads the templates in a directory in the embedded
+// filesystem and calculates a sha1 checksum of the contents. It will generate
+// the same results as doing `sha1sum subdir/*` from the data directory. This
+// is used to verify that the templates have not changed since the last release.
+// Yes, we know that sha1 is not a secure hash, but we're not using it for security,
+// and compatibility with a well-known command line tool is a feature.
+func calculateChecksums(subdir string) (map[string]string, error) {
+	// Read the components from the filesystem
+	temps, err := EmbeddedFS.ReadDir(subdir)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make(map[string]string)
+
+	// Read and sha1 sum each file
+	for _, comp := range temps {
+		checksum := sha1.New()
+		name := path.Join(subdir, comp.Name())
+		templateData, err := EmbeddedFS.ReadFile(name)
+		if err != nil {
+			return nil, err
+		}
+		_, err = checksum.Write(templateData)
+		if err != nil {
+			return nil, err
+		}
+		result := checksum.Sum(nil)
+		results[name] = fmt.Sprintf("%x", result)
+	}
+
+	return results, nil
 }
