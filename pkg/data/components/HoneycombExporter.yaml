@@ -1,5 +1,6 @@
 kind: HoneycombExporter
 name: Honeycomb Exporter
+style: exporter
 type: base
 status: development
 version: v0.1.0

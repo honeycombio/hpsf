@@ -1,6 +1,7 @@
 kind: OTelGRPCExporter
 name: OTel gRPC Exporter
 type: base
+style: exporter
 status: development
 version: v0.1.0
 summary: Exports OTLP (OpenTelemetry) traffic via gRPC

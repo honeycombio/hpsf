@@ -144,6 +144,10 @@ func (c ComponentStatus) MarshalYAML() (any, error) {
 //   - Name is the name of the component. In a templateComponent, it is used to suggest a name that the
 //     end user might want to call the component. It is not used to identify the component in a template,
 //     but is used to identify the component in the UI.
+//   - Style is currently a string, will be used to help the frontend figure out how to display the component.
+//     It will likely become some sort of enum, but for now we don't know what the values will be.
+//   - Type is the generalized type of component for broad classification - Base, Meta, or Template.
+//   - Status is the development status of the component.
 //   - User is only used for templating, but it needs to be exported, so its yaml tag is set to "-"
 //   - collName is the name of the OTel collector component that this component is associated with; it may
 //     be empty if the component is not associated with a collector. We need to store it in this data type
@@ -157,6 +161,7 @@ type TemplateComponent struct {
 	Description string             `yaml:"description,omitempty"`
 	Tags        []string           `yaml:"tags,omitempty"`
 	Type        ComponentType      `yaml:"type,omitempty"`
+	Style       string             `yaml:"style,omitempty"`
 	Status      ComponentStatus    `yaml:"status,omitempty"`
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`

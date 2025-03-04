@@ -46,10 +46,10 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 		require.NotEmpty(t, m)
 		dc := tmpl.NewDottedConfig(m)
 		require.NotEmpty(t, dc)
-		mustHave := []string{"name", "kind", "type", "status", "version"}
-		for _, k := range mustHave {
-			v, ok := dc[k]
-			require.True(t, ok, fmt.Sprintf("missing %s in %s", k, v))
+		mustHave := []string{"name", "kind", "type", "status", "style", "version"}
+		for _, mh := range mustHave {
+			v, ok := dc[mh]
+			require.True(t, ok, fmt.Sprintf("missing %s in %s", mh, k))
 			require.NotEmpty(t, v)
 		}
 	}

@@ -1,5 +1,6 @@
 kind: OTelHTTPExporter
 name: OTel Http Exporter
+style: exporter
 type: base
 status: development
 version: v0.1.0
