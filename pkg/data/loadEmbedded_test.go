@@ -17,6 +17,23 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 	if len(got) == 0 {
 		t.Errorf("LoadEmbeddedComponents() = %v, want non-empty", got)
 	}
+	// we'll eventually move this to a validation library and use that; for now this is just a quick check
+	for k, v := range got {
+		switch v.Style {
+		case config.ComponentStyleBase, config.ComponentStyleMeta, config.ComponentStyleTemplate:
+			// ok
+		default:
+			t.Errorf("LoadEmbeddedComponents() %s style = %v, what's that?", k, v.Style)
+		}
+		switch v.Status {
+		case config.ComponentStatusArchived, config.ComponentStatusDeprecated:
+			t.Errorf("LoadEmbeddedComponents() %s status = %v, want something active", k, v.Status)
+		case config.ComponentStatusDevelopment, config.ComponentStatusStable:
+			// ok
+		default:
+			t.Errorf("LoadEmbeddedComponents() %s status = %v, what's that?", k, v.Status)
+		}
+	}
 }
 
 func TestTemplateComponents(t *testing.T) {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	y "gopkg.in/yaml.v3"
 )
 
 // This is the Go support for components read as data.
@@ -64,6 +65,73 @@ type TemplateData struct {
 	Data   []any
 }
 
+type ComponentStyle string
+
+const (
+	ComponentStyleBase     ComponentStyle = "BASE"
+	ComponentStyleMeta     ComponentStyle = "META"
+	ComponentStyleTemplate ComponentStyle = "TEMPLATE"
+)
+
+// we need to be able to unmarshal the component style and status from YAML
+// and marshal it back to YAML, and the all-caps nature of the DB constants
+// is jarring and doesn't fit with the rest of the yaml styling. So we
+// can marshal YAML with some case conversions.
+// ensure ComponentStyle implements yaml.Marshaler and yaml.Unmarshaler
+var _ y.Marshaler = (*ComponentStyle)(nil)
+var _ y.Unmarshaler = (*ComponentStyle)(nil)
+
+func (c *ComponentStyle) UnmarshalYAML(value *y.Node) error {
+	var s string
+	if err := value.Decode(&s); err != nil {
+		return err
+	}
+	cs := ComponentStyle(strings.ToUpper(s))
+	switch cs {
+	case ComponentStyleBase, ComponentStyleMeta, ComponentStyleTemplate:
+		*c = cs
+		return nil
+	default:
+		return fmt.Errorf("invalid component style: %s", s)
+	}
+}
+
+func (c ComponentStyle) MarshalYAML() (any, error) {
+	return strings.ToLower(string(c)), nil
+}
+
+type ComponentStatus string
+
+const (
+	ComponentStatusArchived    ComponentStatus = "ARCHIVED"
+	ComponentStatusDeprecated  ComponentStatus = "DEPRECATED"
+	ComponentStatusDevelopment ComponentStatus = "DEVELOPMENT"
+	ComponentStatusStable      ComponentStatus = "STABLE"
+)
+
+var _ y.Marshaler = (*ComponentStatus)(nil)
+var _ y.Unmarshaler = (*ComponentStatus)(nil)
+
+func (c *ComponentStatus) UnmarshalYAML(value *y.Node) error {
+	var s string
+	if err := value.Decode(&s); err != nil {
+		return err
+	}
+	cs := ComponentStatus(strings.ToUpper(s))
+	switch cs {
+	case ComponentStatusArchived, ComponentStatusDeprecated,
+		ComponentStatusDevelopment, ComponentStatusStable:
+		*c = cs
+		return nil
+	default:
+		return fmt.Errorf("invalid component status: %s", s)
+	}
+}
+
+func (c ComponentStatus) MarshalYAML() (any, error) {
+	return strings.ToLower(string(c)), nil
+}
+
 // A TemplateComponent is a component that can be described with a template.
 // We're hoping that most components will be described this way, so that we
 // can store most templates in a database and not have to change the code when
@@ -85,6 +153,9 @@ type TemplateComponent struct {
 	CollName    string             `yaml:"collName"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
+	Tags        []string           `yaml:"tags,omitempty"`
+	Style       ComponentStyle     `yaml:"style,omitempty"`
+	Status      ComponentStatus    `yaml:"status,omitempty"`
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`

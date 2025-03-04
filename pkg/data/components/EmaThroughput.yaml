@@ -1,5 +1,7 @@
 kind: EMAThroughput
 name: EMA Throughput Sampler
+style: base
+status: development
 version: v0.1.0
 summary: An EMA sampler designed to achieve a target throughput (in events per second)
 description: |
@@ -7,18 +9,20 @@ description: |
   target throughput (in events per second) based on trying to achieve representative
   quantities of the specified sampling keys. The keys should be chosen from fields
   with relatively low cardinality, such as HTTP method, status code, etc.
+tags:
+  - category:sampling
+  - service:refinery
+  - signal:HoneycombEvents
+  - sampler:ema
+  - sampler:throughput
 ports:
   - name: Traces
     direction: input
-    type: HoneycombTraces
+    type: HoneycombEvents
   - name: SampledOutput
     direction: output
-    type: HoneycombTraces
-    note: "The traces that are sampled"
-  - name: UnsampledOutput
-    direction: output
-    type: HoneycombTraces
-    note: "The traces that are not sampled"
+    type: HoneycombEvents
+    note: "The traces that are sampled (retained for further processing)"
 properties:
   - name: Environment
     summary: The environment in which to enable the sampler

@@ -1,11 +1,20 @@
 kind: TraceConverter
 name: Trace Converter
+style: base
+status: development
 version: v0.1.0
 summary: Receives traffic for Refinery via gRPC or HTTP and converts it to Honeycomb's event format.
 description: |
   Imports OTel telemetry via gRPC or HTTP.
   This receiver can be configured to listen on both gRPC and HTTP, or just one.
   It forwards the data to Refinery for processing.
+tags:
+  - category:converter
+  - service:refinery
+  - signal:OTelTraces
+  - signal:OTelLogs
+  - signal:HoneycombEvents
+  - vendor:Honeycomb
 ports:
   - name: Traces
     direction: input
