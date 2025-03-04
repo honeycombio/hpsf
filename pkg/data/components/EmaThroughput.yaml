@@ -61,7 +61,7 @@ properties:
       quantities of the specified sampling keys, while ensuring that at least
       one instance of every distinct value of each key is sampled.
       There is no default; this field must be specified.
-    type: "stringarray"
+    type: stringarray
     validations:
       - nonblank
       - nonempty

@@ -8,7 +8,7 @@ components:
     properties:
       - name: Port
         value: 8080
-        type: number
+        type: int
   - name: DeterministicSampler_1
     kind: DeterministicSampler
     ports:
@@ -27,7 +27,7 @@ components:
         type: string
       - name: SampleRate
         value: 10
-        type: number
+        type: int
   - name: TraceConverter_1
     kind: TraceConverter
     ports:
