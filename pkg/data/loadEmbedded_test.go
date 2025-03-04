@@ -22,11 +22,11 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 	}
 	// we'll eventually move all of this to a validation library and use that; for now this is just a quick check
 	for k, v := range got {
-		switch v.Style {
+		switch v.Type {
 		case config.ComponentStyleBase, config.ComponentStyleMeta, config.ComponentStyleTemplate:
 			// ok
 		default:
-			t.Errorf("LoadEmbeddedComponents() %s style = %v, what's that?", k, v.Style)
+			t.Errorf("LoadEmbeddedComponents() %s style = %v, what's that?", k, v.Type)
 		}
 		switch v.Status {
 		case config.ComponentStatusArchived, config.ComponentStatusDeprecated:
@@ -46,7 +46,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 		require.NotEmpty(t, m)
 		dc := tmpl.NewDottedConfig(m)
 		require.NotEmpty(t, dc)
-		mustHave := []string{"name", "kind", "style", "status", "version"}
+		mustHave := []string{"name", "kind", "type", "status", "version"}
 		for _, k := range mustHave {
 			v, ok := dc[k]
 			require.True(t, ok, fmt.Sprintf("missing %s in %s", k, v))

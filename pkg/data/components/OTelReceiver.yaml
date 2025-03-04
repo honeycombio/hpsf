@@ -1,6 +1,6 @@
 kind: OTelReceiver
 name: OTel Receiver
-style: base
+type: base
 status: development
 version: v0.1.0
 summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both
