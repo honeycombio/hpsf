@@ -41,7 +41,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 		require.NoError(t, err)
 		require.NotEmpty(t, ym)
 		var m map[string]any
-		err = y.Unmarshal(ym, &m)
+		err = y.Unmarshal([]byte(ym), &m)
 		require.NoError(t, err)
 		require.NotEmpty(t, m)
 		dc := tmpl.NewDottedConfig(m)

@@ -394,11 +394,11 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 	return config, nil
 }
 
-func (t *TemplateComponent) AsYAML() ([]byte, error) {
+func (t *TemplateComponent) AsYAML() (string, error) {
 	// this is a mechanism to marshal the template component to YAML
 	data, err := y.Marshal(t)
 	if err != nil {
-		return nil, fmt.Errorf("error marshalling template component to YAML: %w", err)
+		return "", fmt.Errorf("error marshalling template component to YAML: %w", err)
 	}
-	return data, nil
+	return string(data), nil
 }
