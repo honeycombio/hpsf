@@ -144,13 +144,15 @@ func (c ComponentStatus) MarshalYAML() (any, error) {
 //   - Name is the name of the component. In a templateComponent, it is used to suggest a name that the
 //     end user might want to call the component. It is not used to identify the component in a template,
 //     but is used to identify the component in the UI.
-//   - CollName is the name of the OTel collector component that this component is associated with; it may
-//     be empty if the component is not associated with a collector.
+//   - User is only used for templating, but it needs to be exported, so its yaml tag is set to "-"
+//   - collName is the name of the OTel collector component that this component is associated with; it may
+//     be empty if the component is not associated with a collector. We need to store it in this data type
+//     because it's used in the template rendering, but it's not part of the component itself (it's specified
+//     in the template metadata).
 type TemplateComponent struct {
 	Kind        string             `yaml:"kind"`
 	Version     string             `yaml:"version"`
 	Name        string             `yaml:"name"`
-	CollName    string             `yaml:"collName"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
 	Tags        []string           `yaml:"tags,omitempty"`
@@ -160,9 +162,10 @@ type TemplateComponent struct {
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
-	User        map[string]any     `yaml:"user,omitempty"`
+	User        map[string]any     `yaml:"-"`
 	hpsf        *hpsf.Component    // the component from the hpsf document
-	connections []*hpsf.Connection `yaml:"connections,omitempty"`
+	connections []*hpsf.Connection
+	collName    string
 }
 
 // SetHPSF stores the original component's details and may modify their contents. To
@@ -193,8 +196,8 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 }
 
 func (t *TemplateComponent) ComponentName() string {
-	if t.CollName != "" {
-		return t.CollName + "/" + t.hpsf.GetSafeName()
+	if t.collName != "" {
+		return t.collName + "/" + t.hpsf.GetSafeName()
 	}
 	return t.Name
 }
@@ -345,7 +348,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
-	t.CollName = ct.collectorComponentName
+	t.collName = ct.collectorComponentName
 	config := tmpl.NewCollectorConfig()
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
@@ -384,4 +387,13 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 		}
 	}
 	return config, nil
+}
+
+func (t *TemplateComponent) AsYAML() ([]byte, error) {
+	// this is a mechanism to marshal the template component to YAML
+	data, err := y.Marshal(t)
+	if err != nil {
+		return nil, fmt.Errorf("error marshalling template component to YAML: %w", err)
+	}
+	return data, nil
 }

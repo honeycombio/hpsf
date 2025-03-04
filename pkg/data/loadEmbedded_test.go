@@ -1,12 +1,15 @@
 package data
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/stretchr/testify/require"
+	y "gopkg.in/yaml.v3"
 )
 
 func TestLoadEmbeddedComponents(t *testing.T) {
@@ -17,7 +20,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 	if len(got) == 0 {
 		t.Errorf("LoadEmbeddedComponents() = %v, want non-empty", got)
 	}
-	// we'll eventually move this to a validation library and use that; for now this is just a quick check
+	// we'll eventually move all of this to a validation library and use that; for now this is just a quick check
 	for k, v := range got {
 		switch v.Style {
 		case config.ComponentStyleBase, config.ComponentStyleMeta, config.ComponentStyleTemplate:
@@ -32,6 +35,22 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 			// ok
 		default:
 			t.Errorf("LoadEmbeddedComponents() %s status = %v, what's that?", k, v.Status)
+		}
+
+		ym, err := v.AsYAML()
+		require.NoError(t, err)
+		require.NotEmpty(t, ym)
+		var m map[string]any
+		err = y.Unmarshal(ym, &m)
+		require.NoError(t, err)
+		require.NotEmpty(t, m)
+		dc := tmpl.NewDottedConfig(m)
+		require.NotEmpty(t, dc)
+		mustHave := []string{"name", "kind", "style", "status", "version"}
+		for _, k := range mustHave {
+			v, ok := dc[k]
+			require.True(t, ok, fmt.Sprintf("missing %s in %s", k, v))
+			require.NotEmpty(t, v)
 		}
 	}
 }
