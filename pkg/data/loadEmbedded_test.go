@@ -57,10 +57,16 @@ func TestTemplateComponents(t *testing.T) {
 			wantOutput: "EmaThroughput_output_refinery_rules.yaml",
 		},
 		{
+			name:       "NopReceiver to collector config",
+			kind:       "NopReceiver",
+			cType:      config.CollectorConfigType,
+			wantOutput: "NopReceiver_output_collector_config.yaml",
+		},
+		{
 			name:       "NopExporter to collector config",
 			kind:       "NopExporter",
 			cType:      config.CollectorConfigType,
-			wantOutput: "NopCollector_output_collector_config.yaml",
+			wantOutput: "NopExporter_output_collector_config.yaml",
 		},
 	}
 

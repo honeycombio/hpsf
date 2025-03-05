@@ -1,5 +1,5 @@
 kind: NopReceiver
-name: NopReceiver
+name: DefaultNopReceiver
 version: v0.1.0
 summary: Nop Receiver
 description: |
@@ -19,4 +19,4 @@ templates:
       collectorComponentName: nop
     data:
       - key: "{{ .ComponentName }}"
-        value: "how to make this null or at least empty braces"
+        value: {}

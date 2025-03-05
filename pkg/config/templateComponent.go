@@ -122,6 +122,9 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 }
 
 func (t *TemplateComponent) ComponentName() string {
+	if t.CollName == "nop" {
+		return t.CollName + "/" + t.Name
+	}
 	if t.CollName != "" {
 		return t.CollName + "/" + t.hpsf.GetSafeName()
 	}
@@ -264,6 +267,9 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 		result := undecorate(value)
 		return result, nil
+	// right now this is dealing with nop receiver/exporter case
+	case map[string]string:
+		return k, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}
@@ -279,13 +285,19 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
 		for _, signalType := range []string{"traces", "logs", "metrics"} {
-			// if the signal type is not in the list of signal types for this collector, skip it
+			// if the signal type is not in the list of signal types for this collector
+			// and the signal type is not traces, skip it
 			if !slices.Contains(ct.signalTypes, signalType) {
-				continue
+				if signalType != "traces" {
+					continue
+				}
 			}
 			// if this template doesn't have a connection for this signal type, skip it
 			if !t.ConnectsUsingAppropriateType(signalType) {
-				continue
+				// if it is NOT NopReceiver or NopExporter then skip it
+				if t.Kind != "NopReceiver" && t.Kind != "NopExporter" {
+					continue
+				}
 			}
 			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
 			for _, kv := range ct.kvs[section] {
