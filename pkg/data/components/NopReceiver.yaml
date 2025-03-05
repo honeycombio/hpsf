@@ -1,6 +1,9 @@
 kind: NopReceiver
 name: DefaultNopReceiver
 version: v0.1.0
+style: receiver
+type: base
+status: development
 summary: Nop Receiver
 description: |
   Simple nop receiver.
