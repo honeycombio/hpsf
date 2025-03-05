@@ -122,9 +122,6 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 }
 
 func (t *TemplateComponent) ComponentName() string {
-	if t.CollName == "nop" {
-		return t.CollName + "/" + t.Name
-	}
 	if t.CollName != "" {
 		return t.CollName + "/" + t.hpsf.GetSafeName()
 	}
