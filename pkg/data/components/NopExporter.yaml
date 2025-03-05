@@ -1,0 +1,22 @@
+kind: NopExporter
+name: DefaultNopExporter
+version: v0.1.0
+summary: Nop exporter
+description: |
+  Simple nop exporter.
+  This exporter does nothing, is required for minimal collector.
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+templates:
+  - kind: collector_config
+    name: nop_exporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces]
+      collectorComponentName: nop
+    data:
+      - key: "{{ .ComponentName }}"
+        value: {}

@@ -1,7 +1,15 @@
+receivers:
+    nop/DefaultNopReceiver: {}
 processors:
     usage: {}
+exporters:
+    nop/DefaultNopExporter: {}
 extensions:
     honeycomb: {}
 service:
     extensions: [honeycomb]
-    pipelines: {}
+    pipelines:
+        traces:
+            receivers: [nop/DefaultNopReceiver]
+            processors: [usage]
+            exporters: [nop/DefaultNopExporter]
