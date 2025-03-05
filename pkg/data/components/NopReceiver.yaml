@@ -1,0 +1,22 @@
+kind: NopReceiver
+name: NopReceiver
+version: v0.1.0
+summary: Nop Receiver
+description: |
+  Simple nop receiver.
+  This receiver does nothing, is required for minimal collector.
+ports:
+  - name: Traces
+    direction: output
+    type: OTelTraces
+templates:
+  - kind: collector_config
+    name: nop_receiver_collector
+    format: collector
+    meta:
+      componentSection: receivers
+      signalTypes: [traces]
+      collectorComponentName: nop
+    data:
+      - key: "{{ .ComponentName }}"
+        value: "how to make this null or at least empty braces"

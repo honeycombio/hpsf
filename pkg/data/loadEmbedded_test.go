@@ -56,6 +56,12 @@ func TestTemplateComponents(t *testing.T) {
 			},
 			wantOutput: "EmaThroughput_output_refinery_rules.yaml",
 		},
+		{
+			name:       "NopExporter to collector config",
+			kind:       "NopExporter",
+			cType:      config.CollectorConfigType,
+			wantOutput: "NopCollector_output_collector_config.yaml",
+		},
 	}
 
 	for _, tt := range tests {
