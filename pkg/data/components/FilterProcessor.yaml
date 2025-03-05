@@ -1,10 +1,20 @@
 kind: FilterProcessor
 name: Filter Processor
+style: processor
+type: base
+status: development
 version: v0.1.0
 summary: Processor that can be used to filter telemetry.
 description: |
   Filters traces, metrics, and logs based on rules defined
   in the configuration.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
 ports:
   - name: Traces
     direction: input
