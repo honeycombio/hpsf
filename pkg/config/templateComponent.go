@@ -288,9 +288,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 			// if the signal type is not in the list of signal types for this collector
 			// and the signal type is not traces, skip it
 			if !slices.Contains(ct.signalTypes, signalType) {
-				if signalType != "traces" {
-					continue
-				}
+				continue
 			}
 			// if this template doesn't have a connection for this signal type, skip it
 			if !t.ConnectsUsingAppropriateType(signalType) {

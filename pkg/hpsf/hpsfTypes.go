@@ -27,6 +27,15 @@ components:
     kind: NopReceiver
   - name: DefaultNopExporter
     kind: NopExporter
+connections:
+  - source:
+      component: DefaultNopReceiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: DefaultNopExporter
+      port: Traces
+      type: OTelTraces
 `
 
 type ConnectionType string
