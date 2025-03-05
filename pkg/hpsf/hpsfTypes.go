@@ -13,7 +13,8 @@ import (
 )
 
 // DefaultConfiguration is the default HPSF configuration that includes a
-// simple Refinery configuration with a determinisic sampler.
+// simple Refinery configuration with a deterministic sampler
+// and a Collector Nop receiver and exporter.
 const DefaultConfiguration = `
 components:
   - name: DefaultDeterministicSampler
@@ -22,6 +23,19 @@ components:
       - name: SampleRate
         value: 1
         type: int
+  - name: DefaultNopReceiver
+    kind: NopReceiver
+  - name: DefaultNopExporter
+    kind: NopExporter
+connections:
+  - source:
+      component: DefaultNopReceiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: DefaultNopExporter
+      port: Traces
+      type: OTelTraces
 `
 
 type ConnectionType string

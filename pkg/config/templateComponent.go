@@ -264,6 +264,9 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 		result := undecorate(value)
 		return result, nil
+	// right now this is dealing with nop receiver/exporter case
+	case map[string]string:
+		return k, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}
@@ -279,7 +282,8 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
 		for _, signalType := range []string{"traces", "logs", "metrics"} {
-			// if the signal type is not in the list of signal types for this collector, skip it
+			// if the signal type is not in the list of signal types for this collector
+			// and the signal type is not traces, skip it
 			if !slices.Contains(ct.signalTypes, signalType) {
 				continue
 			}

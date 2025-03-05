@@ -1,0 +1,14 @@
+components:
+  - name: MyNopReceiver
+    kind: NopReceiver
+  - name: MyNopExporter
+    kind: NopExporter
+connections:
+  - source:
+      component: MyNopReceiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: MyNopExporter
+      port: Traces
+      type: OTelTraces
