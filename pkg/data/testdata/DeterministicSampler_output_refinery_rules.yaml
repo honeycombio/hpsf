@@ -1,4 +1,4 @@
 Samplers:
     staging:
         DeterministicSampler:
-            GoalThroughput: 42
+            SampleRate: 42
