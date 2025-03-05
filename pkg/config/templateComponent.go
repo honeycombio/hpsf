@@ -292,10 +292,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 			}
 			// if this template doesn't have a connection for this signal type, skip it
 			if !t.ConnectsUsingAppropriateType(signalType) {
-				// if it is NOT NopReceiver or NopExporter then skip it
-				if t.Kind != "NopReceiver" && t.Kind != "NopExporter" {
-					continue
-				}
+				continue
 			}
 			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
 			for _, kv := range ct.kvs[section] {
