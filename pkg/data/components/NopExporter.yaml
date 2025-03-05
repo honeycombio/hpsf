@@ -1,6 +1,9 @@
 kind: NopExporter
 name: DefaultNopExporter
 version: v0.1.0
+style: exporter
+type: base
+status: development
 summary: Nop exporter
 description: |
   Simple nop exporter.
