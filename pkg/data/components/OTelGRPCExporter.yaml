@@ -47,6 +47,12 @@ properties:
       values.
     type: map
     validations: []
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    validations: [bool]
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector
