@@ -39,6 +39,12 @@ properties:
     type: int
     validations: [int]
     default: 443
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    validations: [bool]
   - name: Headers
     summary: Headers to emit when sending HTTP traffic.
     description: |
