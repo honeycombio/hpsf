@@ -8,8 +8,13 @@ receivers:
 processors:
     usage: {}
 exporters:
-    otlp/otlp_out:
+    otlphttp/otlp_out:
         endpoint: myhost.com:1234
+        headers:
+            x-honeycomb-dataset: custom
+            x-honeycomb-team: ${HONEYCOMB_API_KEY}
+        tls:
+            insecure: true
 extensions:
     honeycomb: {}
 service:
@@ -18,4 +23,4 @@ service:
         traces:
             receivers: [otlp/otlp_in]
             processors: [usage]
-            exporters: [otlp/otlp_out]
+            exporters: [otlphttp/otlp_out]

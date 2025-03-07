@@ -14,8 +14,6 @@ processors:
 exporters:
     otlphttp/otlp_out:
         endpoint: myhost.com:1234
-        tls:
-            insecure: false
 extensions:
     honeycomb: {}
 service:
