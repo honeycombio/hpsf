@@ -47,6 +47,13 @@ properties:
       values.
     type: map
     validations: []
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    validations: [bool]
+    default: false
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector
@@ -58,6 +65,9 @@ templates:
     data:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: "{{ .HProps.Insecure | encodeAsBool }}"
+        suppress_if: "{{ not .HProps.Insecure }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"

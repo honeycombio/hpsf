@@ -1,0 +1,26 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+processors:
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: myhost.com:1234
+        headers:
+            x-honeycomb-dataset: custom
+            x-honeycomb-team: ${HONEYCOMB_API_KEY}
+        tls:
+            insecure: true
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage]
+            exporters: [otlphttp/otlp_out]
