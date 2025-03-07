@@ -45,6 +45,7 @@ properties:
       Can be used to send data without TLS.
     type: bool
     validations: [bool]
+    default: false
   - name: Headers
     summary: Headers to emit when sending HTTP traffic.
     description: |
@@ -64,6 +65,8 @@ templates:
     data:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: {{ firstNonZero .HProps.Insecure .User.Insecure .Props.Insecure.Default }}
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
