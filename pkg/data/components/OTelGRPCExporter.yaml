@@ -66,7 +66,7 @@ templates:
       - key: "{{ .ComponentName }}.endpoint"
         value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.tls.insecure"
-        value: {{ firstNonZero .HProps.Insecure .User.Insecure .Props.Insecure.Default }}
+        value: "{{ .HProps.Insecure | encodeAsBool }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"

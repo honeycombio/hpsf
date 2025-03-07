@@ -13,6 +13,8 @@ exporters:
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
+        tls:
+            insecure: false
 extensions:
     honeycomb: {}
 service:
