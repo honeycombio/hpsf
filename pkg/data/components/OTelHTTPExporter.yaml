@@ -24,28 +24,6 @@ ports:
     direction: input
     type: OTelLogs
 properties:
-  - name: Host
-    summary: The hostname or IP address to send data to
-    description: |
-      Hostname or IP address on which to send outgoing HTTP traffic.
-    type: string
-    validations: [nonblank]
-    default: https://api.honeycomb.io
-  - name: Port
-    summary: The port on which to send HTTP traffic.
-    description: |
-      The port on which to send outgoing HTTP traffic. Default is 443, which is
-      the value expected by Honeycomb. The OTel standard for HTTP is 4318.
-    type: int
-    validations: [int]
-    default: 443
-  - name: Insecure
-    summary: Provide a way to disable TLS export.
-    description: |
-      Can be used to send data without TLS.
-    type: bool
-    validations: [bool]
-    default: false
   - name: Headers
     summary: Headers to emit when sending HTTP traffic.
     description: |
@@ -54,6 +32,31 @@ properties:
       values.
     type: map
     validations: []
+  - name: Host
+    summary: The hostname or IP address to send data to
+    description: |
+      Hostname or IP address on which to send outgoing HTTP traffic.
+    type: string
+    validations: [nonblank]
+    default: https://api.honeycomb.io
+    advanced: true
+  - name: Port
+    summary: The port on which to send HTTP traffic.
+    description: |
+      The port on which to send outgoing HTTP traffic. Default is 443, which is
+      the value expected by Honeycomb. The OTel standard for HTTP is 4318.
+    type: int
+    validations: [int]
+    default: 443
+    advanced: true
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    validations: [bool]
+    default: false
+    advanced: true
 templates:
   - kind: collector_config
     name: otel_http_exporter_collector
