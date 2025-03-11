@@ -178,33 +178,6 @@ func firstNonzero(s ...any) any {
 	return ""
 }
 
-func firstNonzerOld(s ...any) string {
-	// returns the first non-zero-valued item from the arguments
-	// []any is special-cased to return a comma-separated set of strings.
-	// If we eventually feel like the comma syntax is failing to handle some special
-	// cases, we can change it to use some other syntax that's less likely to occur
-	// in real data.
-	for _, v := range s {
-		if !_isZeroValue(v) {
-			switch vt := v.(type) {
-			case string:
-				return fmt.Sprintf("%v", vt)
-			case []any:
-				ss := make([]string, len(vt))
-				for i, vv := range vt {
-					ss[i] = fmt.Sprintf("%v", vv)
-				}
-				return strings.Join(ss, FieldSeparator)
-			case []string:
-				return strings.Join(vt, FieldSeparator)
-			default:
-				return fmt.Sprintf("%v", vt)
-			}
-		}
-	}
-	return ""
-}
-
 // indents a string by the specified number of spaces
 func indent(count int, s string) string {
 	return strings.Repeat(" ", count) + _indentRest(count, s)
