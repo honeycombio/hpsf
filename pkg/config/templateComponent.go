@@ -159,6 +159,7 @@ type TemplateComponent struct {
 	Name        string             `yaml:"name"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
+	Comment     string             `yaml:"comment,omitempty"`
 	Tags        []string           `yaml:"tags,omitempty"`
 	Type        ComponentType      `yaml:"type,omitempty"`
 	Style       string             `yaml:"style,omitempty"`
