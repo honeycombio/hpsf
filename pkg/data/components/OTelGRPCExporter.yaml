@@ -24,21 +24,6 @@ ports:
     direction: input
     type: OTelLogs
 properties:
-  - name: Host
-    summary: The hostname or IP address to send data to
-    description: |
-      Hostname or IP address on which to send outgoing GRPC traffic.
-    type: string
-    validations: [nonblank]
-    default: https://api.honeycomb.io
-  - name: Port
-    summary: The port on which to send gRPC traffic.
-    description: |
-      The port on which to send outgoing gRPC traffic. Default is 443, which is
-      the value expected by Honeycomb. The OTel standard for gRPC is 4317.
-    type: int
-    validations: []
-    default: 443
   - name: Headers
     summary: Headers to emit when sending gRPC traffic.
     description: |
@@ -47,6 +32,23 @@ properties:
       values.
     type: map
     validations: []
+  - name: Host
+    summary: The hostname or IP address to send data to
+    description: |
+      Hostname or IP address on which to send outgoing GRPC traffic.
+    type: string
+    validations: [nonblank]
+    default: https://api.honeycomb.io
+    advanced: true
+  - name: Port
+    summary: The port on which to send gRPC traffic.
+    description: |
+      The port on which to send outgoing gRPC traffic. Default is 443, which is
+      the value expected by Honeycomb. The OTel standard for gRPC is 4317.
+    type: int
+    validations: []
+    default: 443
+    advanced: true
   - name: Insecure
     summary: Provide a way to disable TLS export.
     description: |
@@ -54,6 +56,7 @@ properties:
     type: bool
     validations: [bool]
     default: false
+    advanced: true
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector

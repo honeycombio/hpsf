@@ -34,6 +34,7 @@ properties:
     type: string
     validations: [nonblank]
     default: ${STRAWS_COLLECTOR_POD_IP}
+    advanced: true
   - name: GRPCPort
     summary: The port on which to listen for gRPC traffic.
     description: |
@@ -42,6 +43,7 @@ properties:
     type: int
     validations: [int]
     default: 4317
+    advanced: true
   - name: HTTPPort
     summary: The port on which to listen for HTTP traffic.
     description: |
@@ -50,6 +52,7 @@ properties:
     type: int
     validations: [int]
     default: 4318
+    advanced: true
 templates:
   - kind: collector_config
     name: otel_receiver_collector

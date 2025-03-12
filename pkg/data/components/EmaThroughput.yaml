@@ -57,6 +57,7 @@ properties:
     validations:
       - positive
     default: 60
+    advanced: true
   - name: FieldList
     summary: The field names of the keys to use for controlling sampling
     description: |
