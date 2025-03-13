@@ -1,6 +1,7 @@
 package hpsf
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -100,6 +101,72 @@ func TestComponent_GetSafeName(t *testing.T) {
 			if got := c.GetSafeName(); got != tt.want {
 				t.Errorf("Component.GetSafeName() = %v, want %v", got, tt.want)
 			}
+		})
+	}
+}
+
+func TestPropType_ValueCoerce(t *testing.T) {
+	var result any
+	tests := []struct {
+		p       PropType
+		v       any
+		target  any
+		wantErr bool
+	}{
+		{PTYPE_STRING, "a", "a", false},
+		{PTYPE_STRING, 1, "1", false},
+		{PTYPE_STRING, 1.5, "1.5", false},
+		{PTYPE_STRING, true, "true", false},
+		{PTYPE_STRING, []string{"a"}, nil, true},
+		{PTYPE_STRING, map[string]any{"a": 3}, nil, true},
+		{PTYPE_INT, "a", nil, true},
+		{PTYPE_INT, "17", 17, false},
+		{PTYPE_INT, "17.5", nil, true},
+		{PTYPE_INT, 1, 1, false},
+		{PTYPE_INT, 1.0, 1, false},
+		{PTYPE_INT, 1.5, nil, true},
+		{PTYPE_INT, true, nil, true},
+		{PTYPE_INT, []string{"a"}, nil, true},
+		{PTYPE_INT, map[string]any{"a": 3}, nil, true},
+		{PTYPE_FLOAT, "a", nil, true},
+		{PTYPE_FLOAT, "17", 17.0, false},
+		{PTYPE_FLOAT, "17.5", 17.5, false},
+		{PTYPE_FLOAT, 1, 1.0, false},
+		{PTYPE_FLOAT, 1.0, 1.0, false},
+		{PTYPE_FLOAT, 1.5, 1.5, false},
+		{PTYPE_FLOAT, true, nil, true},
+		{PTYPE_FLOAT, []string{"a"}, nil, true},
+		{PTYPE_FLOAT, map[string]any{"a": 3}, nil, true},
+		{PTYPE_BOOL, "a", nil, true},
+		{PTYPE_BOOL, "true", true, false},
+		{PTYPE_BOOL, "True", true, false},
+		{PTYPE_BOOL, "TRUE", true, false},
+		{PTYPE_BOOL, "T", true, false},
+		{PTYPE_BOOL, "t", true, false},
+		{PTYPE_BOOL, "YES", true, false},
+		{PTYPE_BOOL, "yes", true, false},
+		{PTYPE_BOOL, "Yes", true, false},
+		{PTYPE_BOOL, "Y", true, false},
+		{PTYPE_BOOL, "y", true, false},
+		{PTYPE_BOOL, "1", nil, true},
+		{PTYPE_BOOL, "0", nil, true},
+		{PTYPE_BOOL, 1, true, false},
+		{PTYPE_BOOL, 0, false, false},
+		{PTYPE_BOOL, 1.0, true, false},
+		{PTYPE_BOOL, 0.0, false, false},
+		{PTYPE_BOOL, 1.5, true, false},
+		{PTYPE_BOOL, true, true, false},
+		{PTYPE_BOOL, false, false, false},
+		{PTYPE_BOOL, []string{"true"}, nil, true},
+	}
+	for _, tt := range tests {
+		name := fmt.Sprintf("%s_%#v", tt.p, tt.v)
+		t.Run(name, func(t *testing.T) {
+			result = nil
+			if err := tt.p.ValueCoerce(tt.v, &result); (err != nil) != tt.wantErr {
+				t.Errorf("PropType.ValueCoerce() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			assert.Equal(t, tt.target, result)
 		})
 	}
 }
