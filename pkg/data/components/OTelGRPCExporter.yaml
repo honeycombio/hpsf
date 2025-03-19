@@ -4,7 +4,7 @@ type: base
 style: exporter
 status: development
 version: v0.1.0
-summary: Exports OTLP (OpenTelemetry) traffic via gRPC
+summary: Exports OTLP (OpenTelemetry) traffic via gRPC.
 description: |
   Exports OpenTelemetry signals using OTLP via gRPC.
 tags:
@@ -33,7 +33,7 @@ properties:
     type: map
     validations: []
   - name: Host
-    summary: The hostname or IP address to send data to
+    summary: The hostname or IP address to send data to.
     description: |
       Hostname or IP address on which to send outgoing GRPC traffic.
     type: string

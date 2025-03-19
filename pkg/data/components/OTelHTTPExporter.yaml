@@ -33,7 +33,7 @@ properties:
     type: map
     validations: []
   - name: Host
-    summary: The hostname or IP address to send data to
+    summary: The hostname or IP address to send data to.
     description: |
       Hostname or IP address on which to send outgoing HTTP traffic.
     type: string

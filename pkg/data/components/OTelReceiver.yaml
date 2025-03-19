@@ -4,7 +4,7 @@ style: receiver
 type: base
 status: development
 version: v0.1.0
-summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both
+summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both.
 description: |
   Imports OTLP signals from OpenTelemetry via gRPC or HTTP.
   This receiver can be configured to listen on both gRPC and HTTP, or just one.

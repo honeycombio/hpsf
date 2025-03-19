@@ -4,7 +4,7 @@ style: sampler
 type: base
 status: development
 version: v0.1.0
-summary: A basic sampler that deterministically samples a fixed fraction of traces based on trace ID
+summary: A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.
 description: |
   A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.
 tags:
@@ -23,7 +23,7 @@ ports:
     note: "The traces that are sampled"
 properties:
   - name: Environment
-    summary: The environment in which to enable the sampler
+    summary: The environment in which to enable the sampler.
     description: |
       The environment in which to enable the sampler. If this field is
       not specified, the sampler will be enabled in the __default__ environment,
@@ -31,7 +31,7 @@ properties:
     type: string
     default: "__default__"
   - name: SampleRate
-    summary: The target SampleRate
+    summary: The target SampleRate.
     description: |
       The target SampleRate. One of every SampleRate traces will be sampled. In other
       words, a sample rate of 5 means that 1 in 5 traces will be sampled. SampleRate

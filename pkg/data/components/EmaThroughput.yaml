@@ -4,7 +4,7 @@ version: v0.1.0
 style: sampler
 type: base
 status: development
-summary: An EMA sampler designed to achieve a target throughput (in events per second)
+summary: An EMA sampler designed to achieve a target throughput (in events per second).
 description: |
   This is an EMA (Exponential Moving Average) sampler designed to achieve a
   target throughput (in events per second) based on trying to achieve representative
@@ -26,7 +26,7 @@ ports:
     note: "The traces that are sampled (retained for further processing)"
 properties:
   - name: Environment
-    summary: The environment in which to enable the sampler
+    summary: The environment in which to enable the sampler.
     description: |
       The environment in which to enable the sampler. If this field is
       not specified, the sampler will be enabled in the __default__ environment,
@@ -34,7 +34,7 @@ properties:
     type: string
     default: "__default__"
   - name: GoalThroughput
-    summary: The target throughput to achieve (in events per second)
+    summary: The target throughput to achieve (in events per second).
     description: |
       The desired throughput to achieve (in events per second, NOT traces
       per second). Note that this is a target, and the actual throughput may
