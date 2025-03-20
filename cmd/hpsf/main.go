@@ -143,21 +143,17 @@ func main() {
 		}
 
 		// validate the HPSF
-		verrors := hpsf.Validate()
-		if verrors == nil {
-			log.Printf("HPSF is valid")
-			os.Exit(0)
-		}
-
-		if hErr, ok := verrors.(validator.Error); ok {
-			log.Printf("error: %v", hErr.Msg)
-			for _, e := range hErr.Details {
-				log.Printf("  error: %v", e)
+		if verrors := hpsf.Validate(); verrors != nil {
+			if hErr, ok := verrors.(validator.Result); ok {
+				log.Printf("error: %v", hErr.Msg)
+				for _, e := range hErr.Details {
+					log.Printf("  error: %v", e)
+				}
+				os.Exit(1)
+			} else {
+				log.Printf("unexpected validation error: %v", verrors)
+				os.Exit(1)
 			}
-			os.Exit(1)
-		} else {
-			log.Printf("error: %v", verrors)
-			os.Exit(1)
 		}
 
 		log.Printf("HPSF is valid")

@@ -86,7 +86,7 @@ func (p PropType) Validate() error {
 // error is returned. We use this to ensure that all the values in a configuration
 // are of the correct type before we try to use them.
 func (p PropType) ValueCoerce(a any, target *any) error {
-	// null proptype means anything goes
+	// empty proptype means anything goes
 	if p == "" {
 		*target = a
 		return nil
@@ -306,33 +306,33 @@ func NewWarning(reason string) *HPSFError {
 }
 
 func (c *Component) Validate() error {
-	results := validator.NewError("component validation errors")
+	result := validator.NewResult("component validation errors")
 	if c.Name == "" {
-		results.Add(NewError("Name must be set"))
+		result.Add(NewError("Name must be set"))
 	}
 	if c.Kind == "" {
-		results.Add(NewError("Kind must be set").WithComponent(c.Name))
+		result.Add(NewError("Kind must be set").WithComponent(c.Name))
 	}
 	// base components mentioned in typical configurations don't need to set up
 	// ports, because those come from the templatecomponents, but composite
 	// components might have ports, so we do want to check them if they exist
 	for _, p := range c.Ports {
 		if p.Direction != string(DIR_INPUT) && p.Direction != string(DIR_OUTPUT) {
-			results.Add(NewError("Port " + p.Name + " Direction must be 'Input' or 'Output'").WithComponent(c.Name))
+			result.Add(NewError("Port " + p.Name + " Direction must be 'Input' or 'Output'").WithComponent(c.Name))
 		}
 	}
 	// any properties specified need to have a value
 	for _, p := range c.Properties {
 		if p.Name == "" {
-			results.Add(NewError("Property Name must be set").WithComponent(c.Name))
+			result.Add(NewError("Property Name must be set").WithComponent(c.Name))
 		}
 		if p.Type != "" {
 			if err := p.Type.Validate(); err != nil {
-				results.Add(NewError("Type is invalid").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
+				result.Add(NewError("Type is invalid").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 			}
 		}
 		if p.Value == nil {
-			results.Add(NewError("Value must be set").WithComponent(c.Name).WithProperty(p.Name))
+			result.Add(NewError("Value must be set").WithComponent(c.Name).WithProperty(p.Name))
 			// can't check values after this
 			continue
 		}
@@ -343,20 +343,20 @@ func (c *Component) Validate() error {
 		case string, int, float64, bool, []any, []string, map[string]any:
 			err := p.Type.ValueCoerce(p.Value, &p.Value)
 			if err != nil {
-				results.Add(NewError("Value error").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
+				result.Add(NewError("Value error").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 			}
 		default:
-			results.Add(NewError("Value must be a string, number, bool, array, or dictionary").WithComponent(c.Name).WithProperty(p.Name))
+			result.Add(NewError("Value must be a string, number, bool, array, or dictionary").WithComponent(c.Name).WithProperty(p.Name))
 		}
 
 		// This is a sanity check; belt and suspenders since the above should have done it right.
 		// This was the first implementation, and we should be able to delete it once we're comfortable.
 		err := p.Type.ValueConforms(p.Value)
 		if err != nil {
-			results.Add(NewError("Value does not conform").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
+			result.Add(NewError("Value does not conform").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 		}
 	}
-	return results
+	return result
 }
 
 func safeName(s string) string {
@@ -412,17 +412,17 @@ func (cp *ConnectionPort) GetSafeName() string {
 }
 
 func (cp *ConnectionPort) Validate() error {
-	results := validator.NewError("connection port validation errors")
+	result := validator.NewResult("connection port validation errors")
 	if cp.Component == "" {
-		results.Add(validator.NewError("ConnectionPort Component must be set"))
+		result.Add(validator.NewResult("ConnectionPort Component must be set"))
 	}
 	if cp.PortName == "" {
-		results.Add(validator.NewError("ConnectionPort PortName must be set"))
+		result.Add(validator.NewResult("ConnectionPort PortName must be set"))
 	}
 	if cp.Type == "" {
-		results.Add(validator.NewError("ConnectionPort Type must be set"))
+		result.Add(validator.NewResult("ConnectionPort Type must be set"))
 	}
-	return results
+	return result
 }
 
 type Connection struct {
@@ -431,12 +431,12 @@ type Connection struct {
 }
 
 func (c *Connection) Validate() error {
-	results := validator.NewError("connection validation errors")
+	result := validator.NewResult("connection validation errors")
 	e := c.Source.Validate()
-	results.Add(e)
+	result.Add(e)
 	e = c.Destination.Validate()
-	results.Add(e)
-	return results
+	result.Add(e)
+	return result
 }
 
 type PublicPort struct {
@@ -446,17 +446,17 @@ type PublicPort struct {
 }
 
 func (pp *PublicPort) Validate() error {
-	results := validator.NewError("port validation errors")
+	result := validator.NewResult("port validation errors")
 	if pp.Name == "" {
-		results.Add(validator.NewError("PublicPort Name must be set"))
+		result.Add(validator.NewResult("PublicPort Name must be set"))
 	}
 	if pp.Component == "" {
-		results.Add(validator.NewError("PublicPort Component must be set"))
+		result.Add(validator.NewResult("PublicPort Component must be set"))
 	}
 	if pp.Port == "" {
-		results.Add(validator.NewError("PublicPort Port must be set"))
+		result.Add(validator.NewResult("PublicPort Port must be set"))
 	}
-	return results
+	return result
 }
 
 type PublicProp struct {
@@ -466,17 +466,17 @@ type PublicProp struct {
 }
 
 func (pp *PublicProp) Validate() error {
-	results := validator.NewError("prop validation errors")
+	result := validator.NewResult("prop validation errors")
 	if pp.Name == "" {
-		results.Add(validator.NewError("PublicProp Name must be set"))
+		result.Add(validator.NewResult("PublicProp Name must be set"))
 	}
 	if pp.Component == "" {
-		results.Add(validator.NewError("PublicProp Component must be set"))
+		result.Add(validator.NewResult("PublicProp Component must be set"))
 	}
 	if pp.Property == "" {
-		results.Add(validator.NewError("PublicProp Property must be set"))
+		result.Add(validator.NewResult("PublicProp Property must be set"))
 	}
-	return results
+	return result
 }
 
 type Container struct {
@@ -487,19 +487,19 @@ type Container struct {
 }
 
 func (c *Container) Validate() error {
-	results := validator.NewError("container validation errors")
+	result := validator.NewResult("container validation errors")
 	if c.Name == "" {
-		results.Add(validator.NewError("Container Name must be set"))
+		result.Add(validator.NewResult("Container Name must be set"))
 	}
 	for _, p := range c.Ports {
 		e := p.Validate()
-		results.Add(e)
+		result.Add(e)
 	}
 	for _, p := range c.Props {
 		e := p.Validate()
-		results.Add(e)
+		result.Add(e)
 	}
-	return results
+	return result
 }
 
 // placeholder for where we'll store layout information later
@@ -542,24 +542,24 @@ func getValidKeys(p any) []string {
 // is a string that can be parsed as an integer, it will parse it and store the
 // result as an integer in the value.
 func (h *HPSF) Validate() error {
-	results := validator.NewError("hpsf validation errors")
+	result := validator.NewResult("hpsf validation errors")
 
 	// if the HPSF is empty, it's invalid
 	if len(h.Components) == 0 && len(h.Containers) == 0 {
-		results.Add(errors.New("empty HPSF is not valid"))
+		result.Add(errors.New("empty HPSF is not valid"))
 	}
 
 	for _, c := range h.Components {
 		e := c.Validate()
-		results.Add(e)
+		result.Add(e)
 	}
 	for _, c := range h.Connections {
 		e := c.Validate()
-		results.Add(e)
+		result.Add(e)
 	}
 	for _, c := range h.Containers {
 		e := c.Validate()
-		results.Add(e)
+		result.Add(e)
 	}
 
 	// crosscheck the components and connections to make sure that all connections
@@ -570,14 +570,14 @@ func (h *HPSF) Validate() error {
 	}
 	for _, c := range h.Connections {
 		if _, ok := components[c.Source.Component]; !ok {
-			results.Add(NewError("Connection source component not found").WithComponent(c.Source.Component))
+			result.Add(NewError("Connection source component not found").WithComponent(c.Source.Component))
 		}
 		if _, ok := components[c.Destination.Component]; !ok {
-			results.Add(NewError("Connection destination component not found").WithComponent(c.Destination.Component))
+			result.Add(NewError("Connection destination component not found").WithComponent(c.Destination.Component))
 		}
 	}
 
-	return results.ErrOrNil()
+	return result.ErrOrNil()
 }
 
 // EnsureHPSFYAML returns an error if the input is not HPSF yaml or invalid HPSF

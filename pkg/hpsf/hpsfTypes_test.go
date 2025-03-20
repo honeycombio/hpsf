@@ -116,7 +116,7 @@ connections:
 	assert.NoError(t, err)
 
 	errors := hpsf.Validate()
-	errs, ok := errors.(validator.Error)
+	errs, ok := errors.(validator.Result)
 	assert.True(t, ok)
 	assert.Equal(t, 2, errs.Len())
 	unwrapped := errs.Unwrap()
