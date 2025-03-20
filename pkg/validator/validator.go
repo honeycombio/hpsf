@@ -4,43 +4,38 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
-type Error struct {
+// Result is the value returned by the Validate method; it conforms to the error interface
+// and also contains a list of errors and a message.
+type Result struct {
 	Details []error
 	Msg     string
 }
 
-func (e Error) Error() string {
+func (e Result) Error() string {
 	return e.Msg
 }
 
-func (e Error) Unwrap() []error {
+func (e Result) Unwrap() []error {
 	return e.Details
 }
 
-func NewError(msg string) Error {
-	return Error{
+func NewResult(msg string) Result {
+	return Result{
 		Msg:     msg,
 		Details: nil,
 	}
 }
 
-func NewErrorWith(msg string, err error) Error {
-	return Error{
-		Msg:     msg,
-		Details: []error{err},
-	}
-}
-
-// Add adds an error to the list of errors; it's a no-op if the error is nil
+// Add adds an error to the list of results; it's a no-op if the error is nil
 // If the error is a validator.Error, it will be flattened into the current list
-func (e *Error) Add(err error) {
+func (e *Result) Add(err error) {
 	if e == nil {
 		return
 	}
 	if err == nil {
 		return
 	}
-	if other, ok := err.(Error); ok {
+	if other, ok := err.(Result); ok {
 		e.Details = append(e.Details, other.Details...)
 		// we always want to keep our own message as it provides the outer context
 		if e.Msg == "" {
@@ -51,19 +46,20 @@ func (e *Error) Add(err error) {
 	e.Details = append(e.Details, err)
 }
 
-func (e Error) Len() int {
+func (e Result) Len() int {
 	return len(e.Details)
 }
 
-func (e Error) ErrOrNil() error {
+func (e Result) ErrOrNil() error {
 	if e.Len() == 0 {
 		return nil
 	}
 	return e
 }
 
-// Validator is an interface that can be implemented by any struct that needs to be validated
-// It returns a list of errors that are encountered during validation; this list may be empty or nil.
+// Validator is an interface that can be implemented by any struct that needs to be validated.
+// It returns an error that may be a simple error or a Result, in case it's useful to provide multiple
+// errors.
 type Validator interface {
 	Validate() error
 }

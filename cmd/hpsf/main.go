@@ -144,7 +144,7 @@ func main() {
 
 		// validate the HPSF
 		if verrors := hpsf.Validate(); verrors != nil {
-			if hErr, ok := verrors.(validator.Error); ok {
+			if hErr, ok := verrors.(validator.Result); ok {
 				log.Printf("error: %v", hErr.Msg)
 				for _, e := range hErr.Details {
 					log.Printf("  error: %v", e)
