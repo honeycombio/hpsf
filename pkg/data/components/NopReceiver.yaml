@@ -8,17 +8,30 @@ summary: A "receiver" that does nothing, but might be useful for testing.
 description: |
   A simple no-op receiver.
   This receiver does nothing. It is required for the minimal collector.
+tags:
+  - category:receiver
+  - category:nop
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
 ports:
   - name: Traces
-    direction: output
+    direction: input
     type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
 templates:
   - kind: collector_config
     name: nop_receiver_collector
     format: collector
     meta:
       componentSection: receivers
-      signalTypes: [traces]
+      signalTypes: [traces, metrics, logs]
       collectorComponentName: nop
     data:
       - key: "{{ .ComponentName }}"
