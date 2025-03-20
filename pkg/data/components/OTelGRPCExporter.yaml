@@ -4,7 +4,7 @@ type: base
 style: exporter
 status: development
 version: v0.1.0
-summary: Exports OTLP (OpenTelemetry) traffic via gRPC.
+summary: An exporter that sends telemetry in OTLP (OpenTelemetry) format via gRPC.
 description: |
   Exports OpenTelemetry signals using OTLP via gRPC.
 tags:
