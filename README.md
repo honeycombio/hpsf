@@ -1,4 +1,5 @@
-[![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/hpsf)](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
+[![OSS Lifecycle](https://img.shields.io/osslifecycle/honeycombio/hpsf?color/yellow)](https://github.com/honeycombio/home/blob/main/honeycomb-oss-lifecycle-and-practices.md)
+[![GoDoc](https://godoc.org/github.com/honeycombio/hpsf?status.svg)](https://godoc.org/github.com/honeycombio/hpsf)
 
 # HPSF -- EXPERIMENTAL!
 
@@ -18,4 +19,4 @@ Here are some sample commands:
 
 Here's an example that exercises a separate data table:
 
-go run ./cmd/hpsf -d API_Key=hello -i examples/hpsf2.yaml rConfig
+`go run ./cmd/hpsf -d API_Key=hello -i examples/hpsf2.yaml rConfig`
