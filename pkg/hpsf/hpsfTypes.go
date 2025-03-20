@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/validator"
@@ -71,6 +72,109 @@ func (p PropType) Validate() error {
 	case PTYPE_BOOL:
 	case PTYPE_ARRSTR:
 	case PTYPE_MAPSTR:
+	default:
+		return errors.New("invalid PropType '" + string(p) + "'")
+	}
+	return nil
+}
+
+// ValueCoerce takes a value and coerces it to the type specified by the
+// PropType, if possible, storing the result in target. We try to be as
+// forgiving as possible here -- for example, if the PropType is INT and value
+// is a string that can be parsed as an int, we will parse it and store the
+// result in target. If the value cannot be coerced to the desired type, an
+// error is returned. We use this to ensure that all the values in a configuration
+// are of the correct type before we try to use them.
+func (p PropType) ValueCoerce(a any, target *any) error {
+	// empty proptype means anything goes
+	if p == "" {
+		*target = a
+		return nil
+	}
+	switch p {
+	case PTYPE_INT:
+		switch v := a.(type) {
+		case int:
+			*target = v
+		case float64:
+			if float64(int(v)) != v {
+				return errors.New("expected int, got " + fmt.Sprint(a))
+			}
+			*target = int(v)
+		case string:
+			i, err := strconv.Atoi(v)
+			if err != nil {
+				return errors.New("expected int, got " + fmt.Sprint(a))
+			}
+			*target = i
+		default:
+			return errors.New("expected int, got " + fmt.Sprint(a))
+		}
+	case PTYPE_FLOAT:
+		switch v := a.(type) {
+		case int:
+			*target = float64(v)
+		case float64:
+			*target = v
+		case string:
+			f, err := strconv.ParseFloat(v, 64)
+			if err != nil {
+				return errors.New("expected float, got " + fmt.Sprint(a))
+			}
+			*target = f
+		default:
+			return errors.New("expected float, got " + fmt.Sprint(a))
+		}
+	case PTYPE_STRING:
+		switch v := a.(type) {
+		case int, float64, bool:
+			*target = fmt.Sprint(a)
+		case string:
+			*target = v
+		default:
+			return errors.New("expected string, got " + fmt.Sprint(a))
+		}
+	case PTYPE_BOOL:
+		switch v := a.(type) {
+		case bool:
+			*target = v
+		case int:
+			*target = v != 0
+		case float64:
+			*target = v != 0
+		case string:
+			switch v {
+			case "true", "True", "TRUE", "YES", "yes", "Yes", "T", "t", "Y", "y":
+				*target = true
+			case "false", "False", "FALSE", "NO", "no", "No", "F", "f", "N", "n":
+				*target = false
+			default:
+				return errors.New("expected bool, got " + fmt.Sprint(a))
+			}
+		default:
+			return errors.New("expected bool, got " + fmt.Sprint(a))
+		}
+	case PTYPE_ARRSTR:
+		switch v := a.(type) {
+		case []string:
+			*target = v
+		case []any:
+			sa := make([]string, len(v))
+			for i, a := range v {
+				// whatever it was, make it a string
+				sa[i] = fmt.Sprint(a)
+			}
+			*target = sa
+		default:
+			return errors.New("expected string array, got " + fmt.Sprint(a))
+		}
+	case PTYPE_MAPSTR:
+		switch v := a.(type) {
+		case map[string]any:
+			*target = v
+		default:
+			return errors.New("expected dictionary, got " + fmt.Sprint(a))
+		}
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
@@ -147,12 +251,15 @@ func (c *Component) Validate() []error {
 	if c.Kind == "" {
 		results = append(results, validator.NewErrorf("Component %s Kind must be set", c.Name))
 	}
+	// normal components don't need to set up ports, because those come from the templatecomponents, but
+	// composite components might have ports, so we do want to check them
 	for _, p := range c.Ports {
 		if p.Direction != string(DIR_INPUT) && p.Direction != string(DIR_OUTPUT) {
 			results = append(results, validator.NewErrorf(
 				"Component %s Port %s Direction must be 'Input' or 'Output'", c.Name, p.Name))
 		}
 	}
+	// any properties specified need to have a value
 	for _, p := range c.Properties {
 		if p.Name == "" {
 			results = append(results, validator.NewErrorf("Component %s Property Name must be set", c.Name))
@@ -166,25 +273,20 @@ func (c *Component) Validate() []error {
 			}
 		}
 
+		// we can only support specific types for the values we get from the YAML, so we coerce the values
+		// we have to the types we expect
 		switch p.Value.(type) {
-		case string:
-		case int:
-		case float64:
-		case bool:
-		case map[string]any:
-		case []any:
-			sa := make([]string, len(p.Value.([]any)))
-			for i, v := range p.Value.([]any) {
-				if _, ok := v.(string); !ok {
-					results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, []any, or map[string]any", c.Name, p.Name))
-				}
-				sa[i] = v.(string)
+		case string, int, float64, bool, []any, []string, map[string]any:
+			err := p.Type.ValueCoerce(p.Value, &p.Value)
+			if err != nil {
+				results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
 			}
-			p.Value = sa
 		default:
-			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, []any, or map[string]any", c.Name, p.Name))
+			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, array, or dictionary", c.Name, p.Name))
 		}
 
+		// This is a sanity check; belt and suspenders since the above should have done it right.
+		// This was the first implementation, and we should be able to delete it once we're comfortable.
 		err := p.Type.ValueConforms(p.Value)
 		if err != nil {
 			results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
@@ -370,11 +472,17 @@ func getValidKeys(p any) []string {
 	return keys
 }
 
+// Validate checks that the HPSF is valid, returning a list of errors if it is not.
+// If it detects minor issues that can be corrected, it will fix them and return.
+// For example, if a property specifies that it requires an integer but the value
+// is a string that can be parsed as an integer, it will parse it and store the
+// result as an integer in the value.
 func (h *HPSF) Validate() []error {
 	results := []error{}
 
-	if h.Components == nil && h.Connections == nil && h.Containers == nil && h.Layout == nil {
-		results = append(results, errors.New("empty and default HPSF structs are considered invalid"))
+	// if the HPSF is empty, it's invalid
+	if len(h.Components) == 0 && len(h.Containers) == 0 {
+		results = append(results, errors.New("empty HPSF is not valid"))
 	}
 
 	for _, c := range h.Components {
