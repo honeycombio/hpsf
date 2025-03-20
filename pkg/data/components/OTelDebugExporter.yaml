@@ -15,6 +15,16 @@ tags:
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
 properties:
   - name: Verbosity
     summary: The verbosity level of the debug output.
