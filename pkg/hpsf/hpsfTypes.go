@@ -326,13 +326,15 @@ func (c *Component) Validate() error {
 		if p.Name == "" {
 			results.Add(NewError("Property Name must be set").WithComponent(c.Name))
 		}
-		if p.Value == nil {
-			results.Add(NewError("Value must be set").WithComponent(c.Name).WithProperty(p.Name))
-		}
 		if p.Type != "" {
 			if err := p.Type.Validate(); err != nil {
 				results.Add(NewError("Type is invalid").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 			}
+		}
+		if p.Value == nil {
+			results.Add(NewError("Value must be set").WithComponent(c.Name).WithProperty(p.Name))
+			// can't check values after this
+			continue
 		}
 
 		// we can only support specific types for the values we get from the YAML, so we coerce the values
@@ -559,6 +561,22 @@ func (h *HPSF) Validate() error {
 		e := c.Validate()
 		results.Add(e)
 	}
+
+	// crosscheck the components and connections to make sure that all connections
+	// have valid source and destination components
+	components := make(map[string]bool)
+	for _, c := range h.Components {
+		components[c.Name] = true
+	}
+	for _, c := range h.Connections {
+		if _, ok := components[c.Source.Component]; !ok {
+			results.Add(NewError("Connection source component not found").WithComponent(c.Source.Component))
+		}
+		if _, ok := components[c.Destination.Component]; !ok {
+			results.Add(NewError("Connection destination component not found").WithComponent(c.Destination.Component))
+		}
+	}
+
 	return results.ErrOrNil()
 }
 
