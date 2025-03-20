@@ -4,7 +4,7 @@ style: exporter
 type: base
 status: development
 version: v0.1.0
-summary: Export traces to Honeycomb in Honeycomb's event format.
+summary: An exporter that sends traces to Honeycomb in Honeycomb's event format.
 description: |
   This component exports traces to Honeycomb in Honeycomb's event format.
 tags:
@@ -18,7 +18,7 @@ ports:
     type: HoneycombEvents
 properties:
   - name: APIKey
-    summary: The API key to use to authenticate with Honeycomb
+    summary: The API key to use to authenticate with Honeycomb.
     description: |
       The API key to use to authenticate with Honeycomb.
     type: string

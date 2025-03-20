@@ -28,7 +28,7 @@ ports:
     type: HoneycombEvents
 properties:
   - name: Host
-    summary: The hostname or IP address on which to listen
+    summary: The hostname or IP address on which to listen.
     description: |
       Hostname or IP address on which to listen for incoming traffic.
       It is recommended not to change the default unless

@@ -4,10 +4,10 @@ version: v0.1.0
 style: receiver
 type: base
 status: development
-summary: Nop Receiver
+summary: A "receiver" that does nothing, but might be useful for testing.
 description: |
-  Simple nop receiver.
-  This receiver does nothing, is required for minimal collector.
+  A simple no-op receiver.
+  This receiver does nothing. It is required for the minimal collector.
 ports:
   - name: Traces
     direction: output

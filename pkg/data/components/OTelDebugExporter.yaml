@@ -4,7 +4,7 @@ style: exporter
 type: base
 status: development
 version: v0.1.0
-summary: Exports pipeline signal traffic to stdout
+summary: An "exporter" that sends pipeline signal traffic to stdout for debugging.
 description: |
   Exports signal data from a pipeline to stdout. This is useful for debugging, but only if you
   have access to the stdout stream in your environment. This component is not intended for production use.
@@ -17,7 +17,7 @@ tags:
   - signal:OTelLogs
 properties:
   - name: Verbosity
-    summary: The verbosity level of the debug output
+    summary: The verbosity level of the debug output.
     description: |
       The verbosity level of the debug output. Valid values are basic, normal, or detailed. The default is "basic".
     type: string
