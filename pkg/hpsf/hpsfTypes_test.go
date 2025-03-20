@@ -78,6 +78,53 @@ connections:
 	assert.Empty(t, errors)
 }
 
+func TestHPSF_ValidateFailures(t *testing.T) {
+	// GRPCPort is missing a value / value type is wrong
+	// connection names a non-existent component
+	inputData := []byte(`components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+      - name: HTTPPort
+        value: 1234
+  - name: otlp_out
+    kind: OTelGRPCExporter
+    properties:
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+      - name: Headers
+        value:
+          "header1": "1234"
+connections:
+  - source:
+      component: otlp_in2
+      port: Traces
+      type: OTelTrace
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces`)
+
+	_, err := validator.EnsureYAML(inputData)
+	assert.NoError(t, err)
+
+	var hpsf HPSF
+	err = yaml.Unmarshal(inputData, &hpsf)
+	assert.NoError(t, err)
+
+	errors := hpsf.Validate()
+	errs, ok := errors.(validator.Result)
+	assert.True(t, ok)
+	assert.Equal(t, 2, errs.Len())
+	unwrapped := errs.Unwrap()
+	assert.Equal(t, 2, len(unwrapped))
+	assert.Contains(t, unwrapped[0].Error(), "GRPCPort")
+	assert.Contains(t, unwrapped[1].Error(), "otlp_in2")
+}
+
 func TestDefaultConfigurationIsValidYAML(t *testing.T) {
 	err := EnsureHPSFYAML(DefaultConfiguration)
 	require.NoError(t, err)

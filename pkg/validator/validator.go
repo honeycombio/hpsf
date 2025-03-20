@@ -1,29 +1,65 @@
 package validator
 
 import (
-	"fmt"
-
 	y "gopkg.in/yaml.v3"
 )
 
-type Error struct {
-	Msg string
+// Result is the value returned by the Validate method; it conforms to the error interface
+// and also contains a list of errors and a message.
+type Result struct {
+	Details []error
+	Msg     string
 }
 
-func (e Error) Error() string {
+func (e Result) Error() string {
 	return e.Msg
 }
 
-func NewError(msg string) error {
-	return Error{Msg: msg}
+func (e Result) Unwrap() []error {
+	return e.Details
 }
 
-func NewErrorf(format string, args ...interface{}) error {
-	return Error{Msg: fmt.Sprintf(format, args...)}
+func NewResult(msg string) Result {
+	return Result{
+		Msg:     msg,
+		Details: nil,
+	}
 }
 
-// Validator is an interface that can be implemented by any struct that needs to be validated
-// It returns a list of errors that are encountered during validation; this list may be empty or nil.
+// Add adds an error to the list of results; it's a no-op if the error is nil
+// If the error is a validator.Error, it will be flattened into the current list
+func (e *Result) Add(err error) {
+	if e == nil {
+		return
+	}
+	if err == nil {
+		return
+	}
+	if other, ok := err.(Result); ok {
+		e.Details = append(e.Details, other.Details...)
+		// we always want to keep our own message as it provides the outer context
+		if e.Msg == "" {
+			e.Msg = other.Msg
+		}
+		return
+	}
+	e.Details = append(e.Details, err)
+}
+
+func (e Result) Len() int {
+	return len(e.Details)
+}
+
+func (e Result) ErrOrNil() error {
+	if e.Len() == 0 {
+		return nil
+	}
+	return e
+}
+
+// Validator is an interface that can be implemented by any struct that needs to be validated.
+// It returns an error that may be a simple error or a Result, in case it's useful to provide multiple
+// errors.
 type Validator interface {
 	Validate() error
 }

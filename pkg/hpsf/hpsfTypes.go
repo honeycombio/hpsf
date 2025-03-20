@@ -243,34 +243,98 @@ type Component struct {
 	Properties []Property `yaml:"properties,omitempty"`
 }
 
-func (c *Component) Validate() []error {
-	results := []error{}
+type ErrorSeverity string
+
+const (
+	SEV_ERROR ErrorSeverity = "E"
+	SEV_WARN  ErrorSeverity = "W"
+)
+
+type HPSFError struct {
+	Severity  ErrorSeverity `yaml:"severity"`
+	Component string        `yaml:"component,omitempty"`
+	Property  string        `yaml:"property,omitempty"`
+	Reason    string        `yaml:"reason"`
+	Cause     error         `yaml:"cause,omitempty"`
+}
+
+func (e *HPSFError) Error() string {
+	err := fmt.Sprintf("%s: %s", e.Severity, e.Reason)
+	if e.Component != "" {
+		err += fmt.Sprintf(" Component: %s", e.Component)
+	}
+	if e.Property != "" {
+		err += fmt.Sprintf(" Property: %s", e.Property)
+	}
+	if e.Cause != nil {
+		err += fmt.Sprintf(" Cause: %s", e.Cause)
+	}
+	return err
+}
+
+func (e *HPSFError) Unwrap() error {
+	return e.Cause
+}
+
+func (e *HPSFError) WithComponent(c string) *HPSFError {
+	e.Component = c
+	return e
+}
+
+func (e *HPSFError) WithProperty(p string) *HPSFError {
+	e.Property = p
+	return e
+}
+
+func (e *HPSFError) WithCause(c error) *HPSFError {
+	e.Cause = c
+	return e
+}
+
+func NewError(reason string) *HPSFError {
+	return &HPSFError{
+		Severity: SEV_ERROR,
+		Reason:   reason,
+	}
+}
+
+func NewWarning(reason string) *HPSFError {
+	return &HPSFError{
+		Severity: SEV_WARN,
+		Reason:   reason,
+	}
+}
+
+func (c *Component) Validate() error {
+	result := validator.NewResult("component validation errors")
 	if c.Name == "" {
-		results = append(results, validator.NewError("Component Name must be set"))
+		result.Add(NewError("Name must be set"))
 	}
 	if c.Kind == "" {
-		results = append(results, validator.NewErrorf("Component %s Kind must be set", c.Name))
+		result.Add(NewError("Kind must be set").WithComponent(c.Name))
 	}
-	// normal components don't need to set up ports, because those come from the templatecomponents, but
-	// composite components might have ports, so we do want to check them
+	// base components mentioned in typical configurations don't need to set up
+	// ports, because those come from the templatecomponents, but composite
+	// components might have ports, so we do want to check them if they exist
 	for _, p := range c.Ports {
 		if p.Direction != string(DIR_INPUT) && p.Direction != string(DIR_OUTPUT) {
-			results = append(results, validator.NewErrorf(
-				"Component %s Port %s Direction must be 'Input' or 'Output'", c.Name, p.Name))
+			result.Add(NewError("Port " + p.Name + " Direction must be 'Input' or 'Output'").WithComponent(c.Name))
 		}
 	}
 	// any properties specified need to have a value
 	for _, p := range c.Properties {
 		if p.Name == "" {
-			results = append(results, validator.NewErrorf("Component %s Property Name must be set", c.Name))
-		}
-		if p.Value == nil {
-			results = append(results, validator.NewErrorf("Component %s Property %s Value must be set", c.Name, p.Name))
+			result.Add(NewError("Property Name must be set").WithComponent(c.Name))
 		}
 		if p.Type != "" {
 			if err := p.Type.Validate(); err != nil {
-				results = append(results, validator.NewErrorf("Component %s Property %s Type %s", c.Name, p.Name, err))
+				result.Add(NewError("Type is invalid").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 			}
+		}
+		if p.Value == nil {
+			result.Add(NewError("Value must be set").WithComponent(c.Name).WithProperty(p.Name))
+			// can't check values after this
+			continue
 		}
 
 		// we can only support specific types for the values we get from the YAML, so we coerce the values
@@ -279,20 +343,20 @@ func (c *Component) Validate() []error {
 		case string, int, float64, bool, []any, []string, map[string]any:
 			err := p.Type.ValueCoerce(p.Value, &p.Value)
 			if err != nil {
-				results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
+				result.Add(NewError("Value error").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 			}
 		default:
-			results = append(results, validator.NewErrorf("Component %s Property %s Value must be a string, number, bool, array, or dictionary", c.Name, p.Name))
+			result.Add(NewError("Value must be a string, number, bool, array, or dictionary").WithComponent(c.Name).WithProperty(p.Name))
 		}
 
 		// This is a sanity check; belt and suspenders since the above should have done it right.
 		// This was the first implementation, and we should be able to delete it once we're comfortable.
 		err := p.Type.ValueConforms(p.Value)
 		if err != nil {
-			results = append(results, validator.NewErrorf("Component %s Property %s Value %s", c.Name, p.Name, err))
+			result.Add(NewError("Value does not conform").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 		}
 	}
-	return results
+	return result
 }
 
 func safeName(s string) string {
@@ -347,18 +411,18 @@ func (cp *ConnectionPort) GetSafeName() string {
 	return safeName(cp.Component)
 }
 
-func (cp *ConnectionPort) Validate() []error {
-	results := []error{}
+func (cp *ConnectionPort) Validate() error {
+	result := validator.NewResult("connection port validation errors")
 	if cp.Component == "" {
-		results = append(results, validator.NewError("ConnectionPort Component must be set"))
+		result.Add(validator.NewResult("ConnectionPort Component must be set"))
 	}
 	if cp.PortName == "" {
-		results = append(results, validator.NewError("ConnectionPort PortName must be set"))
+		result.Add(validator.NewResult("ConnectionPort PortName must be set"))
 	}
 	if cp.Type == "" {
-		results = append(results, validator.NewError("ConnectionPort Type must be set"))
+		result.Add(validator.NewResult("ConnectionPort Type must be set"))
 	}
-	return results
+	return result
 }
 
 type Connection struct {
@@ -366,13 +430,13 @@ type Connection struct {
 	Destination ConnectionPort `yaml:"destination"`
 }
 
-func (c *Connection) Validate() []error {
-	results := []error{}
+func (c *Connection) Validate() error {
+	result := validator.NewResult("connection validation errors")
 	e := c.Source.Validate()
-	results = append(results, e...)
+	result.Add(e)
 	e = c.Destination.Validate()
-	results = append(results, e...)
-	return results
+	result.Add(e)
+	return result
 }
 
 type PublicPort struct {
@@ -381,18 +445,18 @@ type PublicPort struct {
 	Port      string `yaml:"port"`
 }
 
-func (pp *PublicPort) Validate() []error {
-	results := []error{}
+func (pp *PublicPort) Validate() error {
+	result := validator.NewResult("port validation errors")
 	if pp.Name == "" {
-		results = append(results, validator.NewError("PublicPort Name must be set"))
+		result.Add(validator.NewResult("PublicPort Name must be set"))
 	}
 	if pp.Component == "" {
-		results = append(results, validator.NewError("PublicPort Component must be set"))
+		result.Add(validator.NewResult("PublicPort Component must be set"))
 	}
 	if pp.Port == "" {
-		results = append(results, validator.NewError("PublicPort Port must be set"))
+		result.Add(validator.NewResult("PublicPort Port must be set"))
 	}
-	return results
+	return result
 }
 
 type PublicProp struct {
@@ -401,18 +465,18 @@ type PublicProp struct {
 	Property  string `yaml:"property"`
 }
 
-func (pp *PublicProp) Validate() []error {
-	results := []error{}
+func (pp *PublicProp) Validate() error {
+	result := validator.NewResult("prop validation errors")
 	if pp.Name == "" {
-		results = append(results, validator.NewError("PublicProp Name must be set"))
+		result.Add(validator.NewResult("PublicProp Name must be set"))
 	}
 	if pp.Component == "" {
-		results = append(results, validator.NewError("PublicProp Component must be set"))
+		result.Add(validator.NewResult("PublicProp Component must be set"))
 	}
 	if pp.Property == "" {
-		results = append(results, validator.NewError("PublicProp Property must be set"))
+		result.Add(validator.NewResult("PublicProp Property must be set"))
 	}
-	return results
+	return result
 }
 
 type Container struct {
@@ -422,20 +486,20 @@ type Container struct {
 	Props      []PublicProp `yaml:"props,omitempty"`
 }
 
-func (c *Container) Validate() []error {
-	results := []error{}
+func (c *Container) Validate() error {
+	result := validator.NewResult("container validation errors")
 	if c.Name == "" {
-		results = append(results, validator.NewError("Container Name must be set"))
+		result.Add(validator.NewResult("Container Name must be set"))
 	}
 	for _, p := range c.Ports {
 		e := p.Validate()
-		results = append(results, e...)
+		result.Add(e)
 	}
 	for _, p := range c.Props {
 		e := p.Validate()
-		results = append(results, e...)
+		result.Add(e)
 	}
-	return results
+	return result
 }
 
 // placeholder for where we'll store layout information later
@@ -477,27 +541,43 @@ func getValidKeys(p any) []string {
 // For example, if a property specifies that it requires an integer but the value
 // is a string that can be parsed as an integer, it will parse it and store the
 // result as an integer in the value.
-func (h *HPSF) Validate() []error {
-	results := []error{}
+func (h *HPSF) Validate() error {
+	result := validator.NewResult("hpsf validation errors")
 
 	// if the HPSF is empty, it's invalid
 	if len(h.Components) == 0 && len(h.Containers) == 0 {
-		results = append(results, errors.New("empty HPSF is not valid"))
+		result.Add(errors.New("empty HPSF is not valid"))
 	}
 
 	for _, c := range h.Components {
 		e := c.Validate()
-		results = append(results, e...)
+		result.Add(e)
 	}
 	for _, c := range h.Connections {
 		e := c.Validate()
-		results = append(results, e...)
+		result.Add(e)
 	}
 	for _, c := range h.Containers {
 		e := c.Validate()
-		results = append(results, e...)
+		result.Add(e)
 	}
-	return results
+
+	// crosscheck the components and connections to make sure that all connections
+	// have valid source and destination components
+	components := make(map[string]bool)
+	for _, c := range h.Components {
+		components[c.Name] = true
+	}
+	for _, c := range h.Connections {
+		if _, ok := components[c.Source.Component]; !ok {
+			result.Add(NewError("Connection source component not found").WithComponent(c.Source.Component))
+		}
+		if _, ok := components[c.Destination.Component]; !ok {
+			result.Add(NewError("Connection destination component not found").WithComponent(c.Destination.Component))
+		}
+	}
+
+	return result.ErrOrNil()
 }
 
 // EnsureHPSFYAML returns an error if the input is not HPSF yaml or invalid HPSF
@@ -530,13 +610,5 @@ func EnsureHPSFYAML(input string) error {
 	if err != nil {
 		return err
 	}
-	validations := hpsf.Validate()
-	if len(validations) != 0 {
-		v := make([]string, len(validations))
-		for i, e := range validations {
-			v[i] = e.Error()
-		}
-		return errors.New("HPSF validation failed: " + strings.Join(v, ", "))
-	}
-	return nil
+	return hpsf.Validate()
 }
