@@ -86,7 +86,7 @@ func (p PropType) Validate() error {
 // error is returned. We use this to ensure that all the values in a configuration
 // are of the correct type before we try to use them.
 func (p PropType) ValueCoerce(a any, target *any) error {
-	// null proptype means anything goes
+	// empty proptype means anything goes
 	if p == "" {
 		*target = a
 		return nil
