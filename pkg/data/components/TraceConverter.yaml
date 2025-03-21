@@ -36,7 +36,7 @@ properties:
     validations: [nonblank]
     default: ${STRAWS_REFINERY_POD_IP}
     advanced: true
-  - name: HTTPPort
+  - name: Port
     summary: The port on which Refinery is listening for HTTP traffic.
     description: |
       The port on which Refinery listens for incoming HTTP traffic.
@@ -44,6 +44,22 @@ properties:
     type: int
     validations: [int]
     default: 4318
+    advanced: true
+  - name: Headers
+    summary: Headers to emit when sending HTTP traffic.
+    description: |
+      Sending data to a backend may require additional headers to be
+      configured. This properties supports sending a map of header keys and
+      values.
+    type: map
+    validations: []
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    validations: [bool]
+    default: false
     advanced: true
 templates:
   - kind: collector_config
@@ -55,6 +71,11 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.HTTPPort .User.HTTPPort .Props.HTTPPort.Default }}"
-        suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
+        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: "{{ .HProps.Insecure | encodeAsBool }}"
+        suppress_if: "{{ not .HProps.Insecure }}"
+      - key: "{{ .ComponentName }}.headers"
+        value: "{{ .HProps.Headers | encodeAsMap }}"
+        suppress_if: "{{ not .HProps.Headers }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
