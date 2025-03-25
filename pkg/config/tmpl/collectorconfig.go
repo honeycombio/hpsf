@@ -70,10 +70,10 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 	}
 }
 
-// injectBatchProcessor ensures the collector configuration always has the necessary honeycomb
-// components for measuring usage.
+// injectBatchProcessor ensures the collector configuration always has the necessary components
+// for batching records together.
 func (f *collectorConfigFormat) injectBatchProcessor() {
-	// ensure the usageprocessor is configured for all pipelines
+	// ensure the batch is configured for all pipelines
 	if f.Processors == nil {
 		f.Processors = make(map[string]any)
 	}
