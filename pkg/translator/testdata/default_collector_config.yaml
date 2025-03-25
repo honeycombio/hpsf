@@ -1,6 +1,7 @@
 receivers:
     nop/DefaultNopReceiver: {}
 processors:
+    batch: {}
     usage: {}
 exporters:
     nop/DefaultNopExporter: {}
@@ -11,5 +12,5 @@ service:
     pipelines:
         traces:
             receivers: [nop/DefaultNopReceiver]
-            processors: [usage]
+            processors: [usage, batch]
             exporters: [nop/DefaultNopExporter]
