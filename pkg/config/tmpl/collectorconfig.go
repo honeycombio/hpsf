@@ -70,6 +70,19 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 	}
 }
 
+// injectBatchProcessor ensures the collector configuration always has the necessary honeycomb
+// components for measuring usage.
+func (f *collectorConfigFormat) injectBatchProcessor() {
+	// ensure the usageprocessor is configured for all pipelines
+	if f.Processors == nil {
+		f.Processors = make(map[string]any)
+	}
+	f.Processors["batch"] = map[string]any{}
+	for _, x := range f.Service.Pipelines {
+		x.Processors = append(x.Processors, "batch")
+	}
+}
+
 func dedup[T comparable](slice []T) []T {
 	keys := make(map[T]struct{})
 	list := []T{}
@@ -159,6 +172,7 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	}
 
 	f.injectHoneycombUsageComponents()
+	f.injectBatchProcessor()
 
 	// now marshal from the struct to yaml
 	data, err = y.Marshal(f)

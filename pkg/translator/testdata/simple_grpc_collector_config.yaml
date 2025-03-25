@@ -6,6 +6,7 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
 processors:
+    batch: {}
     usage: {}
 exporters:
     otlp/otlp_out:
@@ -17,5 +18,5 @@ service:
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: [usage]
+            processors: [usage, batch]
             exporters: [otlp/otlp_out]
