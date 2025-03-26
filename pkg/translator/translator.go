@@ -46,6 +46,16 @@ func (t *Translator) InstallTemplates(components map[string]hpsf.HPSF) {
 	maps.Copy(t.templates, components)
 }
 
+// GetComponents returns the components installed in the translator.
+func (t *Translator) GetComponents() map[string]config.TemplateComponent {
+	return t.components
+}
+
+// GetTemplates returns the templates installed in the translator.
+func (t *Translator) GetTemplates() map[string]hpsf.HPSF {
+	return t.templates
+}
+
 // Loads the embedded components into the translator.
 // Deprecated: use InstallComponents instead
 func (t *Translator) LoadEmbeddedComponents() error {
