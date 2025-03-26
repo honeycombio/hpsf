@@ -2,7 +2,7 @@ kind: HoneycombExporter
 name: Honeycomb Exporter
 style: exporter
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: An exporter that sends traces to Honeycomb in Honeycomb's event format.
 description: |
