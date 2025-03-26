@@ -3,6 +3,8 @@ package translator
 import (
 	"fmt"
 
+	"maps"
+
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
@@ -13,7 +15,8 @@ import (
 // collection of components, and then further rendering those into configuration
 // files.
 type Translator struct {
-	templateComponents map[string]config.TemplateComponent
+	components map[string]config.TemplateComponent
+	templates  map[string]hpsf.HPSF
 }
 
 // Deprecated: use NewEmptyTranslator and InstallComponents instead
@@ -26,16 +29,31 @@ func NewTranslator() (*Translator, error) {
 
 // Creates a translator with no components loaded.
 func NewEmptyTranslator() *Translator {
-	tr := &Translator{templateComponents: make(map[string]config.TemplateComponent)}
+	tr := &Translator{
+		components: make(map[string]config.TemplateComponent),
+		templates:  make(map[string]hpsf.HPSF),
+	}
 	return tr
 }
 
 // InstallComponents installs the given components into the translator.
 func (t *Translator) InstallComponents(components map[string]config.TemplateComponent) {
-	// copy components into the templateComponents map, overwriting any duplicates
-	for k, v := range components {
-		t.templateComponents[k] = v
-	}
+	maps.Copy(t.components, components)
+}
+
+// InstallTemplates installs the given templates into the translator.
+func (t *Translator) InstallTemplates(components map[string]hpsf.HPSF) {
+	maps.Copy(t.templates, components)
+}
+
+// GetComponents returns the components installed in the translator.
+func (t *Translator) GetComponents() map[string]config.TemplateComponent {
+	return t.components
+}
+
+// GetTemplates returns the templates installed in the translator.
+func (t *Translator) GetTemplates() map[string]hpsf.HPSF {
+	return t.templates
 }
 
 // Loads the embedded components into the translator.
@@ -46,16 +64,13 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	if err != nil {
 		return err
 	}
-	// overwrite anything in the templateComponents map with the embedded components
-	for k, v := range tcs {
-		t.templateComponents[k] = v
-	}
+	maps.Copy(t.components, tcs)
 	return nil
 }
 
 func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Component, error) {
 	// first look in the template components
-	tc, ok := t.templateComponents[component.Kind]
+	tc, ok := t.components[component.Kind]
 	if ok {
 		tc.SetHPSF(component)
 		return &tc, nil

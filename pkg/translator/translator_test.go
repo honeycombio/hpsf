@@ -74,7 +74,12 @@ func TestGenerateConfig(t *testing.T) {
 			comps, err := data.LoadEmbeddedComponents()
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
+			require.Equal(t, comps, tlater.GetComponents())
+
+			templates, err := data.LoadEmbeddedTemplates()
 			require.NoError(t, err)
+			tlater.InstallTemplates(templates)
+			require.Equal(t, templates, tlater.GetTemplates())
 
 			cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
 			require.NoError(t, err)
