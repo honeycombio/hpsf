@@ -1,0 +1,41 @@
+kind: LogDeduplicationProcessor
+name: Log Deduplication Processor
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that can be used to deduplcate logs.
+description: |
+  Deduplicate logs and add a count attribute.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelLogs
+ports:
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: Interval
+    type: duration
+    validations: [duration]
+    default: 60s
+    advanced: true
+  - name: CountAttribute
+    type: string
+    validations: [string]
+    default: sampleRate
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_logdedup
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs]
+      collectorComponentName: logdedup
+    data:
+      - key: "{{ .ComponentName }}.interval"
+        value: "{{ firstNonZero .HProps.Interval .User.Interval .Props.Interval.Default }}"
+      - key: "{{ .ComponentName }}.log_count_attribute"
+        value: "{{ firstNonZero .HProps.CountAttribute .User.CountAttribute .Props.CountAttribute.Default }}"

@@ -1,0 +1,25 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+processors:
+    batch: {}
+    logdedup/DedupMyLogs:
+        interval: 60s
+        log_count_attribute: sampleRate
+    usage: {}
+exporters:
+    debug/ShowMeTheOlly:
+        verbosity: basic
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs:
+            receivers: [otlp/otlp_in]
+            processors: [usage, logdedup/DedupMyLogs, batch]
+            exporters: [debug/ShowMeTheOlly]
