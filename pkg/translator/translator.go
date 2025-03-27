@@ -138,11 +138,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 
 func maybeAddDefaultSampler(h *hpsf.HPSF) {
 	foundSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
-		switch c.Kind {
-		case "DeterministicSampler", "EMASampler":
-			return true
-		}
-		return false
+		return c.Kind == "sampler"
 	})
 	if !foundSampler {
 		h.Components = append(h.Components, hpsf.Component{
