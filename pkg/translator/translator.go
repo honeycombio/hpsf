@@ -2,6 +2,7 @@ package translator
 
 import (
 	"fmt"
+	"slices"
 
 	"maps"
 
@@ -86,6 +87,9 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
+	maybeAddDefaultSampler(h)
+
 	comps := make(map[string]config.Component)
 	// make all the components
 	for _, c := range h.Components {
@@ -130,4 +134,22 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		}
 	}
 	return composite, nil
+}
+
+func maybeAddDefaultSampler(h *hpsf.HPSF) {
+	foundSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
+		return c.Style == "sampler"
+	})
+	if !foundSampler {
+		h.Components = append(h.Components, hpsf.Component{
+			Name: "defaultSampler",
+			Kind: "DeterministicSampler",
+			Properties: []hpsf.Property{
+				{
+					Name:  "SampleRate",
+					Value: 1,
+				},
+			},
+		})
+	}
 }

@@ -140,3 +140,23 @@ func TestDefaultHPSF(t *testing.T) {
 		})
 	}
 }
+
+func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
+	b, err := os.ReadFile("testdata/default_refinery_rules.yaml")
+	require.NoError(t, err)
+	var expectedConfig = string(b)
+
+	hpsf := hpsf.HPSF{}
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+
+	cfg, err := tlater.GenerateConfig(&hpsf, config.RefineryRulesType, nil)
+	require.NoError(t, err)
+
+	got, err := cfg.RenderYAML()
+	require.NoError(t, err)
+
+	assert.Equal(t, expectedConfig, string(got))
+}

@@ -2,11 +2,11 @@ kind: DeterministicSampler
 name: Deterministic Sampler
 style: sampler
 type: base
-status: development
+status: alpha
 version: v0.1.0
-summary: A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.
+summary: A sampler that deterministically samples a fixed fraction of traces based on trace ID.
 description: |
-  A basic sampler that deterministically samples a fixed fraction of traces based on trace ID.
+  A sampler that deterministically samples a fixed fraction of traces based on trace ID.
 tags:
   - category:sampling
   - service:refinery

@@ -103,6 +103,7 @@ func (c ComponentType) MarshalYAML() (any, error) {
 type ComponentStatus string
 
 const (
+	ComponentStatusAlpha       ComponentStatus = "ALPHA"
 	ComponentStatusArchived    ComponentStatus = "ARCHIVED"
 	ComponentStatusDeprecated  ComponentStatus = "DEPRECATED"
 	ComponentStatusDevelopment ComponentStatus = "DEVELOPMENT"
@@ -119,7 +120,7 @@ func (c *ComponentStatus) UnmarshalYAML(value *y.Node) error {
 	}
 	cs := ComponentStatus(strings.ToUpper(s))
 	switch cs {
-	case ComponentStatusArchived, ComponentStatusDeprecated,
+	case ComponentStatusAlpha, ComponentStatusArchived, ComponentStatusDeprecated,
 		ComponentStatusDevelopment, ComponentStatusStable:
 		*c = cs
 		return nil

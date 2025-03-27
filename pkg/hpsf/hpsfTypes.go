@@ -215,6 +215,7 @@ type Component struct {
 	Kind       string     `yaml:"kind"`
 	Ports      []Port     `yaml:"ports,omitempty"`
 	Properties []Property `yaml:"properties,omitempty"`
+	Style      string     `yaml:"style,omitempty"`
 }
 
 type ErrorSeverity string
