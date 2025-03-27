@@ -54,6 +54,11 @@ func TestGenerateConfig(t *testing.T) {
 			inputHPSFTestData:      "testdata/http_hpsf_with_filtering.yaml",
 			expectedConfigTestData: "testdata/http_collector_config_with_filter_processor.yaml",
 		},
+		{
+			desc:                   "Collector with log deduplication processor",
+			inputHPSFTestData:      "testdata/otlp_with_logdeduplication_hpsf.yaml",
+			expectedConfigTestData: "testdata/otlp_with_logdeduplication_collector_config.yaml",
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
