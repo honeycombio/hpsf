@@ -11,7 +11,7 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
-const DefaultConfigurationKind = "TemplateProxy"
+const DefaultConfigurationKind = "TemplateDefault"
 
 // Reads a set of components from the local embedded filesystem (in the source, this is the
 // data/components directory) and loads them into a map of TemplateComponent by name.
