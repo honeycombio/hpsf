@@ -11,6 +11,8 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
+const DefaultConfigurationKind = "TemplateProxy"
+
 // Reads a set of components from the local embedded filesystem (in the source, this is the
 // data/components directory) and loads them into a map of TemplateComponent by name.
 func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
@@ -75,6 +77,21 @@ func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	}
 
 	return templates, nil
+}
+
+// LoadEmbeddedDefaultTemplate loads the default template from the embedded filesystem.
+func LoadEmbeddedDefaultTemplate() (hpsf.HPSF, error) {
+	templates, err := LoadEmbeddedTemplates()
+	if err != nil {
+		return hpsf.HPSF{}, err
+	}
+
+	template, ok := templates[DefaultConfigurationKind]
+	if !ok {
+		return hpsf.HPSF{}, fmt.Errorf("no default template found")
+	}
+
+	return template, nil
 }
 
 // CalculateChecksums reads the components and templates in the non-test

@@ -1,16 +1,30 @@
 receivers:
-    nop/DefaultNopReceiver: {}
+    otlp/OTel_Receiver_1:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     batch: {}
     usage: {}
 exporters:
-    nop/DefaultNopExporter: {}
+    otlp/OTel_gRPC_Exporter_1:
+        endpoint: https://api.honeycomb.io:443
 extensions:
     honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
-            receivers: [nop/DefaultNopReceiver]
+        logs:
+            receivers: [otlp/OTel_Receiver_1]
             processors: [usage, batch]
-            exporters: [nop/DefaultNopExporter]
+            exporters: [otlp/OTel_gRPC_Exporter_1]
+        metrics:
+            receivers: [otlp/OTel_Receiver_1]
+            processors: [usage, batch]
+            exporters: [otlp/OTel_gRPC_Exporter_1]
+        traces:
+            receivers: [otlp/OTel_Receiver_1]
+            processors: [usage, batch]
+            exporters: [otlp/OTel_gRPC_Exporter_1]

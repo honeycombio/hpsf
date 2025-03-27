@@ -8,7 +8,6 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -123,11 +122,6 @@ connections:
 	assert.Equal(t, 2, len(unwrapped))
 	assert.Contains(t, unwrapped[0].Error(), "GRPCPort")
 	assert.Contains(t, unwrapped[1].Error(), "otlp_in2")
-}
-
-func TestDefaultConfigurationIsValidYAML(t *testing.T) {
-	err := EnsureHPSFYAML(DefaultConfiguration)
-	require.NoError(t, err)
 }
 
 func TestComponent_GetSafeName(t *testing.T) {
