@@ -1,7 +1,7 @@
 kind: HoneycombExporter
 name: Honeycomb Exporter
 style: exporter
-logo: opentelemetry
+logo: honeycomb
 type: base
 status: alpha
 version: v0.1.0
