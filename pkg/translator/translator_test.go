@@ -59,6 +59,11 @@ func TestGenerateConfig(t *testing.T) {
 			inputHPSFTestData:      "testdata/otlp_with_logdeduplication_hpsf.yaml",
 			expectedConfigTestData: "testdata/otlp_with_logdeduplication_collector_config.yaml",
 		},
+		{
+			desc:                   "Collector with transform processor",
+			inputHPSFTestData:      "testdata/otlp_with_transform_hpsf.yaml",
+			expectedConfigTestData: "testdata/otlp_with_transform_collector_config.yaml",
+		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
