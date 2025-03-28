@@ -27,6 +27,14 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
+        logs:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/my_transformer, batch]
+            exporters: [debug/debug_out]
+        metrics:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/my_transformer, batch]
+            exporters: [debug/debug_out]
         traces:
             receivers: [otlp/otlp_in]
             processors: [usage, transform/my_transformer, batch]

@@ -6,13 +6,15 @@ status: development
 version: v0.1.0
 summary: A processor that can be used to transform telemetry.
 description: |
-  Transforms traces based on rules defined
+  Transforms traces, metrics and logs based on rules defined
   in the configuration.
 tags:
   - category:processor
   - service:collector
   - category:transform
   - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
 ports:
   - name: Traces
     direction: input
@@ -51,7 +53,7 @@ templates:
     format: collector
     meta:
       componentSection: processors
-      signalTypes: [traces]
+      signalTypes: [traces, metrics, logs]
       collectorComponentName: transform
     data:
       - key: "{{ .ComponentName }}.error_mode"

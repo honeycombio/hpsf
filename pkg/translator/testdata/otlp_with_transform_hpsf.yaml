@@ -42,3 +42,35 @@ connections:
       component: debug_out
       port: Traces
       type: OTelTraces
+  - source:
+      component: otlp_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: my_transformer
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: my_transformer
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: debug_out
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: my_transformer
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: my_transformer
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: debug_out
+      port: Logs
+      type: OTelLogs
