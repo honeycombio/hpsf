@@ -1,0 +1,44 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: my_transformer
+    kind: TransformProcessor
+    properties:
+      - name: ErrorMode
+        value: ignore
+      - name: LogsStatements
+        value:
+          - some_logs_transform_statement
+          - another_logs_transform_statement
+      - name: MetricsStatements
+        value:
+          - some_metrics_transform_statement
+          - another_metrics_transform_statement
+      - name: TracesStatements
+        value:
+          - some_traces_transform_statement
+          - another_traces_transform_statement
+  - name: debug_out
+    kind: OTelDebugExporter
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: my_transformer
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: my_transformer
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: debug_out
+      port: Traces
+      type: OTelTraces

@@ -1,0 +1,33 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+processors:
+    batch: {}
+    transform/my_transformer:
+        error_mode: ignore
+        logs_statements:
+            - some_logs_transform_statement
+            - another_logs_transform_statement
+        metrics_statements:
+            - some_metrics_transform_statement
+            - another_metrics_transform_statement
+        traces_statements:
+            - some_traces_transform_statement
+            - another_traces_transform_statement
+    usage: {}
+exporters:
+    debug/debug_out:
+        verbosity: basic
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/my_transformer, batch]
+            exporters: [debug/debug_out]
