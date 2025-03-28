@@ -16,14 +16,23 @@ tags:
   - signal:OTelMetrics
   - signal:OTelLogs
 ports:
-  - name: Traces
+  - name: TracesIn
     direction: input
     type: OTelTraces
-  - name: Metrics
+  - name: TracesOut
+    direction: output
+    type: OTelTraces
+  - name: MetricsIn
     direction: input
     type: OTelMetrics
-  - name: Logs
+  - name: MetricsOut
+    direction: output
+    type: OTelMetrics
+  - name: LogsIn
     direction: input
+    type: OTelLogs
+  - name: LogsOut
+    direction: output
     type: OTelLogs
 properties:
   - name: ErrorMode
