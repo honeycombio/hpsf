@@ -1,0 +1,49 @@
+name: Default Template
+kind: TemplateDefault
+version: v0.1.0
+summary: The default configuration that receives traces, metrics, and logs and forwards them to the OpenTelemetry GRPC exporter.
+description: |
+  This is the default configuration that forwards traces, metrics, and logs received via OpenTelemetry
+  components to the OpenTelemetry GRPC exporter. This is useful for testing and debugging, or
+  as a starting point for more complex configurations.
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: OTel gRPC Exporter 1
+    kind: OTelGRPCExporter
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel gRPC Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: OTel gRPC Exporter 1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel gRPC Exporter 1
+      port: Logs
+      type: OTelLogs
+layout:
+  frame:
+    width: 1835
+    height: 1491
+  components:
+    - name: OTel Receiver 1
+      x: 260
+      y: 182
+    - name: OTel gRPC Exporter 1
+      x: 642
+      y: 182

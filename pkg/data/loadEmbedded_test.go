@@ -8,6 +8,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
+	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/stretchr/testify/require"
 	y "gopkg.in/yaml.v3"
 )
@@ -143,4 +144,15 @@ func TestLoadTemplates(t *testing.T) {
 			require.Empty(t, tmpl.Validate())
 		})
 	}
+}
+
+func TestDefaultConfigurationIsValidYAML(t *testing.T) {
+	templates, err := LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	template, ok := templates[DefaultConfigurationKind]
+	require.True(t, ok)
+	data, err := template.AsYAML()
+	require.NoError(t, err)
+	err = hpsf.EnsureHPSFYAML(data)
+	require.NoError(t, err)
 }

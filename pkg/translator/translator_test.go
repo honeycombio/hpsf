@@ -127,9 +127,7 @@ func TestDefaultHPSF(t *testing.T) {
 			require.NoError(t, err)
 			var expectedConfig = string(b)
 
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(hpsf.DefaultConfiguration))
-			err = dec.Decode(&h)
+			h, err := data.LoadEmbeddedDefaultTemplate()
 			require.NoError(t, err)
 
 			tlater := NewEmptyTranslator()
@@ -137,7 +135,7 @@ func TestDefaultHPSF(t *testing.T) {
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(h, tC.ct, nil)
+			cfg, err := tlater.GenerateConfig(&h, tC.ct, nil)
 			require.NoError(t, err)
 
 			got, err := cfg.RenderYAML()

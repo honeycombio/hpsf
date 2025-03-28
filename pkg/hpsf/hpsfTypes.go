@@ -13,32 +13,6 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
-// DefaultConfiguration is the default HPSF configuration that includes a
-// simple Refinery configuration with a deterministic sampler
-// and a Collector Nop receiver and exporter.
-const DefaultConfiguration = `
-components:
-  - name: DefaultDeterministicSampler
-    kind: DeterministicSampler
-    properties:
-      - name: SampleRate
-        value: 1
-        type: int
-  - name: DefaultNopReceiver
-    kind: NopReceiver
-  - name: DefaultNopExporter
-    kind: NopExporter
-connections:
-  - source:
-      component: DefaultNopReceiver
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: DefaultNopExporter
-      port: Traces
-      type: OTelTraces
-`
-
 type ConnectionType string
 
 const (
@@ -612,4 +586,13 @@ func EnsureHPSFYAML(input string) error {
 		return err
 	}
 	return hpsf.Validate()
+}
+
+func (h *HPSF) AsYAML() (string, error) {
+	// this is a mechanism to marshal the template to YAML
+	data, err := y.Marshal(h)
+	if err != nil {
+		return "", fmt.Errorf("error marshalling hpsf to YAML: %w", err)
+	}
+	return string(data), nil
 }
