@@ -1,13 +1,13 @@
 kind: TraceConverter
 name: Trace Converter
-style: receiver
+style: processor
 type: base
 status: alpha
 version: v0.1.0
-summary: Exports telemetry to Refinery via HTTP for further processing.
+summary: Sends telemetry to Refinery via HTTP for further processing.
 description: |
-  Exports OTel telemetry via HTTP.
-  This exporter forwards the data to Refinery over HTTP for processing.
+  Sends OTel telemetry via HTTP.
+  This component forwards the data to Refinery over HTTP for processing.
 tags:
   - category:converter
   - service:refinery

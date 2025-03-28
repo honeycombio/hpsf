@@ -1,6 +1,7 @@
 kind: OTelReceiver
 name: OTel Receiver
 style: receiver
+logo: opentelemetry
 type: base
 status: development
 version: v0.1.0

@@ -1,10 +1,11 @@
 kind: OTelHTTPExporter
 name: OTel HTTP Exporter
 style: exporter
+logo: opentelemetry
 type: base
 status: alpha
 version: v0.1.0
-summary: An exporter that sends telemetry in OTLP (OpenTelemetry) format via HTTP.
+summary: Sends telemetry in OTLP (OpenTelemetry) format via HTTP.
 description: |
   Exports OpenTelemetry signals using OTLP via HTTP.
 tags:
