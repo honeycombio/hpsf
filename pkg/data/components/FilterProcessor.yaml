@@ -3,7 +3,7 @@ name: Filter Processor
 style: processor
 type: base
 status: development
-version: v0.1.0
+version: v0.0.0
 summary: A processor that can be used to filter telemetry.
 description: |
   Filters traces, metrics, and logs based on rules defined

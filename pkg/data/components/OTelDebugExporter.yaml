@@ -1,10 +1,11 @@
 kind: OTelDebugExporter
 name: OTel Debug Exporter
 style: exporter
+logo: opentelemetry
 type: base
 status: alpha
 version: v0.1.0
-summary: An exporter that sends pipeline signal traffic to stdout for debugging.
+summary: Sends pipeline signal traffic to stdout for debugging.
 description: |
   Exports signal data from a pipeline to stdout. This is useful for debugging, but only if you
   have access to the stdout stream in your environment. This component is not intended for production use.

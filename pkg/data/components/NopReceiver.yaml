@@ -2,15 +2,17 @@ kind: NopReceiver
 name: DefaultNopReceiver
 version: v0.1.0
 style: receiver
+logo: opentelemetry
 type: base
 status: development
-summary: A "receiver" that does nothing, but might be useful for testing.
+summary: A no-op "receiver" that does nothing, but might be useful for testing.
 description: |
   A simple no-op receiver.
-  This receiver does nothing. It is required for the minimal collector.
+  This receiver does nothing. It is required for the minimal configuration.
 tags:
   - category:receiver
   - category:nop
+  - category:debug
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

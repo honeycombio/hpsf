@@ -2,6 +2,7 @@ kind: NopExporter
 name: DefaultNopExporter
 version: v0.1.0
 style: exporter
+logo: opentelemetry
 type: base
 status: development
 summary: An "exporter" that does nothing, but might be useful for testing.
@@ -11,6 +12,7 @@ description: |
 tags:
   - category:exporter
   - category:nop
+  - category:debug
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

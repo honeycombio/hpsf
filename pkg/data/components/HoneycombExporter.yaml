@@ -1,10 +1,11 @@
 kind: HoneycombExporter
 name: Honeycomb Exporter
 style: exporter
+logo: honeycomb
 type: base
 status: alpha
 version: v0.1.0
-summary: An exporter that sends traces to Honeycomb in Honeycomb's event format.
+summary: Sends traces to Honeycomb in Honeycomb's event format.
 description: |
   This component exports traces to Honeycomb in Honeycomb's event format.
 tags:
