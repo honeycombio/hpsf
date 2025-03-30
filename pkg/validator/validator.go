@@ -46,12 +46,19 @@ func (e *Result) Add(err error) {
 	e.Details = append(e.Details, err)
 }
 
+// Len returns the number of errors in the Result.
 func (e Result) Len() int {
 	return len(e.Details)
 }
 
+// IsEmpty returns true if there are no errors in the Result
+// This is a convenience method to check if the Result has any errors
+func (e Result) IsEmpty() bool {
+	return e.Len() == 0
+}
+
 func (e Result) ErrOrNil() error {
-	if e.Len() == 0 {
+	if e.IsEmpty() {
 		return nil
 	}
 	return e

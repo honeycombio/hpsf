@@ -10,6 +10,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/validator"
 )
 
 // A Translator is responsible for translating an HPSF document into a
@@ -73,17 +74,93 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if ok {
+		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
-	// fall back to the base components
-	switch component.Kind {
-	case "TraceGRPC", "TraceHTTP", "LogGRPC", "LogHTTP", "RefineryGRPC", "RefineryHTTP":
-		return NewInput(component)
-	default:
-		return nil, fmt.Errorf("unknown component kind: %s", component.Kind)
+	// nothing found so we're done
+	return nil, fmt.Errorf("unknown component kind: %s", component.Kind)
+}
+
+// ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
+// components and templates installed in the translator.
+func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
+	if h == nil {
+		return fmt.Errorf("nil HPSF document provided for validation")
 	}
+
+	// We assume that the HPSF document has already been validated for syntax and structure since
+	// it's already in hpsf format. Our goal here is to make sure that the components and templates
+	// can be used to generate a valid configuration. This means checking that all components referenced
+	// in the HPSF document are available in the translator's component map and that they can be instantiated
+	// correctly, and that all the properties are of the correct type.
+	result := validator.NewResult("HPSF document validation failed")
+	templateComps := make(map[string]config.TemplateComponent)
+	// make all the components
+	for _, c := range h.Components {
+		err := c.Validate()
+		if err != nil {
+			// if the component itself is invalid, add the error to the result
+			// this means the component itself has some issues
+			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
+			// continue to process other components, since we want to validate all of them
+			// before returning an error. This allows us to collect all the errors in one pass.
+		}
+
+		if comp, ok := t.components[c.Kind]; ok {
+			templateComps[c.GetSafeName()] = comp
+		} else {
+			result.Add(fmt.Errorf("failed to locate corresponding template component for %s: %w", c.Name, err))
+		}
+	}
+	if !result.IsEmpty() {
+		// if we have errors at this point, return early
+		// this means we couldn't even instantiate the components
+		// so there's no point in continuing to validate the connections
+		return result
+	}
+
+	// now we have a map of all the components that were successfully instantiated
+	// so we can iterate the properties and validate them according to the validations specified in the template components
+	for _, c := range h.Components {
+		tmpl, ok := templateComps[c.GetSafeName()]
+		if !ok {
+			// If we don't have a template component for this component, it
+			// means we couldn't instantiate it. We caught this earlier, so we
+			// should never get here. Just continue.
+			continue
+		}
+
+		// Get the template properties from the template component.
+		tprops := tmpl.Props()
+		for _, prop := range c.Properties {
+			// validate each property against the template component's basic validation rules
+			tp, ok := tprops[prop.Name]
+			if !ok {
+				// If the property is not found in the template component's
+				// properties, something's messed up. This means the property is
+				// not defined in the template component.
+				return hpsf.NewError("property not found in template component").
+					WithComponent(c.Name).
+					WithProperty(prop.Name)
+			}
+
+			// Now validate the property against the template property's validation rules.
+			if err := tp.Validate(prop); err != nil {
+				// if the property fails validation, add the error to the result
+				// this means the property itself has some issues
+				// we want to include the component name and property name in the error message for clarity
+				herr := hpsf.NewError("failed to validate property").
+					WithCause(err).
+					WithComponent(c.Name).
+					WithProperty(prop.Name)
+				result.Add(herr)
+			}
+		}
+	}
+
+	return result.ErrOrNil()
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {

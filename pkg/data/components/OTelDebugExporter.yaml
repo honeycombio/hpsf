@@ -32,7 +32,7 @@ properties:
     description: |
       The verbosity level of the debug output. Valid values are basic, normal, or detailed. The default is "basic".
     type: string
-    validations: [nonblank]
+    validations: [noblanks]
     default: basic
 templates:
   - kind: collector_config

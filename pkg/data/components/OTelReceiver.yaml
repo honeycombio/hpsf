@@ -33,7 +33,7 @@ properties:
       It is recommended not to change the default unless
       you know what you're doing.
     type: string
-    validations: [nonblank]
+    validations: [noblanks]
     default: ${STRAWS_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
@@ -42,7 +42,7 @@ properties:
       The port on which to listen for incoming gRPC traffic.
       The OTel default is 4317. Set to 0 to disable gRPC.
     type: int
-    validations: [int]
+    validations: [inrange(1, 65535)]
     default: 4317
     advanced: true
   - name: HTTPPort
@@ -51,7 +51,7 @@ properties:
       The port on which to listen for incoming HTTP traffic.
       The OTel default is 4318. Set to 0 to disable HTTP.
     type: int
-    validations: [int]
+    validations: [inrange(1, 65535)]
     default: 4318
     advanced: true
 templates:

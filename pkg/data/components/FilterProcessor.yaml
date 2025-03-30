@@ -28,10 +28,10 @@ ports:
 properties:
   - name: Rules
     type: rule
-    validations: [rule]
+    validations: [filterrule]
   - name: Signal
     type: string
-    validations: [string] # TODO: validate a valid signal
+    validations: ["oneof(traces, metrics, logs)"] # TODO: validate a valid signal
 templates:
   - kind: collector_config
     name: otel_filter

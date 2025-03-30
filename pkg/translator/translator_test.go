@@ -8,6 +8,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
@@ -164,4 +165,54 @@ func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, expectedConfig, string(got))
+}
+
+func TestTranslatorValidation(t *testing.T) {
+	// read all yaml files in testdata
+	entries, err := os.ReadDir("testdata")
+	require.NoError(t, err)
+	// Filter for YAML files
+	var yamlFiles []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".yaml") {
+			// Construct the full path to the file
+			filePath := "testdata/" + entry.Name()
+			yamlFiles = append(yamlFiles, filePath)
+		}
+	}
+
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+
+	// Iterate over each YAML file and test for validation
+	for _, filePath := range yamlFiles {
+		t.Run("Validate test for "+filePath, func(t *testing.T) {
+			// Read the file content
+			b, err := os.ReadFile(filePath)
+			require.NoError(t, err)
+			var inputData = string(b)
+
+			var hpsf *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+			err = dec.Decode(&hpsf)
+			require.NoError(t, err)
+
+			err = tlater.ValidateConfig(hpsf)
+			if err != nil {
+				// If validation fails, check if it's a validator.Result
+				// and ensure it contains errors
+				if result, ok := err.(validator.Result); ok {
+					// If it's a Result, we can check the details
+					// This means the validation failed and we expect it to fail
+					// We can log the error for debugging
+					for _, err := range result.Unwrap() {
+						t.Logf("Validation failed for %s: %v", filePath, err)
+					}
+				}
+			}
+			require.NoError(t, err)
+		})
+	}
 }
