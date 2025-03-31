@@ -2,6 +2,7 @@ package translator
 
 import (
 	"os"
+	"path"
 	"strings"
 	"testing"
 
@@ -16,84 +17,78 @@ import (
 
 func TestGenerateConfig(t *testing.T) {
 	testCases := []struct {
-		desc                   string
-		inputHPSFTestData      string
-		expectedConfigTestData string
+		desc          string
+		inputTestData string
 	}{
 		{
-			desc:                   "OTLP GRPC & HTTP in, GRPC out",
-			inputHPSFTestData:      "testdata/simple_grpc_hpsf.yaml",
-			expectedConfigTestData: "testdata/simple_grpc_collector_config.yaml",
+			desc:          "OTLP GRPC & HTTP in, GRPC out",
+			inputTestData: "simple_grpc.yaml",
 		},
 		{
-			desc:                   "GRPC in and out with headers",
-			inputHPSFTestData:      "testdata/simple_grpc_hpsf_with_headers.yaml",
-			expectedConfigTestData: "testdata/simple_grpc_collector_config_with_headers.yaml",
+			desc:          "GRPC in and out with headers",
+			inputTestData: "simple_grpc_with_headers.yaml",
 		},
 		{
-			desc:                   "OTLP GRPC & HTTP in, HTTP out",
-			inputHPSFTestData:      "testdata/simple_http_hpsf.yaml",
-			expectedConfigTestData: "testdata/simple_http_collector_config.yaml",
+			desc:          "OTLP GRPC & HTTP in, HTTP out",
+			inputTestData: "simple_http.yaml",
 		},
 		{
-			desc:                   "OTLP GRPC & HTTP in, HTTP out with headers",
-			inputHPSFTestData:      "testdata/simple_http_hpsf_with_headers.yaml",
-			expectedConfigTestData: "testdata/simple_http_collector_config_with_headers.yaml",
+			desc:          "OTLP GRPC & HTTP in, HTTP out with headers",
+			inputTestData: "simple_http_with_headers.yaml",
 		},
 		{
-			desc:                   "OTLP GRPC & HTTP in, HTTP out with headers",
-			inputHPSFTestData:      "testdata/simple_http_hpsf_with_headers_insecure.yaml",
-			expectedConfigTestData: "testdata/simple_http_collector_config_with_headers_insecure.yaml",
+			desc:          "OTLP GRPC & HTTP in, HTTP out with headers",
+			inputTestData: "simple_http_with_headers_insecure.yaml",
 		},
 		{
-			desc:                   "OTLP GRPC & HTTP in and a debug exporter",
-			inputHPSFTestData:      "testdata/otlp_with_debug_exporter_hpsf.yaml",
-			expectedConfigTestData: "testdata/otlp_with_debug_exporter_collector_config.yaml",
+			desc:          "OTLP GRPC & HTTP in and a debug exporter",
+			inputTestData: "otlp_with_debug_exporter.yaml",
 		},
 		{
-			desc:                   "Collector with filtering processor",
-			inputHPSFTestData:      "testdata/http_hpsf_with_filtering.yaml",
-			expectedConfigTestData: "testdata/http_collector_config_with_filter_processor.yaml",
+			desc:          "Collector with filtering processor",
+			inputTestData: "http_with_filtering.yaml",
 		},
 		{
-			desc:                   "Collector with log deduplication processor",
-			inputHPSFTestData:      "testdata/otlp_with_logdeduplication_hpsf.yaml",
-			expectedConfigTestData: "testdata/otlp_with_logdeduplication_collector_config.yaml",
+			desc:          "Collector with log deduplication processor",
+			inputTestData: "otlp_with_logdeduplication.yaml",
 		},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-			b, err := os.ReadFile(tC.inputHPSFTestData)
+			// test source config lives in testdata/hpsf
+			b, err := os.ReadFile(path.Join("testdata", "hpsf", tC.inputTestData))
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			b, err = os.ReadFile(tC.expectedConfigTestData)
-			require.NoError(t, err)
-			var expectedConfig = string(b)
+			for _, configType := range []config.Type{config.CollectorConfigType} {
+				b, err = os.ReadFile(path.Join("testdata", string(configType), tC.inputTestData))
+				require.NoError(t, err)
+				var expectedConfig = string(b)
 
-			var hpsf *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-			err = dec.Decode(&hpsf)
-			require.NoError(t, err)
+				var hpsf *hpsf.HPSF
+				dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+				err = dec.Decode(&hpsf)
+				require.NoError(t, err)
 
-			tlater := NewEmptyTranslator()
-			comps, err := data.LoadEmbeddedComponents()
-			require.NoError(t, err)
-			tlater.InstallComponents(comps)
-			require.Equal(t, comps, tlater.GetComponents())
+				tlater := NewEmptyTranslator()
+				comps, err := data.LoadEmbeddedComponents()
+				require.NoError(t, err)
+				tlater.InstallComponents(comps)
+				require.Equal(t, comps, tlater.GetComponents())
 
-			templates, err := data.LoadEmbeddedTemplates()
-			require.NoError(t, err)
-			tlater.InstallTemplates(templates)
-			require.Equal(t, templates, tlater.GetTemplates())
+				templates, err := data.LoadEmbeddedTemplates()
+				require.NoError(t, err)
+				tlater.InstallTemplates(templates)
+				require.Equal(t, templates, tlater.GetTemplates())
 
-			cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
-			require.NoError(t, err)
+				cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
+				require.NoError(t, err)
 
-			got, err := cfg.RenderYAML()
-			require.NoError(t, err)
+				got, err := cfg.RenderYAML()
+				require.NoError(t, err)
 
-			assert.Equal(t, expectedConfig, string(got))
+				assert.Equal(t, expectedConfig, string(got))
+			}
 		})
 	}
 }
