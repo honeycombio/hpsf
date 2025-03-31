@@ -103,17 +103,17 @@ func TestDefaultHPSF(t *testing.T) {
 		{
 			desc:                   "Refinery Config",
 			ct:                     config.RefineryConfigType,
-			expectedConfigTestData: "testdata/default_refinery_config.yaml",
+			expectedConfigTestData: "testdata/refinery_config/default.yaml",
 		},
 		{
 			desc:                   "Refinery Rules",
 			ct:                     config.RefineryRulesType,
-			expectedConfigTestData: "testdata/default_refinery_rules.yaml",
+			expectedConfigTestData: "testdata/refinery_rules/default.yaml",
 		},
 		{
 			desc:                   "Collector Config",
 			ct:                     config.CollectorConfigType,
-			expectedConfigTestData: "testdata/default_collector_config.yaml",
+			expectedConfigTestData: "testdata/collector_config/default.yaml",
 		},
 	}
 	for _, tC := range testCases {
@@ -143,7 +143,7 @@ func TestDefaultHPSF(t *testing.T) {
 }
 
 func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
-	b, err := os.ReadFile("testdata/default_refinery_rules.yaml")
+	b, err := os.ReadFile("testdata/refinery_rules/default.yaml")
 	require.NoError(t, err)
 	var expectedConfig = string(b)
 
@@ -164,14 +164,14 @@ func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
 
 func TestTranslatorValidation(t *testing.T) {
 	// read all yaml files in testdata
-	entries, err := os.ReadDir("testdata")
+	entries, err := os.ReadDir(path.Join("testdata", "hpsf"))
 	require.NoError(t, err)
 	// Filter for YAML files
 	var yamlFiles []string
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".yaml") {
 			// Construct the full path to the file
-			filePath := "testdata/" + entry.Name()
+			filePath := path.Join("testdata", "hpsf", entry.Name())
 			yamlFiles = append(yamlFiles, filePath)
 		}
 	}
