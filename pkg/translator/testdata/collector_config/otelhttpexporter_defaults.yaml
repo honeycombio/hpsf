@@ -2,20 +2,15 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     batch: {}
     usage: {}
 exporters:
     otlphttp/otlp_out:
-        endpoint: myhost.com:1234
-        headers:
-            x-honeycomb-dataset: custom
-            x-honeycomb-team: ${HONEYCOMB_API_KEY}
-        tls:
-            insecure: true
+        endpoint: https://api.honeycomb.io:443
 extensions:
     honeycomb: {}
 service:
