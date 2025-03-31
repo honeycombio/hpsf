@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -14,6 +15,54 @@ import (
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
 )
+
+func TestGenerateConfigForAllComponents(t *testing.T) {
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	for componentName := range comps {
+		for _, properties := range []string{"all", "defaults"} {
+			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(componentName), properties)
+			t.Run(testData, func(t *testing.T) {
+				// test source config lives in testdata/hpsf
+				b, err := os.ReadFile(path.Join("testdata", "hpsf", testData))
+				require.NoError(t, err)
+				var inputData = string(b)
+
+				for _, configType := range []config.Type{config.CollectorConfigType} {
+					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
+					require.NoError(t, err)
+					var expectedConfig = string(b)
+
+					var hpsf *hpsf.HPSF
+					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+					err = dec.Decode(&hpsf)
+					require.NoError(t, err)
+
+					tlater := NewEmptyTranslator()
+					comps, err := data.LoadEmbeddedComponents()
+					require.NoError(t, err)
+					tlater.InstallComponents(comps)
+					require.Equal(t, comps, tlater.GetComponents())
+
+					templates, err := data.LoadEmbeddedTemplates()
+					require.NoError(t, err)
+					tlater.InstallTemplates(templates)
+					require.Equal(t, templates, tlater.GetTemplates())
+
+					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
+					require.NoError(t, err)
+
+					got, err := cfg.RenderYAML()
+					require.NoError(t, err)
+
+					assert.Equal(t, expectedConfig, string(got))
+				}
+			})
+		}
+		// get a file for the component
+
+	}
+}
 
 func TestGenerateConfig(t *testing.T) {
 	testCases := []struct {

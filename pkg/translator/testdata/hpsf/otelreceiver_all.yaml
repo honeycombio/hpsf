@@ -1,0 +1,21 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: Host
+        value: testtest
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: otlp_out
+    kind: OTelGRPCExporter
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
