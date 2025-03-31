@@ -16,7 +16,18 @@ func (e Result) Error() string {
 }
 
 func (e Result) Unwrap() []error {
-	return e.Details
+	output := []error{}
+	for _, d := range e.Details {
+		// if any of the details are themselves a Result, unpack them recursively and add to the output.
+		if other, ok := d.(Result); ok {
+			// recursively unpack the details of the other Result
+			output = append(output, other.Unwrap()...)
+		} else {
+			// otherwise just append the error to the output
+			output = append(output, d)
+		}
+	}
+	return output
 }
 
 func NewResult(msg string) Result {

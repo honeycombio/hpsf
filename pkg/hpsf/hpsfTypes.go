@@ -338,7 +338,7 @@ func (c *Component) Validate() error {
 			result.Add(NewError("Value does not conform").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 		}
 	}
-	return result
+	return result.ErrOrNil()
 }
 
 func safeName(s string) string {

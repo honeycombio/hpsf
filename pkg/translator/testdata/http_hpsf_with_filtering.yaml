@@ -5,10 +5,6 @@ components:
       - name: TraceOut
         direction: output
         type: Honeycomb
-    properties:
-      - name: Port
-        value: 4317
-        type: number
   - name: otlp_in
     kind: OTelReceiver
     properties:
