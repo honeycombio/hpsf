@@ -1,0 +1,24 @@
+components:
+  - name: honeycomb_in
+    kind: HoneycombExporter
+  - name: honeycomb_out
+    kind: HoneycombExporter
+  - name: DeterministicSampler_1
+    kind: DeterministicSampler
+connections:
+  - source:
+      component: honeycomb_in
+      port: TraceOut
+      type: Honeycomb
+    destination:
+      component: DeterministicSampler_1
+      port: Input
+      type: Honeycomb
+  - source:
+      component: DeterministicSampler_1
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: honeycomb_out
+      port: Traces
+      type: Honeycomb
