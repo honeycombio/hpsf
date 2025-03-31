@@ -1,1 +1,5 @@
-default.yaml
+RulesVersion: 2
+Samplers:
+    __default__:
+        DeterministicSampler:
+            SampleRate: 100

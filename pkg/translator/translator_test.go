@@ -17,8 +17,17 @@ import (
 )
 
 func TestGenerateConfigForAllComponents(t *testing.T) {
+	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
 	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
 	for componentName := range comps {
 		for _, properties := range []string{"all", "defaults"} {
 			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(componentName), properties)
@@ -37,17 +46,6 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
 					err = dec.Decode(&hpsf)
 					require.NoError(t, err)
-
-					tlater := NewEmptyTranslator()
-					comps, err := data.LoadEmbeddedComponents()
-					require.NoError(t, err)
-					tlater.InstallComponents(comps)
-					require.Equal(t, comps, tlater.GetComponents())
-
-					templates, err := data.LoadEmbeddedTemplates()
-					require.NoError(t, err)
-					tlater.InstallTemplates(templates)
-					require.Equal(t, templates, tlater.GetTemplates())
 
 					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
 					require.NoError(t, err)
