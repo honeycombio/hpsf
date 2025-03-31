@@ -1,24 +1,8 @@
 components:
-  - name: HoneycombExporter_2
-    kind: HoneycombExporter
-    ports:
-      - name: TraceOut
-        direction: output
-        type: Honeycomb
   - name: otlp_in
     kind: OTelReceiver
-    properties:
-      - name: GRPCPort
-        value: 9922
-      - name: HTTPPort
-        value: 1234
   - name: otlp_out
     kind: OTelHTTPExporter
-    properties:
-      - name: Host
-        value: myhost.com
-      - name: Port
-        value: 1234
   - name: drop_container_1
     kind: FilterProcessor
     properties:

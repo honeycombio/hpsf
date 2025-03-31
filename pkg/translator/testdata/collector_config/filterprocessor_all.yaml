@@ -2,9 +2,9 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     batch: {}
     filter/drop_container_1:
@@ -14,7 +14,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/otlp_out:
-        endpoint: myhost.com:1234
+        endpoint: https://api.honeycomb.io:443
 extensions:
     honeycomb: {}
 service:
