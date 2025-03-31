@@ -18,8 +18,8 @@ components:
       - name: SampleRate
         value: 10
         type: int
-  - name: RefineryGRPC_2
-    kind: RefineryGRPC
+  - name: HoneycombExporter_2
+    kind: HoneycombExporter
     ports:
       - name: TraceOut
         direction: output
@@ -43,7 +43,7 @@ components:
         type: string
 connections:
   - source:
-      component: RefineryGRPC_2
+      component: HoneycombExporter_2
       port: TraceOut
       type: Honeycomb
     destination:
@@ -66,7 +66,7 @@ layout:
     - name: DeterministicSampler_1
       x: 500.66666666666686
       y: 112.01276041666668
-    - name: RefineryGRPC_2
+    - name: HoneycombExporter_2
       x: 270
       y: 220
     - name: HoneycombExporter_1

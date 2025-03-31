@@ -1,6 +1,6 @@
 components:
-  - name: RefineryGRPC_2
-    kind: RefineryGRPC
+  - name: HoneycombExporter_2
+    kind: HoneycombExporter
     ports:
       - name: TraceOut
         direction: output

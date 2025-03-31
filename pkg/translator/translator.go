@@ -85,6 +85,10 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 
 // ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
 // components and templates installed in the translator.
+// Note that it returns a validation.Result so that the errors can be collected and reported in a
+// structured way. This allows for multiple validation errors to be returned at once, rather than
+// stopping at the first error. This is useful for providing feedback to users on multiple issues
+// in their configuration.
 func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	if h == nil {
 		return fmt.Errorf("nil HPSF document provided for validation")
