@@ -13,7 +13,7 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
-func TestGenerateConfig(t *testing.T) {
+func TestGenerateCollectorConfigs(t *testing.T) {
 	testCases := []struct {
 		desc                   string
 		inputHPSFTestData      string
@@ -87,6 +87,57 @@ func TestGenerateConfig(t *testing.T) {
 			require.Equal(t, templates, tlater.GetTemplates())
 
 			cfg, err := tlater.GenerateConfig(hpsf, config.CollectorConfigType, nil)
+			require.NoError(t, err)
+
+			got, err := cfg.RenderYAML()
+			require.NoError(t, err)
+
+			assert.Equal(t, expectedConfig, string(got))
+		})
+	}
+}
+
+func TestGenerateRefineryRulesConfigs(t *testing.T) {
+	testCases := []struct {
+		desc                   string
+		inputHPSFTestData      string
+		expectedConfigTestData string
+	}{
+
+		{
+			desc:                   "OTLP with rules based sampler",
+			inputHPSFTestData:      "testdata/otlp_with_rules_based_sampler_hpsf.yaml",
+			expectedConfigTestData: "testdata/otlp_with_rules_based_sampler_refinery_rules.yaml",
+		},
+	}
+
+	for _, tC := range testCases {
+		t.Run(tC.desc, func(t *testing.T) {
+			b, err := os.ReadFile(tC.inputHPSFTestData)
+			require.NoError(t, err)
+			var inputData = string(b)
+
+			b, err = os.ReadFile(tC.expectedConfigTestData)
+			require.NoError(t, err)
+			var expectedConfig = string(b)
+
+			var hpsf *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+			err = dec.Decode(&hpsf)
+			require.NoError(t, err)
+
+			tlater := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			tlater.InstallComponents(comps)
+			require.Equal(t, comps, tlater.GetComponents())
+
+			templates, err := data.LoadEmbeddedTemplates()
+			require.NoError(t, err)
+			tlater.InstallTemplates(templates)
+			require.Equal(t, templates, tlater.GetTemplates())
+
+			cfg, err := tlater.GenerateConfig(hpsf, config.RefineryRulesType, nil)
 			require.NoError(t, err)
 
 			got, err := cfg.RenderYAML()

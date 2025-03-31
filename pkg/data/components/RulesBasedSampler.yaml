@@ -1,0 +1,53 @@
+kind: RulesBasedSampler
+name: Rules Based Sampler
+style: sampler
+type: base
+status: alpha
+version: v0.1.0
+summary: Roolz based samples a fixed fraction of traces based on trace ID.
+description: |
+  A sampler that roolz samples a fixed fraction of traces based on trace ID.
+tags:
+  - category:sampling
+  - service:refinery
+  - signal:HoneycombEvents
+  - sampler:rulesbased
+  - sampler:rate
+ports:
+  - name: Traces
+    direction: input
+    type: HoneycombEvents
+  - name: SampledOutput
+    direction: output
+    type: HoneycombEvents
+    note: "The traces that are sampled"
+properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler.
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
+  - name: Rules
+    summary: The field names of the keys to use for controlling sampling
+    description: |
+      The field names of keys to use for sampling. These should be chosen
+      from fields with relatively low cardinality, such as HTTP method,
+      status code, etc. The sampler will try to achieve representative
+      quantities of the specified sampling keys, while ensuring that at least
+      one instance of every distinct value of each key is sampled.
+      There is no default; this field must be specified.
+    type: map
+    validations:
+      - nonblank
+      - nonempty
+    # default: []
+templates:
+  - kind: refinery_rules
+    name: EMA_Throughput_Rules
+    format: dotted
+    data:
+      - key: "Samplers.{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}.RulesBasedSampler.Rules"
+        value: "{{ firstNonZero .HProps.Rules .User.Rules .Props.Rules.Default }}"

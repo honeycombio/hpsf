@@ -1,0 +1,87 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  - name: trace_converter
+    kind: TraceConverter
+    ports:
+      - name: Input
+        direction: input
+        type: OTelTraces
+      - name: Output
+        direction: output
+        type: Honeycomb
+  - name: rules_based_sampler
+    kind: RulesBasedSampler
+    properties:
+      - name: Rules
+        value:
+          - Name: drop healthchecks
+            Drop: true
+            Conditions:
+              - Field: http.route
+                Operator: =
+                Value: /health-check
+          - Name: drop everything from specific services
+            Drop: true
+            Conditions:
+              - Field: service.name
+                Operator: in
+                Value:
+                  - noisy-service
+                  - overly-chatty-service17
+          - Name: keep slow 500 errors across semantic conventions
+            SampleRate: 1
+            Conditions:
+              - Fields:
+                  - http.status_code
+                  - http.response.status_code
+                Operator: =
+                Value: 500
+                Datatype: int
+              - Field: duration_ms
+                Operator: '>='
+                Value: 1000
+                Datatype: float
+  - name: honeycomb_exporter
+    kind: HoneycombExporter
+    ports:
+      - name: Traces
+        direction: input
+        type: Honeycomb
+    properties:
+      - name: Dataset
+        value: mytraces
+        type: string
+      - name: APIKey
+        value: ${team.HONEYCOMB_APIKEY}
+        type: string
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: trace_converter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: trace_converter
+      port: Output
+      type: Honeycomb
+    destination:
+      component: rules_based_sampler
+      port: Input
+      type: Honeycomb
+  - source:
+      component: rules_based_sampler
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: honeycomb_exporter
+      port: Traces
+      type: Honeycomb
