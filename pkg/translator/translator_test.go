@@ -28,7 +28,7 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 				require.NoError(t, err)
 				var inputData = string(b)
 
-				for _, configType := range []config.Type{config.CollectorConfigType} {
+				for _, configType := range []config.Type{config.CollectorConfigType, config.RefineryConfigType, config.RefineryRulesType} {
 					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
 					require.NoError(t, err)
 					var expectedConfig = string(b)
