@@ -16,7 +16,18 @@ func (e Result) Error() string {
 }
 
 func (e Result) Unwrap() []error {
-	return e.Details
+	output := []error{}
+	for _, d := range e.Details {
+		// if any of the details are themselves a Result, unpack them recursively and add to the output.
+		if other, ok := d.(Result); ok {
+			// recursively unpack the details of the other Result
+			output = append(output, other.Unwrap()...)
+		} else {
+			// otherwise just append the error to the output
+			output = append(output, d)
+		}
+	}
+	return output
 }
 
 func NewResult(msg string) Result {
@@ -46,12 +57,19 @@ func (e *Result) Add(err error) {
 	e.Details = append(e.Details, err)
 }
 
+// Len returns the number of errors in the Result.
 func (e Result) Len() int {
 	return len(e.Details)
 }
 
+// IsEmpty returns true if there are no errors in the Result
+// This is a convenience method to check if the Result has any errors
+func (e Result) IsEmpty() bool {
+	return e.Len() == 0
+}
+
 func (e Result) ErrOrNil() error {
-	if e.Len() == 0 {
+	if e.IsEmpty() {
 		return nil
 	}
 	return e

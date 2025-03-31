@@ -32,13 +32,12 @@ properties:
       configured. This property supports sending a map of header keys and
       values.
     type: map
-    validations: []
   - name: Host
     summary: The hostname or IP address to send data to.
     description: |
       Hostname or IP address on which to send outgoing GRPC traffic.
     type: string
-    validations: [nonblank]
+    validations: [noblanks]
     default: https://api.honeycomb.io
     advanced: true
   - name: Port
@@ -47,7 +46,7 @@ properties:
       The port on which to send outgoing gRPC traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for gRPC is 4317.
     type: int
-    validations: []
+    validations: [inrange(1, 65535)]
     default: 443
     advanced: true
   - name: Insecure
@@ -55,7 +54,6 @@ properties:
     description: |
       Can be used to send data without TLS.
     type: bool
-    validations: [bool]
     default: false
     advanced: true
 templates:

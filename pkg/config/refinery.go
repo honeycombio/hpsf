@@ -31,7 +31,7 @@ func (c *RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any
 	pstr := yaml.AsString(port.Value)
 
 	switch c.Component.Kind {
-	case "RefineryGRPC":
+	case "HoneycombExporter":
 		return tmpl.DottedConfig{
 			"GRPCServerParameters.Enabled":    true,
 			"GRPCServerParameters.ListenAddr": "0.0.0.0:" + pstr,

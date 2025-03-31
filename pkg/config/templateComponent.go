@@ -34,24 +34,6 @@ type TemplatePort struct {
 	Note      string              `yaml:"note,omitempty"`
 }
 
-// A TemplateProperty describes a property of a component. A property is a
-// user-settable value that can be used to configure the component. Properties
-// have a name, a type (which can be used to validate the value), and a default
-// value. The advanced flag can be used to indicate that the property should be
-// suppressed by default in the UI (only shown if the user selects an "advanced"
-// option). We also allow for validations, which can be used to constrain the
-// value of the property. The property can also have a summary and a
-// description, which are used to document the property.
-type TemplateProperty struct {
-	Name        string        `yaml:"name"`
-	Summary     string        `yaml:"summary,omitempty"`
-	Description string        `yaml:"description,omitempty"`
-	Type        hpsf.PropType `yaml:"type"`
-	Advanced    bool          `yaml:"advanced,omitempty"`
-	Validations []string      `yaml:"validation,omitempty"`
-	Default     any           `yaml:"default,omitempty"`
-}
-
 // A TemplateData describes a template for generating configuration data. It's a
 // deliberately simple structure, with a kind (which is the type of
 // configuration data it generates), a name (which is used to identify the
@@ -278,7 +260,7 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 }
 
 // undecorate removes type decorations from strings and returns the desired type.
-// Since everything that comes out of a template is a string, for things that
+// Since everything that comes out of a Go template is a string, for things that
 // needed to not be strings, we flagged them with a decoration indicating the
 // desired type. Now we need to do some extra work to make sure that we return
 // the indicated type. If it can't be converted to the desired type, we return

@@ -52,6 +52,11 @@ func (p PropType) Validate() error {
 	return nil
 }
 
+// String returns the string representation of the PropType.
+func (p PropType) String() string {
+	return string(p)
+}
+
 // ValueCoerce takes a value and coerces it to the type specified by the
 // PropType, if possible, storing the result in target. We try to be as
 // forgiving as possible here -- for example, if the PropType is INT and value
@@ -261,6 +266,8 @@ func (e *HPSFError) WithProperty(p string) *HPSFError {
 	return e
 }
 
+// WithCause accepts an error that will be used to populate the Cause field of the HPSFError struct.
+// This allows you to wrap another error inside an HPSFError, which can be useful for debugging.
 func (e *HPSFError) WithCause(c error) *HPSFError {
 	e.Cause = c
 	return e
@@ -331,7 +338,7 @@ func (c *Component) Validate() error {
 			result.Add(NewError("Value does not conform").WithComponent(c.Name).WithProperty(p.Name).WithCause(err))
 		}
 	}
-	return result
+	return result.ErrOrNil()
 }
 
 func safeName(s string) string {

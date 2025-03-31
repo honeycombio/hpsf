@@ -38,7 +38,7 @@ properties:
     description: |
       Hostname or IP address on which to send outgoing HTTP traffic.
     type: string
-    validations: [nonblank]
+    validations: [noblanks]
     default: https://api.honeycomb.io
     advanced: true
   - name: Port
@@ -47,7 +47,7 @@ properties:
       The port on which to send outgoing HTTP traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for HTTP is 4318.
     type: int
-    validations: [int]
+    validations: [inrange(1, 65535)]
     default: 443
     advanced: true
   - name: Insecure
@@ -55,7 +55,7 @@ properties:
     description: |
       Can be used to send data without TLS.
     type: bool
-    validations: [bool]
+    validations: []
     default: false
     advanced: true
 templates:

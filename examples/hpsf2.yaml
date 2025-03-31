@@ -6,13 +6,13 @@ components:
         value: 99
       - name: Environment
         value: staging
-  - name: RefineryGRPC_2
-    kind: RefineryGRPC
+  - name: HoneycombExporter_2
+    kind: HoneycombExporter
   - name: HoneycombExporter_1
     kind: HoneycombExporter
 connections:
   - source:
-      component: RefineryGRPC_2
+      component: HoneycombExporter_2
       port: TraceOut
       type: Honeycomb
     destination:

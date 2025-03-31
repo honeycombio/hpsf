@@ -1,14 +1,10 @@
 components:
-  - name: RefineryGRPC_2
-    kind: RefineryGRPC
+  - name: HoneycombExporter_2
+    kind: HoneycombExporter
     ports:
       - name: TraceOut
         direction: output
         type: Honeycomb
-    properties:
-      - name: Port
-        value: 4317
-        type: number
   - name: otlp_in
     kind: OTelReceiver
     properties:

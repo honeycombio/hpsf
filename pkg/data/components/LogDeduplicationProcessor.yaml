@@ -6,7 +6,7 @@ status: development
 version: v0.1.0
 summary: A processor that removes duplicate log entries.
 description: |
-  This processor is used to deduplicate logs by detecting identical logs over a range of time and 
+  This processor is used to deduplicate logs by detecting identical logs over a range of time and
   emitting a single log with the count of logs that were deduplicated.
 tags:
   - category:processor
@@ -27,7 +27,6 @@ properties:
     advanced: true
   - name: CountAttribute
     type: string
-    validations: [string]
     default: sampleRate
     advanced: true
 templates:

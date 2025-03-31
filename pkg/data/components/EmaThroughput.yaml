@@ -69,7 +69,7 @@ properties:
       There is no default; this field must be specified.
     type: stringarray
     validations:
-      - nonblank
+      - noblanks
       - nonempty
     default: []
 templates:
