@@ -90,8 +90,8 @@ func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Compo
 // stopping at the first error. This is useful for providing feedback to users on multiple issues
 // in their configuration.
 func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
-	if h == nil || len(h.Components) == 0 {
-		return fmt.Errorf("an empty HPSF document is not valid")
+	if h == nil {
+		return fmt.Errorf("nil HPSF document provided for validation")
 	}
 
 	// We assume that the HPSF document has already been validated for syntax and structure since
