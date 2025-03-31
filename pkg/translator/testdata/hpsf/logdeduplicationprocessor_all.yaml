@@ -1,15 +1,15 @@
 components:
-  - name: ShowMeTheOlly
-    kind: OTelDebugExporter
   - name: otlp_in
     kind: OTelReceiver
-    properties:
-      - name: GRPCPort
-        value: 9922
-      - name: HTTPPort
-        value: 1234
+  - name: otlp_out
+    kind: OTelGRPCExporter
   - name: DedupMyLogs
     kind: LogDeduplicationProcessor
+    properties:
+      - name: Interval
+        value: 10s
+      - name: CountAttribute
+        value: another_value
 connections:
   - source:
       component: otlp_in
@@ -24,6 +24,6 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: ShowMeTheOlly
+      component: otlp_out
       port: Logs
       type: OTelLogs

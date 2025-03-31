@@ -2,18 +2,18 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:9922
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:1234
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     batch: {}
     logdedup/DedupMyLogs:
-        interval: 60s
-        log_count_attribute: sampleRate
+        interval: 10s
+        log_count_attribute: another_value
     usage: {}
 exporters:
-    debug/ShowMeTheOlly:
-        verbosity: basic
+    otlp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
 extensions:
     honeycomb: {}
 service:
@@ -22,4 +22,4 @@ service:
         logs:
             receivers: [otlp/otlp_in]
             processors: [usage, logdedup/DedupMyLogs, batch]
-            exporters: [debug/ShowMeTheOlly]
+            exporters: [otlp/otlp_out]
