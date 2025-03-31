@@ -1,19 +1,8 @@
 components:
-  - name: HoneycombExporter_2
-    kind: HoneycombExporter
-    ports:
-      - name: TraceOut
-        direction: output
-        type: Honeycomb
   - name: otlp_in
     kind: OTelReceiver
-    properties:
-      - name: GRPCPort
-        value: 9922
-      - name: HTTPPort
-        value: 1234
   - name: otlp_out
-    kind: OTelHTTPExporter
+    kind: OTelGRPCExporter
     properties:
       - name: Host
         value: myhost.com
@@ -23,6 +12,8 @@ components:
         value:
           x-honeycomb-dataset: "custom"
           x-honeycomb-team: "${HONEYCOMB_API_KEY}"
+      - name: Insecure
+        value: true
 connections:
   - source:
       component: otlp_in
