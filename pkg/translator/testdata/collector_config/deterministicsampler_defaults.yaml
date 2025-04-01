@@ -1,8 +1,0 @@
-processors:
-    batch: {}
-    usage: {}
-extensions:
-    honeycomb: {}
-service:
-    extensions: [honeycomb]
-    pipelines: {}

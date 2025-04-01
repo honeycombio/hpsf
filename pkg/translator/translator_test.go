@@ -37,7 +37,8 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 				require.NoError(t, err)
 				var inputData = string(b)
 
-				for _, configType := range []config.Type{config.CollectorConfigType, config.RefineryConfigType, config.RefineryRulesType} {
+				for _, template := range comps[componentName].Templates {
+					configType := config.Type(template.Kind)
 					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
 					require.NoError(t, err)
 					var expectedConfig = string(b)
@@ -57,8 +58,6 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 				}
 			})
 		}
-		// get a file for the component
-
 	}
 }
 
