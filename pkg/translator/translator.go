@@ -224,7 +224,12 @@ func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
 				return false
 			}
 			p := c.GetProperty("Environment")
-			return p != nil && p.Value == "__default__"
+			if p != nil {
+				return p.Value == "__default__"
+			}
+			return slices.ContainsFunc(component.Properties, func(p config.TemplateProperty) bool {
+				return p.Name == "Environment" && p.Default == "__default__"
+			})
 		}
 		return false
 	})

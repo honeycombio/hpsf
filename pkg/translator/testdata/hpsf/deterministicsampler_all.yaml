@@ -7,7 +7,7 @@ components:
     kind: DeterministicSampler
     properties:
       - name: Environment
-        value: __default__
+        value: test
       - name: SampleRate
         value: 90
 connections:
