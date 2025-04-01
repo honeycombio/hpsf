@@ -1,0 +1,28 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    batch: {}
+    usage: {}
+exporters:
+    awss3/s3_out:
+        marshaler: otlp_json
+        s3uploader:
+            region: my-region
+            s3_bucket: my-bucket
+            s3_partition_format: my-partition-format
+            s3_prefix: my-prefix
+        timeout: 30s
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, batch]
+            exporters: [awss3/s3_out]

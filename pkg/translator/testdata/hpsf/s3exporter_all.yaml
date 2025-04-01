@@ -1,0 +1,27 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: s3_out
+    kind: S3Exporter
+    properties:
+      - name: Region
+        value: 'my-region'
+      - name: Bucket
+        value: 'my-bucket'
+      - name: Prefix
+        value: 'my-prefix'
+      - name: PartitionFormat
+        value: 'my-partition-format'
+      - name: Timeout
+        value: 30s
+      - name: Marshaler
+        value: otlp_json
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: s3_out
+      port: Traces
+      type: OTelTraces
