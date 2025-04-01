@@ -1,0 +1,22 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    batch: {}
+    usage: {}
+exporters:
+    otlphttp/Trace_Converter_1:
+        endpoint: ${STRAWS_REFINERY_POD_IP}:4318
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, batch]
+            exporters: [otlphttp/Trace_Converter_1]

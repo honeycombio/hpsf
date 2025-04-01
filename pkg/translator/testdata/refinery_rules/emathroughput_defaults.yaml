@@ -1,0 +1,7 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        EMAThroughputSampler:
+            AdjustmentInterval: 60
+            FieldList: ""
+            GoalThroughput: 100

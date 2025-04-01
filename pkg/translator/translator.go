@@ -169,7 +169,7 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
-	maybeAddDefaultSampler(h)
+	t.maybeAddDefaultSampler(h)
 
 	comps := make(map[string]config.Component)
 	// make all the components
@@ -217,11 +217,23 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	return composite, nil
 }
 
-func maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
-		return c.Style == "sampler"
+func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
+	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
+		if component, ok := t.components[c.Kind]; ok {
+			if component.Style != "sampler" {
+				return false
+			}
+			p := c.GetProperty("Environment")
+			if p != nil {
+				return p.Value == "__default__"
+			}
+			return slices.ContainsFunc(component.Properties, func(p config.TemplateProperty) bool {
+				return p.Name == "Environment" && p.Default == "__default__"
+			})
+		}
+		return false
 	})
-	if !foundSampler {
+	if !foundDefaultSampler {
 		h.Components = append(h.Components, hpsf.Component{
 			Name: "defaultSampler",
 			Kind: "DeterministicSampler",

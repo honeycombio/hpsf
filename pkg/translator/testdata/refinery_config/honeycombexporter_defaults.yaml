@@ -1,0 +1,7 @@
+AccessKeys:
+    SendKey: ""
+General:
+    ConfigurationVersion: 2
+    MinRefineryVersion: v2.0
+Network:
+    HoneycombAPI: https://api.honeycomb.io

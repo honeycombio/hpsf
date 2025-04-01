@@ -1,0 +1,19 @@
+components:
+  - name: honeycomb_in
+    kind: HoneycombExporter
+  - name: honeycomb_out
+    kind: HoneycombExporter
+    properties:
+      - name: APIEndpoint
+        value: endpoint:1234
+      - name: APIKey
+        value: key1234
+connections:
+  - source:
+      component: honeycomb_in
+      port: TraceOut
+      type: Honeycomb
+    destination:
+      component: honeycomb_out
+      port: Traces
+      type: Honeycomb

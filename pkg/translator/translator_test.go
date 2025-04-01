@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"fmt"
 	"os"
 	"path"
 	"strings"
@@ -15,81 +16,49 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
-func TestGenerateConfig(t *testing.T) {
-	testCases := []struct {
-		desc          string
-		inputTestData string
-	}{
-		{
-			desc:          "OTLP GRPC & HTTP in, GRPC out",
-			inputTestData: "simple_grpc.yaml",
-		},
-		{
-			desc:          "GRPC in and out with headers",
-			inputTestData: "simple_grpc_with_headers.yaml",
-		},
-		{
-			desc:          "OTLP GRPC & HTTP in, HTTP out",
-			inputTestData: "simple_http.yaml",
-		},
-		{
-			desc:          "OTLP GRPC & HTTP in, HTTP out with headers",
-			inputTestData: "simple_http_with_headers.yaml",
-		},
-		{
-			desc:          "OTLP GRPC & HTTP in, HTTP out with headers",
-			inputTestData: "simple_http_with_headers_insecure.yaml",
-		},
-		{
-			desc:          "OTLP GRPC & HTTP in and a debug exporter",
-			inputTestData: "otlp_with_debug_exporter.yaml",
-		},
-		{
-			desc:          "Collector with filtering processor",
-			inputTestData: "http_with_filtering.yaml",
-		},
-		{
-			desc:          "Collector with log deduplication processor",
-			inputTestData: "otlp_with_logdeduplication.yaml",
-		},
-	}
-	for _, tC := range testCases {
-		t.Run(tC.desc, func(t *testing.T) {
-			// test source config lives in testdata/hpsf
-			b, err := os.ReadFile(path.Join("testdata", "hpsf", tC.inputTestData))
-			require.NoError(t, err)
-			var inputData = string(b)
+func TestGenerateConfigForAllComponents(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
 
-			for _, configType := range []config.Type{config.CollectorConfigType} {
-				b, err = os.ReadFile(path.Join("testdata", string(configType), tC.inputTestData))
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	for componentName := range comps {
+		for _, properties := range []string{"all", "defaults"} {
+			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(componentName), properties)
+			t.Run(testData, func(t *testing.T) {
+				// test source config lives in testdata/hpsf
+				b, err := os.ReadFile(path.Join("testdata", "hpsf", testData))
 				require.NoError(t, err)
-				var expectedConfig = string(b)
+				var inputData = string(b)
 
-				var hpsf *hpsf.HPSF
-				dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-				err = dec.Decode(&hpsf)
-				require.NoError(t, err)
+				for _, configType := range []config.Type{config.CollectorConfigType, config.RefineryConfigType, config.RefineryRulesType} {
+					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
+					require.NoError(t, err)
+					var expectedConfig = string(b)
 
-				tlater := NewEmptyTranslator()
-				comps, err := data.LoadEmbeddedComponents()
-				require.NoError(t, err)
-				tlater.InstallComponents(comps)
-				require.Equal(t, comps, tlater.GetComponents())
+					var hpsf *hpsf.HPSF
+					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+					err = dec.Decode(&hpsf)
+					require.NoError(t, err)
 
-				templates, err := data.LoadEmbeddedTemplates()
-				require.NoError(t, err)
-				tlater.InstallTemplates(templates)
-				require.Equal(t, templates, tlater.GetTemplates())
+					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
+					require.NoError(t, err)
 
-				cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
-				require.NoError(t, err)
+					got, err := cfg.RenderYAML()
+					require.NoError(t, err)
 
-				got, err := cfg.RenderYAML()
-				require.NoError(t, err)
+					assert.Equal(t, expectedConfig, string(got))
+				}
+			})
+		}
+		// get a file for the component
 
-				assert.Equal(t, expectedConfig, string(got))
-			}
-		})
 	}
 }
 

@@ -1,0 +1,14 @@
+components:
+  - name: otlp_in
+    kind: NopReceiver
+  - name: otlp_out
+    kind: OTelGRPCExporter
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

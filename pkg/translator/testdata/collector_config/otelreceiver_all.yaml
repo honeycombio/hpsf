@@ -1,0 +1,22 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: testtest:9922
+            http:
+                endpoint: testtest:1234
+processors:
+    batch: {}
+    usage: {}
+exporters:
+    otlp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, batch]
+            exporters: [otlp/otlp_out]

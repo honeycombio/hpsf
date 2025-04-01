@@ -1,0 +1,17 @@
+receivers:
+    nop/otlp_in: {}
+processors:
+    batch: {}
+    usage: {}
+exporters:
+    otlp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs:
+            receivers: [nop/otlp_in]
+            processors: [usage, batch]
+            exporters: [otlp/otlp_out]

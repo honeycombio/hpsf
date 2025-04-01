@@ -1,0 +1,14 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: Trace Converter 1
+    kind: TraceConverter
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Trace Converter 1
+      port: Input
+      type: OTelTraces

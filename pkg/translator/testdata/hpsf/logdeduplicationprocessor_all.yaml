@@ -1,0 +1,29 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelGRPCExporter
+  - name: DedupMyLogs
+    kind: LogDeduplicationProcessor
+    properties:
+      - name: Interval
+        value: 10s
+      - name: CountAttribute
+        value: another_value
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: DedupMyLogs
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: DedupMyLogs
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs
