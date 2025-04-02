@@ -32,13 +32,13 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
-    validations: []
   - name: Host
     summary: The hostname or IP address to send data to.
     description: |
       Hostname or IP address on which to send outgoing HTTP traffic.
     type: string
-    validations: [noblanks]
+    validations:
+      - noblanks
     default: https://api.honeycomb.io
     advanced: true
   - name: Port
@@ -47,7 +47,8 @@ properties:
       The port on which to send outgoing HTTP traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for HTTP is 4318.
     type: int
-    validations: [inrange(1, 65535)]
+    validations:
+      - inrange(1, 65535)
     default: 443
     advanced: true
   - name: Insecure
@@ -55,7 +56,6 @@ properties:
     description: |
       Can be used to send data without TLS.
     type: bool
-    validations: []
     default: false
     advanced: true
 templates:

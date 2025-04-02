@@ -30,7 +30,8 @@ properties:
     description: |
       The bucket in which to store the S3. This is a required field.
     type: string
-    validations: [noblanks]
+    validations:
+      - noblanks
   - name: Region
     summary: The region in which to store the S3.
     description: |
@@ -53,14 +54,18 @@ properties:
     description: |
       The timeout to use for the S3. The default value is `5s`.
     type: duration
-    validations: [duration]
+    default: 5s
+    validations:
+      - duration
     advanced: true
   - name: Marshaler
     summary: The marshaler to use for the S3.
     description: |
       The marshaler to use for the S3. The default value is `otlp_json`.
     type: string
-    validations: [oneof(otlp_json, otlp_proto)]
+    default: otlp_json
+    validations:
+      - oneof(otlp_json, otlp_proto)
     advanced: true
 templates:
   - name: s3_exporter_collector

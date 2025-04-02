@@ -22,7 +22,8 @@ ports:
 properties:
   - name: Interval
     type: duration
-    validations: [duration]
+    validations:
+      - duration
     default: 60s
     advanced: true
   - name: CountAttribute

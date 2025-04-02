@@ -24,7 +24,7 @@ type TemplateProperty struct {
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
 	Advanced    bool          `yaml:"advanced,omitempty"`
-	Validations []string      `yaml:"validation,omitempty"`
+	Validations []string      `yaml:"validations,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
 }
 
@@ -97,7 +97,7 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 	var value any
 	// this tries to coerce the value of the property to the type specified in the TemplateProperty
 	// and stores it in the `value` variable
-	if err := prop.Type.ValueCoerce(tp.Type, &value); err != nil {
+	if err := prop.Type.ValueCoerce(prop.Value, &value); err != nil {
 		// if the type of the property does not match the type of the template property, return an error
 		return hpsf.NewError("value cannot be converted to expected type " + tp.Type.String()).
 			WithComponent(prop.Name). // include the component name for context

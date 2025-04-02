@@ -4,4 +4,4 @@ General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0
 Network:
-    HoneycombAPI: endpoint:1234
+    HoneycombAPI: https://alternative.honeycomb.io

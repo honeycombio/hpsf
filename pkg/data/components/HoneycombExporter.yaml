@@ -23,7 +23,8 @@ properties:
     description: |
       The API key to use to authenticate with Honeycomb.
     type: string
-    validations: [noblanks]
+    validations:
+      - noblanks
     default: ${HONEYCOMB_EXPORTER_APIKEY}
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
@@ -31,7 +32,9 @@ properties:
       The Endpoint URL of the Honeycomb API.
       This is normally https://api.honeycomb.io, but can be overridden.
     type: string
-    validations: [noblanks, url]
+    validations:
+      - noblanks
+      - url
     default: https://api.honeycomb.io
     advanced: true
 templates:

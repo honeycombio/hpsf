@@ -114,14 +114,12 @@ connections:
 	err = yaml.Unmarshal(inputData, &hpsf)
 	assert.NoError(t, err)
 
-	errors := hpsf.Validate()
-	errs, ok := errors.(validator.Result)
+	err = hpsf.Validate()
+	result, ok := err.(validator.Result)
 	assert.True(t, ok)
-	assert.Equal(t, 2, errs.Len())
-	unwrapped := errs.Unwrap()
-	assert.Equal(t, 2, len(unwrapped))
-	assert.Contains(t, unwrapped[0].Error(), "GRPCPort")
-	assert.Contains(t, unwrapped[1].Error(), "otlp_in2")
+	assert.Equal(t, 2, result.Len())
+	assert.Contains(t, result.Details[0].Error(), "GRPCPort")
+	assert.Contains(t, result.Details[1].Error(), "otlp_in2")
 }
 
 func TestComponent_GetSafeName(t *testing.T) {
