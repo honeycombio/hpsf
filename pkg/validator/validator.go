@@ -1,6 +1,8 @@
 package validator
 
 import (
+	"errors"
+
 	y "gopkg.in/yaml.v3"
 )
 
@@ -15,19 +17,19 @@ func (e Result) Error() string {
 	return e.Msg
 }
 
-func (e Result) Unwrap() []error {
+func (e Result) Unwrap() error {
 	output := []error{}
 	for _, d := range e.Details {
 		// if any of the details are themselves a Result, unpack them recursively and add to the output.
 		if other, ok := d.(Result); ok {
 			// recursively unpack the details of the other Result
-			output = append(output, other.Unwrap()...)
+			output = append(output, other.Unwrap())
 		} else {
 			// otherwise just append the error to the output
 			output = append(output, d)
 		}
 	}
-	return output
+	return errors.Join(output...)
 }
 
 func NewResult(msg string) Result {

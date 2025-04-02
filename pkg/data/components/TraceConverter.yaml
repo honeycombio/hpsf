@@ -33,7 +33,8 @@ properties:
       It is recommended not to change the default unless
       you know what you're doing.
     type: string
-    validations: [noblanks]
+    validations:
+      - noblanks
     default: ${STRAWS_REFINERY_POD_IP}
     advanced: true
   - name: Port
@@ -42,7 +43,8 @@ properties:
       The port on which Refinery listens for incoming HTTP traffic.
       The OTel default is 4318. Set to 0 to disable HTTP.
     type: int
-    validations: [inrange(1, 65535)]
+    validations:
+      - inrange(1, 65535)
     default: 4318
     advanced: true
   - name: Headers
@@ -52,13 +54,11 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
-    validations: []
   - name: Insecure
     summary: Provide a way to disable TLS export.
     description: |
       Can be used to send data without TLS.
     type: bool
-    validations: []
     default: false
     advanced: true
 templates:

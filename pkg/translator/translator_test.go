@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -10,7 +11,6 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
-	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
@@ -163,19 +163,7 @@ func TestTranslatorValidation(t *testing.T) {
 			require.NoError(t, err)
 
 			err = tlater.ValidateConfig(hpsf)
-			if err != nil {
-				// If validation fails, check if it's a validator.Result
-				// and ensure it contains errors
-				if result, ok := err.(validator.Result); ok {
-					// If it's a Result, we can check the details
-					// This means the validation failed and we expect it to fail
-					// We can log the error for debugging
-					for _, err := range result.Unwrap() {
-						t.Logf("Validation failed for %s: %v", filePath, err)
-					}
-				}
-			}
-			require.NoError(t, err)
+			require.NoError(t, errors.Unwrap(err))
 		})
 	}
 }

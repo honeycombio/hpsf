@@ -5,7 +5,7 @@ components:
     kind: HoneycombExporter
     properties:
       - name: APIEndpoint
-        value: endpoint:1234
+        value: https://alternative.honeycomb.io
       - name: APIKey
         value: key1234
 connections:

@@ -37,7 +37,8 @@ properties:
     description: |
       Hostname or IP address on which to send outgoing GRPC traffic.
     type: string
-    validations: [noblanks]
+    validations:
+      - noblanks
     default: https://api.honeycomb.io
     advanced: true
   - name: Port
@@ -46,7 +47,8 @@ properties:
       The port on which to send outgoing gRPC traffic. Default is 443, which is
       the value expected by Honeycomb. The OTel standard for gRPC is 4317.
     type: int
-    validations: [inrange(1, 65535)]
+    validations:
+      - inrange(1, 65535)
     default: 443
     advanced: true
   - name: Insecure
