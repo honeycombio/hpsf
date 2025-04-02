@@ -1,0 +1,90 @@
+kind: S3Exporter
+name: S3 Exporter
+type: base
+style: exporter
+logo: opentelemetry
+status: development
+version: v0.1.0
+summary: Stores telemetry in OTLP (OpenTelemetry) format in S3 storage.
+description: |
+  Exports OpenTelemetry signals using OTLP to S3 storage.
+tags:
+  - category:exporter
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: Bucket
+    summary: The bucket in which to store the S3.
+    description: |
+      The bucket in which to store the S3. This is a required field.
+    type: string
+    validations: [noblanks]
+  - name: Region
+    summary: The region in which to store the S3.
+    description: |
+      The region in which to store the S3. The default value is `us-east-1`.
+    type: string
+  - name: Prefix
+    summary: The prefix to use for the S3.
+    description: |
+      The prefix to use for the S3.
+    type: string
+  # advanced properties
+  - name: PartitionFormat
+    summary: The partition format to use for the S3.
+    description: |
+      The partition format to use for the S3. The default value is `year=%Y/month=%m/day=%d/hour=%H/minute=%M`.
+    type: string
+    advanced: true
+  - name: Timeout
+    summary: The timeout to use for the S3.
+    description: |
+      The timeout to use for the S3. The default value is `5s`.
+    type: duration
+    validations: [duration]
+    advanced: true
+  - name: Marshaler
+    summary: The marshaler to use for the S3.
+    description: |
+      The marshaler to use for the S3. The default value is `otlp_json`.
+    type: string
+    validations: [oneof(otlp_json, otlp_proto)]
+    advanced: true
+templates:
+  - name: s3_exporter_collector
+    kind: collector_config
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: awss3
+    data:
+      - key: "{{ .ComponentName }}.s3uploader.s3_bucket"
+        value: "{{ firstNonZero .HProps.Bucket .User.Bucket .Props.Bucket.Default }}"
+      - key: "{{ .ComponentName }}.s3uploader.region"
+        value: "{{ firstNonZero .HProps.Region .User.Region .Props.Region.Default }}"
+        suppress_if: "{{ not .HProps.Region }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_prefix"
+        value: "{{ firstNonZero .HProps.Prefix .User.Prefix .Props.Prefix.Default }}"
+        suppress_if: "{{ not .HProps.Prefix }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_partition_format"
+        value: "{{ firstNonZero .HProps.PartitionFormat .User.PartitionFormat .Props.PartitionFormat.Default }}"
+        suppress_if: "{{ not .HProps.PartitionFormat }}"
+      - key: "{{ .ComponentName }}.timeout"
+        value: "{{ firstNonZero .HProps.Timeout .User.Timeout .Props.Timeout.Default }}"
+        suppress_if: "{{ not .HProps.Timeout }}"
+      - key: "{{ .ComponentName }}.marshaler"
+        value: "{{ firstNonZero .HProps.Marshaler .User.Marshaler .Props.Marshaler.Default }}"
+        suppress_if: "{{ not .HProps.Marshaler }}"
