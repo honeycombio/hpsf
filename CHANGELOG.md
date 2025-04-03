@@ -1,5 +1,24 @@
 # hpsf library changelog
 
+## 0.3.0 2025-04-03
+
+### Features
+
+- feat: Add S3 exporter component (#65)
+- feat: Validate properties with the property rules (#60)
+- feat: Add logos to receivers and exporters, tweak some text (#56)
+
+### Fixes
+
+- fix: add output config to processor (#59)
+
+### Maintenance
+
+- maint: Apply component property validations (#66)
+- maint: only check for test files for valid component config types (#64)
+- chore: add tests to validate all components (#63)
+- chore: update test path (#62)
+
 ## 0.2.0 2025-03-28
 
 ### Features
