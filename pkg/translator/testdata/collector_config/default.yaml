@@ -9,7 +9,7 @@ processors:
     batch: {}
     usage: {}
 exporters:
-    otlp/OTel_gRPC_Exporter_1:
+    otlphttp/OTel_HTTP_Exporter_1:
         endpoint: https://api.honeycomb.io:443
 extensions:
     honeycomb: {}
@@ -19,12 +19,12 @@ service:
         logs:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage, batch]
-            exporters: [otlp/OTel_gRPC_Exporter_1]
+            exporters: [otlphttp/OTel_HTTP_Exporter_1]
         metrics:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage, batch]
-            exporters: [otlp/OTel_gRPC_Exporter_1]
+            exporters: [otlphttp/OTel_HTTP_Exporter_1]
         traces:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage, batch]
-            exporters: [otlp/OTel_gRPC_Exporter_1]
+            exporters: [otlphttp/OTel_HTTP_Exporter_1]
