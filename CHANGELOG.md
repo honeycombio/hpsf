@@ -1,5 +1,13 @@
 # hpsf library changelog
 
+## 0.4.0 2025-04-07
+
+### Features
+
+- feat: use http exporter in default (#73)
+- feat: set otelgrpc exporter to alpha (#72)
+- feat: set otel receiver to alpha (#71)
+
 ## 0.3.0 2025-04-03
 
 ### Features
