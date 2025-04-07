@@ -3,7 +3,7 @@ name: OTel gRPC Exporter
 type: base
 style: exporter
 logo: opentelemetry
-status: development
+status: alpha
 version: v0.1.0
 summary: Sends telemetry in OTLP (OpenTelemetry) format via gRPC.
 description: |
