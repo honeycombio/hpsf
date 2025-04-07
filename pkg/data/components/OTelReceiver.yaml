@@ -3,7 +3,7 @@ name: OTel Receiver
 style: receiver
 logo: opentelemetry
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both.
 description: |
