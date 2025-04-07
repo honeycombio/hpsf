@@ -1,6 +1,6 @@
 # hpsf library changelog
 
-## 0.3.0 2025-04-07
+## 0.4.0 2025-04-07
 
 ### Features
 
