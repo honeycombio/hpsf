@@ -43,19 +43,20 @@ connections:
       port: Traces
       type: Honeycomb
 layout:
-  frame:
-    width: 1835
-    height: 1491
   components:
     - name: OTel Receiver 1
-      x: 253
-      y: 223
+      position:
+        x: -340
+        y: 0
     - name: Trace Converter 1
-      x: 439
-      y: 227
+      position:    
+        x: -100
+        y: 0
     - name: Honeycomb Exporter 1
-      x: 938
-      y: 210
+      position:
+        x: 100
+        y: 0
     - name: EMA Throughput 1
-      x: 676
-      y: 228
+      position:
+        x: 340
+        y: 0
