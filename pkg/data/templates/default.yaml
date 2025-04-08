@@ -37,13 +37,12 @@ connections:
       port: Logs
       type: OTelLogs
 layout:
-  frame:
-    width: 1835
-    height: 1491
   components:
     - name: OTel Receiver 1
-      x: 260
-      y: 182
+      position:
+        x: -100
+        y: 0
     - name: OTel HTTP Exporter 1
-      x: 642
-      y: 182
+      position:
+        x: 100
+        y: 0
