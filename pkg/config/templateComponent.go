@@ -140,6 +140,7 @@ type TemplateComponent struct {
 	Kind        string             `yaml:"kind"`
 	Version     string             `yaml:"version"`
 	Name        string             `yaml:"name"`
+	Logo        string             `yaml:"logo,omitempty"`
 	Summary     string             `yaml:"summary,omitempty"`
 	Description string             `yaml:"description,omitempty"`
 	Comment     string             `yaml:"comment,omitempty"`

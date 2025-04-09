@@ -2,7 +2,7 @@ kind: S3Exporter
 name: S3 Exporter
 type: base
 style: exporter
-logo: opentelemetry
+logo: awss3
 status: development
 version: v0.1.0
 summary: Stores telemetry in OTLP (OpenTelemetry) format in S3 storage.
