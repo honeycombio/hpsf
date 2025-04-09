@@ -1,5 +1,15 @@
 # hpsf library changelog
 
+## 0.5.0 2025-04-09
+
+### Features
+
+- feat: add logo to components (#76)
+
+### Maintenance
+
+- maint: Update template layouts to be valid (#75)
+
 ## 0.4.0 2025-04-07
 
 ### Features
