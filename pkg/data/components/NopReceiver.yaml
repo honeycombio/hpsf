@@ -19,13 +19,13 @@ tags:
   - signal:OTelLogs
 ports:
   - name: Traces
-    direction: input
+    direction: output
     type: OTelTraces
   - name: Metrics
-    direction: input
+    direction: output
     type: OTelMetrics
   - name: Logs
-    direction: input
+    direction: output
     type: OTelLogs
 templates:
   - kind: collector_config
