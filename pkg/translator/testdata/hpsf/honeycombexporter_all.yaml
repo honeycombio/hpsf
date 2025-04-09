@@ -1,6 +1,6 @@
 components:
   - name: honeycomb_in
-    kind: HoneycombExporter
+    kind: TraceConverter
   - name: honeycomb_out
     kind: HoneycombExporter
     properties:
