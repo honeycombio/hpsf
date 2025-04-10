@@ -28,16 +28,16 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 	tlater.InstallTemplates(templates)
 	require.Equal(t, templates, tlater.GetTemplates())
 
-	for componentName := range comps {
+	for _, component := range comps {
 		for _, properties := range []string{"all", "defaults"} {
-			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(componentName), properties)
+			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(component.Kind), properties)
 			t.Run(testData, func(t *testing.T) {
 				// test source config lives in testdata/hpsf
 				b, err := os.ReadFile(path.Join("testdata", "hpsf", testData))
 				require.NoError(t, err)
 				var inputData = string(b)
 
-				for _, template := range comps[componentName].Templates {
+				for _, template := range component.Templates {
 					configType := config.Type(template.Kind)
 					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
 					require.NoError(t, err)
