@@ -206,12 +206,12 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 
 	// merge in the config from each of the components
 	for _, comp := range comps {
-		refineryConfig, err := comp.GenerateConfig(ct, userdata)
+		compConfig, err := comp.GenerateConfig(ct, userdata)
 		if err != nil {
 			return nil, err
 		}
-		if refineryConfig != nil {
-			composite.Merge(refineryConfig)
+		if compConfig != nil {
+			composite.Merge(compConfig)
 		}
 	}
 	return composite, nil

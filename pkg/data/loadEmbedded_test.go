@@ -24,7 +24,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 	// we'll eventually move all of this to a validation library and use that; for now this is just a quick check
 	for k, v := range got {
 		switch v.Type {
-		case config.ComponentStyleBase, config.ComponentStyleMeta, config.ComponentStyleTemplate:
+		case config.ComponentTypeBase, config.ComponentTypeMeta, config.ComponentTypeTemplate:
 			// ok
 		default:
 			t.Errorf("LoadEmbeddedComponents() %s style = %v, what's that?", k, v.Type)

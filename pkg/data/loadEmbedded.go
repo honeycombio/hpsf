@@ -25,6 +25,10 @@ func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	// Load each template
 	components := make(map[string]config.TemplateComponent)
 	for _, comp := range comps {
+		// skip non-yaml files
+		if !strings.HasSuffix(comp.Name(), ".yaml") {
+			continue
+		}
 		templateData, err := EmbeddedFS.ReadFile(path.Join("components", comp.Name()))
 		if err != nil {
 			return nil, err
@@ -58,6 +62,10 @@ func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	// Load each template
 	templates := make(map[string]hpsf.HPSF)
 	for _, comp := range temps {
+		// skip non-yaml files
+		if !strings.HasSuffix(comp.Name(), ".yaml") {
+			continue
+		}
 		templateData, err := EmbeddedFS.ReadFile(path.Join("templates", comp.Name()))
 		if err != nil {
 			return nil, err
