@@ -50,9 +50,9 @@ type TemplateData struct {
 type ComponentType string
 
 const (
-	ComponentStyleBase     ComponentType = "BASE"
-	ComponentStyleMeta     ComponentType = "META"
-	ComponentStyleTemplate ComponentType = "TEMPLATE"
+	ComponentTypeBase     ComponentType = "BASE"
+	ComponentTypeMeta     ComponentType = "META"
+	ComponentTypeTemplate ComponentType = "TEMPLATE"
 )
 
 // we need to be able to unmarshal the component style and status from YAML
@@ -70,7 +70,7 @@ func (c *ComponentType) UnmarshalYAML(value *y.Node) error {
 	}
 	cs := ComponentType(strings.ToUpper(s))
 	switch cs {
-	case ComponentStyleBase, ComponentStyleMeta, ComponentStyleTemplate:
+	case ComponentTypeBase, ComponentTypeMeta, ComponentTypeTemplate:
 		*c = cs
 		return nil
 	default:
@@ -192,6 +192,7 @@ func (t *TemplateComponent) ComponentName() string {
 	return t.Name
 }
 
+// Tests if this component has a connection with this signal type
 func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool {
 	typeMapping := map[string]hpsf.ConnectionType{
 		"traces":  hpsf.CTYPE_TRACES,
