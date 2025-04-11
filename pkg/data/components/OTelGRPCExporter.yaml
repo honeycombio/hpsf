@@ -32,6 +32,7 @@ properties:
       configured. This property supports sending a map of header keys and
       values.
     type: map
+    subtype: header
   - name: Host
     summary: The hostname or IP address to send data to.
     description: |

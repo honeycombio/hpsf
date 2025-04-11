@@ -30,6 +30,7 @@ properties:
     type: rule
   - name: Signal
     type: string
+    subtype: oneof(traces, metrics, logs)
     validations:
       - oneof(traces, metrics, logs)
 templates:

@@ -23,6 +23,7 @@ type TemplateProperty struct {
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
+	Subtype     string        `yaml:"subtype,omitempty"`
 	Advanced    bool          `yaml:"advanced,omitempty"`
 	Validations []string      `yaml:"validations,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
