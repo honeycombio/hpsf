@@ -62,6 +62,16 @@ func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userd
 		if err != nil {
 			return nil, err
 		}
+		if kv.suppress_if != "" {
+			// if the suppress_if condition is met, we skip this key
+			condition, err := t.applyTemplate(kv.suppress_if, userdata)
+			if err != nil {
+				return nil, err
+			}
+			if condition == "true" {
+				continue
+			}
+		}
 		// and then the value
 		value, err := t.applyTemplate(kv.value, userdata)
 		if err != nil {

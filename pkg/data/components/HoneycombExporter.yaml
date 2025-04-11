@@ -46,4 +46,6 @@ templates:
         value: "{{ firstNonZero .HProps.APIEndpoint .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
         value: "{{ firstNonZero .HProps.APIKey .User.APIKey }}"
-
+      - key: AccessKeys.SendKeyMode
+        value: "all"
+        suppress_if: "{{ not (nonempty (firstNonZero .HProps.APIKey .User.APIKey)) }}"
