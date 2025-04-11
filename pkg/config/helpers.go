@@ -48,6 +48,7 @@ func helpers() template.FuncMap {
 		"join":          join,
 		"makeSlice":     makeSlice,
 		"meta":          meta,
+		"nonempty":      nonempty,
 		"now":           now,
 		"split":         split,
 		"yamlf":         yamlf,
