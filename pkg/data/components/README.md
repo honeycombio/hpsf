@@ -104,6 +104,7 @@ templates:
 ```
 
 ## The template section
+
 As noted above, the template section is what does the work to generate
 configurations from the data specified in each component.
 
