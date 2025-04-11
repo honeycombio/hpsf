@@ -127,6 +127,7 @@ when composing samplers.
 
 Each format can do different things with the meta section. For collectors,
 `meta` contains:
+
 - `componentSection` - exporters, receivers, processors etc
 - `signalTypes` - array of which signal types this component handles
 - `collectorComponentName` is the name by which the underlying collector component is known
