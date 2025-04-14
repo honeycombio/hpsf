@@ -1,5 +1,6 @@
 AccessKeys:
     SendKey: key1234
+    SendKeyMode: all
 General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0
