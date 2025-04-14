@@ -60,7 +60,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 CONFIG ?= examples/hpsf.yaml
 .PHONY: smoke_refinery
 smoke_refinery:
-	@echo generating refinery configs for component component $(CONFIG)
+	@echo generating refinery configs for component $(CONFIG)
 	mkdir -p tmp
 
 	# generate the configs from the provided file
@@ -76,10 +76,10 @@ smoke_refinery:
 
 	# check if the container is running
 	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-refinery')" != "true" ]; then \
-		echo "+++ smoke test - container not running"; \
+		echo "+++ container not running"; \
 		exit 1; \
 	else \
-		echo "+++ smoke test - container running"; \
+		echo "+++ container is running"; \
 		docker kill 'smoke-refinery' > /dev/null; \
 	fi
 
