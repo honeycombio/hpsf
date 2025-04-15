@@ -57,15 +57,22 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done
 
-CONFIG ?= examples/hpsf.yaml
-.PHONY: smoke_refinery
-smoke_refinery:
-	@echo generating refinery configs for component $(CONFIG)
+.PHONY: .smoke_refinery
+#: run smoke test for refinery
+#: (usage: make smoke_refinery FILE=examples/hpsf.yaml)
+#: Do not use directly, use the smoke target instead
+.smoke_refinery:
+	if [ -z "$(FILE)" ]; then \
+		echo "+++ no component file provided, use smoke instead -- exiting"; \
+		exit 1; \
+	fi
+
+	@echo generating refinery configs for component $(FILE)
 	mkdir -p tmp
 
 	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${CONFIG} -o tmp/refinery-rules.yaml rRules
-	go run ./cmd/hpsf -i ${CONFIG} -o tmp/refinery-config.yaml rConfig
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig
 	
 	# run refinery with the generated configs
 	docker run -d --rm --name smoke-refinery \
@@ -87,7 +94,7 @@ smoke_refinery:
 smoke: pkg/data/components/*.yaml
 	for file in $^ ; do \
 		if [ "$$(yq '.templates[] | select(.kind | contains("refinery_config","refinery_rules"))' $${file})" != "" ]; then \
-			$(MAKE) smoke_refinery CONFIG=$${file}; \
+			$(MAKE) .smoke_refinery FILE=$${file}; \
 		fi; \
 	done
 
