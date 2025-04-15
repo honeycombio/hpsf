@@ -58,7 +58,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	done
 
 .PHONY: .smoke_refinery
-#: run smoke test for refinery
+#: run smoke test for refinery component
 #: Do not use directly, use the smoke target instead
 .smoke_refinery:
 	if [ -z "$(FILE)" ]; then \
@@ -90,6 +90,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	fi
 
 .PHONY: smoke
+#: run smoke tests for HPSF components
 smoke: pkg/data/components/*.yaml
 	for file in $^ ; do \
 		if [ "$$(yq '.templates[] | select(.kind | contains("refinery_config","refinery_rules"))' $${file})" != "" ]; then \
