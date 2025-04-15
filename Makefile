@@ -89,6 +89,42 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		docker kill 'smoke-refinery' > /dev/null; \
 	fi
 
+# collector_binary:
+# 	docker create --name supervised honeycombio/supervised-collector:latest
+# 	docker cp supervised:/otelcol-contrib ./tmp/otelcol-contrib
+# 	docker rm supervised
+
+.PHONY: .smoke_collector
+#: run smoke test for collector component
+#: Do not use directly, use the smoke target instead
+.smoke_collector: collector_binary
+	if [ -z "$(FILE)" ]; then \
+		echo "+++ no component file provided, use smoke instead -- exiting"; \
+		exit 1; \
+	fi
+
+	@echo generating collector configs for component $(FILE)
+	mkdir -p tmp
+
+	# generate the configs from the provided file
+	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig
+
+	# run collector with the generated config
+	docker run -d --rm --name smoke-collector \
+		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
+		-v ./tmp/otelcol-contrib:/etc/otelcol-contrib \
+		honeycombio/supervised-collector:latest
+	sleep 1
+
+	# check if the container is running
+	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-collector')" != "true" ]; then \
+		echo "+++ container not running"; \
+		exit 1; \
+	else \
+		echo "+++ container is running"; \
+		docker kill 'smoke-collector' > /dev/null; \
+	fi
+
 .PHONY: smoke
 #: run smoke tests for HPSF components
 smoke: pkg/data/components/*.yaml
