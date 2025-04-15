@@ -59,7 +59,6 @@ validate_all: examples/hpsf* pkg/data/templates/*
 
 .PHONY: .smoke_refinery
 #: run smoke test for refinery
-#: (usage: make smoke_refinery FILE=examples/hpsf.yaml)
 #: Do not use directly, use the smoke target instead
 .smoke_refinery:
 	if [ -z "$(FILE)" ]; then \
