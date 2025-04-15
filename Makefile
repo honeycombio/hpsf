@@ -57,19 +57,46 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done
 
-.PHONY: smoke
-smoke:
-	@echo
-	@echo "+++ basic smoke test - does it start?"
-	@echo "+++ if so, make unsmoke after this"
-	@echo
+.PHONY: .smoke_refinery
+#: run smoke test for refinery component
+#: Do not use directly, use the smoke target instead
+.smoke_refinery:
+	if [ -z "$(FILE)" ]; then \
+		echo "+++ no component file provided, use smoke instead -- exiting"; \
+		exit 1; \
+	fi
+
+	@echo generating refinery configs for component $(FILE)
 	mkdir -p tmp
-	go run ./cmd/hpsf -i ./examples/hpsfProxy.yaml -o tmp/hpsfProxy.cconfig.yaml cConfig
-	docker run --rm -it \
-		--name smoke-proxy \
-    -p 4227-4228:4227-4228 \
-		-v ./tmp/hpsfProxy.cconfig.yaml:/etc/otelcol/config.yaml \
-		otel/opentelemetry-collector:latest
+
+	# generate the configs from the provided file
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig
+	
+	# run refinery with the generated configs
+	docker run -d --rm --name smoke-refinery \
+		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
+		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
+		honeycombio/refinery:latest
+	sleep 1
+
+	# check if the container is running
+	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-refinery')" != "true" ]; then \
+		echo "+++ container not running"; \
+		exit 1; \
+	else \
+		echo "+++ container is running"; \
+		docker kill 'smoke-refinery' > /dev/null; \
+	fi
+
+.PHONY: smoke
+#: run smoke tests for HPSF components
+smoke: pkg/data/components/*.yaml
+	for file in $^ ; do \
+		if [ "$$(yq '.templates[] | select(.kind | contains("refinery_config","refinery_rules"))' $${file})" != "" ]; then \
+			$(MAKE) .smoke_refinery FILE=$${file}; \
+		fi; \
+	done
 
 .PHONY: unsmoke
 unsmoke:
