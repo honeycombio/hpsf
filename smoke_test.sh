@@ -37,8 +37,10 @@ yq -i e \
 
 # run collector with the generated config
 cid=$(docker run -d --rm --name smoke-collector \
+    --entrypoint /otelcol-contrib \
     -v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
-    otel/opentelemetry-collector-contrib:latest)
+    honeycombio/supervised-collector:latest \
+    --config /etc/otelcol-contrib/config.yaml)
 sleep 1
 
 # check if collector container is running
