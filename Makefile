@@ -57,50 +57,9 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		$(MAKE) validate CONFIG=$${file} || exit 1; \
 	done
 
-.PHONY: .smoke_refinery
-#: run smoke test for refinery component
-#: Do not use directly, use the smoke target instead
-.smoke_refinery:
-	if [ -z "$(FILE)" ]; then \
-		echo "+++ no component file provided, use smoke instead -- exiting"; \
-		exit 1; \
-	fi
-
-	@echo generating refinery configs for component $(FILE)
-	mkdir -p tmp
-
-	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig
-	
-	# run refinery with the generated configs
-	docker run -d --rm --name smoke-refinery \
-		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
-		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		honeycombio/refinery:latest
-	sleep 1
-
-	# check if the container is running
-	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-refinery')" != "true" ]; then \
-		echo "+++ container not running"; \
-		exit 1; \
-	else \
-		echo "+++ container is running"; \
-		docker kill 'smoke-refinery' > /dev/null; \
-	fi
-
 .PHONY: smoke
 #: run smoke tests for HPSF components
-smoke: pkg/data/components/*.yaml
+smoke: pkg/translator/testdata/hpsf/*.yaml
 	for file in $^ ; do \
-		if [ "$$(yq '.templates[] | select(.kind | contains("refinery_config","refinery_rules"))' $${file})" != "" ]; then \
-			$(MAKE) .smoke_refinery FILE=$${file}; \
-		fi; \
+		./smoke_test.sh $${file} || exit 1; \
 	done
-
-.PHONY: unsmoke
-unsmoke:
-	@echo
-	@echo "+++ stopping smoke test"
-	@echo
-	docker stop smoke-proxy
