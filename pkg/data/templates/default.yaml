@@ -11,6 +11,10 @@ components:
     kind: OTelReceiver
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
+    properties:
+      - name: Headers
+        value:
+          x-honeycomb-team: ${HONEYCOMB_API_KEY}
 connections:
   - source:
       component: OTel Receiver 1
