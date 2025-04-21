@@ -11,6 +11,8 @@ processors:
 exporters:
     otlphttp/OTel_HTTP_Exporter_1:
         endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-team: ${HONEYCOMB_API_KEY}
 extensions:
     honeycomb: {}
 service:
