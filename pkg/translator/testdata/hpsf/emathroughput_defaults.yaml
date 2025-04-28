@@ -5,6 +5,9 @@ components:
     kind: HoneycombExporter
   - name: EMAThroughput_1
     kind: EMAThroughput
+    properties:
+      - name: FieldList # FieldList is a required property without a default value
+        value: [http.method, http.status_code]
 connections:
   - source:
       component: honeycomb_in
