@@ -90,9 +90,43 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		docker rm 'smoke-refinery'; \
 	fi
 
+.PHONY: .smoke_collector
+#: run smoke test for collector components
+#: Do not use directly, use the smoke target instead
+.smoke_collector:
+	if [ -z "$(FILE)" ]; then \
+		echo "+++ no component file provided, use smoke instead -- exiting"; \
+		exit 1; \
+	fi
+
+	@echo generating collector configs for component $(FILE)
+	mkdir -p tmp
+
+	# generate the configs from the provided file
+	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
+
+	# run collector with the generated config
+	docker run -d --name smoke-collector \
+		--entrypoint /otelcol-contrib \
+		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
+		honeycombio/supervised-collector:latest \
+		--config /etc/otelcol-contrib/config.yaml || exit 1
+	sleep 1
+
+	# check if the container is running
+	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-collector')" != "true" ]; then \
+		echo "+++ container not running"; \
+		exit 1; \
+	else \
+		echo "+++ container is running"; \
+		docker kill 'smoke-collector'; \
+		docker rm 'smoke-collector'; \
+	fi
+
 .PHONY: smoke
 #: run smoke tests for HPSF components
 smoke: pkg/translator/testdata/hpsf/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
+		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
