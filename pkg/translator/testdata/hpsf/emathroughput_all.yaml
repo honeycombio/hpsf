@@ -9,7 +9,7 @@ components:
       - name: Environment
         value: test
       - name: AdjustmentInterval
-        value: 120s
+        value: 120
       - name: FieldList
         value: [http.method, http.status_code]
       - name: GoalThroughputPerSec

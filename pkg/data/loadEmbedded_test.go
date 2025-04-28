@@ -88,7 +88,7 @@ func TestTemplateComponents(t *testing.T) {
 			config: map[string]any{
 				"Environment":          "staging",
 				"GoalThroughputPerSec": 42,
-				"AdjustmentInterval":   "120s",
+				"AdjustmentInterval":   120,
 				"FieldList":            []string{"http.method", "http.status_code"},
 			},
 			wantOutput: "EmaThroughput_output_refinery_rules.yaml",
