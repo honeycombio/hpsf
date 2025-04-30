@@ -119,6 +119,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-collector \
 		--entrypoint /otelcol-contrib \
 		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
+		-e STRAWS_COLLECTOR_POD_IP=localhost \
+		-e STRAWS_REFINERY_POD_IP=localhost \
 		honeycombio/supervised-collector:latest \
 		--config /etc/otelcol-contrib/config.yaml || exit 1
 	sleep 1
