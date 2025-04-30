@@ -7,7 +7,7 @@ components:
       - name: APIEndpoint
         value: https://alternative.honeycomb.io
       - name: APIKey
-        value: key1234
+        value: abcdef1234567890abcdef1  # a validly-formatted key
 connections:
   - source:
       component: honeycomb_in

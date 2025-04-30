@@ -5,8 +5,8 @@ Samplers:
             SampleRate: 1
     test:
         EMAThroughputSampler:
-            AdjustmentInterval: 120
+            AdjustmentInterval: 120s
             FieldList:
                 - http.method
                 - http.status_code
-            GoalThroughput: 42
+            GoalThroughputPerSec: 42
