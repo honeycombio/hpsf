@@ -70,14 +70,14 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	mkdir -p tmp
 
 	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules || exit 1
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig || exit 1
-
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig
+	
 	# run refinery with the generated configs
-	docker run -d --name smoke-refinery \
+	docker run -d --rm --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		honeycombio/refinery:latest || exit 1
+		honeycombio/refinery:latest
 	sleep 1
 
 	# check if the container is running
@@ -87,7 +87,6 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	else \
 		echo "+++ container is running"; \
 		docker kill 'smoke-refinery'; \
-		docker rm 'smoke-refinery'; \
 	fi
 
 .PHONY: .smoke_collector
@@ -144,3 +143,10 @@ smoke: pkg/data/templates/*.yaml
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
+
+.PHONY: unsmoke
+unsmoke:
+	@echo
+	@echo "+++ stopping smoke test"
+	@echo
+	docker stop smoke-proxy
