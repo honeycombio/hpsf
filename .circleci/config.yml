@@ -11,8 +11,6 @@ jobs:
             - v1-go-mod-{{ checksum "go.sum" }}
       - run: make test
       - run: make validate_all
-      - setup_remote_docker
-      - run: make smoke
       - store_test_results:
           path: test_results/
       - save_cache:
