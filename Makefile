@@ -142,13 +142,3 @@ smoke: pkg/data/templates/*.yaml
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
-
-.PHONY: unsmoke
-#: clean up after smoke tests
-unsmoke:
-	@echo
-	@echo "+++ cleaning up smoke tests"
-	@echo
-	docker rm -f smoke-refinery
-	docker rm -f smoke-collector
-	rm -rf tmp
