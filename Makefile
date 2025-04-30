@@ -137,7 +137,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 
 .PHONY: smoke
 #: run smoke tests for HPSF components
-smoke: pkg/translator/testdata/hpsf/*.yaml
+smoke: pkg/data/templates/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
