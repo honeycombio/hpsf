@@ -86,7 +86,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
-		docker kill 'smoke-refinery'; \
+		docker kill 'smoke-refinery' > /dev/null; \
 	fi
 
 .PHONY: .smoke_collector
