@@ -128,6 +128,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	# check if the container is running
 	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-collector')" != "true" ]; then \
 		echo "+++ container not running"; \
+		docker logs 'smoke-collector'; \
+		docker rm 'smoke-collector'; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
