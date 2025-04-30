@@ -83,6 +83,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	# check if the container is running
 	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-refinery')" != "true" ]; then \
 		echo "+++ container not running"; \
+		docker logs 'smoke-refinery'; \
+		docker rm 'smoke-refinery'; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
