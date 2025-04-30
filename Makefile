@@ -96,3 +96,10 @@ smoke: pkg/data/templates/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 	done
+
+.PHONY: unsmoke
+unsmoke:
+	@echo
+	@echo "+++ stopping smoke test"
+	@echo
+	docker stop smoke-proxy
