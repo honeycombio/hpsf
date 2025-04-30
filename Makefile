@@ -105,6 +105,16 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	# generate the configs from the provided file
 	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
 
+	# use yq to remove the usage processor and honeycomb extension from collector config
+	yq -i e \
+		'del(.processors.usage) | \
+		 del(.extensions.honeycomb) | \
+		 del(.service.extensions[] | select(. == "honeycomb")) | \
+		 del(.service.pipelines.traces.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.metrics.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.logs.processors[] | select(. == "usage"))' \
+		tmp/collector-config.yaml || exit 1
+
 	# run collector with the generated config
 	docker run -d --name smoke-collector \
 		--entrypoint /otelcol-contrib \
