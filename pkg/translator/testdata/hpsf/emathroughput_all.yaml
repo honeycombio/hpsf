@@ -12,7 +12,7 @@ components:
         value: 120
       - name: FieldList
         value: [http.method, http.status_code]
-      - name: GoalThroughput
+      - name: GoalThroughputPerSec
         value: 42
 connections:
   - source:
