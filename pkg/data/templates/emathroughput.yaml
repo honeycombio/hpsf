@@ -6,7 +6,7 @@ description: |
   Limit the throughput of traces to Honeycomb using an EMA sampler. This template
   accepts traces from an OTel receiver, converts them to Honeycomb format, and
   then samples them using an EMA Throughput Sampler before exporting them to
-  Honeycomb. Control the volume of traces by modifying the GoalThroughput value in
+  Honeycomb. Control the volume of traces by modifying the GoalThroughputPerSec value in
   the properties section of the EMAThroughputSampler component.
 components:
   - name: OTel Receiver 1
@@ -17,7 +17,7 @@ components:
     kind: EMAThroughput
     properties:
       - name: FieldList
-        value: 
+        value:
           - http.method
           - http.status_code
   - name: Honeycomb Exporter 1

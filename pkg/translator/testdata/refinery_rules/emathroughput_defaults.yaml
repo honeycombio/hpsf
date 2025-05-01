@@ -2,6 +2,8 @@ RulesVersion: 2
 Samplers:
     __default__:
         EMAThroughputSampler:
-            AdjustmentInterval: 60
-            FieldList: ""
-            GoalThroughput: 100
+            AdjustmentInterval: 60s
+            FieldList:
+                - http.method
+                - http.status_code
+            GoalThroughputPerSec: 100

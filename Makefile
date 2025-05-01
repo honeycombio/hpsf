@@ -70,23 +70,26 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	mkdir -p tmp
 
 	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig
-	
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules || exit 1
+	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig || exit 1
+
 	# run refinery with the generated configs
-	docker run -d --rm --name smoke-refinery \
+	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		honeycombio/refinery:latest
+		honeycombio/refinery:latest || exit 1
 	sleep 1
 
 	# check if the container is running
 	if [ "$$(docker inspect -f '{{.State.Running}}' 'smoke-refinery')" != "true" ]; then \
 		echo "+++ container not running"; \
+		docker logs 'smoke-refinery'; \
+		docker rm 'smoke-refinery'; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
-		docker kill 'smoke-refinery' > /dev/null; \
+		docker kill 'smoke-refinery'; \
+		docker rm 'smoke-refinery'; \
 	fi
 
 .PHONY: .smoke_collector

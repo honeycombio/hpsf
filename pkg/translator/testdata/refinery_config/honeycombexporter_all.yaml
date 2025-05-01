@@ -1,5 +1,5 @@
 AccessKeys:
-    SendKey: key1234
+    SendKey: abcdef1234567890abcdef1
     SendKeyMode: all
 General:
     ConfigurationVersion: 2
