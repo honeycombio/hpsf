@@ -15,6 +15,11 @@ components:
     kind: TraceConverter
   - name: EMA Throughput 1
     kind: EMAThroughput
+    properties:
+      - name: FieldList
+        value:
+          - http.method
+          - http.status_code
   - name: Honeycomb Exporter 1
     kind: HoneycombExporter
 connections:
