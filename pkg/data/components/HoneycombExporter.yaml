@@ -25,7 +25,7 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${HONEYCOMB_EXPORTER_APIKEY}
+    default: ${REFINERY_HONEYCOMB_API_KEY}
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
     description: |
