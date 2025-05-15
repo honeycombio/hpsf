@@ -58,8 +58,8 @@ func (c GenericBaseComponent) GenerateConfig(ct Type, userdata map[string]any) (
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
 	case RefineryRulesType:
-		return tmpl.DottedConfig{
-			"RulesVersion": 2,
+		return &tmpl.RulesConfig{
+			Version: 2,
 		}, nil
 	case CollectorConfigType:
 		return tmpl.NewCollectorConfig(), nil

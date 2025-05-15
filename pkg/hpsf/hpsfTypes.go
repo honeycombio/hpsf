@@ -34,8 +34,9 @@ const (
 	PTYPE_FLOAT  PropType = "float"
 	PTYPE_STRING PropType = "string"
 	PTYPE_BOOL   PropType = "bool"
-	PTYPE_ARRSTR PropType = "stringarray"
-	PTYPE_MAPSTR PropType = "map" // map[string]any
+	PTYPE_ARRSTR PropType = "stringarray" // []string
+	PTYPE_MAPSTR PropType = "map"         // map[string]any
+	PTYPE_COND   PropType = "conditions"  // for refinery conditions
 )
 
 func (p PropType) Validate() error {
@@ -46,6 +47,7 @@ func (p PropType) Validate() error {
 	case PTYPE_BOOL:
 	case PTYPE_ARRSTR:
 	case PTYPE_MAPSTR:
+	case PTYPE_COND:
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
@@ -148,6 +150,13 @@ func (p PropType) ValueCoerce(a any, target *any) error {
 			return errors.New("expected string array, got " + fmt.Sprint(a))
 		}
 	case PTYPE_MAPSTR:
+		switch v := a.(type) {
+		case map[string]any:
+			*target = v
+		default:
+			return errors.New("expected dictionary, got " + fmt.Sprint(a))
+		}
+	case PTYPE_COND:
 		switch v := a.(type) {
 		case map[string]any:
 			*target = v

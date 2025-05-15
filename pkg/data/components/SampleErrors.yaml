@@ -1,0 +1,82 @@
+kind: SampleErrors
+name: Sample Based on Errors
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: Samples HTTP errors based on error codes
+description: |
+  Samples HTTP errors based on the http status of processes within the trace.
+  If any span a trace has a status code in the 500s, it will be sampled
+  at the error rate. If any span has a status code in the 400s,
+  it will be sampled at the user error rate.
+  All other traces will be sampled at the default rate.
+tags:
+  - category:refinery_rule
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  - name: In
+    direction: input
+    type: HoneycombEvents
+  - name: Out
+    direction: output
+    type: HoneycombEvents
+properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler.
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
+  - name: ErrorRate
+    summary: The sample rate to use if the trace contains error spans (http 500s).
+    description: |
+      The sample rate to use if the rule matches. Example: 10 to keep 1 out of 10 traces.
+    type: int
+    default: 1
+    validations:
+      - positive
+  - name: UserErrorRate
+    summary: The sample rate to use if the trace contains spans with status in the 400s.
+    description: |
+      The sample rate to use if the rule matches. Example: 10 to keep 1 out of 10 traces.
+    type: int
+    default: 10
+    validations:
+      - positive
+  - name: DefaultRate
+    summary: The sample rate to use if the trace does not contain any error spans.
+    description: |
+      The sample rate to use if the rule matches. Example: 10 to keep 1 out of 10 traces.
+    type: int
+    default: 100
+    validations:
+      - positive
+templates:
+  - kind: refinery_rules
+    name: Drop_RefineryRules
+    format: rules
+    meta:
+      env: "{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}"
+      sampler: "RulesBasedSampler"
+    data:
+      - key: Name
+        value: "Sample 500 statuses at {{ .HProps.ErrorRate }} ({{ .HProps.Name }})"
+      - key: SampleRate
+        value: "{{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }}"
+      - key: "!condition!"
+        value: "fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
+      - key: Name
+        value: "Sample 400 statuses at {{ .HProps.UserErrorRate }} ({{ .HProps.Name }})"
+      - key: SampleRate
+        value: "{{ firstNonZero .HProps.UserErrorRate .User.UserErrorRate .Props.UserErrorRate.Default }}"
+      - key: "!condition!"
+        value: "fs=http.status_code,http.response.status_code;o=>=;d=i;v=400"
+      - key: Name
+        value: "Sample remainder at {{ .HProps.DefaultRate }} ({{ .HProps.Name }})"
+      - key: SampleRate
+        value: "{{ firstNonZero .HProps.DefaultRate .User.DefaultRate .Props.DefaultRate.Default }}"

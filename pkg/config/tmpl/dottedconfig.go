@@ -1,15 +1,37 @@
 package tmpl
 
 import (
+	"fmt"
 	"strings"
 
 	y "gopkg.in/yaml.v3"
 )
 
-// DottedConfig is a map that allows for keys with dots in them;
-// it can convert a regular map into a DottedConfig, and
-// when rendered, it will generate nested maps.
-// This exists because dotted paths are easier to merge.
+// DottedConfig is a map that allows for keys with dots in them; it can convert
+// a regular map into a DottedConfig, and when rendered, it will generate nested
+// maps. This exists because dotted paths are easier to merge.
+// There's a special case we have to deal with where if there are duplicate keys
+// in the list of dotted configs, we want to create a list of them at the level
+// above the final key.
+// For example, if we have:
+//
+//	a.b.c: 1
+//	a.b.d: 2
+//	a.b.e: 3
+//	a.b.c: 4
+//	a.b.d: 5
+//	a.b.e: 6
+//
+// We want to end up with:
+//
+//	a:
+//	  b:
+//	   - c: 1
+//	     d: 2
+//	     e: 3
+//	   - c: 4
+//	     d: 5
+//	     e: 6
 type DottedConfig map[string]any
 
 // renderInto is a helper function that recursively renders a DottedConfig into a map.
@@ -18,11 +40,34 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 	if strings.Contains(key, ".") {
 		// split the key into parts
 		parts := strings.SplitN(key, ".", 2)
+		// if the first part of the key does not exist in the map, create it
 		if m[parts[0]] == nil {
 			m[parts[0]] = make(map[string]any)
 		}
-		// recursively call renderInto with the new map
-		dc.renderInto(m[parts[0]].(map[string]any), parts[1], value)
+		switch m[parts[0]].(type) {
+		case []map[string]any:
+			// if the first part of the key is a list of maps, append to it
+			// we need to create a new map for the new value
+			newMap := make(map[string]any)
+			dc.renderInto(newMap, parts[1], value)
+			m[parts[0]] = append(m[parts[0]].([]map[string]any), newMap)
+		case map[string]any:
+			// if the first part of the key is a map, we need to check if the
+			// second part of the key already exists in the map
+			if _, ok := m[parts[0]].(map[string]any)[parts[1]]; ok {
+				// if it does, we need to create a new map for the new value
+				fmt.Println("key already exists, key=", key, parts)
+				newMap := make(map[string]any)
+				dc.renderInto(newMap, parts[1], value)
+				// and turn the existing map into a list of maps
+				m[parts[0]] = append([]map[string]any{m[parts[0]].(map[string]any)}, newMap)
+			} else {
+				// if it doesn't, we can just call renderInto on the existing map
+				dc.renderInto(m[parts[0]].(map[string]any), parts[1], value)
+			}
+		default:
+			fmt.Println("we have a non-map, key=", key, parts, "m[parts[0]]=", m[parts[0]])
+		}
 	} else {
 		// if the key does not contain a dot, assign the value
 		m[key] = value
@@ -30,8 +75,10 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 }
 
 // RenderToMap renders the config into a map.
-func (dc DottedConfig) RenderToMap() map[string]any {
-	m := make(map[string]any)
+func (dc DottedConfig) RenderToMap(m map[string]any) map[string]any {
+	if m == nil {
+		m = make(map[string]any)
+	}
 	for k, v := range dc {
 		dc.renderInto(m, k, v)
 	}
@@ -40,7 +87,7 @@ func (dc DottedConfig) RenderToMap() map[string]any {
 
 // RenderYAML renders the config into YAML and returns a hash of it.
 func (dc DottedConfig) RenderYAML() ([]byte, error) {
-	m := dc.RenderToMap()
+	m := dc.RenderToMap(nil)
 	data, err := y.Marshal(m)
 	if err != nil {
 		return nil, err
