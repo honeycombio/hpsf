@@ -1,7 +1,9 @@
 package tmpl
 
 import (
-	"fmt"
+	"log"
+	"regexp"
+	"strconv"
 	"strings"
 
 	y "gopkg.in/yaml.v3"
@@ -56,7 +58,6 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 			// second part of the key already exists in the map
 			if _, ok := m[parts[0]].(map[string]any)[parts[1]]; ok {
 				// if it does, we need to create a new map for the new value
-				fmt.Println("key already exists, key=", key, parts)
 				newMap := make(map[string]any)
 				dc.renderInto(newMap, parts[1], value)
 				// and turn the existing map into a list of maps
@@ -66,12 +67,58 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 				dc.renderInto(m[parts[0]].(map[string]any), parts[1], value)
 			}
 		default:
-			fmt.Println("we have a non-map, key=", key, parts, "m[parts[0]]=", m[parts[0]])
+			log.Printf("Template error in DottedConfig.renderInto: %s is not a map", parts[0])
 		}
 	} else {
 		// if the key does not contain a dot, assign the value
 		m[key] = value
 	}
+}
+
+// Iterate through the map recursively. If at any level, the key ends with a
+// number in square brackets (which indicates that it's an indexed value in a
+// slice), then we need to take the value of that key and put it into a
+// []map[string]any at the same level, but with the new key being the portion of
+// the name before the `[` and `]`. The number in the brackets is the index of
+// the slice.
+func consolidate(in map[string]any) map[string]any {
+	pat := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
+	out := make(map[string]any)
+	for k, v := range in {
+		switch v := v.(type) {
+		case map[string]any:
+			// if the value is a map, we need to consolidate it
+			// recursively call consolidate on the map
+			cv := consolidate(v)
+			// if the key contains our regex, we need to consolidate it
+			if pat.MatchString(k) {
+				// get the key and index
+				matches := pat.FindStringSubmatch(k)
+				key := matches[1]
+				index, _ := strconv.Atoi(matches[2])
+
+				// maybe we have a slice already
+				sl, ok := out[key].([]map[string]any)
+				if !ok {
+					sl = make([]map[string]any, 0)
+				}
+				// maybe expand the slice to fit the index
+				for i := len(sl); i <= index; i++ {
+					sl = append(sl, make(map[string]any))
+				}
+				// replace the value at the list at the index (it will be a map)
+				sl[index] = cv
+				out[key] = sl
+			} else {
+				// if the key doesn't match our regex, just add it to the map
+				out[k] = cv
+			}
+		default:
+			// if the value is not a map, just use it as is
+			out[k] = v
+		}
+	}
+	return out
 }
 
 // RenderToMap renders the config into a map.
@@ -82,7 +129,8 @@ func (dc DottedConfig) RenderToMap(m map[string]any) map[string]any {
 	for k, v := range dc {
 		dc.renderInto(m, k, v)
 	}
-	return m
+	cm := consolidate(m)
+	return cm
 }
 
 // RenderYAML renders the config into YAML and returns a hash of it.

@@ -24,7 +24,7 @@ func (rc *RulesConfig) RenderToMap(m map[string]any) map[string]any {
 	}
 	m["RulesVersion"] = rc.Version
 	for _, env := range rc.Envs {
-		env.ConfigData.RenderToMap(m)
+		m = env.ConfigData.RenderToMap(m)
 	}
 	return m
 }

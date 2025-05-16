@@ -69,13 +69,13 @@ templates:
       - key: SampleRate
         value: "{{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }}"
       - key: "!condition!"
-        value: "fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
+        value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
       - key: Name
         value: "Sample 400 statuses at {{ .HProps.UserErrorRate }} ({{ .HProps.Name }})"
       - key: SampleRate
         value: "{{ firstNonZero .HProps.UserErrorRate .User.UserErrorRate .Props.UserErrorRate.Default }}"
       - key: "!condition!"
-        value: "fs=http.status_code,http.response.status_code;o=>=;d=i;v=400"
+        value: "ix=1;fs=http.status_code,http.response.status_code;o=>=;d=i;v=400"
       - key: Name
         value: "Sample remainder at {{ .HProps.DefaultRate }} ({{ .HProps.Name }})"
       - key: SampleRate

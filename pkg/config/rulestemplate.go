@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -14,6 +15,7 @@ type rulesTemplate struct {
 }
 
 type rulesCondition struct {
+	index    int
 	fields   []string
 	op       string
 	value    string
@@ -23,27 +25,32 @@ type rulesCondition struct {
 func (r *rulesCondition) Render() (map[string]any, error) {
 	// render the condition into a dottedConfigTemplateKV
 	dc := make(map[string]any)
-	if len(r.fields) == 1 {
-		dc["Conditions.Field"] = r.fields[0]
-	} else {
-		dc["Conditions.Fields"] = r.fields
+	// we need to inject the index if it's not negative
+	c := "Conditions"
+	if r.index >= 0 {
+		c = fmt.Sprintf("Conditions[%d]", r.index)
 	}
-	dc["Conditions.Operator"] = r.op
+	if len(r.fields) == 1 {
+		dc[c+".Field"] = r.fields[0]
+	} else {
+		dc[c+".Fields"] = r.fields
+	}
+	dc[c+".Operator"] = r.op
 	if r.op == "exists" || r.op == "not_exists" {
 		// if the operator is exists or not_exists, we don't need a value or datatype
 		return dc, nil
 	}
-	dc["Conditions.Value"] = r.value
+	dc[c+".Value"] = r.value
 
 	switch r.datatype {
 	case "string", "s":
-		dc["Conditions.Datatype"] = "string"
+		dc[c+".Datatype"] = "string"
 	case "int", "i":
-		dc["Conditions.Datatype"] = "int"
+		dc[c+".Datatype"] = "int"
 	case "float", "f":
-		dc["Conditions.Datatype"] = "float"
+		dc[c+".Datatype"] = "float"
 	case "bool", "b":
-		dc["Conditions.Datatype"] = "bool"
+		dc[c+".Datatype"] = "bool"
 	case "":
 		// if the datatype is empty, don't set it
 	default:
@@ -75,9 +82,16 @@ func splitCondition(v any) *rulesCondition {
 			}
 		}
 
-		cond := &rulesCondition{}
+		cond := &rulesCondition{index: -1}
 		for k, v := range m {
 			switch k {
+			case "ix":
+				// parse the index as an int
+				if i, err := strconv.Atoi(v.(string)); err == nil {
+					cond.index = i
+				} else {
+					return nil
+				}
 			case "f":
 				cond.fields = append(cond.fields, v.(string))
 			case "fs":
@@ -155,7 +169,7 @@ func buildRulesTemplate(t TemplateData) (rulesTemplate, error) {
 }
 
 func (t *TemplateComponent) generateRulesConfig(rt rulesTemplate, userdata map[string]any) (*tmpl.RulesConfig, error) {
-	dc := tmpl.DottedConfig{}
+	dc := tmpl.NewDottedConfig(nil)
 	if strings.Contains(rt.env, "{{") {
 		// if the env contains a template variable, we need to expand it
 		env, err := t.expandTemplateVariable(rt.env, userdata)
