@@ -44,5 +44,5 @@ layout:
         y: 0
     - name: OTel gRPC Exporter 1
       position:
-        x: 100
+        x: 200
         y: 0

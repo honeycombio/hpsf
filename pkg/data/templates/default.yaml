@@ -48,5 +48,5 @@ layout:
         y: 0
     - name: OTel HTTP Exporter 1
       position:
-        x: 100
+        x: 200
         y: 0
