@@ -55,13 +55,13 @@ layout:
         y: 0
     - name: Trace Converter 1
       position:    
-        x: -100
+        x: 0
         y: 0
     - name: Honeycomb Exporter 1
       position:
-        x: 100
+        x: 240
         y: 0
     - name: EMA Throughput 1
       position:
-        x: 340
+        x: 540
         y: 0
