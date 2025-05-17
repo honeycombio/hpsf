@@ -20,7 +20,7 @@ func TestDottedConfig_Render(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.dc.RenderToMap(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.dc.RenderToMap(nil); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("DottedConfig.Render() = %v, want %v", got, tt.want)
 			}
 		})
@@ -46,6 +46,39 @@ func TestMakeDottedConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := NewDottedConfig(tt.args.m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MakeDottedConfig() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func clone(m map[string]any) map[string]any {
+	cl := make(map[string]any)
+	for k, v := range m {
+		switch v := v.(type) {
+		case map[string]any:
+			cl[k] = clone(v)
+		default:
+			cl[k] = v
+		}
+	}
+	return cl
+}
+
+func TestDottedConfig_Compose(t *testing.T) {
+	baseMap := map[string]any{"a": map[string]any{"b": map[string]any{"c": 1}}}
+	tests := []struct {
+		name string
+		dc   DottedConfig
+		want map[string]any
+	}{
+		{"1", DottedConfig{"b": 1}, map[string]any{"a": map[string]any{"b": map[string]any{"c": 1}}, "b": 1}},
+		{"2", DottedConfig{"a.b.c": 2}, map[string]any{"a": map[string]any{"b": []map[string]any{map[string]any{"c": 1}, map[string]any{"c": 2}}}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := clone(baseMap)
+			if got := tt.dc.RenderToMap(m); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("DottedConfig.Render() = %v, want %v", got, tt.want)
 			}
 		})
 	}
