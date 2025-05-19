@@ -77,22 +77,23 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 
 // Iterate through the map recursively. If at any level, the key ends with a
 // number in square brackets (which indicates that it's an indexed value in a
-// slice), then we need to take the value of that key and put it into a
-// []map[string]any at the same level, but with the new key being the portion of
+// slice), then we need to take the value of that key, determine its type T, and put it into a
+// []T at the same level, but with the new key being the portion of
 // the name before the `[` and `]`. The number in the brackets is the index of
 // the slice.
-func consolidate(in map[string]any) map[string]any {
+func processIndices(in map[string]any) map[string]any {
 	pat := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
 	out := make(map[string]any)
 	for k, v := range in {
 		switch v := v.(type) {
 		case map[string]any:
-			// if the value is a map, we need to consolidate it
-			// recursively call consolidate on the map
-			cv := consolidate(v)
-			// if the key contains our regex, we need to consolidate it
-			if pat.MatchString(k) {
-				// get the key and index
+			// if the value is a map, we need to recursively call processIndices on it first
+			cv := processIndices(v)
+			if !pat.MatchString(k) {
+				// if the key doesn't match our regex, just add it to the map
+				out[k] = cv
+			} else {
+				// we need to process it -- split the key and index
 				matches := pat.FindStringSubmatch(k)
 				key := matches[1]
 				index, _ := strconv.Atoi(matches[2])
@@ -109,9 +110,6 @@ func consolidate(in map[string]any) map[string]any {
 				// replace the value at the list at the index (it will be a map)
 				sl[index] = cv
 				out[key] = sl
-			} else {
-				// if the key doesn't match our regex, just add it to the map
-				out[k] = cv
 			}
 		default:
 			// if the value is not a map, just use it as is
@@ -129,7 +127,7 @@ func (dc DottedConfig) RenderToMap(m map[string]any) map[string]any {
 	for k, v := range dc {
 		dc.renderInto(m, k, v)
 	}
-	cm := consolidate(m)
+	cm := processIndices(m)
 	return cm
 }
 

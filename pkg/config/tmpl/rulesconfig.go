@@ -23,8 +23,19 @@ func (rc *RulesConfig) RenderToMap(m map[string]any) map[string]any {
 		m = make(map[string]any)
 	}
 	m["RulesVersion"] = rc.Version
+	foundDefault := false
 	for _, env := range rc.Envs {
+		if env.Name == "__default__" {
+			foundDefault = true
+		}
 		m = env.ConfigData.RenderToMap(m)
+	}
+	if !foundDefault {
+		// if we don't have a default env, we need to add one
+		defaultConfig := DottedConfig{
+			"Samplers.__default__.DeterministicSampler.SampleRate": 1,
+		}
+		m = defaultConfig.RenderToMap(m)
 	}
 	return m
 }

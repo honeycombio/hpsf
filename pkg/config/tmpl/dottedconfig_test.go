@@ -72,13 +72,31 @@ func TestDottedConfig_Compose(t *testing.T) {
 		want map[string]any
 	}{
 		{"1", DottedConfig{"b": 1}, map[string]any{"a": map[string]any{"b": map[string]any{"c": 1}}, "b": 1}},
-		{"2", DottedConfig{"a.b.c": 2}, map[string]any{"a": map[string]any{"b": []map[string]any{map[string]any{"c": 1}, map[string]any{"c": 2}}}}},
+		{"2", DottedConfig{"a.b.c": 2}, map[string]any{"a": map[string]any{"b": []map[string]any{{"c": 1}, {"c": 2}}}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			m := clone(baseMap)
 			if got := tt.dc.RenderToMap(m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("DottedConfig.Render() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_processIndices(t *testing.T) {
+	tests := []struct {
+		name string
+		in   map[string]any
+		want map[string]any
+	}{
+		{"0", map[string]any{}, map[string]any{}},
+		{"1", map[string]any{"a[0]": map[string]any{"a": "b"}}, map[string]any{"a": []map[string]any{{"a": "b"}}}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := processIndices(tt.in); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("processIndices() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}

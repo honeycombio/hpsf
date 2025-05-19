@@ -22,13 +22,13 @@ type rulesCondition struct {
 	datatype string
 }
 
-func (r *rulesCondition) Render() (map[string]any, error) {
+func (r *rulesCondition) Render(prefix string) (map[string]any, error) {
 	// render the condition into a dottedConfigTemplateKV
 	dc := make(map[string]any)
 	// we need to inject the index if it's not negative
-	c := "Conditions"
+	c := prefix + "Conditions"
 	if r.index >= 0 {
-		c = fmt.Sprintf("Conditions[%d]", r.index)
+		c = fmt.Sprintf("%sConditions[%d]", prefix, r.index)
 	}
 	if len(r.fields) == 1 {
 		dc[c+".Field"] = r.fields[0]
@@ -142,15 +142,17 @@ func buildRulesTemplate(t TemplateData) (rulesTemplate, error) {
 			return r, fmt.Errorf("expected map for data, got %T", d)
 		}
 
-		switch kv.key {
-		// this is a special case for the conditions
-		// we need to render them into a dottedConfigTemplateKV
-		case "!condition!":
+		if ix := strings.Index(kv.key, "!condition!"); ix != -1 {
+			// this is a special case for the conditions
+			// we need to render them into a dottedConfigTemplateKV
+
+			// first, get the prefix
+			prefix := kv.key[:ix]
 			cond := splitCondition(kv.value)
 			if cond == nil {
 				return r, fmt.Errorf("expected string for condition, got %T", kv.value)
 			}
-			m, err := cond.Render()
+			m, err := cond.Render(prefix)
 			if err != nil {
 				return r, err
 			}
@@ -161,7 +163,7 @@ func buildRulesTemplate(t TemplateData) (rulesTemplate, error) {
 				}
 				r.kvs = append(r.kvs, kv)
 			}
-		default:
+		} else {
 			r.kvs = append(r.kvs, *kv)
 		}
 	}
