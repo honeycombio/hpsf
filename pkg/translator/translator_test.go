@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -17,6 +18,10 @@ import (
 )
 
 func TestGenerateConfigForAllComponents(t *testing.T) {
+	// set this to true to overwrite the testdata files with the generated
+	// config files if they are different
+	overwrite := false
+
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
 	require.NoError(t, err)
@@ -54,7 +59,14 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 					got, err := cfg.RenderYAML()
 					require.NoError(t, err)
 
-					assert.Equal(t, expectedConfig, string(got))
+					if overwrite && !reflect.DeepEqual(expectedConfig, string(got)) {
+						// overwrite the testdata file with the generated config
+						err = os.WriteFile(path.Join("testdata", string(configType), testData), got, 0644)
+						require.NoError(t, err)
+						t.Logf("Overwrote %s with generated config", path.Join("testdata", string(configType), testData))
+					} else {
+						assert.Equal(t, expectedConfig, string(got))
+					}
 				}
 			})
 		}

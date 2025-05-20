@@ -231,6 +231,15 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 						err, t.Kind)
 				}
 				return t.generateCollectorConfig(ct, userdata)
+			case "rules":
+				// a rules template expects the metadata to include environment
+				// information.
+				rt, err := buildRulesTemplate(template)
+				if err != nil {
+					return nil, fmt.Errorf("error %w building rules template for %s",
+						err, t.Kind)
+				}
+				return t.generateRulesConfig(rt, userdata)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
@@ -316,7 +325,7 @@ func undecorate(s string) any {
 func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
 	switch k := tmplVal.(type) {
 	case string:
-		if tmplVal == "" || !strings.Contains(k, "{{") {
+		if !strings.Contains(k, "{{") {
 			return k, nil
 		}
 
@@ -331,6 +340,8 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 		return result, nil
 	// right now this is dealing with nop receiver/exporter case
 	case map[string]string:
+		return k, nil
+	case []string:
 		return k, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)

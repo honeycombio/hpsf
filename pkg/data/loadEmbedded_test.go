@@ -95,6 +95,8 @@ func TestTemplateComponents(t *testing.T) {
 		},
 	}
 
+	// set overwrite to true to rewrite the testdata files with the generated config
+	overwrite := false
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			want, err := os.ReadFile(path.Join("testdata", tt.wantOutput))
@@ -106,7 +108,14 @@ func TestTemplateComponents(t *testing.T) {
 			require.NotNil(t, conf)
 			got, err := conf.RenderYAML()
 			require.NoError(t, err)
-			require.Equal(t, string(want), string(got))
+			if overwrite && string(got) != string(want) {
+				// overwrite the testdata file with the generated config
+				err = os.WriteFile(path.Join("testdata", tt.wantOutput), got, 0644)
+				require.NoError(t, err)
+				t.Logf("Overwrote %s with generated config", path.Join("testdata", tt.wantOutput))
+			} else {
+				require.Equal(t, string(want), string(got))
+			}
 		})
 	}
 }

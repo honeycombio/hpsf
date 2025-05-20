@@ -142,8 +142,10 @@ func (cc *CollectorConfig) renderInto(m map[string]any, key string, value any) {
 }
 
 // RenderToMap renders the config into a map.
-func (cc *CollectorConfig) RenderToMap() map[string]any {
-	m := make(map[string]any)
+func (cc *CollectorConfig) RenderToMap(m map[string]any) map[string]any {
+	if m == nil {
+		m = make(map[string]any)
+	}
 	for section := range cc.Sections {
 		for k, v := range cc.Sections[section] {
 			key := section + "." + k
@@ -157,7 +159,7 @@ func (cc *CollectorConfig) RenderToMap() map[string]any {
 func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	// we render the config to a map, and then marshal it to yaml
 	// but that yaml is not idiomatic for the collector
-	m := cc.RenderToMap()
+	m := cc.RenderToMap(nil)
 	data, err := y.Marshal(m)
 	if err != nil {
 		return nil, err
