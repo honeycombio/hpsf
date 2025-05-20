@@ -71,12 +71,12 @@ templates:
       - key: "Rules[0].!condition!"
         value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
       - key: Rules[1].Name
-        value: "Sample 400 statuses at {{ .HProps.UserErrorRate }}"
+        value: "Sample 400 statuses at {{ firstNonZero .HProps.UserErrorRate .User.UserErrorRate .Props.UserErrorRate.Default }}"
       - key: Rules[1].SampleRate
         value: "{{ firstNonZero .HProps.UserErrorRate .User.UserErrorRate .Props.UserErrorRate.Default }}"
       - key: "Rules[1].!condition!"
         value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=400"
       - key: Rules[2].Name
-        value: "Sample remainder at {{ .HProps.DefaultRate }}"
+        value: "Sample remainder at {{ firstNonZero .HProps.DefaultRate .User.DefaultRate .Props.DefaultRate.Default }}"
       - key: Rules[2].SampleRate
         value: "{{ firstNonZero .HProps.DefaultRate .User.DefaultRate .Props.DefaultRate.Default }}"

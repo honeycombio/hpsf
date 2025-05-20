@@ -19,7 +19,7 @@ Samplers:
                         - http.response.status_code
                       Operator: '>='
                       Value: "400"
-                  Name: Sample 400 statuses at <no value>
+                  Name: Sample 400 statuses at 10
                   SampleRate: "10"
-                - Name: Sample remainder at <no value>
+                - Name: Sample remainder at 100
                   SampleRate: "100"
