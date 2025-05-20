@@ -65,7 +65,7 @@ templates:
       sampler: "RulesBasedSampler"
     data:
       - key: Rules[0].Name
-        value: "Sample 500 statuses at {{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }} ({{ .HProps.Name }})"
+        value: "Sample 500 statuses at {{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }}"
       - key: Rules[0].SampleRate
         value: "{{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }}"
       - key: "Rules[0].!condition!"
