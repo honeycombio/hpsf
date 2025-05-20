@@ -120,17 +120,28 @@ It's probably a good idea to make it unique in case we decide it's helpful somew
 ### format
 
 This is an escape hatch in case there are specialized components that need to
-compose differently from the standard. Today, `collector_config` always uses `collector` and the others always use `dottedConfig`. This could change
+compose differently from the standard. Today,
+* `collector_config` uses `collector`
+* `refinery_config` uses `dottedConfig`
+* `refinery_rules` uses `rules`
 when composing samplers.
 
 ### meta
 
-Each format can do different things with the meta section. For collectors,
-`meta` contains:
+Each format can do different things with the meta section.
+
+For collectors, `meta` contains:
 
 - `componentSection` - exporters, receivers, processors etc
 - `signalTypes` - array of which signal types this component handles
 - `collectorComponentName` is the name by which the underlying collector component is known
+
+For refinery rules, `meta` contains:
+
+- `env` - the environment for the rules
+- `sampler` - the kind of sampler being configured (the name used in Refinery configs, such as "RulesBasedSampler")
+
+Both of these fields can use template variables (and it's likely that at least `env` will).
 
 ### data
 
@@ -140,3 +151,27 @@ to convert them to configurations. For now, `data` is an array of elements, each
 - `key` - the name of the yaml key under which this value will be stored. For non-collectors, this is a "dotted" key (meaning dots separate multiple levels) in YAML. For collectors, it's complicated. Read the code.
 - `value` - the value of the key that should end up in the config
 - `suppress_if` - a value that evaluates to nonzero if the entire key/value pair should be omitted. For example, we use this to output the `Insecure` flag only when it's true.
+
+For refinery rules, a special key of `"!condition!"` indicates that its value field should be a semicolon-separated list of key=value pairs to define a refinery rules condition. Example:
+
+```yaml
+      - key: "!condition!"
+        value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
+```
+
+Possible field names are:
+* `ix` -- index; the value should be an integer ordering for this condition. No two conditions in the same rule should have the same index.
+* `f` -- field name
+* `fs` -- multiple fields in a comma-separated list
+* `o` -- operator; the Refinery operator
+* `d` -- datatype; one of `float`, `string`, `int`, or `bool`, or the first letter of these
+* `v` -- value; the constant value being compared
+
+For both collector and refinery rules, the dottedconfig also supports fields
+with a number in square brackets.
+
+If at any level, the key ends with a number in square brackets (which indicates
+that it's an indexed value in a slice), then we take the value of that key,
+determine its type T, and put it into a []T at the same level, but with the new
+key being the portion of the name before the `[` and `]`. The number in the
+brackets is the index of the slice.
