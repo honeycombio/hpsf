@@ -1,6 +1,6 @@
 kind: SampleErrors
 name: Sample Based on Errors
-style: processor
+style: sampler
 type: base
 status: development
 version: v0.1.0
@@ -62,7 +62,7 @@ templates:
     format: rules
     meta:
       env: "{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}"
-      sampler: "RulesBasedSampler"
+      sampler: RulesBasedSampler
     data:
       - key: Rules[0].Name
         value: "Sample 500 statuses at {{ firstNonZero .HProps.ErrorRate .User.ErrorRate .Props.ErrorRate.Default }}"

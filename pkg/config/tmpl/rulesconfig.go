@@ -14,7 +14,8 @@ type EnvConfig struct {
 
 func NewRulesConfig() *RulesConfig {
 	return &RulesConfig{
-		Envs: []EnvConfig{},
+		Version: 2,
+		Envs:    []EnvConfig{},
 	}
 }
 
