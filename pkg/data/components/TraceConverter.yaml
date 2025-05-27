@@ -55,7 +55,7 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
-  - name: Secure
+  - name: UseTLS
     summary: Provide a way to enable TLS export.
     description: |
       Can be used to send data with TLS.
@@ -73,10 +73,10 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "http{{ if (firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default) }}s{{ end }}://{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+        value: "http{{ if (firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default) }}s{{ end }}://{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.tls.insecure"
-        value: "{{ not (firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default) | encodeAsBool }}"
-        suppress_if: "{{ firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default }}"
+        value: "{{ not (firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default) | encodeAsBool }}"
+        suppress_if: "{{ firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"

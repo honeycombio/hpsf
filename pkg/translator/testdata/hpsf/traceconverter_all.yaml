@@ -12,7 +12,7 @@ components:
         value:
           x-honeycomb-dataset: "custom"
           x-honeycomb-team: "${HONEYCOMB_API_KEY}"
-      - name: Secure
+      - name: UseTLS
         value: true
 connections:
   - source:
