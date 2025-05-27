@@ -10,12 +10,10 @@ processors:
     usage: {}
 exporters:
     otlphttp/Trace_Converter_1:
-        endpoint: myhost.com:1234
+        endpoint: https://myhost.com:1234
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
-        tls:
-            insecure: true
 extensions:
     honeycomb: {}
 service:

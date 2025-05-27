@@ -35,17 +35,18 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${STRAWS_REFINERY_POD_IP}
+    default: ${STRAWS_REFINERY_SERVICE}
     advanced: true
   - name: Port
     summary: The port on which Refinery is listening for HTTP traffic.
     description: |
       The port on which Refinery listens for incoming HTTP traffic.
-      The OTel default is 4318. Set to 0 to disable HTTP.
+      The default is 80. It is recommended not to change the default unless
+      you know what you're doing.
     type: int
     validations:
       - inrange(1, 65535)
-    default: 4318
+    default: 80
     advanced: true
   - name: Headers
     summary: Headers to emit when sending HTTP traffic.
@@ -54,10 +55,11 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
-  - name: Insecure
-    summary: Provide a way to disable TLS export.
+  - name: Secure
+    summary: Provide a way to enable TLS export.
     description: |
-      Can be used to send data without TLS.
+      Can be used to send data with TLS.
+      Since Refinery does not use TLS, this is off by default.
     type: bool
     default: false
     advanced: true
@@ -71,10 +73,10 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+        value: "http{{ if (firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default) }}s{{ end }}://{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
       - key: "{{ .ComponentName }}.tls.insecure"
-        value: "{{ .HProps.Insecure | encodeAsBool }}"
-        suppress_if: "{{ not .HProps.Insecure }}"
+        value: "{{ not (firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default) | encodeAsBool }}"
+        suppress_if: "{{ firstNonZero .HProps.Secure .User.Secure .Props.Secure.Default }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
