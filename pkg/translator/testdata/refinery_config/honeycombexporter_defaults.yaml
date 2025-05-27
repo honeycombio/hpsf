@@ -1,5 +1,6 @@
 AccessKeys:
-    SendKey: ""
+    SendKey: ${HONEYCOMB_EXPORTER_APIKEY}
+    SendKeyMode: all
 General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0

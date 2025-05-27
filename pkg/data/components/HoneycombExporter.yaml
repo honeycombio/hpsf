@@ -26,6 +26,7 @@ properties:
     validations:
       - noblanks
     default: ${HONEYCOMB_EXPORTER_APIKEY}
+    advanced: true
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
     description: |
@@ -37,6 +38,19 @@ properties:
       - url
     default: https://api.honeycomb.io
     advanced: true
+  - name: Mode
+    summary: Configures when to use the the APIKey.
+    description: |
+      Allows configuring when the exporter uses the APIKey.
+      Valid values are 'all' and 'none'.
+      The value 'none' means that the APIKey will
+      not be used. Defaults to 'all', which means all
+      the traffic will be exported using the configured APIKey.
+    type: string
+    validations:
+      - oneof(all, none)
+    default: all
+    advanced: true
 templates:
   - kind: refinery_config
     name: HoneycombExporter_RefineryConfig
@@ -45,7 +59,7 @@ templates:
       - key: Network.HoneycombAPI
         value: "{{ firstNonZero .HProps.APIEndpoint .User.APIEndpoint .Props.APIEndpoint.Default }}"
       - key: AccessKeys.SendKey
-        value: "{{ firstNonZero .HProps.APIKey .User.APIKey }}"
+        value: "{{ firstNonZero .HProps.APIKey .User.APIKey .Props.APIKey.Default }}"
+        suppress_if: '{{ eq "none" (firstNonZero .HProps.APIKey .User.APIKey) }}'
       - key: AccessKeys.SendKeyMode
-        value: "all"
-        suppress_if: "{{ not (nonempty (firstNonZero .HProps.APIKey .User.APIKey)) }}"
+        value: "{{ firstNonZero .HProps.Mode .User.Mode .Props.Mode.Default }}"
