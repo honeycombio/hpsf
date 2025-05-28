@@ -100,7 +100,7 @@ templates:
       collectorComponentName: debug
     data:
       - key: "{{ .ComponentName }}.verbosity"
-        value: "{{ firstNonZero .HProps.Verbosity .User.Verbosity .Props.Verbosity.Default }}"
+        value: "{{ .Values.Verbosity }}"
 ```
 
 ## The template section

@@ -77,12 +77,12 @@ templates:
     name: EMA_Throughput_Rules
     format: rules
     meta:
-      env: "{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}"
+      env: "{{ .Values.Environment }}"
       sampler: EMAThroughputSampler
     data:
       - key: GoalThroughputPerSec
-        value: "{{ firstNonZero .HProps.GoalThroughputPerSec .User.GoalThroughputPerSec .Props.GoalThroughputPerSec.Default | encodeAsInt }}"
+        value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
       - key: AdjustmentInterval
-        value: "{{ firstNonZero .HProps.AdjustmentInterval .User.AdjustmentInterval .Props.AdjustmentInterval.Default }}s"
+        value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
-        value: "{{ firstNonZero .HProps.FieldList .User.FieldList .Props.FieldList.Default | encodeAsArray }}"
+        value: "{{ .Values.FieldList | encodeAsArray }}"

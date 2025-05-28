@@ -185,6 +185,37 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	return props
 }
 
+func (t *TemplateComponent) Values() map[string]any {
+	// this is a helper for templates to get the data values that are available
+	// in the component including those specified as defaults and the
+	// environment. This composes HProps, User, and Properties into a single map
+	// that can be used in templates.
+	result := make(map[string]any)
+	for k, v := range t.HProps() {
+		if !_isZeroValue(v) {
+			// we only want to include non-zero values in the result
+			result[k] = v
+		}
+	}
+	for k, v := range t.User {
+		if !_isZeroValue(v) {
+			// don't overwrite existing values
+			if _, exists := result[k]; exists {
+				continue
+			}
+			result[k] = v
+		}
+	}
+	for _, prop := range t.Properties {
+		// don't overwrite existing values
+		if _, exists := result[prop.Name]; exists {
+			continue
+		}
+		result[prop.Name] = prop.Default
+	}
+	return result
+}
+
 func (t *TemplateComponent) ComponentName() string {
 	if t.collName != "" {
 		return t.collName + "/" + t.hpsf.GetSafeName()

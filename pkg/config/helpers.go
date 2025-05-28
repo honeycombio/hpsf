@@ -43,7 +43,6 @@ func helpers() template.FuncMap {
 		"encodeAsInt":   encodeAsInt,
 		"encodeAsFloat": encodeAsFloat,
 		"encodeAsMap":   encodeAsMap,
-		"firstNonZero":  firstNonzero,
 		"indent":        indent,
 		"join":          join,
 		"makeSlice":     makeSlice,
@@ -150,33 +149,6 @@ func encodeAsMap(a map[string]any) string {
 	// could encounter that would be meaningful.
 	_ = j.Encode(a)
 	return MapPrefix + buf.String()
-}
-
-func firstNonzero(s ...any) any {
-	// returns the first non-zero-valued item from the arguments
-	// []any is special-cased to return a comma-separated set of strings.
-	// If we eventually feel like the comma syntax is failing to handle some special
-	// cases, we can change it to use some other syntax that's less likely to occur
-	// in real data.
-	for _, v := range s {
-		if !_isZeroValue(v) {
-			switch vt := v.(type) {
-			case string:
-				return vt
-			case []any:
-				return vt
-			case []string:
-				return vt
-			case int:
-				return vt
-			case float64:
-				return vt
-			default:
-				return fmt.Sprintf("%v", vt)
-			}
-		}
-	}
-	return ""
 }
 
 // indents a string by the specified number of spaces

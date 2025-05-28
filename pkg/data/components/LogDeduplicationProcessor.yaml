@@ -40,6 +40,6 @@ templates:
       collectorComponentName: logdedup
     data:
       - key: "{{ .ComponentName }}.interval"
-        value: "{{ firstNonZero .HProps.Interval .User.Interval .Props.Interval.Default }}"
+        value: "{{ .Values.Interval }}"
       - key: "{{ .ComponentName }}.log_count_attribute"
-        value: "{{ firstNonZero .HProps.CountAttribute .User.CountAttribute .Props.CountAttribute.Default }}"
+        value: "{{ .Values.CountAttribute }}"
