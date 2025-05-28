@@ -10,12 +10,20 @@ processors:
     usage: {}
 exporters:
     awss3/s3_out:
+        compression: gzip
         marshaler: otlp_json
         s3uploader:
             region: my-region
             s3_bucket: my-bucket
             s3_partition_format: my-partition-format
             s3_prefix: my-prefix
+        sending_queue:
+            enabled: true
+            flush_timeout: 30s
+            max_size: 200000
+            min_size: 200000
+            queue_size: 2000000
+            sizer: items
         timeout: 30s
 extensions:
     honeycomb: {}
