@@ -70,6 +70,26 @@ properties:
     validations:
       - oneof(otlp_json, otlp_proto)
     advanced: true
+  - name: BatchTimeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout even if min size has not been met.
+    type: duration
+    default: 60s
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchMaxSize
+    summary: Max size of a batch.
+    description: |
+      The max size of a batch. Once a batch reaches this size it will be sent.
+    type: int
+    default: 100_000_000
+    validations:
+      - nonempty
+    advanced: true
 templates:
   - name: s3_exporter_collector
     kind: collector_config
@@ -96,3 +116,15 @@ templates:
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"
         suppress_if: "{{ not .HProps.Marshaler }}"
+      - key: "{{ .ComponentName }}.compression"
+        value: "gzip"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "bytes"
+      - key: "{{ .ComponentName }}.sending_queue.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.min_size"
+        value: "{{ 1 | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.max_size"
+        value: "{{ .Values.BatchMaxSize | encodeAsInt }}"
