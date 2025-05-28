@@ -77,7 +77,7 @@ templates:
     name: EMA_Throughput_Rules
     format: rules
     meta:
-      env: "{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}"
+      env: "{{ .Data.Environment }}"
       sampler: EMAThroughputSampler
     data:
       - key: GoalThroughputPerSec
