@@ -19,10 +19,11 @@ exporters:
             s3_prefix: my-prefix
         sending_queue:
             enabled: true
-            flush_timeout: 60s
-            max_size: 90000000
-            min_size: 90000000
-            sizer: bytes
+            flush_timeout: 30s
+            max_size: 200000
+            min_size: 200000
+            queue_size: 2000000
+            sizer: items
         timeout: 30s
 extensions:
     honeycomb: {}
