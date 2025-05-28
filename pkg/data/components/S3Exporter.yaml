@@ -74,7 +74,7 @@ properties:
     summary: How long to wait to before sending a batch, regardless of size.
     description: |
       Configure how long to wait before sending a batch. The batch will be sent after
-      this timeout even if min size has not been met.
+      this timeout.
     type: duration
     default: 60s
     validations:
