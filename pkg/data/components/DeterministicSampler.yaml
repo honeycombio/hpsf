@@ -46,8 +46,8 @@ templates:
     name: DeterministicSampler_RefineryRules
     format: rules
     meta:
-      env: "{{ firstNonZero .HProps.Environment .User.Environment .Props.Environment.Default }}"
+      env: "{{ .Data.Environment }}"
       sampler: DeterministicSampler
     data:
       - key: SampleRate
-        value: "{{ firstNonZero .HProps.SampleRate .User.SampleRate .Props.SampleRate.Default | encodeAsInt }}"
+        value: "{{ .Data.SampleRate | encodeAsInt }}"

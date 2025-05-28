@@ -73,7 +73,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "http{{ if (firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default) }}s{{ end }}://{{ firstNonZero .HProps.Host .User.Host .Props.Host.Default }}:{{ firstNonZero .HProps.Port .User.Port .Props.Port.Default }}"
+        value: "http{{ if .Data.UseTLS }}s{{ end }}://{{ .Data.Host }}:{{ .Data.Port }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ not (firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default) | encodeAsBool }}"
         suppress_if: "{{ firstNonZero .HProps.UseTLS .User.UseTLS .Props.UseTLS.Default }}"
