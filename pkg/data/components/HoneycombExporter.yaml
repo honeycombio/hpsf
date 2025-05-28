@@ -57,9 +57,9 @@ templates:
     format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ .Data.APIEndpoint }}"
+        value: "{{ .Values.APIEndpoint }}"
       - key: AccessKeys.SendKey
-        value: "{{ .Data.APIKey }}"
+        value: "{{ .Values.APIKey }}"
         suppress_if: '{{ eq "none" (or .HProps.APIKey .User.APIKey) }}'
       - key: AccessKeys.SendKeyMode
-        value: "{{ .Data.Mode }}"
+        value: "{{ .Values.Mode }}"

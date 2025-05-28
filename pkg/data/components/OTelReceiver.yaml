@@ -67,9 +67,9 @@ templates:
       collectorComponentName: otlp
     data:
       - key: "{{ .ComponentName }}.protocols.grpc.endpoint"
-        value: "{{ .Data.Host }}:{{ .Data.GRPCPort }}"
+        value: "{{ .Values.Host }}:{{ .Values.GRPCPort }}"
         suppress_if: "{{ eq .HProps.GRPCPort 0 }}"
       - key: "{{ .ComponentName }}.protocols.http.endpoint"
-        value: "{{ .Data.Host }}:{{ .Data.HTTPPort }}"
+        value: "{{ .Values.Host }}:{{ .Values.HTTPPort }}"
         suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
       # service is not part of the template, it's generated automatically by the collectorConfig

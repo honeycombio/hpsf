@@ -46,8 +46,8 @@ templates:
     name: DeterministicSampler_RefineryRules
     format: rules
     meta:
-      env: "{{ .Data.Environment }}"
+      env: "{{ .Values.Environment }}"
       sampler: DeterministicSampler
     data:
       - key: SampleRate
-        value: "{{ .Data.SampleRate | encodeAsInt }}"
+        value: "{{ .Values.SampleRate | encodeAsInt }}"

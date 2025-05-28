@@ -185,7 +185,7 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	return props
 }
 
-func (t *TemplateComponent) Data() map[string]any {
+func (t *TemplateComponent) Values() map[string]any {
 	// this is a helper for templates to get the data values that are available
 	// in the component including those specified as defaults and the
 	// environment. This composes HProps, User, and Properties into a single map

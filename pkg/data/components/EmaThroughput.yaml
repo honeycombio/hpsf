@@ -77,12 +77,12 @@ templates:
     name: EMA_Throughput_Rules
     format: rules
     meta:
-      env: "{{ .Data.Environment }}"
+      env: "{{ .Values.Environment }}"
       sampler: EMAThroughputSampler
     data:
       - key: GoalThroughputPerSec
-        value: "{{ .Data.GoalThroughputPerSec | encodeAsInt }}"
+        value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
       - key: AdjustmentInterval
-        value: "{{ .Data.AdjustmentInterval }}s"
+        value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
-        value: "{{ .Data.FieldList | encodeAsArray }}"
+        value: "{{ .Values.FieldList | encodeAsArray }}"

@@ -40,6 +40,6 @@ templates:
       collectorComponentName: logdedup
     data:
       - key: "{{ .ComponentName }}.interval"
-        value: "{{ .Data.Interval }}"
+        value: "{{ .Values.Interval }}"
       - key: "{{ .ComponentName }}.log_count_attribute"
-        value: "{{ .Data.CountAttribute }}"
+        value: "{{ .Values.CountAttribute }}"

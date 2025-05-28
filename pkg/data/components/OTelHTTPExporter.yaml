@@ -69,7 +69,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ .Data.Host }}:{{ .Data.Port }}"
+        value: "{{ .Values.Host }}:{{ .Values.Port }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ .HProps.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .HProps.Insecure }}"
