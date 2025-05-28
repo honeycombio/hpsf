@@ -76,17 +76,17 @@ properties:
       Configure how long to wait before sending a batch. The batch will be sent after
       this timeout even if min size has not been met.
     type: duration
-    default: 60s
+    default: 30s
     validations:
       - duration
       - nonempty
     advanced: true
-  - name: BatchMaxSize
-    summary: Max size of a batch.
+  - name: BatchSize
+    summary: The size of a batch.
     description: |
-      The max size of a batch. Once a batch reaches this size it will be sent.
+      The size of a batch. Once a batch reaches this size it will be sent.
     type: int
-    default: 100_000_000
+    default: 50_000_000
     validations:
       - nonempty
     advanced: true
@@ -125,6 +125,6 @@ templates:
       - key: "{{ .ComponentName }}.sending_queue.flush_timeout"
         value: "{{ .Values.BatchTimeout }}"
       - key: "{{ .ComponentName }}.sending_queue.min_size"
-        value: "{{ 1 | encodeAsInt }}"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.max_size"
-        value: "{{ .Values.BatchMaxSize | encodeAsInt }}"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"

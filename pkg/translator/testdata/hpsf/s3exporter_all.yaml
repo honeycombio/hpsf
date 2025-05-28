@@ -17,9 +17,9 @@ components:
       - name: Marshaler
         value: otlp_json
       - name: BatchTimeout
-        value: 30s
-      - name: BatchMaxSize
-        value: 50_000_000
+        value: 60s
+      - name: BatchSize
+        value: 90_000_000
 connections:
   - source:
       component: otlp_in

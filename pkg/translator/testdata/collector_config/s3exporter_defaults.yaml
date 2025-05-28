@@ -15,9 +15,9 @@ exporters:
             s3_bucket: my-bucket
         sending_queue:
             enabled: true
-            flush_timeout: 60s
-            max_size: 100000000
-            min_size: 1
+            flush_timeout: 30s
+            max_size: 50000000
+            min_size: 50000000
             sizer: bytes
 extensions:
     honeycomb: {}
