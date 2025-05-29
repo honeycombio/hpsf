@@ -9,17 +9,17 @@ Samplers:
                         - http.status_code
                         - http.response.status_code
                       Operator: '>='
-                      Value: "500"
+                      Value: 500
                   Name: Sample 500 statuses at 1
-                  SampleRate: "1"
+                  SampleRate: 1
                 - Conditions:
                     - Datatype: int
                       Fields:
                         - http.status_code
                         - http.response.status_code
                       Operator: '>='
-                      Value: "400"
+                      Value: 400
                   Name: Sample 400 statuses at 10
-                  SampleRate: "10"
+                  SampleRate: 10
                 - Name: Sample remainder at 100
-                  SampleRate: "100"
+                  SampleRate: 100

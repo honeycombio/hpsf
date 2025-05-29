@@ -67,16 +67,16 @@ templates:
       - key: Rules[0].Name
         value: "Sample 500 statuses at {{ .Values.ErrorRate }}"
       - key: Rules[0].SampleRate
-        value: "{{ .Values.ErrorRate }}"
+        value: "{{ .Values.ErrorRate | encodeAsInt }}"
       - key: "Rules[0].!condition!"
         value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
       - key: Rules[1].Name
         value: "Sample 400 statuses at {{ .Values.UserErrorRate }}"
       - key: Rules[1].SampleRate
-        value: "{{ .Values.UserErrorRate }}"
+        value: "{{ .Values.UserErrorRate | encodeAsInt }}"
       - key: "Rules[1].!condition!"
         value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=400"
       - key: Rules[2].Name
         value: "Sample remainder at {{ .Values.DefaultRate }}"
       - key: Rules[2].SampleRate
-        value: "{{ .Values.DefaultRate }}"
+        value: "{{ .Values.DefaultRate | encodeAsInt }}"

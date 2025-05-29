@@ -47,10 +47,25 @@ func (r *rulesCondition) Render(prefix string) (map[string]any, error) {
 		dc[c+".Datatype"] = "string"
 	case "int", "i":
 		dc[c+".Datatype"] = "int"
+		if cv, err := strconv.Atoi(r.value); err != nil {
+			return nil, fmt.Errorf("value %q is not a valid int for datatype int", r.value)
+		} else {
+			dc[c+".Value"] = cv
+		}
 	case "float", "f":
 		dc[c+".Datatype"] = "float"
+		if cv, err := strconv.ParseFloat(r.value, 64); err != nil {
+			return nil, fmt.Errorf("value %q is not a valid float for datatype float", r.value)
+		} else {
+			dc[c+".Value"] = cv
+		}
 	case "bool", "b":
 		dc[c+".Datatype"] = "bool"
+		if r.value == "true" || r.value == "false" {
+			dc[c+".Value"] = r.value
+		} else {
+			return nil, fmt.Errorf("value %q is not a valid bool for datatype bool", r.value)
+		}
 	case "":
 		// if the datatype is empty, don't set it
 	default:
