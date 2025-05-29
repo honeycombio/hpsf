@@ -374,6 +374,12 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 		return k, nil
 	case []string:
 		return k, nil
+	case int:
+		return k, nil
+	case float64:
+		return k, nil
+	case bool:
+		return k, nil
 	default:
 		return "", fmt.Errorf("invalid templated variable type %T", k)
 	}
