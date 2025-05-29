@@ -59,6 +59,36 @@ properties:
     type: bool
     default: false
     advanced: true
+  - name: BatchTimeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout.
+    type: duration
+    default: 60s
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
+    type: int
+    default: 100_000
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    summary: The size of a exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/datapoint/log record count.
+      Items will be kept in the queue while the batch is being created.
+    type: int
+    default: 1_000_000
+    validations:
+      - nonempty
+    advanced: true
 templates:
   - kind: collector_config
     name: otel_grpc_exporter_collector
@@ -76,4 +106,16 @@ templates:
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
       # service is not part of the template, it's generated automatically by the collectorConfig

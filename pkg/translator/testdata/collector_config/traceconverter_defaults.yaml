@@ -6,11 +6,17 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
-    batch: {}
     usage: {}
 exporters:
     otlphttp/Trace_Converter_1:
         endpoint: http://${STRAWS_REFINERY_SERVICE}:80
+        sending_queue:
+            enabled: true
+            flush_timeout: 60s
+            max_size: 100000
+            min_size: 100000
+            queue_size: 1000000
+            sizer: items
         tls:
             insecure: true
 extensions:
@@ -20,5 +26,5 @@ service:
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: [usage, batch]
+            processors: [usage]
             exporters: [otlphttp/Trace_Converter_1]

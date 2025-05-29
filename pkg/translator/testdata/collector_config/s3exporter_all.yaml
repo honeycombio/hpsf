@@ -6,7 +6,6 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
-    batch: {}
     usage: {}
 exporters:
     awss3/s3_out:
@@ -32,5 +31,5 @@ service:
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: [usage, batch]
+            processors: [usage]
             exporters: [awss3/s3_out]

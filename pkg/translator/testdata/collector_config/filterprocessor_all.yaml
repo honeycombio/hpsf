@@ -6,7 +6,6 @@ receivers:
             http:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
-    batch: {}
     filter/drop_container_1:
         traces:
             span:
@@ -15,6 +14,13 @@ processors:
 exporters:
     otlphttp/otlp_out:
         endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            enabled: true
+            flush_timeout: 60s
+            max_size: 100000
+            min_size: 100000
+            queue_size: 1000000
+            sizer: items
 extensions:
     honeycomb: {}
 service:
@@ -22,5 +28,5 @@ service:
     pipelines:
         traces:
             receivers: [otlp/otlp_in]
-            processors: [usage, filter/drop_container_1, batch]
+            processors: [usage, filter/drop_container_1]
             exporters: [otlphttp/otlp_out]
