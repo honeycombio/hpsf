@@ -69,7 +69,7 @@ properties:
       Configure how long to wait before sending a batch. The batch will be sent after
       this timeout.
     type: duration
-    default: 60s
+    default: 200ms
     validations:
       - duration
       - nonempty
@@ -77,19 +77,19 @@ properties:
   - name: BatchSize
     summary: The size of a batch.
     description: |
-      The size of a batch, measured by span/log record count. Once a batch reaches this size it will be sent.
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
     type: int
-    default: 100_000
+    default: 8192
     validations:
       - nonempty
     advanced: true
   - name: QueueSize
     summary: The size of a exporting queue.
     description: |
-      The size of the exporting queue, measured by span/log record count.
+      The size of the exporting queue, measured by span/datapoint/log record count.
       Items will be kept in the queue while the batch is being created.
     type: int
-    default: 1_000_000
+    default: 100_000
     validations:
       - nonempty
     advanced: true

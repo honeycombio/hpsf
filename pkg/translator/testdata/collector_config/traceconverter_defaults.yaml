@@ -12,10 +12,10 @@ exporters:
         endpoint: http://${STRAWS_REFINERY_SERVICE}:80
         sending_queue:
             enabled: true
-            flush_timeout: 60s
-            max_size: 100000
-            min_size: 100000
-            queue_size: 1000000
+            flush_timeout: 200ms
+            max_size: 8192
+            min_size: 8192
+            queue_size: 100000
             sizer: items
         tls:
             insecure: true
