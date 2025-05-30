@@ -14,10 +14,11 @@ exporters:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
         sending_queue:
+            batch:
+                flush_timeout: 30s
+                max_size: 200000
+                min_size: 200000
             enabled: true
-            flush_timeout: 30s
-            max_size: 200000
-            min_size: 200000
             queue_size: 2000000
             sizer: items
 extensions:
