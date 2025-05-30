@@ -13,10 +13,11 @@ exporters:
         s3uploader:
             s3_bucket: my-bucket
         sending_queue:
+            batch:
+                flush_timeout: 60s
+                max_size: 100000
+                min_size: 100000
             enabled: true
-            flush_timeout: 60s
-            max_size: 100000
-            min_size: 100000
             queue_size: 1000000
             sizer: items
 extensions:

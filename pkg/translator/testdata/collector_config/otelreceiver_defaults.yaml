@@ -11,10 +11,11 @@ exporters:
     otlp/otlp_out:
         endpoint: https://api.honeycomb.io:443
         sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
             enabled: true
-            flush_timeout: 200ms
-            max_size: 8192
-            min_size: 8192
             queue_size: 100000
             sizer: items
 extensions:

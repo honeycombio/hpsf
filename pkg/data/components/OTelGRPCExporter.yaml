@@ -112,10 +112,10 @@ templates:
         value: "{{ true | encodeAsBool}}"
       - key: "{{ .ComponentName }}.sending_queue.sizer"
         value: "items"
-      - key: "{{ .ComponentName }}.sending_queue.flush_timeout"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
         value: "{{ .Values.BatchTimeout }}"
-      - key: "{{ .ComponentName }}.sending_queue.min_size"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
         value: "{{ .Values.BatchSize | encodeAsInt }}"
-      - key: "{{ .ComponentName }}.sending_queue.max_size"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
         value: "{{ .Values.BatchSize | encodeAsInt }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
