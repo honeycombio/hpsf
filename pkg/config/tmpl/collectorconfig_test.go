@@ -18,7 +18,6 @@ receivers:
         endpoint: localhost
         port: "4317"
 processors:
-    batch: {}
     usage: {}
 extensions:
     honeycomb: {}
@@ -27,7 +26,7 @@ service:
     pipelines:
         traces:
             receivers: [otlp]
-            processors: [usage, batch]
+            processors: [usage]
             exporters: []
 `
 	got, err := cc.RenderYAML()
