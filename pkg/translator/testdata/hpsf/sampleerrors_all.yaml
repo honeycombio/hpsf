@@ -1,5 +1,33 @@
-RulesVersion: 2
-Samplers:
-    __default__:
-        DeterministicSampler:
-            SampleRate: 1
+components:
+  - name: honeycomb_in
+    kind: TraceConverter
+  - name: honeycomb_out
+    kind: HoneycombExporter
+  - name: sampler
+    kind: SampleErrors
+    properties:
+      - name: Environment
+        value: test
+      - name: ErrorRate
+        value: 90
+      - name: UserErrorRate
+        value: 91
+      - name: DefaultRate
+        value: 92
+connections:
+  - source:
+      component: honeycomb_in
+      port: TraceOut
+      type: Honeycomb
+    destination:
+      component: sampler
+      port: Input
+      type: Honeycomb
+  - source:
+      component: sampler
+      port: Kept
+      type: Honeycomb
+    destination:
+      component: honeycomb_out
+      port: Traces
+      type: Honeycomb
