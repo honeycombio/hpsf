@@ -3,28 +3,19 @@ components:
     kind: TraceConverter
   - name: honeycomb_out
     kind: HoneycombExporter
-  - name: sampler
-    kind: SampleErrors
-    properties:
-      - name: Environment
-        value: test
-      - name: ErrorRate
-        value: 90
-      - name: UserErrorRate
-        value: 91
-      - name: DefaultRate
-        value: 92
+  - name: Sampler_1
+    kind: KeepErrors
 connections:
   - source:
       component: honeycomb_in
       port: TraceOut
       type: Honeycomb
     destination:
-      component: sampler
+      component: Sampler_1
       port: Input
       type: Honeycomb
   - source:
-      component: sampler
+      component: Sampler_1
       port: Kept
       type: Honeycomb
     destination:

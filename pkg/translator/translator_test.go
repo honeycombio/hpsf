@@ -37,17 +37,14 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 		for _, properties := range []string{"all", "defaults"} {
 			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(component.Kind), properties)
 			t.Run(testData, func(t *testing.T) {
-				// test source config lives in testdata/hpsf
+				// testdata source config is an hpsf file that lives in testdata/hpsf
+				// we can't automatically generate the testdata (we can generate the expected config)
 				b, err := os.ReadFile(path.Join("testdata", "hpsf", testData))
 				require.NoError(t, err)
 				var inputData = string(b)
 
 				for _, template := range component.Templates {
 					configType := config.Type(template.Kind)
-					b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
-					require.NoError(t, err)
-					var expectedConfig = string(b)
-
 					var hpsf *hpsf.HPSF
 					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
 					err = dec.Decode(&hpsf)
@@ -58,6 +55,13 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 					got, err := cfg.RenderYAML()
 					require.NoError(t, err)
+
+					var expectedConfig = ""
+					if !overwrite {
+						b, err = os.ReadFile(path.Join("testdata", string(configType), testData))
+						require.NoError(t, err)
+						expectedConfig = string(b)
+					}
 
 					if overwrite && !reflect.DeepEqual(expectedConfig, string(got)) {
 						// overwrite the testdata file with the generated config
@@ -70,6 +74,10 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 				}
 			})
 		}
+	}
+	if overwrite {
+		t.Fail()
+		t.Log("Some testdata files were overwritten. Please review the changes and commit them if they are correct.")
 	}
 }
 
