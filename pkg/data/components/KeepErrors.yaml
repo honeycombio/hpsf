@@ -33,9 +33,8 @@ properties:
   - name: FieldName
     summary: The name of the field to check for errors.
     description: |
-      The name of the field to check. If this field is not specified,
-      the default is 'error'. If this field exists, the trace will be
-      sampled at the specified rate.
+      The name of the field to check (default 'error'). If a field of this name
+      exists, the trace will be sampled at the specified rate.
     type: string
     default: "error"
   - name: SampleRate
