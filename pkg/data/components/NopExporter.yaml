@@ -4,7 +4,7 @@ version: v0.1.0
 style: exporter
 logo: opentelemetry
 type: base
-status: development
+status: alpha
 summary: An "exporter" that does nothing, but might be useful for testing.
 description: |
   A simple no-op exporter.
