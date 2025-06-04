@@ -1,0 +1,71 @@
+###
+### Basic integration test for a receiver sending data to refinery and metrics direct
+###
+
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Honeycomb Exporter_1
+    kind: HoneycombExporter
+    properties:
+      - name: APIKey
+        value: ${HONEYCOMB_EXPORTER_APIKEY}
+  - name: Deterministic Sampler_1
+    kind: DeterministicSampler
+  - name: Trace Converter_1
+    kind: TraceConverter
+    properties:
+      - name: Headers
+        value:
+          x-honeycomb-team: ${HONEYCOMB_EXPORTER_APIKEY}
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Trace Converter_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Trace Converter_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Trace Converter_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Deterministic Sampler_1
+      port: Traces
+      type: HoneycombEvents
+  - source:
+      component: Deterministic Sampler_1
+      port: SampledOutput
+      type: HoneycombEvents
+    destination:
+      component: Honeycomb Exporter_1
+      port: Traces
+      type: HoneycombEvents
+layout:
+  components:
+    - name: OTel Receiver_1
+      position:
+        x: -200
+        y: 20
+    - name: Honeycomb Exporter_1
+      position:
+        x: 720
+        y: 20
+    - name: Deterministic Sampler_1
+      position:
+        x: 420
+        y: 20
+    - name: Trace Converter_1
+      position:
+        x: 180
+        y: 20

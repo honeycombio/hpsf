@@ -163,3 +163,45 @@ unsmoke:
 	@echo "+++ stopping smoke test"
 	@echo
 	docker stop smoke-proxy
+
+INTEGRATION_TESTS=$(wildcard ./tests/*)
+OUTPUT_DIR?=output
+
+.PHONY: regenerate-translator-testdata
+.SILENT: regenerate-translator-testdata
+regenerate-translator-testdata: 
+	@echo
+	@echo "+++ regenerating translator testdata"
+	@echo
+	echo "+++ tests $(INTEGRATION_TESTS)"
+	
+	for dir in $(INTEGRATION_TESTS) ; do \
+		echo "+++ regenerating testdata for $${dir}"; \
+		mkdir -p $${dir}/$(OUTPUT_DIR); \
+		rm -rf $${dir}/$(OUTPUT_DIR)/*; \
+		go run ./cmd/hpsf -i $${dir}/hpsf.yaml -o $${dir}/$(OUTPUT_DIR)/config.yaml cConfig; \
+		go run ./cmd/hpsf -i $${dir}/hpsf.yaml -o $${dir}/$(OUTPUT_DIR)/rules.yaml rRules; \
+		go run ./cmd/hpsf -i $${dir}/hpsf.yaml -o $${dir}/$(OUTPUT_DIR)/refinery.yaml rConfig; \
+	done
+
+
+.PHONY: run-integration-tests
+.SILENT: run-integration-tests
+run-integration-tests:
+	@echo
+	@echo "+++ running integration tests"
+	@echo
+	make -s regenerate-translator-testdata OUTPUT_DIR=compare
+	HAS_ERRORS=0
+	for dir in $(INTEGRATION_TESTS) ; do \
+		echo "+++ running integration test for $${dir}"; \
+		for file in $${dir}/compare/* ; do \
+			IS_ERROR=$$(diff -u $${file} $${dir}/output/$${file##*/}); \
+			if [ -n "$${IS_ERROR}" ]; then \
+				echo "+++ error: $${IS_ERROR}"; \
+				HAS_ERRORS=1; \
+			fi; \
+		done; \
+		rm -rf $${dir}/compare/*; \
+		exit $${HAS_ERRORS}; \
+	done
