@@ -1,0 +1,37 @@
+receivers:
+    otlp/OTel_Receiver_1:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+exporters:
+    otlphttp/Trace_Converter_1:
+        endpoint: http://${STRAWS_REFINERY_SERVICE}:80
+        headers:
+            x-honeycomb-team: ${HONEYCOMB_EXPORTER_APIKEY}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+        tls:
+            insecure: true
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs:
+            receivers: [otlp/OTel_Receiver_1]
+            processors: [usage]
+            exporters: [otlphttp/Trace_Converter_1]
+        traces:
+            receivers: [otlp/OTel_Receiver_1]
+            processors: [usage]
+            exporters: [otlphttp/Trace_Converter_1]

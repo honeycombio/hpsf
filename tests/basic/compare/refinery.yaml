@@ -1,0 +1,8 @@
+AccessKeys:
+    SendKey: ${HONEYCOMB_EXPORTER_APIKEY}
+    SendKeyMode: all
+General:
+    ConfigurationVersion: 2
+    MinRefineryVersion: v2.0
+Network:
+    HoneycombAPI: https://api.honeycomb.io
