@@ -9,9 +9,9 @@ processors:
     usage: {}
 exporters:
     awss3/s3_out:
-        compression: gzip
         marshaler: otlp_json
         s3uploader:
+            compression: gzip
             region: my-region
             s3_bucket: my-bucket
             s3_partition_format: my-partition-format

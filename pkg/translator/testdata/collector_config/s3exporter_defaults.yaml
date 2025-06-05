@@ -9,8 +9,8 @@ processors:
     usage: {}
 exporters:
     awss3/s3_out:
-        compression: gzip
         s3uploader:
+            compression: gzip
             s3_bucket: my-bucket
         sending_queue:
             batch:
