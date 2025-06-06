@@ -4,7 +4,7 @@ type: base
 style: exporter
 logo: awss3
 status: development
-version: v0.2.0
+version: v0.3.0
 summary: Stores telemetry in OTLP (OpenTelemetry) format in S3 storage.
 description: |
   Exports OpenTelemetry signals using OTLP to S3 storage.
@@ -66,7 +66,7 @@ properties:
       The marshaler to use when writing files to S3. The default value is `otlp_json`.
     type: string
     subtype: oneof(otlp_json, otlp_proto)
-    default: otlp_json
+    default: otlp_proto
     validations:
       - oneof(otlp_json, otlp_proto)
     advanced: true
@@ -127,7 +127,6 @@ templates:
         suppress_if: "{{ not .HProps.Timeout }}"
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"
-        suppress_if: "{{ not .HProps.Marshaler }}"
       - key: "{{ .ComponentName }}.sending_queue.queue_size"
         value: "{{ .Values.QueueSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"
