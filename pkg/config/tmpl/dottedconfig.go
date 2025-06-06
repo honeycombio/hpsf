@@ -85,11 +85,12 @@ func processIndices(in map[string]any) map[string]any {
 	pat := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
 	out := make(map[string]any)
 	for k, v := range in {
+		hasIndex := pat.MatchString(k)
 		switch v := v.(type) {
 		case map[string]any:
 			// if the value is a map, we need to recursively call processIndices on it first
 			cv := processIndices(v)
-			if !pat.MatchString(k) {
+			if !hasIndex {
 				// if the key doesn't match our regex, just add it to the map
 				out[k] = cv
 			} else {
@@ -112,8 +113,28 @@ func processIndices(in map[string]any) map[string]any {
 				out[key] = sl
 			}
 		default:
-			// if the value is not a map, just use it as is
-			out[k] = v
+			if hasIndex {
+				// we have a key with an index, but the value is not a map, so we need to either append
+				// it to a slice or create a new slice with the value
+				matches := pat.FindStringSubmatch(k)
+				key := matches[1]
+				index, _ := strconv.Atoi(matches[2])
+				// maybe we have a slice already
+				sl, ok := out[key].([]any)
+				if !ok {
+					sl = make([]any, 0)
+				}
+				// maybe expand the slice to fit the index
+				for i := len(sl); i <= index; i++ {
+					sl = append(sl, nil) // fill with nils to expand
+				}
+				// replace the value at the list at the index
+				sl[index] = v
+				out[key] = sl
+			} else {
+				// if the key doesn't match our regex, we can just add it to the map
+				out[k] = v
+			}
 		}
 	}
 	return out
