@@ -23,7 +23,7 @@ type rulesCondition struct {
 }
 
 func (r *rulesCondition) Render(prefix string) (map[string]any, error) {
-	// render the condition into a dottedConfigTemplateKV
+	// render the condition into a map
 	dc := make(map[string]any)
 	// we need to inject the index if it's not negative
 	c := prefix + "Conditions"

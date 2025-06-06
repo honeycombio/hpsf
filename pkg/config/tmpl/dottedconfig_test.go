@@ -92,6 +92,7 @@ func Test_processIndices(t *testing.T) {
 	}{
 		{"0", map[string]any{}, map[string]any{}},
 		{"1", map[string]any{"a[0]": map[string]any{"a": "b"}}, map[string]any{"a": []map[string]any{{"a": "b"}}}},
+		{"2", map[string]any{"a[0]": "item1", "a[1]": "item2"}, map[string]any{"a": []any{"item1", "item2"}}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

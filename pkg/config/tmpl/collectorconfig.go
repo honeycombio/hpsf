@@ -134,6 +134,7 @@ func (cc *CollectorConfig) RenderToMap(m map[string]any) map[string]any {
 		m = make(map[string]any)
 	}
 	for section := range cc.Sections {
+		cc.Sections[section] = cc.Sections[section].RenderToMap(nil)
 		for k, v := range cc.Sections[section] {
 			key := section + "." + k
 			cc.renderInto(m, key, v)
