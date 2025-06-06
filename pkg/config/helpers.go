@@ -51,6 +51,7 @@ func helpers() template.FuncMap {
 		"now":           now,
 		"split":         split,
 		"yamlf":         yamlf,
+		"upper":         strings.ToUpper,
 	}
 }
 
