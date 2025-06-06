@@ -70,7 +70,7 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
-func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Component, error) {
+func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if ok {
@@ -218,7 +218,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 }
 
 func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
+	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
 		if component, ok := t.components[c.Kind]; ok {
 			if component.Style != "sampler" {
 				return false
@@ -234,7 +234,7 @@ func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
 		return false
 	})
 	if !foundDefaultSampler {
-		h.Components = append(h.Components, hpsf.Component{
+		h.Components = append(h.Components, &hpsf.Component{
 			Name: "defaultSampler",
 			Kind: "DeterministicSampler",
 			Properties: []hpsf.Property{

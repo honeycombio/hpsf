@@ -502,10 +502,15 @@ type HPSF struct {
 	Name        string        `yaml:"name"`
 	Summary     string        `yaml:"summary"`
 	Description string        `yaml:"description"`
-	Components  []Component   `yaml:"components,omitempty"`
+	Components  []*Component  `yaml:"components,omitempty"`
 	Connections []*Connection `yaml:"connections,omitempty"`
 	Containers  []Container   `yaml:"containers,omitempty"`
 	Layout      Layout        `yaml:"layout,omitempty"`
+}
+
+// generate a list of components that are not named as the destination of a connection
+func (h *HPSF) GetStartComponents() []*Component {
+	return nil
 }
 
 // use reflect to generate a list of valid yaml tags in a pointer to
