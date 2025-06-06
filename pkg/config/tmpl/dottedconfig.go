@@ -81,42 +81,37 @@ func (dc DottedConfig) renderInto(m map[string]any, key string, value any) {
 // []T at the same level, but with the new key being the portion of
 // the name before the `[` and `]`. The number in the brackets is the index of
 // the slice.
-func processIndices(in map[string]any) map[string]any {
-	pat := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
-	out := make(map[string]any)
-	for k, v := range in {
-		switch v := v.(type) {
-		case map[string]any:
-			// if the value is a map, we need to recursively call processIndices on it first
-			cv := processIndices(v)
-			if !pat.MatchString(k) {
-				// if the key doesn't match our regex, just add it to the map
-				out[k] = cv
-			} else {
-				// we need to process it -- split the key and index
-				matches := pat.FindStringSubmatch(k)
-				key := matches[1]
-				index, _ := strconv.Atoi(matches[2])
+func processIndices(inputMap map[string]any) map[string]any {
+	pattern := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
+	outputMap := make(map[string]any)
+	for key, value := range inputMap {
+		currentValue := value
+		// if the value is a map, we need to recursively call processIndices on it first
+		if mapped, ok := value.(map[string]any); ok {
+			currentValue = processIndices(mapped)
+		}
+		if !pattern.MatchString(key) {
+			// if the key doesn't match our regex, just add it to the map
+			outputMap[key] = currentValue
+		} else {
+			// we need to process it -- split the key and index
+			matches := pattern.FindStringSubmatch(key)
+			key := matches[1]
+			index, _ := strconv.Atoi(matches[2])
 
-				// maybe we have a slice already
-				sl, ok := out[key].([]map[string]any)
-				if !ok {
-					sl = make([]map[string]any, 0)
-				}
-				// maybe expand the slice to fit the index
-				for i := len(sl); i <= index; i++ {
-					sl = append(sl, make(map[string]any))
-				}
-				// replace the value at the list at the index (it will be a map)
-				sl[index] = cv
-				out[key] = sl
+			// maybe we have a slice already
+			arraySlice, ok := outputMap[key].([]any)
+			if !ok {
+				arraySlice = make([]any, 0)
 			}
-		default:
-			// if the value is not a map, just use it as is
-			out[k] = v
+			// maybe expand the slice to fit the index
+			for i := len(arraySlice); i <= index; i++ {
+				arraySlice = append(arraySlice, currentValue)
+			}
+			outputMap[key] = arraySlice
 		}
 	}
-	return out
+	return outputMap
 }
 
 // RenderToMap renders the config into a map.
