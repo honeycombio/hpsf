@@ -1,0 +1,80 @@
+name: multiple_otlp_exporters
+version: v0.1.0
+summary: Test for multiple exporters
+description: |
+  There is a single otel receiver, with all singles connected to 2 separate otel exporters
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+    properties:
+      - name: Headers
+        value:
+          x-honeycomb-team: ${HONEYCOMB_API_KEY}
+  - name: OTel HTTP Exporter_1
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: OTel HTTP Exporter_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter_1
+      port: Logs
+      type: OTelLogs
+layout:
+  components:
+    - name: OTel Receiver 1
+      position:
+        x: -180
+        y: -20
+    - name: OTel HTTP Exporter 1
+      position:
+        x: 220
+        y: 120
+    - name: OTel HTTP Exporter_1
+      position:
+        x: 220
+        y: -200

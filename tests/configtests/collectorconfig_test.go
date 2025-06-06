@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tmpl "github.com/honeycombio/hpsf/pkg/config/tmpl"
-	"github.com/honeycombio/hpsf/tests/configtests/internal/collectorconfigprovider"
+	"github.com/honeycombio/hpsf/tests/configproviders/collectorconfigprovider"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 )

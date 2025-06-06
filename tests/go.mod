@@ -1,4 +1,4 @@
-module github.com/honeycombio/hpsf/tests/configtests
+module github.com/honeycombio/hpsf/tests
 
 go 1.24.1
 
@@ -188,4 +188,4 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-replace github.com/honeycombio/hpsf => ../..
+replace github.com/honeycombio/hpsf => ../

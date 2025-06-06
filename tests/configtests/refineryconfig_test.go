@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tmpl "github.com/honeycombio/hpsf/pkg/config/tmpl"
-	"github.com/honeycombio/hpsf/tests/configtests/internal/refineryconfigprovider"
+	"github.com/honeycombio/hpsf/tests/configproviders/refineryconfigprovider"
 )
 
 type BasicRefineryConfig struct {
