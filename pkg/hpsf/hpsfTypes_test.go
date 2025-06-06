@@ -1,6 +1,7 @@
 package hpsf
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -206,6 +207,188 @@ func TestPropType_ValueCoerce(t *testing.T) {
 				t.Errorf("PropType.ValueCoerce() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			assert.Equal(t, tt.target, result)
+		})
+	}
+}
+
+func TestHPSF_VisitComponents(t *testing.T) {
+	tests := []struct {
+		name          string
+		components    []*Component
+		connections   []*Connection
+		expectedOrder []string
+		errorOn       string // Return error when visiting this component (empty string means no error)
+	}{
+		{
+			name: "no connections",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections:   []*Connection{},
+			expectedOrder: []string{"A", "B", "C"}, // Alphabetical because of sorting
+		},
+		{
+			name: "linear path",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "B", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "B", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in", Type: "test"},
+				},
+			},
+			expectedOrder: []string{"A", "B", "C"},
+		},
+		{
+			name: "fork",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out1", Type: "test"},
+					Destination: ConnectionPort{Component: "B", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out2", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in", Type: "test"},
+				},
+			},
+			expectedOrder: []string{"A", "B", "C"},
+		},
+		{
+			name: "join",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in1", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "B", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in2", Type: "test"},
+				},
+			},
+			expectedOrder: []string{"A", "C", "B"}, // A and B are start nodes (alphabetical), and C is visited from A
+		},
+		{
+			name: "cycle",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "B", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "B", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "C", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "A", PortName: "in", Type: "test"},
+				},
+			},
+			expectedOrder: nil,
+		},
+		{
+			name: "error during visit",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "B", PortName: "in", Type: "test"},
+				},
+			},
+			expectedOrder: []string{"A"},
+			errorOn:       "B",
+		},
+		{
+			name:          "empty HPSF",
+			components:    []*Component{},
+			connections:   []*Connection{},
+			expectedOrder: nil,
+		},
+		{
+			name: "complex graph",
+			components: []*Component{
+				{Name: "A", Kind: "test"},
+				{Name: "B", Kind: "test"},
+				{Name: "C", Kind: "test"},
+				{Name: "D", Kind: "test"},
+				{Name: "E", Kind: "test"},
+			},
+			connections: []*Connection{
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out1", Type: "test"},
+					Destination: ConnectionPort{Component: "B", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "A", PortName: "out2", Type: "test"},
+					Destination: ConnectionPort{Component: "C", PortName: "in", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "B", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "D", PortName: "in1", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "C", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "D", PortName: "in2", Type: "test"},
+				},
+				{
+					Source:      ConnectionPort{Component: "D", PortName: "out", Type: "test"},
+					Destination: ConnectionPort{Component: "E", PortName: "in", Type: "test"},
+				},
+			},
+			expectedOrder: []string{"A", "B", "D", "E", "C"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := &HPSF{
+				Components:  tt.components,
+				Connections: tt.connections,
+			}
+
+			var visited []string
+			err := h.VisitComponents(func(c *Component) error {
+				visited = append(visited, c.Name)
+				if tt.errorOn == c.Name {
+					return errors.New("test error")
+				}
+				return nil
+			})
+
+			if tt.errorOn != "" {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "test error")
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expectedOrder, visited)
+			}
 		})
 	}
 }
