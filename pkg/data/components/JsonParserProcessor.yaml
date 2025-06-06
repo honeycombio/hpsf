@@ -1,0 +1,80 @@
+kind: JsonParserProcessor
+name: Json Parser Processor
+style: processor
+type: base
+status: development
+version: v0.0.0
+summary: Converts an Attribute's from a JSON string into individual attributes
+description: |
+  Filters traces, metrics, and logs based on rules defined
+  in the configuration.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelLogs
+ports:
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Spans
+    direction: input
+    type: OTelTraces
+  - name: Spans
+    direction: output
+    type: OTelTraces
+properties:
+  - name: Field
+    type: string
+  - name: Signal
+    type: string
+    subtype: oneof(span, logs)
+    validations:
+      - oneof(span, logs)
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs, traces] # we'll generate a name for each pipeline if there's more than 1
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.{{ .HProps.Signal }}_statements[0].context"
+        value: "{{ if eq .HProps.Signal \"span\" }}span{{ end }}{{ else if eq .HProps.Signal \"logs\" }}log{{ end }}"
+        suppress_if: "{{ not .HProps.Type }}"
+      - key: "{{ .ComponentName }}.{{ .HProps.Signal }}_statements[0].conditions[0]"
+        value: "{{ .HProps.Field }} != nil and Substring({{ .HProps.Field }}, 0, 2) == \"{\""
+      - key: "{{ .ComponentName }}.{{ .HProps.Signal }}_statements[0].statements[0]"
+        value: "set(cache, ParseJSON({{ .HProps.Field }}))"
+      - key: "{{ .ComponentName }}.{{ .HProps.Signal }}_statements[0].statements[1]"
+        value: "flatten(cache, \"\")"
+      - key: "{{ .ComponentName }}.{{ .HProps.Signal }}_statements[0].statements[2]"
+        value: "merge_maps(attributes, cache, \"upsert\")"
+      
+
+
+## resulting config will look something like this:
+# transform:
+#   error_mode: ignore
+log_statements:
+  - context: log
+    conditions:
+      - body != nil and Substring(body, 0, 2) == "{\""
+    statements:
+      - set(cache, ParseJSON(body))
+      - flatten(cache, "")
+      - merge_maps(attributes, cache, "upsert")
+  - context: log_record
+    conditions:
+      - body != nil and Substring(body, 0, 2) == "{\""
+    statements:
+      - set(cache, ParseJSON(body))
+      - flatten(cache, "")
+      - merge_maps(attributes, cache, "upsert")
