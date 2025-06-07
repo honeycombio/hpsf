@@ -502,10 +502,80 @@ type HPSF struct {
 	Name        string        `yaml:"name"`
 	Summary     string        `yaml:"summary"`
 	Description string        `yaml:"description"`
-	Components  []Component   `yaml:"components,omitempty"`
+	Components  []*Component  `yaml:"components,omitempty"`
 	Connections []*Connection `yaml:"connections,omitempty"`
 	Containers  []Container   `yaml:"containers,omitempty"`
 	Layout      Layout        `yaml:"layout,omitempty"`
+}
+
+// generate a list of components that are not named as the destination of a connection
+func (h *HPSF) GetStartComponents() []*Component {
+	startComps := make([]*Component, 0)
+	// make a map of all components that are destinations of connections
+	destinations := make(map[string]bool)
+	for _, conn := range h.Connections {
+		destinations[conn.Destination.Component] = true
+	}
+	for _, c := range h.Components {
+		// if the component is not a destination of a connection, add it to the list
+		if !destinations[c.Name] {
+			startComps = append(startComps, c)
+		}
+	}
+
+	return startComps
+}
+
+// visit all components in the HPSF in order of connections, starting from the components
+// that are not destinations of any connections. This is a depth-first search
+// that will visit all components that are reachable from the start components.
+func (h *HPSF) VisitComponents(fn func(*Component) error) error {
+	startComps := h.GetStartComponents()
+	// let's sort this so that we always visit the same components in the same order
+	slices.SortFunc(startComps, func(a, b *Component) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	visited := make(map[string]bool)
+	var visit func(*Component) error
+	visit = func(c *Component) error {
+		if c == nil {
+			return nil
+		}
+		if visited[c.Name] {
+			// already visited this component, skip it
+			return nil
+		}
+		visited[c.Name] = true
+		// call the function on the component
+		err := fn(c)
+		if err != nil {
+			return fmt.Errorf("error visiting component %s: %w", c.Name, err)
+		}
+		// now visit all connections that have this component as a source
+		for _, conn := range h.Connections {
+			if conn.Source.Component == c.Name {
+				// find the destination component
+				for _, destComp := range h.Components {
+					if destComp.Name == conn.Destination.Component {
+						// visit the destination component
+						err := visit(destComp)
+						if err != nil {
+							return fmt.Errorf("error visiting destination component %s from source %s: %w", destComp.Name, c.Name, err)
+						}
+					}
+				}
+			}
+		}
+		return nil
+	}
+	for _, c := range startComps {
+		// visit each start component
+		err := visit(c)
+		if err != nil {
+			return fmt.Errorf("error visiting start component %s: %w", c.Name, err)
+		}
+	}
+	return nil
 }
 
 // use reflect to generate a list of valid yaml tags in a pointer to

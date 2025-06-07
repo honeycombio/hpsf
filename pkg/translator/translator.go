@@ -2,6 +2,7 @@ package translator
 
 import (
 	"fmt"
+	"iter"
 	"slices"
 
 	"maps"
@@ -70,7 +71,7 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
-func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Component, error) {
+func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if ok {
@@ -167,29 +168,80 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	return result.ErrOrNil()
 }
 
+// OrderedComponentMap is a generic map that maintains the order of insertion.
+// It is used to ensure that the order of components and properties is preserved
+// when generating the configuration.
+type OrderedComponentMap struct {
+	// Keys is the list of keys in the order they were added.
+	Keys []string
+	// Values is the map of keys to values.
+	Values map[string]config.Component
+}
+
+func NewOrderedComponentMap() *OrderedComponentMap {
+	return &OrderedComponentMap{
+		Keys:   make([]string, 0),
+		Values: make(map[string]config.Component),
+	}
+}
+
+// Set adds a key-value pair to the ordered map.
+func (om *OrderedComponentMap) Set(key string, value config.Component) {
+	if _, exists := om.Values[key]; !exists {
+		// Only add the key to the Keys slice if it doesn't already exist
+		om.Keys = append(om.Keys, key)
+	}
+	om.Values[key] = value
+}
+
+// Get retrieves a value from the ordered map by key.
+func (om *OrderedComponentMap) Get(key string) (config.Component, bool) {
+	value, exists := om.Values[key]
+	return value, exists
+}
+
+// Items returns a Go iterable
+func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
+	return func(yield func(config.Component) bool) {
+		for _, key := range om.Keys {
+			if value, exists := om.Values[key]; exists {
+				if !yield(value) {
+					return
+				}
+			}
+		}
+	}
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
 	t.maybeAddDefaultSampler(h)
 
-	comps := make(map[string]config.Component)
+	comps := NewOrderedComponentMap()
 	// make all the components
-	for _, c := range h.Components {
+	// for _, c := range h.Components {
+	visitFunc := func(c *hpsf.Component) error {
 		comp, err := t.MakeConfigComponent(c)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		comps[c.GetSafeName()] = comp
+		comps.Set(c.GetSafeName(), comp)
+		return nil
+	}
+
+	if err := h.VisitComponents(visitFunc); err != nil {
+		return nil, fmt.Errorf("failed to create components: %w", err)
 	}
 
 	// now add the connections
 	for _, conn := range h.Connections {
-		comp, ok := comps[conn.Source.GetSafeName()]
+		comp, ok := comps.Get(conn.Source.GetSafeName())
 		if !ok {
 			return nil, fmt.Errorf("unknown source component %s in connection", conn.Source.Component)
 		}
 		comp.AddConnection(conn)
 
-		comp, ok = comps[conn.Destination.GetSafeName()]
+		comp, ok = comps.Get(conn.Destination.GetSafeName())
 		if !ok {
 			return nil, fmt.Errorf("unknown target component %s in connection", conn.Destination.Component)
 		}
@@ -205,7 +257,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	}
 
 	// merge in the config from each of the components
-	for _, comp := range comps {
+	for comp := range comps.Items() {
 		compConfig, err := comp.GenerateConfig(ct, userdata)
 		if err != nil {
 			return nil, err
@@ -218,7 +270,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 }
 
 func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
+	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
 		if component, ok := t.components[c.Kind]; ok {
 			if component.Style != "sampler" {
 				return false
@@ -234,7 +286,7 @@ func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
 		return false
 	})
 	if !foundDefaultSampler {
-		h.Components = append(h.Components, hpsf.Component{
+		h.Components = append(h.Components, &hpsf.Component{
 			Name: "defaultSampler",
 			Kind: "DeterministicSampler",
 			Properties: []hpsf.Property{
