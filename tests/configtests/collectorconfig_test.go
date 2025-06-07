@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tmpl "github.com/honeycombio/hpsf/pkg/config/tmpl"
-	collectorconfigprovider "github.com/honeycombio/hpsf/tests/providers/collector"
+	collectorprovider "github.com/honeycombio/hpsf/tests/providers/collector"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 )
@@ -16,9 +16,9 @@ func TestValidateCollectorConfig(t *testing.T) {
 	cc.Set("service", "pipelines.traces.receivers", []string{"otlp"})
 	cc.Set("service", "pipelines.traces.processors", []string{})
 
-	parsedConfig, err := collectorconfigprovider.GetParsedConfig(t, cc)
-	if err != nil {
-		t.Errorf("Error parsing config: %v\n Rendedered Config: %s\n", err, err.Config)
+	parsedConfig, parserError := collectorprovider.GetParsedConfig(t, cc)
+	if parserError.HasError {
+		t.Errorf("Error parsing config: %v\n Rendedered Config: %s\n", parserError.Error, parserError.Config)
 	}
 
 	if parsedConfig.Receivers[component.MustNewID("otlp")].(*otlpreceiver.Config).HTTP.ServerConfig.Endpoint != "0.0.0.0:4317" {

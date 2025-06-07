@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os"
 	"strings"
 	"testing"
 
@@ -44,39 +45,45 @@ func (e ParserError) FailIfError(t testing.TB) {
 	}
 }
 
+func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
+	file, err := os.ReadFile("multiple_otlp_exporters.yaml")
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+
+	return GetParsedConfigs(t, string(file))
+}
+
 func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
 	hpsf, err := unmarshalHPSF(strings.NewReader(hpsfConfig))
 	if err != nil {
 		log.Fatalf("error unmarshaling HPSF: %v", err)
 	}
 
-	tr := translator.NewEmptyTranslator()
-	// for this command line app, we load the embedded components, but
-	// a real app should load them from a database
-	components, err := data.LoadEmbeddedComponents()
+	hpsfTranslator := translator.NewEmptyTranslator()
+	allHpsfComponents, err := data.LoadEmbeddedComponents()
 	if err != nil {
 		log.Fatalf("error loading embedded components: %v", err)
 	}
-	// install the components
-	tr.InstallComponents(components)
+	hpsfTranslator.InstallComponents(allHpsfComponents)
 
 	errors := make(map[config.Type]ErrorDetails)
 
-	refineryRulesTmpl, err := tr.GenerateConfig(hpsf, config.RefineryRulesType, nil)
+	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(hpsf, config.RefineryRulesType, nil)
 	if err != nil {
 		errors[config.RefineryConfigType] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
 		refineryRules = refineryConfigProvider.GetParsedRulesConfig(t, refineryRulesTmpl.(*tmpl.RulesConfig))
 	}
 
-	collectorConfigTmpl, err := tr.GenerateConfig(hpsf, config.CollectorConfigType, nil)
+	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(hpsf, config.CollectorConfigType, nil)
 	if err != nil {
 		errors[config.CollectorConfigType] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
-		var parsingErrors collectorConfigProvider.ParseError
+		var parsingErrors collectorConfigProvider.CollectorConfigParseError
 		collectorConfig, parsingErrors = collectorConfigProvider.GetParsedConfig(t, collectorConfigTmpl.(*tmpl.CollectorConfig))
-		if parsingErrors.IsError {
-			errors[config.CollectorConfigType] = ErrorDetails{Config: parsingErrors.Config, Error: parsingErrors.InnerError}
+		if parsingErrors.HasError {
+			errors[config.CollectorConfigType] = ErrorDetails{Config: parsingErrors.Config, Error: parsingErrors.Error}
 		}
 	}
 

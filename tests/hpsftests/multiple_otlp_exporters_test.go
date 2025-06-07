@@ -1,27 +1,21 @@
 package hpsftests
 
 import (
-	"os"
 	"testing"
 
 	collectorConfigprovider "github.com/honeycombio/hpsf/tests/providers/collector"
 	hpsfprovider "github.com/honeycombio/hpsf/tests/providers/hpsf"
 	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
-	"go.opentelemetry.io/collector/pipeline"
 )
 
 func TestMultipleOTLPExporters(t *testing.T) {
 
-	file, err := os.ReadFile("multiple_otlp_exporters.yaml")
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
-	}
-
-	rulesConfig, collectorConfig, errors := hpsfprovider.GetParsedConfigs(t, string(file))
+	rulesConfig, collectorConfig, errors := hpsfprovider.GetParsedConfigsFromFile(t, "multiple_otlp_exporters.yaml")
 	errors.FailIfError(t)
 
-	if len(collectorConfig.Service.Pipelines[pipeline.NewID(pipeline.SignalTraces)].Exporters) != 2 {
-		t.Errorf("Expected 2 exporters, got %d", len(collectorConfig.Service.Pipelines[pipeline.NewID(pipeline.SignalTraces)].Exporters))
+	_, _, exporters, getResult := collectorConfigprovider.GetPipelineConfig(collectorConfig, "traces")
+	if !getResult.Found || len(exporters) != 2 {
+		t.Errorf("Expected 2 exporters, got %s", exporters)
 	}
 
 	customBackendConfig, findResult := collectorConfigprovider.GetExporterConfig[otlphttpexporter.Config](collectorConfig, "otlphttp/My_Custom_backend")
