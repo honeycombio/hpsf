@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tmpl "github.com/honeycombio/hpsf/pkg/config/tmpl"
-	"github.com/honeycombio/hpsf/tests/configproviders/refineryconfigprovider"
+	refineryconfig "github.com/honeycombio/hpsf/tests/providers/refinery"
 )
 
 type BasicRefineryConfig struct {
@@ -23,7 +23,7 @@ func TestRefineryArrayRendering(t *testing.T) {
 		},
 	})
 
-	parsedConfig := refineryconfigprovider.GetParsedConfig(t, rulesConfig)
+	parsedConfig := refineryconfig.GetParsedRulesConfig(t, rulesConfig)
 
 	if parsedConfig.Samplers["__default__"].RulesBasedSampler.Rules[0].Name != "test.name1" {
 		t.Errorf("Expected value not found in rendered config")

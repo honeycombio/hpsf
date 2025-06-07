@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-func GetParsedConfig(t *testing.T, rulesConfig *tmpl.RulesConfig) *refineryConfig.V2SamplerConfig {
+func GetParsedRulesConfig(t *testing.T, rulesConfig *tmpl.RulesConfig) *refineryConfig.V2SamplerConfig {
 	renderedConfig, err := rulesConfig.RenderYAML()
 	if err != nil {
 		t.Errorf("Error rendering config: %v", err)

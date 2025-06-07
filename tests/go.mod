@@ -160,6 +160,8 @@ require (
 	go.opentelemetry.io/collector/confmap v1.33.0
 	go.opentelemetry.io/collector/consumer v1.33.0 // indirect
 	go.opentelemetry.io/collector/exporter/debugexporter v0.127.0
+	go.opentelemetry.io/collector/exporter/otlpexporter v0.127.0
+	go.opentelemetry.io/collector/exporter/otlphttpexporter v0.127.0
 	go.opentelemetry.io/collector/featuregate v1.33.0 // indirect
 	go.opentelemetry.io/collector/internal/telemetry v0.127.0 // indirect
 	go.opentelemetry.io/collector/otelcol v0.127.0
