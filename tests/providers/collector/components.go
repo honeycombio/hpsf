@@ -3,6 +3,7 @@ package collectorprovider
 import (
 	"github.com/honeycombio/opentelemetry-collector-configs/honeycombextension"
 	"github.com/honeycombio/opentelemetry-collector-configs/usageprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
@@ -22,6 +23,7 @@ func defaultComponents() otelcol.Factories {
 			component.MustNewType("otlp"): otlpreceiver.NewFactory(),
 		},
 		Exporters: map[component.Type]exporter.Factory{
+			component.MustNewType("awss3"):    awss3exporter.NewFactory(),
 			component.MustNewType("debug"):    debugexporter.NewFactory(),
 			component.MustNewType("otlp"):     otlpexporter.NewFactory(),
 			component.MustNewType("otlphttp"): otlphttpexporter.NewFactory(),

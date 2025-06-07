@@ -74,7 +74,7 @@ func GetPipelineConfig(collectorConfig *otelcol.Config, pipelineName string) (re
 		}
 		return nil, nil, nil, ComponentGetResult{Found: false, SearchString: pipelineName, Components: availablePipelines}
 	}
-	return getComponentNames(pipeline.Exporters), getComponentNames(pipeline.Processors), getComponentNames(pipeline.Receivers), ComponentGetResult{Found: true, SearchString: pipelineName}
+	return getComponentNames(pipeline.Receivers), getComponentNames(pipeline.Processors), getComponentNames(pipeline.Exporters), ComponentGetResult{Found: true, SearchString: pipelineName}
 
 }
 

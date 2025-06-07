@@ -46,7 +46,7 @@ func (e ParserError) FailIfError(t testing.TB) {
 }
 
 func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
-	file, err := os.ReadFile("multiple_otlp_exporters.yaml")
+	file, err := os.ReadFile(filename)
 	if err != nil {
 		t.Fatalf("Failed to read file: %v", err)
 	}
