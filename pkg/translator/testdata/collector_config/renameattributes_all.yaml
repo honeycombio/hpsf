@@ -1,0 +1,40 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    transform/attribute_renamer:
+        error_mode: ignore
+        log_statements:
+            - set(attributes["new_attribute_name"], attributes["old_attribute_name"]) where attributes["old_attribute_name"] != nil
+            - delete_key(attributes, "old_attribute_name") where attributes["old_attribute_name"] != nil
+        metric_statements:
+            - set(attributes["new_attribute_name"], attributes["old_attribute_name"]) where attributes["old_attribute_name"] != nil
+            - delete_key(attributes, "old_attribute_name") where attributes["old_attribute_name"] != nil
+        trace_statements:
+            - set(attributes["new_attribute_name"], attributes["old_attribute_name"]) where attributes["old_attribute_name"] != nil
+            - delete_key(attributes, "old_attribute_name") where attributes["old_attribute_name"] != nil
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/attribute_renamer]
+            exporters: [otlphttp/otlp_out]

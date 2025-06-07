@@ -1,0 +1,74 @@
+kind: RenameAttributes
+name: Rename Attributes
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that renames telemetry attributes using the transform processor.
+description: |
+  This component uses the OpenTelemetry transform processor to rename attributes in spans,
+  metrics, and logs. It allows you to specify the source attribute name and the desired new
+  attribute name, using OTTL (OpenTelemetry Transformation Language) statements.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: SourceAttributeName
+    type: string
+    summary: The name of the attribute to rename
+    description: |
+      The name of the existing span attribute that should be renamed.
+      This attribute must exist on the span for the transformation to take effect.
+    validations:
+      - nonempty
+  - name: TargetAttributeName
+    type: string
+    summary: The new name for the attribute
+    description: |
+      The new name that the source attribute should be renamed to.
+      If an attribute with this name already exists, it will be overwritten.
+    validations:
+      - nonempty
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: "set(attributes[\"{{ .Values.TargetAttributeName }}\"], attributes[\"{{ .Values.SourceAttributeName }}\"]) where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
+      - key: "{{ .ComponentName }}.trace_statements[1]"
+        value: "delete_key(attributes, \"{{ .Values.SourceAttributeName }}\") where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: "set(attributes[\"{{ .Values.TargetAttributeName }}\"], attributes[\"{{ .Values.SourceAttributeName }}\"]) where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
+      - key: "{{ .ComponentName }}.metric_statements[1]"
+        value: "delete_key(attributes, \"{{ .Values.SourceAttributeName }}\") where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: "set(attributes[\"{{ .Values.TargetAttributeName }}\"], attributes[\"{{ .Values.SourceAttributeName }}\"]) where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
+      - key: "{{ .ComponentName }}.log_statements[1]"
+        value: "delete_key(attributes, \"{{ .Values.SourceAttributeName }}\") where attributes[\"{{ .Values.SourceAttributeName }}\"] != nil"
+        suppress_if: "{{ not .Values.SourceAttributeName }}"
