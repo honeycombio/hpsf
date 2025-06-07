@@ -1,0 +1,66 @@
+name: multiple_otlp_exporters
+version: v0.1.0
+summary: Test for multiple exporters
+description: |
+  There is a single otel receiver, with all singles connected to 2 separate otel exporters
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: My Custom backend
+    kind: OTelHTTPExporter
+    properties:
+      - name: Headers
+        value:
+          x-custom-backend: ${MY_KEY}
+  - name: Honeycomb
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: My Custom backend
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: My Custom backend
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: My Custom backend
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Honeycomb
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Honeycomb
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Honeycomb
+      port: Logs
+      type: OTelLogs
