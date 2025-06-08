@@ -4,6 +4,8 @@ import (
 	"github.com/honeycombio/opentelemetry-collector-configs/honeycombextension"
 	"github.com/honeycombio/opentelemetry-collector-configs/usageprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor"
+	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/component"
 	"go.opentelemetry.io/collector/exporter"
@@ -29,8 +31,10 @@ func defaultComponents() otelcol.Factories {
 			component.MustNewType("otlphttp"): otlphttpexporter.NewFactory(),
 		},
 		Processors: map[component.Type]processor.Factory{
-			component.MustNewType("transform"): transformprocessor.NewFactory(),
-			component.MustNewType("usage"):     usageprocessor.NewFactory(),
+			component.MustNewType("filter"):       filterprocessor.NewFactory(),
+			component.MustNewType("groupbyattrs"): groupbyattrsprocessor.NewFactory(),
+			component.MustNewType("transform"):    transformprocessor.NewFactory(),
+			component.MustNewType("usage"):        usageprocessor.NewFactory(),
 		},
 		Extensions: map[component.Type]extension.Factory{
 			component.MustNewType("honeycomb"): honeycombextension.NewFactory(),

@@ -1,0 +1,39 @@
+name: filter_by_target_url_test
+version: v0.1.0
+summary: Test for Filter By Target URL Component
+description: |
+  Test configuration with an OTel receiver connected to a FilterByTargetUrl component that
+  filters spans based on http.target field, then forwards to an OTel HTTP exporter.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: URL Filter
+    kind: FilterByTargetUrl
+    properties:
+      - name: UrlPatternsToFilter
+        value: ["/health", "/healthz", "/ping", "/status"]
+      - name: FilterMode
+        value: "exclude"
+      - name: CaseSensitive
+        value: false
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: URL Filter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: URL Filter
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces

@@ -1,0 +1,24 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Field_Hasher
+    kind: HashField
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Field_Hasher
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Field_Hasher
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

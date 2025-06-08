@@ -1,0 +1,37 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    transform/User_Agent_Parser:
+        error_mode: ignore
+        log_statements:
+            - merge_maps(log.attributes, UserAgent(log.attributes["http.user_agent"]), "upsert") where log.attributes["http.user_agent"] != nil
+        metric_statements:
+            - merge_maps(datapoint.attributes, UserAgent(datapoint.attributes["http.user_agent"]), "upsert") where datapoint.attributes["http.user_agent"] != nil
+        trace_statements:
+            - merge_maps(span.attributes, UserAgent(span.attributes["http.user_agent"]), "upsert") where span.attributes["http.user_agent"] != nil
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/User_Agent_Parser]
+            exporters: [otlphttp/otlp_out]

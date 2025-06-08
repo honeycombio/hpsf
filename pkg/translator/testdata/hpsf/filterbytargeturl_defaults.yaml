@@ -1,0 +1,24 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: URL_Filter
+    kind: FilterByTargetUrl
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: URL_Filter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: URL_Filter
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

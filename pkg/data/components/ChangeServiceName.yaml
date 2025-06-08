@@ -1,0 +1,67 @@
+kind: ChangeServiceName
+name: Change Service Name
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that changes the service name based on a span attribute.
+description: |
+  This component uses both the OpenTelemetry groupbyattrs and transform processors
+  to change the service name based on a span attribute. It first groups spans by
+  the specified attribute, then copies that attribute value to the service.name
+  resource attribute.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - category:groupby
+  - signal:OTelTraces
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+properties:
+  - name: SourceAttribute
+    type: string
+    summary: Name of the span attribute to use as the new service name
+    description: |
+      The name of the span attribute whose value will be used as the new service name.
+      This attribute must exist on the spans for the transformation to take effect.
+    validations:
+      - nonempty
+  - name: KeepOriginalAttribute
+    type: boolean
+    summary: Whether to keep the original attribute after copying
+    description: |
+      If true, the original span attribute will be preserved. If false, it will be
+      removed after copying its value to service.name.
+    default: true
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_groupbyattrs
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: groupbyattrs
+    data:
+      - key: "{{ .ComponentName }}.keys"
+        value: ["{{ .Values.SourceAttribute }}"]
+        suppress_if: "{{ not .Values.SourceAttribute }}"
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: 'set(resource.attributes["service.name"], resource.attributes["{{ .Values.SourceAttribute }}"]) where resource.attributes["{{ .Values.SourceAttribute }}"] != nil'
+        suppress_if: "{{ not .Values.SourceAttribute }}"
+      - key: "{{ .ComponentName }}.trace_statements[1]"
+        value: 'delete_key(resource.attributes, "{{ .Values.SourceAttribute }}") where resource.attributes["{{ .Values.SourceAttribute }}"] != nil'
+        suppress_if: "{{ or (not .Values.SourceAttribute) .Values.KeepOriginalAttribute }}"

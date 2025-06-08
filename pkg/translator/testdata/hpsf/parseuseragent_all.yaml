@@ -1,0 +1,27 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: User_Agent_Parser
+    kind: ParseUserAgent
+    properties:
+      - name: UserAgentField
+        value: http.user_agent
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: User_Agent_Parser
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: User_Agent_Parser
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

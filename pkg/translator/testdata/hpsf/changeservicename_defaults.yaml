@@ -1,0 +1,24 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Service_Name_Changer
+    kind: ChangeServiceName
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Service_Name_Changer
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Service_Name_Changer
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

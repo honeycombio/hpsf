@@ -1,0 +1,37 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    groupbyattrs/Service_Name_Changer:
+        keys:
+            - ""
+            - '{{ .Values.SourceAttribute }}'
+    transform/Service_Name_Changer:
+        error_mode: ignore
+        trace_statements:
+            - set(resource.attributes["service.name"], resource.attributes["service.instance.id"]) where resource.attributes["service.instance.id"] != nil
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, groupbyattrs/Service_Name_Changer, transform/Service_Name_Changer]
+            exporters: [otlphttp/otlp_out]

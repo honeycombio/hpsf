@@ -1,0 +1,29 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Field_Allowlist
+    kind: AllowOnlyTheseFields
+    properties:
+      - name: AllowedFields
+        value: ["field1", "field2", "field3"]
+      - name: KeepResourceAttributes
+        value: true
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Field_Allowlist
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Field_Allowlist
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

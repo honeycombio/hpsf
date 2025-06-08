@@ -1,0 +1,77 @@
+kind: NormalizeFields
+name: Normalize Fields
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that normalizes field values using find and replace patterns.
+description: |
+  This component uses the OpenTelemetry transform processor to normalize field values
+  by applying find and replace operations. It supports pattern-based transformations
+  to standardize field values across telemetry data.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: FieldName
+    type: string
+    summary: Name of the field to normalize
+    description: |
+      The name of the field whose values should be normalized using find and replace.
+    validations:
+      - nonempty
+  - name: FindPattern
+    type: string
+    summary: Pattern to find in field values
+    description: |
+      The pattern to search for in the field values. This supports regular expressions.
+    validations:
+      - nonempty
+  - name: ReplaceWith
+    type: string
+    summary: Replacement value
+    description: |
+      The value to replace the found pattern with. Can be a static string or include
+      regex capture groups.
+    default: ""
+  - name: CaseSensitive
+    type: boolean
+    summary: Whether the pattern matching should be case sensitive
+    description: |
+      If true, pattern matching will be case sensitive. If false, it will be case insensitive.
+    default: true
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: 'replace_pattern(span.attributes["{{ .Values.FieldName }}"], "{{ .Values.FindPattern }}", "{{ .Values.ReplaceWith }}") where span.attributes["{{ .Values.FieldName }}"] != nil'
+        suppress_if: "{{ not .Values.FieldName }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: 'replace_pattern(datapoint.attributes["{{ .Values.FieldName }}"], "{{ .Values.FindPattern }}", "{{ .Values.ReplaceWith }}") where datapoint.attributes["{{ .Values.FieldName }}"] != nil'
+        suppress_if: "{{ not .Values.FieldName }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: 'replace_pattern(log.attributes["{{ .Values.FieldName }}"], "{{ .Values.FindPattern }}", "{{ .Values.ReplaceWith }}") where log.attributes["{{ .Values.FieldName }}"] != nil'
+        suppress_if: "{{ not .Values.FieldName }}"

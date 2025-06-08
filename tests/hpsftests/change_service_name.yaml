@@ -1,0 +1,37 @@
+name: change_service_name_test
+version: v0.1.0
+summary: Test for Change Service Name Component
+description: |
+  Test configuration with an OTel receiver connected to a ChangeServiceName component that
+  changes the service name based on a span attribute, then forwards to an OTel HTTP exporter.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: Service Name Changer
+    kind: ChangeServiceName
+    properties:
+      - name: SourceAttribute
+        value: "service.instance.id"
+      - name: KeepOriginalAttribute
+        value: true
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Service Name Changer
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Service Name Changer
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces

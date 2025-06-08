@@ -1,0 +1,33 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Library_Filter
+    kind: FilterLogsByLibrary
+    properties:
+      - name: LibraryNames
+        value: ["test-library", "another-library"]
+      - name: FilterMode
+        value: "exclude"
+      - name: CaseSensitive
+        value: true
+      - name: UseWildcards
+        value: false
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Library_Filter
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Library_Filter
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

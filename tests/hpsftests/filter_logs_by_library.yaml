@@ -1,0 +1,41 @@
+name: filter_logs_by_library_test
+version: v0.1.0
+summary: Test for Filter Logs By Library Component
+description: |
+  Test configuration with an OTel receiver connected to a FilterLogsByLibrary component that
+  filters logs based on library name, then forwards to an OTel HTTP exporter.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: Library Filter
+    kind: FilterLogsByLibrary
+    properties:
+      - name: LibraryNames
+        value: ["debug.logger", "test.framework", "internal.metrics"]
+      - name: FilterMode
+        value: "exclude"
+      - name: CaseSensitive
+        value: true
+      - name: UseWildcards
+        value: false
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Library Filter
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Library Filter
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs

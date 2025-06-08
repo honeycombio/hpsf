@@ -243,6 +243,13 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool
 var _ Component = (*TemplateComponent)(nil)
 
 func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+	dummyComponent := GenericBaseComponent{Component: dummy}
+	returnTemplate, err := dummyComponent.GenerateConfig(cfgType, userdata)
+	if err != nil {
+		return nil, err
+	}
+
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 	for _, template := range t.Templates {
@@ -254,14 +261,22 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building dotted config template for %s",
 						err, t.Kind)
 				}
-				return t.generateDottedConfig(dct, userdata)
+				generatedDottedConfig, generationError := t.generateDottedConfig(dct, userdata)
+				if generationError != nil {
+					return nil, generationError
+				}
+				returnTemplate.Merge(generatedDottedConfig)
 			case "collector":
 				ct, err := buildCollectorTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building collector template for %s",
 						err, t.Kind)
 				}
-				return t.generateCollectorConfig(ct, userdata)
+				generatedCollectorConfig, generationError := t.generateCollectorConfig(ct, userdata)
+				if generationError != nil {
+					return nil, generationError
+				}
+				returnTemplate.Merge(generatedCollectorConfig)
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
@@ -270,13 +285,17 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				return t.generateRulesConfig(rt, userdata)
+				generatedRulesConfig, generationError := t.generateRulesConfig(rt, userdata)
+				if generationError != nil {
+					return nil, generationError
+				}
+				returnTemplate.Merge(generatedRulesConfig)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
 		}
 	}
-	return nil, nil
+	return returnTemplate, nil
 }
 
 func (t *TemplateComponent) AddConnection(conn *hpsf.Connection) {

@@ -1,0 +1,84 @@
+kind: RedactFields
+name: Redact Fields
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that redacts sensitive field values using hashing.
+description: |
+  This component uses the OpenTelemetry transform processor to redact sensitive field values
+  by replacing them with their SHA256 hash. This helps protect sensitive information while
+  maintaining the ability to correlate data based on the hashed values.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - category:security
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: FieldsToRedact
+    type: string_array
+    summary: List of field names to redact
+    description: |
+      A list of field names whose values should be redacted by replacing them with
+      their SHA256 hash. The original field names are preserved.
+    validations:
+      - nonempty
+  - name: HashPrefix
+    type: string
+    summary: Prefix to add to hashed values
+    description: |
+      An optional prefix to add to hashed values to make it clear they have been redacted.
+      Default is "redacted_".
+    default: "redacted_"
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: "set(span.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(span.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"])], \"\")) where span.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"] != nil"
+        suppress_if: "{{ not .Values.FieldsToRedact }}"
+      - key: "{{ .ComponentName }}.trace_statements[1]"
+        value: "set(span.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(span.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"])], \"\")) where span.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 2) }}"
+      - key: "{{ .ComponentName }}.trace_statements[2]"
+        value: "set(span.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(span.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"])], \"\")) where span.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 3) }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: "set(datapoint.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(datapoint.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"])], \"\")) where datapoint.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"] != nil"
+        suppress_if: "{{ not .Values.FieldsToRedact }}"
+      - key: "{{ .ComponentName }}.metric_statements[1]"
+        value: "set(datapoint.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(datapoint.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"])], \"\")) where datapoint.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 2) }}"
+      - key: "{{ .ComponentName }}.metric_statements[2]"
+        value: "set(datapoint.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(datapoint.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"])], \"\")) where datapoint.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 3) }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: "set(log.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(log.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"])], \"\")) where log.attributes[\"{{ index .Values.FieldsToRedact 0 }}\"] != nil"
+        suppress_if: "{{ not .Values.FieldsToRedact }}"
+      - key: "{{ .ComponentName }}.log_statements[1]"
+        value: "set(log.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(log.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"])], \"\")) where log.attributes[\"{{ index .Values.FieldsToRedact 1 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 2) }}"
+      - key: "{{ .ComponentName }}.log_statements[2]"
+        value: "set(log.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"], Concat([\"{{ .Values.HashPrefix }}\", SHA256(log.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"])], \"\")) where log.attributes[\"{{ index .Values.FieldsToRedact 2 }}\"] != nil"
+        suppress_if: "{{ or (not .Values.FieldsToRedact) (lt (len .Values.FieldsToRedact) 3) }}"

@@ -1,0 +1,61 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Field_Redactor
+    kind: RedactFields
+    properties:
+      - name: FieldsToRedact
+        value: ["password", "ssn", "credit_card"]
+      - name: HashPrefix
+        value: "redacted_"
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Field_Redactor
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Field_Redactor
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: otlp_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Field_Redactor
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Field_Redactor
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: otlp_out
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Field_Redactor
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Field_Redactor
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

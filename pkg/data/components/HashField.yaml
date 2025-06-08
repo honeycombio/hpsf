@@ -1,0 +1,77 @@
+kind: HashField
+name: Hash Field
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that hashes field values for privacy protection.
+description: |
+  This component uses the OpenTelemetry transform processor to hash field values
+  using SHA256. Unlike redaction, this preserves the ability to correlate data
+  while protecting sensitive information by replacing original values with their
+  cryptographic hash.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - category:security
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: FieldName
+    type: string
+    summary: Name of the field to hash
+    description: |
+      The name of the field whose value should be hashed. The original field name
+      is preserved, but its value is replaced with the SHA256 hash.
+    validations:
+      - nonempty
+  - name: HashAlgorithm
+    type: string
+    summary: Hashing algorithm to use
+    description: |
+      The hashing algorithm to use for generating the hash. Currently supports SHA256.
+    default: "SHA256"
+    subtype: oneof(SHA256)
+    validations:
+      - oneof(SHA256)
+    advanced: true
+  - name: Salt
+    type: string
+    summary: Optional salt to add to the hash
+    description: |
+      An optional salt value to add to the field value before hashing. This provides
+      additional security by making rainbow table attacks more difficult.
+    default: ""
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: '{{- if .Values.Salt }}set(span.attributes["{{ .Values.FieldName }}"], SHA256(Concat([span.attributes["{{ .Values.FieldName }}"], "{{ .Values.Salt }}"], ""))) where span.attributes["{{ .Values.FieldName }}"] != nil{{- else }}set(span.attributes["{{ .Values.FieldName }}"], SHA256(span.attributes["{{ .Values.FieldName }}"])) where span.attributes["{{ .Values.FieldName }}"] != nil{{- end }}'
+        suppress_if: "{{ not .Values.FieldName }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: '{{- if .Values.Salt }}set(datapoint.attributes["{{ .Values.FieldName }}"], SHA256(Concat([datapoint.attributes["{{ .Values.FieldName }}"], "{{ .Values.Salt }}"], ""))) where datapoint.attributes["{{ .Values.FieldName }}"] != nil{{- else }}set(datapoint.attributes["{{ .Values.FieldName }}"], SHA256(datapoint.attributes["{{ .Values.FieldName }}"])) where datapoint.attributes["{{ .Values.FieldName }}"] != nil{{- end }}'
+        suppress_if: "{{ not .Values.FieldName }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: '{{- if .Values.Salt }}set(log.attributes["{{ .Values.FieldName }}"], SHA256(Concat([log.attributes["{{ .Values.FieldName }}"], "{{ .Values.Salt }}"], ""))) where log.attributes["{{ .Values.FieldName }}"] != nil{{- else }}set(log.attributes["{{ .Values.FieldName }}"], SHA256(log.attributes["{{ .Values.FieldName }}"])) where log.attributes["{{ .Values.FieldName }}"] != nil{{- end }}'
+        suppress_if: "{{ not .Values.FieldName }}"

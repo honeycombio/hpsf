@@ -1,0 +1,62 @@
+kind: FilterByTargetUrl
+name: Filter By Target URL
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that filters spans based on the http.target field.
+description: |
+  This component uses the OpenTelemetry filter processor to filter out spans
+  based on the http.target field. It's commonly used to filter out health check
+  requests and other unwanted HTTP requests from telemetry data.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+properties:
+  - name: UrlPatternsToFilter
+    type: string_array
+    summary: List of URL patterns to filter out
+    description: |
+      A list of URL patterns that should be filtered out from spans. Supports
+      exact matches and basic wildcards. Common patterns include health check
+      endpoints like /health, /healthz, /ping, etc.
+    default: ["/health", "/healthz", "/ping", "/status", "/ready", "/live"]
+    validations:
+      - nonempty
+  - name: FilterMode
+    type: string
+    summary: Whether to include or exclude matching URLs
+    description: |
+      Determines whether spans matching the URL patterns should be included or excluded.
+      'exclude' will filter out matching spans, 'include' will only keep matching spans.
+    default: "exclude"
+    subtype: oneof(include, exclude)
+    validations:
+      - oneof(include, exclude)
+    advanced: true
+  - name: CaseSensitive
+    type: boolean
+    summary: Whether URL pattern matching should be case sensitive
+    description: |
+      If true, URL pattern matching will be case sensitive. If false, it will be
+      case insensitive.
+    default: false
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: filter
+    data:
+      - key: "{{ .ComponentName }}.traces.span"
+        value: "{{ .Values.UrlPatternsToFilter | encodeAsArrayWithFormat \"attributes[\\\"http.target\\\"] == \\\"%s\\\"\" }}"
+        suppress_if: "{{ not .Values.UrlPatternsToFilter }}"

@@ -1,0 +1,66 @@
+kind: AllowOnlyTheseFields
+name: Allow Only These Fields
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that keeps only specified fields and removes all others.
+description: |
+  This component uses the OpenTelemetry transform processor with the keep_keys
+  function to implement an allowlist of fields. Only the specified fields will
+  be kept in the telemetry data, and all other fields will be removed.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: AllowedFields
+    type: string_array
+    summary: List of field names to keep
+    description: |
+      A list of field names that should be kept in the telemetry data. All other
+      fields will be removed. This creates an allowlist of permitted fields.
+    validations:
+      - nonempty
+  - name: KeepResourceAttributes
+    type: boolean
+    summary: Whether to preserve resource attributes
+    description: |
+      If true, resource attributes will be preserved regardless of the allowlist.
+      If false, the allowlist will also apply to resource attributes.
+    default: true
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: 'keep_keys(span.attributes, [{{ range $index, $field := .Values.AllowedFields }}{{ if $index }}, {{ end }}"{{ $field }}"{{ end }}])'
+        suppress_if: "{{ not .Values.AllowedFields }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: 'keep_keys(datapoint.attributes, [{{ range $index, $field := .Values.AllowedFields }}{{ if $index }}, {{ end }}"{{ $field }}"{{ end }}])'
+        suppress_if: "{{ not .Values.AllowedFields }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: 'keep_keys(log.attributes, [{{ range $index, $field := .Values.AllowedFields }}{{ if $index }}, {{ end }}"{{ $field }}"{{ end }}])'
+        suppress_if: "{{ not .Values.AllowedFields }}"

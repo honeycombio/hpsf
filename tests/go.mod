@@ -43,6 +43,7 @@ require (
 	github.com/creasty/defaults v1.8.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
+	github.com/expr-lang/expr v1.17.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/foxboron/go-tpm-keyfiles v0.0.0-20250323135004-b31fac66206e // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
@@ -62,6 +63,8 @@ require (
 	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.127.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.127.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.127.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.127.0 // indirect
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.127.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

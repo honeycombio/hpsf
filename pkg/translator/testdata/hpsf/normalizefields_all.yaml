@@ -1,0 +1,33 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: Field_Normalizer
+    kind: NormalizeFields
+    properties:
+      - name: FieldName
+        value: "user_id"
+      - name: FindPattern
+        value: "_"
+      - name: ReplaceWith
+        value: "."
+      - name: CaseSensitive
+        value: true
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Field_Normalizer
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Field_Normalizer
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

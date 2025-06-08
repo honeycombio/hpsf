@@ -1,0 +1,37 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    transform/Field_Allowlist:
+        error_mode: ignore
+        log_statements:
+            - keep_keys(log.attributes, ["field1", "field2", "field3"])
+        metric_statements:
+            - keep_keys(datapoint.attributes, ["field1", "field2", "field3"])
+        trace_statements:
+            - keep_keys(span.attributes, ["field1", "field2", "field3"])
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/Field_Allowlist]
+            exporters: [otlphttp/otlp_out]

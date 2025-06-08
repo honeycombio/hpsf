@@ -15,8 +15,8 @@ processors:
             - set(attributes["new_attribute_name"], attributes["old_attribute_name"]) where attributes["old_attribute_name"] != nil
             - delete_key(attributes, "old_attribute_name") where attributes["old_attribute_name"] != nil
         trace_statements:
-            - set(attributes["new_attribute_name"], attributes["old_attribute_name"]) where attributes["old_attribute_name"] != nil
-            - delete_key(attributes, "old_attribute_name") where attributes["old_attribute_name"] != nil
+            - set(span.attributes["new_attribute_name"], span.attributes["old_attribute_name"]) where span.attributes["old_attribute_name"] != nil
+            - delete_key(span.attributes, "old_attribute_name") where span.attributes["old_attribute_name"] != nil
     usage: {}
 exporters:
     otlphttp/otlp_out:

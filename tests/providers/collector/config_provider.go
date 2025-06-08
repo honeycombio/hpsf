@@ -47,5 +47,11 @@ func GetParsedConfig(t *testing.T, cc *tmpl.CollectorConfig) (*otelcol.Config, C
 	if parseError != nil {
 		return nil, CollectorConfigParseError{Error: parseError, Config: renderedYamlAsString, HasError: true}
 	}
+
+	collectorConfigValidationError := parsedConfig.Validate()
+	if collectorConfigValidationError != nil {
+		return nil, CollectorConfigParseError{Error: collectorConfigValidationError, Config: renderedYamlAsString, HasError: true}
+	}
+
 	return parsedConfig, CollectorConfigParseError{}
 }

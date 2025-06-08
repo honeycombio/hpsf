@@ -1,0 +1,71 @@
+name: hash_field_test
+version: v0.1.0
+summary: Test for Hash Field Component
+description: |
+  Test configuration with an OTel receiver connected to a HashField component that
+  hashes field values for privacy protection, then forwards to an OTel HTTP exporter.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: Field Hasher
+    kind: HashField
+    properties:
+      - name: FieldName
+        value: "user_id"
+      - name: HashAlgorithm
+        value: "SHA256"
+      - name: Salt
+        value: "my_secret_salt"
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Field Hasher
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Field Hasher
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Field Hasher
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Field Hasher
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Field Hasher
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Field Hasher
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs

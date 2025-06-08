@@ -1,0 +1,75 @@
+kind: ColumnDeletion
+name: Column Deletion
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that deletes specified attributes from telemetry data.
+description: |
+  This component uses the OpenTelemetry transform processor to delete specified attributes
+  from spans, metrics, and logs. It helps reduce noise and hide sensitive information by
+  removing unwanted fields from telemetry data.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: AttributesToDelete
+    type: string_array
+    summary: List of attribute names to delete
+    description: |
+      A list of attribute names that should be deleted from the telemetry data.
+      These attributes will be removed from spans, metrics, and logs.
+    validations:
+      - nonempty
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: "delete_key(span.attributes, \"{{ index .Values.AttributesToDelete 0 }}\")"
+        suppress_if: "{{ not .Values.AttributesToDelete }}"
+      - key: "{{ .ComponentName }}.trace_statements[1]"
+        value: "delete_key(span.attributes, \"{{ index .Values.AttributesToDelete 1 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 2) }}"
+      - key: "{{ .ComponentName }}.trace_statements[2]"
+        value: "delete_key(span.attributes, \"{{ index .Values.AttributesToDelete 2 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 3) }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: "delete_key(datapoint.attributes, \"{{ index .Values.AttributesToDelete 0 }}\")"
+        suppress_if: "{{ not .Values.AttributesToDelete }}"
+      - key: "{{ .ComponentName }}.metric_statements[1]"
+        value: "delete_key(datapoint.attributes, \"{{ index .Values.AttributesToDelete 1 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 2) }}"
+      - key: "{{ .ComponentName }}.metric_statements[2]"
+        value: "delete_key(datapoint.attributes, \"{{ index .Values.AttributesToDelete 2 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 3) }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: "delete_key(log.attributes, \"{{ index .Values.AttributesToDelete 0 }}\")"
+        suppress_if: "{{ not .Values.AttributesToDelete }}"
+      - key: "{{ .ComponentName }}.log_statements[1]"
+        value: "delete_key(log.attributes, \"{{ index .Values.AttributesToDelete 1 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 2) }}"
+      - key: "{{ .ComponentName }}.log_statements[2]"
+        value: "delete_key(log.attributes, \"{{ index .Values.AttributesToDelete 2 }}\")"
+        suppress_if: "{{ or (not .Values.AttributesToDelete) (lt (len .Values.AttributesToDelete) 3) }}"

@@ -37,20 +37,21 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
-		"indent":        indent,
-		"join":          join,
-		"makeSlice":     makeSlice,
-		"meta":          meta,
-		"nonempty":      nonempty,
-		"now":           now,
-		"split":         split,
-		"yamlf":         yamlf,
+		"comment":                 comment,
+		"encodeAsArray":           encodeAsArray,
+		"encodeAsArrayWithFormat": encodeAsArrayWithFormat,
+		"encodeAsBool":            encodeAsBool,
+		"encodeAsInt":             encodeAsInt,
+		"encodeAsFloat":           encodeAsFloat,
+		"encodeAsMap":             encodeAsMap,
+		"indent":                  indent,
+		"join":                    join,
+		"makeSlice":               makeSlice,
+		"meta":                    meta,
+		"nonempty":                nonempty,
+		"now":                     now,
+		"split":                   split,
+		"yamlf":                   yamlf,
 	}
 }
 
@@ -71,6 +72,14 @@ func encodeAsArray(arr any) string {
 	default:
 		return ""
 	}
+}
+
+func encodeAsArrayWithFormat(format string, arr any) string {
+	var newArr []string
+	for _, item := range arr.([]any) {
+		newArr = append(newArr, fmt.Sprintf(format, item))
+	}
+	return ArrPrefix + strings.Join(newArr, FieldSeparator)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker

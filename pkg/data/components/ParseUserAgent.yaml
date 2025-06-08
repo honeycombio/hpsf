@@ -1,0 +1,58 @@
+kind: ParseUserAgent
+name: Parse User Agent
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: A processor that parses user agent strings into structured attributes.
+description: |
+  This component uses the OpenTelemetry transform processor with the built-in UserAgent
+  OTTL function to parse user agent strings. It merges the parsed user agent fields
+  directly into the telemetry attributes using merge_maps.
+tags:
+  - category:processor
+  - service:collector
+  - category:transform
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: UserAgentField
+    type: string
+    summary: Name of the field containing the user agent string
+    description: |
+      The name of the field that contains the user agent string to be parsed.
+      Common field names include "user_agent", "http.user_agent", or "User-Agent".
+    default: "http.user_agent"
+    validations:
+      - nonempty
+templates:
+  - kind: collector_config
+    name: otel_transform
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0]"
+        value: 'merge_maps(span.attributes, UserAgent(span.attributes["{{ .Values.UserAgentField }}"]), "upsert") where span.attributes["{{ .Values.UserAgentField }}"] != nil'
+        suppress_if: "{{ not .Values.UserAgentField }}"
+      - key: "{{ .ComponentName }}.metric_statements[0]"
+        value: 'merge_maps(datapoint.attributes, UserAgent(datapoint.attributes["{{ .Values.UserAgentField }}"]), "upsert") where datapoint.attributes["{{ .Values.UserAgentField }}"] != nil'
+        suppress_if: "{{ not .Values.UserAgentField }}"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: 'merge_maps(log.attributes, UserAgent(log.attributes["{{ .Values.UserAgentField }}"]), "upsert") where log.attributes["{{ .Values.UserAgentField }}"] != nil'
+        suppress_if: "{{ not .Values.UserAgentField }}"

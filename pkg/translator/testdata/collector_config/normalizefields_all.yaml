@@ -1,0 +1,37 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    transform/Field_Normalizer:
+        error_mode: ignore
+        log_statements:
+            - replace_pattern(log.attributes["user_id"], "_", ".") where log.attributes["user_id"] != nil
+        metric_statements:
+            - replace_pattern(datapoint.attributes["user_id"], "_", ".") where datapoint.attributes["user_id"] != nil
+        trace_statements:
+            - replace_pattern(span.attributes["user_id"], "_", ".") where span.attributes["user_id"] != nil
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/Field_Normalizer]
+            exporters: [otlphttp/otlp_out]
