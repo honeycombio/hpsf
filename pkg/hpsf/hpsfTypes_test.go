@@ -1,7 +1,6 @@
 package hpsf
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -217,7 +216,8 @@ func TestHPSF_VisitComponents(t *testing.T) {
 		components    []*Component
 		connections   []*Connection
 		expectedOrder []string
-		errorOn       string // Return error when visiting this component (empty string means no error)
+		errorOn       string // force error when visiting this component (empty string means no error)
+		expectedError string // expect an error message containing this string
 	}{
 		{
 			name: "no connections",
@@ -308,6 +308,7 @@ func TestHPSF_VisitComponents(t *testing.T) {
 				},
 			},
 			expectedOrder: nil,
+			expectedError: "cycle detected",
 		},
 		{
 			name: "error during visit",
@@ -377,7 +378,7 @@ func TestHPSF_VisitComponents(t *testing.T) {
 			err := h.VisitComponents(func(c *Component) error {
 				visited = append(visited, c.Name)
 				if tt.errorOn == c.Name {
-					return errors.New("test error")
+					return fmt.Errorf("test error expected %s, got %s", tt.errorOn, c.Name)
 				}
 				return nil
 			})
@@ -386,8 +387,13 @@ func TestHPSF_VisitComponents(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), "test error")
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, tt.expectedOrder, visited)
+				if tt.expectedError != "" {
+					assert.Error(t, err)
+					assert.Contains(t, err.Error(), tt.expectedError)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tt.expectedOrder, visited)
+				}
 			}
 		})
 	}

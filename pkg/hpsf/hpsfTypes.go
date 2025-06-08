@@ -530,12 +530,21 @@ func (h *HPSF) GetStartComponents() []*Component {
 // that are not destinations of any connections. This is a depth-first search
 // that will visit all components that are reachable from the start components.
 func (h *HPSF) VisitComponents(fn func(*Component) error) error {
+	if len(h.Components) == 0 {
+		// nothing to do, no components to visit
+		return nil
+	}
+
 	startComps := h.GetStartComponents()
+	if len(startComps) == 0 {
+		return errors.New("cycle detected: component loops are not supported")
+	}
 	// let's sort this so that we always visit the same components in the same order
 	slices.SortFunc(startComps, func(a, b *Component) int {
 		return strings.Compare(a.Name, b.Name)
 	})
 	visited := make(map[string]bool)
+	// we need the visit function to be recursive, so we define it first
 	var visit func(*Component) error
 	visit = func(c *Component) error {
 		if c == nil {
