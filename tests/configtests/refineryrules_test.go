@@ -5,6 +5,7 @@ import (
 
 	tmpl "github.com/honeycombio/hpsf/pkg/config/tmpl"
 	refineryconfig "github.com/honeycombio/hpsf/tests/providers/refinery"
+	"github.com/stretchr/testify/assert"
 )
 
 type BasicRefineryConfig struct {
@@ -25,11 +26,7 @@ func TestRefineryArrayRendering(t *testing.T) {
 
 	parsedConfig := refineryconfig.GetParsedRulesConfig(t, rulesConfig)
 
-	if parsedConfig.Samplers["__default__"].RulesBasedSampler.Rules[0].Name != "test.name1" {
-		t.Errorf("Expected value not found in rendered config")
-	}
-	if parsedConfig.Samplers["__default__"].RulesBasedSampler.Rules[1].Name != "test.name2" {
-		t.Errorf("Expected value not found in rendered config")
-	}
+	assert.Equal(t, "test.name1", parsedConfig.Samplers["__default__"].RulesBasedSampler.Rules[0].Name)
+	assert.Equal(t, "test.name2", parsedConfig.Samplers["__default__"].RulesBasedSampler.Rules[1].Name)
 
 }

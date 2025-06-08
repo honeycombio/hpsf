@@ -16,6 +16,7 @@ import (
 	collectorConfigProvider "github.com/honeycombio/hpsf/tests/providers/collector"
 	refineryConfigProvider "github.com/honeycombio/hpsf/tests/providers/refinery"
 	refineryConfig "github.com/honeycombio/refinery/config"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
 	y "gopkg.in/yaml.v3"
 )
@@ -36,20 +37,12 @@ func (e ParserError) HasErrors() bool {
 }
 
 func (e ParserError) FailIfError(t testing.TB) {
-	if e.HasErrors() || len(e.GenerateErrors) > 0 {
-		// iterate all the errors in errors.GenerateErrors and log them
-		for _, err := range e.GenerateErrors {
-			t.Errorf("Failed to parse config: %v \n configFile %s", err.Error, err.Config)
-		}
-		t.Fatalf("Failed to parse config")
-	}
+	require.False(t, e.HasErrors() || len(e.GenerateErrors) > 0, "Failed to parse config with errors: %+v", e.GenerateErrors)
 }
 
 func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
 	file, err := os.ReadFile(filename)
-	if err != nil {
-		t.Fatalf("Failed to read file: %v", err)
-	}
+	require.NoError(t, err, "Failed to read file")
 
 	return GetParsedConfigs(t, string(file))
 }
@@ -90,6 +83,7 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 	if len(errors) > 0 {
 		groupedErrors.GenerateErrors = errors
 	}
+	groupedErrors.FailIfError(t)
 	return
 
 }

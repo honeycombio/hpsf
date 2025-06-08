@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
+	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/confmap"
 	"go.opentelemetry.io/collector/otelcol"
 )
@@ -17,9 +18,7 @@ type CollectorConfigParseError struct {
 
 func GetParsedConfig(t *testing.T, cc *tmpl.CollectorConfig) (*otelcol.Config, CollectorConfigParseError) {
 	renderedYamlConfig, renderYamlError := cc.RenderYAML()
-	if renderYamlError != nil {
-		t.Fatalf("Error during RenderYAML while reading collector Config: %v", renderYamlError)
-	}
+	require.NoError(t, renderYamlError, "Error during RenderYAML while reading collector Config")
 	renderedYamlAsString := string(renderedYamlConfig)
 
 	inmemoryProvider := newFakeConfmapProvider("inmemory", func(_ context.Context, uri string, w confmap.WatcherFunc) (*confmap.Retrieved, error) {
@@ -37,9 +36,7 @@ func GetParsedConfig(t *testing.T, cc *tmpl.CollectorConfig) (*otelcol.Config, C
 		},
 	})
 
-	if err != nil {
-		t.Fatalf("Error creating collector config provider: %v", err)
-	}
+	require.NoError(t, err, "Error creating collector config provider")
 	componentFactories := defaultComponents()
 	parsedConfig, parseError := configProvider.Get(context.Background(), componentFactories)
 
@@ -47,5 +44,11 @@ func GetParsedConfig(t *testing.T, cc *tmpl.CollectorConfig) (*otelcol.Config, C
 	if parseError != nil {
 		return nil, CollectorConfigParseError{Error: parseError, Config: renderedYamlAsString, HasError: true}
 	}
+
+	collectorConfigValidationError := parsedConfig.Validate()
+	if collectorConfigValidationError != nil {
+		return nil, CollectorConfigParseError{Error: collectorConfigValidationError, Config: renderedYamlAsString, HasError: true}
+	}
+
 	return parsedConfig, CollectorConfigParseError{}
 }
