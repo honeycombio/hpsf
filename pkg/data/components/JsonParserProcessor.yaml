@@ -28,15 +28,15 @@ ports:
     direction: output
     type: OTelTraces
 properties:
-  - name: Field
+  - name: Attribute
     type: string
     default: "body"
   - name: Signal
     type: string
-    subtype: oneof(span, logs)
-    default: "span"
+    subtype: oneof(span, log)
+    default: "log"
     validations:
-      - oneof(span, logs)
+      - oneof(span, log)
 templates:
   - kind: collector_config
     name: otel_filter
@@ -48,14 +48,28 @@ templates:
     data:
       - key: "{{ .ComponentName }}.error_mode"
         value: "ignore"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].context"
-        value: "{{ if eq .Values.Signal \"span\" }}span{{ else if eq .Values.Signal \"logs\" }}log{{ end }}"
-        suppress_if: "{{ not .Values.Signal }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].conditions[0]"
-        value: "{{ if eq .Values.Signal \"span\" }}span.attributes[\"{{ .Values.Field }}\"] != nil and Substring(span.attributes[\"{{ .Values.Field }}\"], 0, 2) == \"{\"{{ else if eq .Values.Signal \"logs\" }}log.attributes[\"{{ .Values.Field }}\"] != nil and Substring(log.attributes[\"{{ .Values.Field }}\"], 0, 2) == \"{\"{{ end }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[0]"
-        value: "{{ if eq .Values.Signal \"span\" }}set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Field }}\"])){{ else if eq .Values.Signal \"logs\" }}set(log.cache, ParseJSON(log.attributes[\"{{ .Values.Field }}\"])){{ end }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[1]"
-        value: "{{ if eq .Values.Signal \"span\" }}flatten(span.cache, \"\"){{ else if eq .Values.Signal \"logs\" }}flatten(log.cache, \"\"){{ end }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[2]"
-        value: "{{ if eq .Values.Signal \"span\" }}merge_maps(span.attributes, span.cache, \"upsert\"){{ else if eq .Values.Signal \"logs\" }}merge_maps(log.attributes, log.cache, \"upsert\"){{ end }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].conditions[0]"
+        value: |
+          {{- $attributeName := .Values.Attribute }}
+          {{- $signalType := .Values.Signal }}
+          {{- $attributeString := printf "%s.attributes[\"%s\"]" $signalType $attributeName }}
+          {{- if and (eq $attributeName "body") (eq $signalType "log") }}
+          {{- $attributeString = "log.body" }}
+          {{- end -}}
+          {{- $attributeString }} != nil and HasPrefix({{ $attributeString }}, "{")
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[0]"
+        value: |
+          {{- $attributeName := .Values.Attribute }}
+          {{- $signalType := .Values.Signal }}
+          {{- $attributeString := printf "%s.attributes[\"%s\"]" $signalType $attributeName }}
+          {{- if and (eq $attributeName "body") (eq $signalType "log") }}
+          {{- $attributeString = "log.body" }}
+          {{- end -}}
+          set({{ $signalType }}.cache, ParseJSON({{ $attributeString }})
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[1]"
+        value: |
+          flatten({{ .Values.Signal }}.cache, \"\")
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[2]"
+        value: |
+          merge_maps({{ .Values.Signal }}.attributes, {{ .Values.Signal }}.cache, "upsert")
+

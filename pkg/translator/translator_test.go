@@ -20,7 +20,7 @@ import (
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	overwrite := false
+	overwrite := true
 
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()

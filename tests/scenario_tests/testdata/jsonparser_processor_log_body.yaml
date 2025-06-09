@@ -11,8 +11,8 @@ components:
   - name: json_parser_1
     kind: JsonParserProcessor
     properties:
-      - name: Field
-        value: "json_payload"
+      - name: Attribute
+        value: "body"
       - name: Signal
         value: "log"
   - name: OTel HTTP Exporter 1

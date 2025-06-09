@@ -8,14 +8,17 @@ receivers:
 processors:
     transform/json_parser_1:
         error_mode: ignore
-        trace_statements:
+        log_statements:
             - conditions:
-                - span.attributes["body"] != nil and Substring(span.attributes["body"], 0, 2) == "{"
-              context: span
+                - |
+                  log.body != nil and HasPrefix(log.body, "{")
               statements:
-                - set(span.cache, ParseJSON(span.attributes["body"]))
-                - flatten(span.cache, "")
-                - merge_maps(span.attributes, span.cache, "upsert")
+                - |
+                  set(log.cache, ParseJSON(log.body)
+                - |
+                  flatten(log.cache, \"\")
+                - |
+                  merge_maps(log.attributes, log.cache, "upsert")
     usage: {}
 exporters:
     otlphttp/otlp_out:
