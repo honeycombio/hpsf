@@ -18,6 +18,16 @@ jobs:
           key: v1-go-mod-{{ checksum "go.sum" }}
           paths:
             - /home/circleci/go/pkg/mod
+  smoke_test:
+    machine:
+      image: ubuntu-2204:2024.01.1
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ./
+      - run:
+          name: Run Smoke Tests
+          command: make smoke
 
   publish_github:
     docker:
@@ -36,10 +46,17 @@ workflows:
           filters:
             tags:
               only: /.*/
+      - smoke_test:
+          requires:
+            - test
+          filters:
+            tags:
+              only: /.*/
       - publish_github:
           context: Honeycomb Secrets for Public Repos
           requires:
             - test
+            - smoke_test
           filters:
             tags:
               only: /^v[0-9].*/
