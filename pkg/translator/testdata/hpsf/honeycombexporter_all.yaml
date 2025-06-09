@@ -1,21 +1,66 @@
 components:
-  - name: honeycomb_in
+  - name: otlp
+    kind: OTelReceiver
+  - name: refinery
     kind: TraceConverter
-  - name: honeycomb_out
+  - name: honeycomb
     kind: HoneycombExporter
     properties:
       - name: APIEndpoint
-        value: https://alternative.honeycomb.io
+        value: https://alternative.honeycomb.io:8080
       - name: APIKey
         value: abcdef1234567890abcdef1  # a validly-formatted key
       - name: Mode
         value: none
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+      - name: Headers
+        value:
+          x-honeycomb-team: abcdef1234567890abcdef1
+          x-honeycomb-dataset: "custom"
+      - name: Insecure
+        value: true
+      - name: BatchTimeout
+        value: 30s
+      - name: BatchSize
+        value: 200_000
+      - name: QueueSize
+        value: 2_000_000
 connections:
+  # traces: otel -> trace_converter -> refinery -> honeycomb
   - source:
-      component: honeycomb_in
-      port: TraceOut
-      type: Honeycomb
+      component: otlp
+      port: Traces
+      type: OTelTraces
     destination:
-      component: honeycomb_out
+      component: refinery
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: refinery
       port: Traces
       type: Honeycomb
+    destination:
+      component: honeycomb
+      port: HoneycombEvents
+      type: HoneycombEvents
+  # metrics: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: honeycomb
+      port: Metrics
+      type: OTelMetrics
+  # logs: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: honeycomb
+      port: Logs
+      type: OTelLogs
