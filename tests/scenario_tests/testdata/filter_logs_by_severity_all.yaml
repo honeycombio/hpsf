@@ -1,0 +1,34 @@
+name: filter_logs_by_severity_all_test
+version: v0.1.0
+summary: Test for FilterLogsBySeverity component with custom severity
+description: |
+  Test configuration with an OTel receiver, FilterLogsBySeverity processor with Error severity, and OTel exporter
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: Error Log Filter
+    kind: FilterLogBySeverity
+    properties:
+      - name: Severity
+        value: Error
+  - name: OTel Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Error Log Filter
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Error Log Filter
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel Exporter 1
+      port: Logs
+      type: OTelLogs
