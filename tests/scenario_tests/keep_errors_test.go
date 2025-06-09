@@ -10,7 +10,7 @@ import (
 
 func TestKeepErrors(t *testing.T) {
 	// Test the HPSF parsing and KeepErrors sampler configuration
-	rulesConfig, _, _ := hpsfprovider.GetParsedConfigsFromFile(t, "keep_errors.yaml")
+	rulesConfig, _, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/keep_errors.yaml")
 
 	// Verify that the refinery rules config was generated successfully
 	assert.Equal(t, 2, rulesConfig.RulesVersion)

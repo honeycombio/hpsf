@@ -1,0 +1,67 @@
+name: kafka_receiver_test
+version: v0.1.0
+summary: Test for Kafka Receiver component
+description: |
+  Test configuration with a Kafka receiver, consuming from custom topics
+  with SASL authentication and custom encoding formats.
+
+components:
+  - name: Kafka Receiver 1
+    kind: KafkaReceiver
+    properties:
+      - name: Brokers
+        value: ["kafka-broker-1:9092", "kafka-broker-2:9092"]
+      - name: GroupID
+        value: test-consumer-group
+      - name: ClientID
+        value: test-client
+      - name: TracesToopic
+        value: custom-traces-topic
+      - name: MetricsTopic
+        value: custom-metrics-topic
+      - name: LogsTopic
+        value: custom-logs-topic
+      - name: TracesEncoding
+        value: jaeger_json
+      - name: MetricsEncoding
+        value: otlp_json
+      - name: LogsEncoding
+        value: json
+      - name: InitialOffset
+        value: earliest
+      - name: Username
+        value: ${KAFKA_USERNAME}
+      - name: Password
+        value: ${KAFKA_PASSWORD}
+      - name: SASLMechanism
+        value: SCRAM-SHA-256
+      - name: EnableTLS
+        value: true
+  - name: Debug Exporter 1
+    kind: OTelDebugExporter
+
+connections:
+  - source:
+      component: Kafka Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Debug Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Kafka Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Debug Exporter 1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Kafka Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Debug Exporter 1
+      port: Logs
+      type: OTelLogs

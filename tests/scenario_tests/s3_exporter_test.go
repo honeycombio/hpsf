@@ -13,7 +13,7 @@ import (
 
 func TestS3Exporter(t *testing.T) {
 	// Test the HPSF parsing and template generation using typed configuration
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "s3_exporter.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/s3_exporter.yaml")
 
 	// First, verify that the refinery config was generated successfully
 	assert.Len(t, rulesConfig.Samplers, 1, "Expected 1 sampler in refinery config")

@@ -12,7 +12,7 @@ import (
 
 func TestMultipleOTLPExporters(t *testing.T) {
 
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "multiple_otlp_exporters.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/multiple_otlp_exporters.yaml")
 
 	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "traces")
 	require.True(t, getResult.Found, "Expected pipeline to be found")
