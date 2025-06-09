@@ -1,0 +1,37 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: symbolicator
+    kind: SymbolicatorProcessor
+    properties:
+      - name: SourceMapStore
+        value: file_store
+      - name: Path
+        value: /var/sourcemaps
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: symbolicator
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: symbolicator
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: symbolicator
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
