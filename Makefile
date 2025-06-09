@@ -20,6 +20,7 @@ test_all: test_results
 	@echo "+++ testing - all the tests"
 	@echo
 	$(call GOTESTCMD,$@) -tags all --timeout 60s -v ./...
+	cd tests && $(call GOTESTCMD,$@) -tags all --timeout 60s -v ./...
 
 test_results:
 	@mkdir -p test_results
