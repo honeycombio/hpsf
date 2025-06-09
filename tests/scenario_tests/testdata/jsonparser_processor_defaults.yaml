@@ -1,0 +1,51 @@
+name: jsonparser_processor_defaults_test
+version: v0.1.0
+summary: Test for JsonParserProcessor with default configuration
+description: |
+  Test configuration with an OTel receiver, JsonParserProcessor using default settings,
+  and OTel HTTP exporter. This tests the default field "body" and signal "span".
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: json_parser_1
+    kind: JsonParserProcessor
+    # Using all default properties:
+    # Field: "body" (default)
+    # Signal: "span" (default)
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: json_parser_1
+      port: Spans
+      type: OTelTraces
+  - source:
+      component: json_parser_1
+      port: Spans
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs

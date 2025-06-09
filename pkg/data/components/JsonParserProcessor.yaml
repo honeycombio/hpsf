@@ -1,0 +1,61 @@
+kind: JsonParserProcessor
+name: Json Parser Processor
+style: processor
+type: base
+status: development
+version: v0.0.0
+summary: Converts an Attribute's JSON string value into individual attributes
+description: |
+  Filters traces, metrics, and logs based on rules defined
+  in the configuration.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelLogs
+ports:
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Spans
+    direction: input
+    type: OTelTraces
+  - name: Spans
+    direction: output
+    type: OTelTraces
+properties:
+  - name: Field
+    type: string
+    default: "body"
+  - name: Signal
+    type: string
+    subtype: oneof(span, logs)
+    default: "span"
+    validations:
+      - oneof(span, logs)
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs, traces] # we'll generate a name for each pipeline if there's more than 1
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].context"
+        value: "{{ if eq .Values.Signal \"span\" }}span{{ else if eq .Values.Signal \"logs\" }}log{{ end }}"
+        suppress_if: "{{ not .Values.Signal }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].conditions[0]"
+        value: "{{ if eq .Values.Signal \"span\" }}span.attributes[\"{{ .Values.Field }}\"] != nil and Substring(span.attributes[\"{{ .Values.Field }}\"], 0, 2) == \"{\"{{ else if eq .Values.Signal \"logs\" }}log.attributes[\"{{ .Values.Field }}\"] != nil and Substring(log.attributes[\"{{ .Values.Field }}\"], 0, 2) == \"{\"{{ end }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[0]"
+        value: "{{ if eq .Values.Signal \"span\" }}set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Field }}\"])){{ else if eq .Values.Signal \"logs\" }}set(log.cache, ParseJSON(log.attributes[\"{{ .Values.Field }}\"])){{ end }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[1]"
+        value: "{{ if eq .Values.Signal \"span\" }}flatten(span.cache, \"\"){{ else if eq .Values.Signal \"logs\" }}flatten(log.cache, \"\"){{ end }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"logs\" }}log_statements{{ end }}[0].statements[2]"
+        value: "{{ if eq .Values.Signal \"span\" }}merge_maps(span.attributes, span.cache, \"upsert\"){{ else if eq .Values.Signal \"logs\" }}merge_maps(log.attributes, log.cache, \"upsert\"){{ end }}"

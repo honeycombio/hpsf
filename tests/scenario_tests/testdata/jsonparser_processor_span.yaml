@@ -1,0 +1,54 @@
+name: jsonparser_processor_span_test
+version: v0.1.0
+summary: Test for JsonParserProcessor with span signal and custom field
+description: |
+  Test configuration with an OTel receiver, JsonParserProcessor using span signal
+  with a custom field, and OTel HTTP exporter. This tests custom field "json_data" 
+  and signal "span".
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: json_parser_1
+    kind: JsonParserProcessor
+    properties:
+      - name: Field
+        value: "json_data"
+      - name: Signal
+        value: "span"
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: json_parser_1
+      port: Spans
+      type: OTelTraces
+  - source:
+      component: json_parser_1
+      port: Spans
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs
