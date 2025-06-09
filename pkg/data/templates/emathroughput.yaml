@@ -29,24 +29,24 @@ connections:
       type: OTelTraces
     destination:
       component: Trace Converter 1
-      port: Input
+      port: Traces
       type: OTelTraces
   - source:
       component: Trace Converter 1
-      port: Output
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: EMA Throughput 1
-      port: Input
-      type: Honeycomb
+      port: Traces
+      type: HoneycombEvents
   - source:
       component: EMA Throughput 1
-      port: Kept
-      type: Honeycomb
+      port: SampledOutput
+      type: HoneycombEvents
     destination:
       component: Honeycomb Exporter 1
       port: Traces
-      type: Honeycomb
+      type: HoneycombEvents
 layout:
   components:
     - name: OTel Receiver 1
@@ -54,14 +54,14 @@ layout:
         x: -340
         y: 0
     - name: Trace Converter 1
-      position:    
+      position:
         x: 0
         y: 0
-    - name: Honeycomb Exporter 1
+    - name: EMA Throughput 1
       position:
         x: 240
         y: 0
-    - name: EMA Throughput 1
+    - name: Honeycomb Exporter 1
       position:
         x: 540
         y: 0
