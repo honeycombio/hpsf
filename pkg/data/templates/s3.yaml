@@ -30,7 +30,7 @@ components:
           - http.request.method
           - http.response.status_code
   - name: S3 Exporter_1
-    kind: S3Exporter
+    kind: SendToS3Archive
 connections:
   - source:
       component: OTel Receiver_1

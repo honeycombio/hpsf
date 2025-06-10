@@ -1,13 +1,13 @@
-kind: S3Exporter
-name: S3 Exporter
+kind: SendToS3Archive
+name: Send to S3 Archive
 type: base
 style: exporter
 logo: awss3
-status: development
-version: v0.3.0
-summary: Stores telemetry in OTLP (OpenTelemetry) format in S3 storage.
+status: alpha
+version: v0.1.0
+summary: Sends the telemetry to AWS S3
 description: |
-  Exports OpenTelemetry signals using OTLP to S3 storage.
+  Sends the telemetry S3 for long-term storage to the location you choose.
 tags:
   - category:exporter
   - service:collector
@@ -124,7 +124,7 @@ templates:
         value: "gzip"
       - key: "{{ .ComponentName }}.timeout"
         value: "{{ .Values.Timeout }}"
-        suppress_if: "{{ not .HProps.Timeout }}"
+        suppress_if: "{{ not Values.Timeout }}"
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"
       - key: "{{ .ComponentName }}.sending_queue.queue_size"

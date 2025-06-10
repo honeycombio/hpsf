@@ -8,7 +8,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: My S3 Backend
-    kind: S3Exporter
+    kind: SendToS3Archive
     properties:
       - name: Bucket
         value: test-bucket

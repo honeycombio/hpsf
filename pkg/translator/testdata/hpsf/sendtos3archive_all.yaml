@@ -2,7 +2,7 @@ components:
   - name: otlp_in
     kind: OTelReceiver
   - name: s3_out
-    kind: S3Exporter
+    kind: SendToS3Archive
     properties:
       - name: Region
         value: 'my-region'
