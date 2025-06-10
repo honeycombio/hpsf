@@ -1,13 +1,12 @@
-kind: TraceConverter
-name: Trace Converter
+kind: StartSampling
+name: Start Sampling
 style: processor
 type: base
 status: alpha
 version: v0.1.0
-summary: Sends telemetry to Refinery via HTTP for further processing.
+summary: Converts traces and logs to a format for sampling
 description: |
-  Sends OTel telemetry via HTTP.
-  This component forwards the data to Refinery over HTTP for processing.
+  Converts traces and logs to a format for advanced tail-based sampling with Refinery.
 tags:
   - category:converter
   - service:refinery

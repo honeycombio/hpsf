@@ -2,7 +2,7 @@ components:
   - name: otlp
     kind: OTelReceiver
   - name: refinery
-    kind: TraceConverter
+    kind: StartSampling
   - name: honeycomb
     kind: HoneycombExporter
 connections:
