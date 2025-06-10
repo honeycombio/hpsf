@@ -21,6 +21,7 @@ exporters:
             enabled: true
             queue_size: 1000000
             sizer: items
+        timeout: 5s
 extensions:
     honeycomb: {}
 service:

@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestS3Exporter(t *testing.T) {
+func TestSendToS3Archive(t *testing.T) {
 	// Test the HPSF parsing and template generation using typed configuration
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/s3_exporter.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/send_to_s3_archive.yaml")
 
 	// First, verify that the refinery config was generated successfully
 	assert.Len(t, rulesConfig.Samplers, 1, "Expected 1 sampler in refinery config")
