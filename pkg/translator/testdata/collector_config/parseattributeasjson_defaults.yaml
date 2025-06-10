@@ -10,15 +10,11 @@ processors:
         error_mode: ignore
         log_statements:
             - conditions:
-                - |
-                  log.body != nil and HasPrefix(log.body, "{")
+                - log.attributes["json_data"] != nil and HasPrefix(log.attributes["json_data"], "{")
               statements:
-                - |
-                  set(log.cache, ParseJSON(log.body)
-                - |
-                  flatten(log.cache, \"\")
-                - |
-                  merge_maps(log.attributes, log.cache, "upsert")
+                - set(log.cache, ParseJSON(log.attributes["json_data"]))
+                - flatten(log.cache, "")
+                - merge_maps(log.attributes, log.cache, "upsert")
     usage: {}
 exporters:
     otlphttp/otlp_out:

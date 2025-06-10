@@ -8,7 +8,7 @@ description: |
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: json_parser_1
+  - name: parse_log_body_1
     kind: ParseLogBodyAsJSON
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
@@ -19,11 +19,11 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: json_parser_1
+      component: parse_log_body_1
       port: Logs
       type: OTelLogs
   - source:
-      component: json_parser_1
+      component: parse_log_body_1
       port: Logs
       type: OTelLogs
     destination:

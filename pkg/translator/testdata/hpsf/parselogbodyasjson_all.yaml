@@ -4,24 +4,8 @@ components:
   - name: otlp_out
     kind: OTelHTTPExporter
   - name: json_parser_1
-    kind: JsonParserProcessor
+    kind: ParseLogBodyAsJSON
 connections:
-  - source:
-      component: otlp_in
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: json_parser_1
-      port: Spans
-      type: OTelTraces
-  - source:
-      component: json_parser_1
-      port: Spans
-      type: OTelTraces
-    destination:
-      component: otlp_out
-      port: Traces
-      type: OTelTraces
   - source:
       component: otlp_in
       port: Logs

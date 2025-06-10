@@ -1,17 +1,17 @@
 name: jsonparser_processor_custom_test
 version: v0.1.0
-summary: Test for JsonParserProcessor with custom configuration
+summary: Test for ParseAttributeAsJSON with custom configuration
 description: |
-  Test configuration with an OTel receiver, JsonParserProcessor using custom settings,
+  Test configuration with an OTel receiver, ParseAttributeAsJSON using custom settings,
   and OTel HTTP exporter. This tests a custom field "json_payload" and signal "logs".
 
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: json_parser_1
-    kind: JsonParserProcessor
+    kind: ParseAttributeAsJSON
     properties:
-      - name: Field
+      - name: Attribute
         value: "json_payload"
       - name: Signal
         value: "log"

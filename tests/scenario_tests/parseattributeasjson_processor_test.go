@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestJsonParserProcessorDefaults(t *testing.T) {
+func TestParseAttributeAsJSONDefaults(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -26,7 +26,7 @@ func TestJsonParserProcessorDefaults(t *testing.T) {
 	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/json_parser_1")
 	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
 
-	// Default signal is "span", so should have trace statements
+	// Default signal is "log", so should have log statements
 	require.Len(t, transformConfig.LogStatements, 1)
 	logStatement := transformConfig.LogStatements[0]
 
@@ -34,7 +34,7 @@ func TestJsonParserProcessorDefaults(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestJsonParserProcessorCustom(t *testing.T) {
+func TestParseAttributeAsJSONCustom(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_custom.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -50,7 +50,7 @@ func TestJsonParserProcessorCustom(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestJsonParserProcessorSpanSignal(t *testing.T) {
+func TestParseAttributeAsJSONSpanSignal(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_span.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -64,22 +64,4 @@ func TestJsonParserProcessorSpanSignal(t *testing.T) {
 
 	assert.Len(t, traceStatement.Conditions, 1)
 	assert.Len(t, traceStatement.Statements, 3)
-}
-
-func TestJsonParserProcessorLogSignal(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_log_body.yaml")
-
-	assert.Len(t, rulesConfig.Samplers, 1)
-
-	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/json_parser_1")
-	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
-
-	// Signal is "logs" with default field, so should have log statements
-	require.Len(t, transformConfig.LogStatements, 1)
-	logStatement := transformConfig.LogStatements[0]
-
-	assert.Len(t, logStatement.Conditions, 1)
-	assert.Contains(t, logStatement.Conditions[0], "log.body")
-	assert.Len(t, logStatement.Statements, 3)
-	assert.Contains(t, logStatement.Statements[0], "log.body")
 }

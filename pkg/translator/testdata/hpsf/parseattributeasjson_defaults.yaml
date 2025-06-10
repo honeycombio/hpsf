@@ -1,24 +1,13 @@
-name: jsonparser_processor_defaults_test
-version: v0.1.0
-summary: Test for ParseAttributeAsJSON with default configuration
-description: |
-  Test configuration with an OTel receiver, ParseAttributeAsJSON using default settings,
-  and OTel HTTP exporter. This tests the default field "json_data" and signal "log".
-
 components:
-  - name: OTel Receiver 1
+  - name: otlp_in
     kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
   - name: json_parser_1
     kind: ParseAttributeAsJSON
-    # Using all default properties:
-    # Attribute: "json_data" (default)
-    # Signal: "log" (default)
-  - name: OTel HTTP Exporter 1
-    kind: OTelHTTPExporter
-
 connections:
   - source:
-      component: OTel Receiver 1
+      component: otlp_in
       port: Traces
       type: OTelTraces
     destination:
@@ -30,11 +19,11 @@ connections:
       port: Spans
       type: OTelTraces
     destination:
-      component: OTel HTTP Exporter 1
+      component: otlp_out
       port: Traces
       type: OTelTraces
   - source:
-      component: OTel Receiver 1
+      component: otlp_in
       port: Logs
       type: OTelLogs
     destination:
@@ -46,6 +35,6 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: OTel HTTP Exporter 1
+      component: otlp_out
       port: Logs
       type: OTelLogs

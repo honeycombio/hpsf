@@ -10,15 +10,11 @@ processors:
         error_mode: ignore
         trace_statements:
             - conditions:
-                - |
-                  span.attributes["body"] != nil and HasPrefix(span.attributes["body"], "{")
+                - span.attributes["json_data"] != nil and HasPrefix(span.attributes["json_data"], "{")
               statements:
-                - |
-                  set(span.cache, ParseJSON(span.attributes["body"])
-                - |
-                  flatten(span.cache, \"\")
-                - |
-                  merge_maps(span.attributes, span.cache, "upsert")
+                - set(span.cache, ParseJSON(span.attributes["json_data"]))
+                - flatten(span.cache, "")
+                - merge_maps(span.attributes, span.cache, "upsert")
     usage: {}
 exporters:
     otlphttp/otlp_out:

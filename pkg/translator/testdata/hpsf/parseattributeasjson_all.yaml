@@ -4,9 +4,9 @@ components:
   - name: otlp_out
     kind: OTelHTTPExporter
   - name: json_parser_1
-    kind: JsonParserProcessor
+    kind: ParseAttributeAsJSON
     properties:
-      - name: Field
+      - name: Attribute
         value: "json_data"
       - name: Signal
         value: "span"
