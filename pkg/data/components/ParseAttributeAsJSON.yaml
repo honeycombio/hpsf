@@ -29,11 +29,11 @@ ports:
 properties:
   - name: Attribute
     type: string
-    default: "json_data"
+    validations:
+      - noblanks
   - name: Signal
     type: string
     subtype: oneof(span, log)
-    default: "log"
     validations:
       - oneof(span, log)
 templates:
