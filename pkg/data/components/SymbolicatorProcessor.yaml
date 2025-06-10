@@ -43,21 +43,21 @@ templates:
       collectorComponentName: symbolicator
     data:
       - key: "{{ .ComponentName }}.source_map_store"
-        value: "{{ .HProps.SourceMapStore }}"
+        value: "{{ .Values.SourceMapStore }}"
       # s3_store
       - key: "{{ .ComponentName }}.s3_source_maps.region"
-        value: "{{ .HProps.Region }}"
-        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+        value: "{{ .Values.Region }}"
+        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.bucket"
-        value: "{{ .HProps.Bucket }}"
-        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+        value: "{{ .Values.Bucket }}"
+        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.prefix"
-        value: "{{ .HProps.Prefix }}"
-        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+        value: "{{ .Values.Prefix }}"
+        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
       # gcs_store
       - key: "{{ .ComponentName }}.gcs_source_maps.bucket"
-        value: "{{ .HProps.Bucket }}"
-        suppress_if: '{{ not (eq "gcs_store" .HProps.SourceMapStore) }}'
+        value: "{{ .Values.Bucket }}"
+        suppress_if: '{{ not (eq "gcs_store" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.prefix"
-        value: "{{ .HProps.Prefix }}"
-        suppress_if: '{{ not (eq "gcs_store" .HProps.SourceMapStore) }}'
+        value: "{{ .Values.Prefix }}"
+        suppress_if: '{{ not (eq "gcs_store" .Values.SourceMapStore) }}'
