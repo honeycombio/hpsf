@@ -160,8 +160,8 @@ type TemplateComponent struct {
 
 // SetHPSF stores the original component's details and may modify their contents. To
 // prevent the original being modified, the argument here should never be changed to a pointer.
-func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
-	t.hpsf = &c
+func (t *TemplateComponent) SetHPSF(c *hpsf.Component) {
+	t.hpsf = c
 }
 
 // HProps is a template helper that gets a map of all properties specified in the hpsf document.

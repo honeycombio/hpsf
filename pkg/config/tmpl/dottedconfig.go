@@ -1,6 +1,7 @@
 package tmpl
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
@@ -85,11 +86,12 @@ func processIndices(in map[string]any) map[string]any {
 	pat := regexp.MustCompile(`^(.*)\[(\d+)\]$`)
 	out := make(map[string]any)
 	for k, v := range in {
+		hasIndex := pat.MatchString(k)
 		switch v := v.(type) {
 		case map[string]any:
 			// if the value is a map, we need to recursively call processIndices on it first
 			cv := processIndices(v)
-			if !pat.MatchString(k) {
+			if !hasIndex {
 				// if the key doesn't match our regex, just add it to the map
 				out[k] = cv
 			} else {
@@ -112,8 +114,28 @@ func processIndices(in map[string]any) map[string]any {
 				out[key] = sl
 			}
 		default:
-			// if the value is not a map, just use it as is
-			out[k] = v
+			if hasIndex {
+				// we have a key with an index, but the value is not a map, so we need to either append
+				// it to a slice or create a new slice with the value
+				matches := pat.FindStringSubmatch(k)
+				key := matches[1]
+				index, _ := strconv.Atoi(matches[2])
+				// maybe we have a slice already
+				sl, ok := out[key].([]any)
+				if !ok {
+					sl = make([]any, 0)
+				}
+				// maybe expand the slice to fit the index
+				for i := len(sl); i <= index; i++ {
+					sl = append(sl, nil) // fill with nils to expand
+				}
+				// replace the value at the list at the index
+				sl[index] = v
+				out[key] = sl
+			} else {
+				// if the key doesn't match our regex, we can just add it to the map
+				out[k] = v
+			}
 		}
 	}
 	return out
@@ -141,6 +163,40 @@ func (dc DottedConfig) RenderYAML() ([]byte, error) {
 	return data, nil
 }
 
+var indexPattern = regexp.MustCompile(`\.([^.]+)\[(\d+)\]`)
+
+func findIndexedValue(s string) (string, int, bool) {
+	// search for stuff like `a.b.foo[0]` and `a.b.bar[1]`,
+	// and return a tuple like `("foo", 0, true)` or `("bar", 1, true)`
+	// we only want the first match
+	matches := indexPattern.FindStringSubmatch(s)
+	if len(matches) < 3 {
+		return "", 0, false
+	}
+	key := matches[1]
+	index, _ := strconv.Atoi(matches[2])
+	return key, index, true
+}
+
+func (dc DottedConfig) FindIndexedValues() map[string]int {
+	indices := make(map[string]int)
+	// search for stuff like `a.b.foo[0]` and `a.b.bar[1]`
+	// and return a map like `{"foo": 0, "bar": 1}`
+	for k := range dc {
+		key, index, ok := findIndexedValue(k)
+		if !ok {
+			// if we don't have a match, continue
+			continue
+		}
+		// if the key is not in the map, it will return 0
+		// if it exists, we only want the largest index
+		if index >= indices[key] {
+			indices[key] = index
+		}
+	}
+	return indices
+}
+
 // Merge combines two `DottedConfig` structs together; the values from the
 // `DottedConfig` passed in will override any values that are not slices.
 func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
@@ -149,23 +205,49 @@ func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 		// if the other TemplateConfig is not a DottedConfig, we can't merge it
 		return dc
 	}
+	baseIndices := dc.FindIndexedValues()
 	for k, v := range otherDotted {
+		// if we haven't seen this key before, we can just add it
 		if _, ok := dc[k]; !ok {
 			dc[k] = v
-		} else {
-			switch v := v.(type) {
-			case []any:
-				dc[k] = append(dc[k].([]any), v...)
-			case []string:
-				dc[k] = append(dc[k].([]string), v...)
-			case []int:
-				dc[k] = append(dc[k].([]int), v...)
-			case []float64:
-				dc[k] = append(dc[k].([]float64), v...)
-			default:
-				dc[k] = v // overwrite if not a slice
+			continue
+		}
+
+		// let's check if we need to adjust the value based on indices
+		otherKey, otherIndex, ok := findIndexedValue(k)
+		if ok {
+			// if we have an indexed value, look if we have a base index for it
+			if baseIndex, ok := baseIndices[otherKey]; ok {
+				// if we have a base index, we need to adjust the index
+				otherIndex += baseIndex + 1
+				splits := indexPattern.Split(k, 2)
+				// put the new key back together
+				k = fmt.Sprintf("%s.%s[%d]%s", splits[0], otherKey, otherIndex, splits[1])
 			}
 		}
+
+		if _, ok := dc[k]; !ok {
+			// if the key doesn't exist, we can just add it
+			dc[k] = v
+			continue
+		}
+
+		// if the key exists, we need to check the type of the value
+		// and append it to the existing value if it's a slice, or overwrite it if
+		// it's not a slice
+		switch v := v.(type) {
+		case []any:
+			dc[k] = append(dc[k].([]any), v...)
+		case []string:
+			dc[k] = append(dc[k].([]string), v...)
+		case []int:
+			dc[k] = append(dc[k].([]int), v...)
+		case []float64:
+			dc[k] = append(dc[k].([]float64), v...)
+		default:
+			dc[k] = v
+		}
+
 	}
 	return dc
 }
