@@ -11,7 +11,7 @@ import (
 )
 
 func TestParseLogBodyAsJSONProcessor(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_log_body.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parselogbodyasjson_processor_log_body.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 

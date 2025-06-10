@@ -1,18 +1,21 @@
-name: jsonparser_processor_defaults_test
+name: parseattributeasjson_span_test
 version: v0.1.0
-summary: Test for ParseAttributeAsJSON with default configuration
+summary: Test for ParseAttributeAsJSON with span signal and custom field
 description: |
-  Test configuration with an OTel receiver, ParseAttributeAsJSON using default settings,
-  and OTel HTTP exporter. This tests the default field "json_data" and signal "log".
+  Test configuration with an OTel receiver, ParseAttributeAsJSON using span signal
+  with a custom field, and OTel HTTP exporter. This tests custom field "json_data" 
+  and signal "span".
 
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: json_parser_1
     kind: ParseAttributeAsJSON
-    # Using all default properties:
-    # Attribute: "json_data" (default)
-    # Signal: "log" (default)
+    properties:
+      - name: Attribute
+        value: "json_data"
+      - name: Signal
+        value: "span"
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
 

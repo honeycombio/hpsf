@@ -11,7 +11,7 @@ import (
 )
 
 func TestParseAttributeAsJSONDefaults(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_defaults.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
@@ -35,7 +35,7 @@ func TestParseAttributeAsJSONDefaults(t *testing.T) {
 }
 
 func TestParseAttributeAsJSONCustom(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_custom.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_custom.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
@@ -51,7 +51,7 @@ func TestParseAttributeAsJSONCustom(t *testing.T) {
 }
 
 func TestParseAttributeAsJSONSpanSignal(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/jsonparser_processor_span.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_span.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 

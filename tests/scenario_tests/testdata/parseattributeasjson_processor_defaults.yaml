@@ -1,9 +1,9 @@
-name: jsonparser_processor_custom_test
+name: parseattributeasjson_defaults_test
 version: v0.1.0
-summary: Test for ParseAttributeAsJSON with custom configuration
+summary: Test for ParseAttributeAsJSON with default configuration
 description: |
-  Test configuration with an OTel receiver, ParseAttributeAsJSON using custom settings,
-  and OTel HTTP exporter. This tests a custom field "json_payload" and signal "logs".
+  Test configuration with an OTel receiver, ParseAttributeAsJSON using default settings,
+  and OTel HTTP exporter. This tests the default field "json_data" and signal "log".
 
 components:
   - name: OTel Receiver 1
@@ -12,7 +12,7 @@ components:
     kind: ParseAttributeAsJSON
     properties:
       - name: Attribute
-        value: "json_payload"
+        value: "json_data"
       - name: Signal
         value: "log"
   - name: OTel HTTP Exporter 1

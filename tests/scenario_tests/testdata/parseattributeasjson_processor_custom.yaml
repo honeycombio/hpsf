@@ -1,10 +1,9 @@
-name: jsonparser_processor_span_test
+name: parseattributeasjson_custom_test
 version: v0.1.0
-summary: Test for ParseAttributeAsJSON with span signal and custom field
+summary: Test for ParseAttributeAsJSON with custom configuration
 description: |
-  Test configuration with an OTel receiver, ParseAttributeAsJSON using span signal
-  with a custom field, and OTel HTTP exporter. This tests custom field "json_data"
-  and signal "span".
+  Test configuration with an OTel receiver, ParseAttributeAsJSON using custom settings,
+  and OTel HTTP exporter. This tests a custom field "json_payload" and signal "logs".
 
 components:
   - name: OTel Receiver 1
@@ -13,9 +12,9 @@ components:
     kind: ParseAttributeAsJSON
     properties:
       - name: Attribute
-        value: "json_data"
+        value: "json_payload"
       - name: Signal
-        value: "span"
+        value: "log"
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
 
