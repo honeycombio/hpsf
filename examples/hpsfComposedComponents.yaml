@@ -4,7 +4,7 @@ components:
   - name: Trace Converter_1
     kind: TraceConverter
   - name: Sample Based on Errors_1
-    kind: SampleErrors
+    kind: SampleByHTTPStatus
     properties:
       - name: ErrorRate
         value: 2
@@ -13,7 +13,7 @@ components:
       - name: DefaultRate
         value: 200
   - name: Sample Based on Errors_2
-    kind: SampleErrors
+    kind: SampleByHTTPStatus
     properties:
       - name: ErrorRate
         value: 3

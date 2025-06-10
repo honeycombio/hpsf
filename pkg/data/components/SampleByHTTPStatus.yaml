@@ -1,10 +1,10 @@
-kind: SampleErrors
-name: Sample Based on Errors
+kind: SampleByHTTPStatus
+name: Sample Based on HTTP Status
 style: sampler
 type: base
-status: development
+status: alpha
 version: v0.1.0
-summary: Samples HTTP errors based on error codes
+summary: Sets sampling rates based on HTTP status codes
 description: |
   Samples HTTP errors based on the http status of processes within the trace.
   If any span a trace has a status code in the 500s, it will be sampled
@@ -17,10 +17,10 @@ tags:
   - vendor:Honeycomb
   - type:error
 ports:
-  - name: In
+  - name: Events
     direction: input
     type: HoneycombEvents
-  - name: Out
+  - name: Events
     direction: output
     type: HoneycombEvents
 properties:
