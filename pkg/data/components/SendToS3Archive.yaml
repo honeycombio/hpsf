@@ -124,7 +124,7 @@ templates:
         value: "gzip"
       - key: "{{ .ComponentName }}.timeout"
         value: "{{ .Values.Timeout }}"
-        suppress_if: "{{ not Values.Timeout }}"
+        suppress_if: "{{ not .Values.Timeout }}"
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"
       - key: "{{ .ComponentName }}.sending_queue.queue_size"
