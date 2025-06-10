@@ -3,19 +3,26 @@ components:
     kind: TraceConverter
   - name: honeycomb_out
     kind: HoneycombExporter
-  - name: Sampler_1
-    kind: KeepSlowTraces
+  - name: sampler
+    kind: SampleByTraceDuration
+    properties:
+      - name: Environment
+        value: test
+      - name: SampleRate
+        value: 17
+      - name: Duration
+        value: 45
 connections:
   - source:
       component: honeycomb_in
       port: TraceOut
       type: Honeycomb
     destination:
-      component: Sampler_1
+      component: sampler
       port: Input
       type: Honeycomb
   - source:
-      component: Sampler_1
+      component: sampler
       port: Kept
       type: Honeycomb
     destination:

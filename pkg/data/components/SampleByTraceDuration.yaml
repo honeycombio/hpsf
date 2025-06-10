@@ -1,10 +1,10 @@
-kind: KeepSlowTraces
-name: Keep Slow Traces
+kind: SampleByTraceDuration
+name: Sample By Trace Duration
 style: sampler
 type: base
-status: development
+status: alpha
 version: v0.1.0
-summary: Keeps traces where the root span exceeds a specified duration.
+summary:  Samples traces based on root span duration
 description: |
   This sampler checks the duration of the root span in a trace.
   If the root span exceeds the specified duration, the trace will be sampled
@@ -31,7 +31,7 @@ properties:
     type: string
     default: "__default__"
   - name: Duration
-    summary: Traces longer than this duration will be sampled at the specified rate.
+    summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
     description: |
       The duration (in milliseconds) that the root span must exceed for the trace
       to be sampled. If the root span's duration is greater than this value, the
