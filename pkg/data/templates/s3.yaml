@@ -28,25 +28,9 @@ components:
       - name: FieldList
         value:
           - http.request.method
-          - http.method
-          - http.status_code
+          - http.response.status_code
   - name: S3 Exporter_1
     kind: S3Exporter
-    properties:
-      - name: Bucket
-        value: otel-demo-for-enhance
-      - name: Region
-        value: us-east-1
-      - name: Prefix
-        value: enhance
-      - name: Timeout
-        value: 60s
-      - name: BatchTimeout
-        value: 30s
-      - name: BatchSize
-        value: 1000000
-      - name: QueueSize
-        value: 20000000
 connections:
   - source:
       component: OTel Receiver_1
