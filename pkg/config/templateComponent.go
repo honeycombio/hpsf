@@ -245,6 +245,11 @@ var _ Component = (*TemplateComponent)(nil)
 func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
+
+	// we might have more than one template for the same config type,
+	// so we need to generate all of them and return the merged result.
+	generatedTemplates := make([]tmpl.TemplateConfig, 0)
+
 	for _, template := range t.Templates {
 		if template.Kind == cfgType {
 			switch template.Format {
@@ -254,14 +259,22 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building dotted config template for %s",
 						err, t.Kind)
 				}
-				return t.generateDottedConfig(dct, userdata)
+				tmpl, err := t.generateDottedConfig(dct, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			case "collector":
 				ct, err := buildCollectorTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building collector template for %s",
 						err, t.Kind)
 				}
-				return t.generateCollectorConfig(ct, userdata)
+				tmpl, err := t.generateCollectorConfig(ct, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
@@ -270,13 +283,27 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				return t.generateRulesConfig(rt, userdata)
+				tmpl, err := t.generateRulesConfig(rt, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
 		}
 	}
-	return nil, nil
+
+	if len(generatedTemplates) == 0 {
+		return nil, nil // no templates found for this config type
+	}
+
+	ret := generatedTemplates[0]
+	for _, tmpl := range generatedTemplates[1:] {
+		ret = ret.Merge(tmpl)
+	}
+
+	return ret, nil
 }
 
 func (t *TemplateComponent) AddConnection(conn *hpsf.Connection) {
