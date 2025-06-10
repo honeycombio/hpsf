@@ -28,21 +28,21 @@ connections:
       type: OTelTraces
     destination:
       component: Start Sampling 1
-      port: TracesIn
+      port: Traces
       type: OTelTraces
   - source:
       component: Start Sampling 1
-      port: TraceOut
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: Error Sampler
-      port: In
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
   - source:
       component: Error Sampler
-      port: Out
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: Honeycomb Exporter 1
-      port: Traces
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents

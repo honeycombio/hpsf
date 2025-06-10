@@ -14,10 +14,10 @@ tags:
   - sampler:deterministic
   - sampler:rate
 ports:
-  - name: Traces
+  - name: Events
     direction: input
     type: HoneycombEvents
-  - name: SampledOutput
+  - name: Events
     direction: output
     type: HoneycombEvents
     note: "The traces that are sampled"

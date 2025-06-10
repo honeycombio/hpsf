@@ -25,11 +25,11 @@ connections:
       type: OTelTraces
     destination:
       component: json_parser_1
-      port: Spans
+      port: Traces
       type: OTelTraces
   - source:
       component: json_parser_1
-      port: Spans
+      port: Traces
       type: OTelTraces
     destination:
       component: OTel HTTP Exporter 1

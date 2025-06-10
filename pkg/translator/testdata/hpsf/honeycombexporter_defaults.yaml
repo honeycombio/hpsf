@@ -17,11 +17,11 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
-      port: Traces
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: honeycomb
-      port: HoneycombEvents
+      port: Events
       type: HoneycombEvents
   # metrics: otel -> honeycomb
   - source:

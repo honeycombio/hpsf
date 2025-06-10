@@ -10,5 +10,5 @@ connections:
       type: OTelTraces
     destination:
       component: Start Sampling 1
-      port: Input
+      port: Traces
       type: OTelTraces

@@ -37,15 +37,15 @@ connections:
       type: HoneycombEvents
     destination:
       component: EMA Throughput 1
-      port: Traces
+      port: Events
       type: HoneycombEvents
   - source:
       component: EMA Throughput 1
-      port: SampledOutput
+      port: Events
       type: HoneycombEvents
     destination:
       component: Honeycomb Exporter 1
-      port: Traces
+      port: Events
       type: HoneycombEvents
 layout:
   components:

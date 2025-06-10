@@ -15,17 +15,17 @@ components:
 connections:
   - source:
       component: honeycomb_in
-      port: TraceOut
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: sampler
-      port: Input
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
   - source:
       component: sampler
-      port: Kept
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: honeycomb_out
-      port: Traces
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
