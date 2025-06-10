@@ -3,6 +3,7 @@ package hpsftests
 import (
 	"testing"
 
+	collectorprovider "github.com/honeycombio/hpsf/tests/providers/collector"
 	hpsfprovider "github.com/honeycombio/hpsf/tests/providers/hpsf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -10,7 +11,7 @@ import (
 
 func TestKeepErrors(t *testing.T) {
 	// Test the HPSF parsing and KeepErrors sampler configuration
-	rulesConfig, _, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/keep_errors.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/keep_errors.yaml")
 
 	// Verify that the refinery rules config was generated successfully
 	assert.Equal(t, 2, rulesConfig.RulesVersion)
@@ -55,4 +56,10 @@ func TestKeepErrors(t *testing.T) {
 	require.NotNil(t, defaultSampler.DeterministicSampler, "Expected default sampler to be a DeterministicSampler")
 
 	assert.Equal(t, 1, defaultSampler.DeterministicSampler.SampleRate)
+
+	// verify that the the collectorconfig pipeline includes the exporter to refinery
+	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "traces")
+	require.True(t, getResult.Found, "Expected pipeline to be found")
+	assert.Len(t, exporters, 1, "Expected 1 exporter, got %s", exporters)
+	assert.Contains(t, exporters, "otlphttp/Start_Sampling_1", "Expected OTel HTTP exporter")
 }

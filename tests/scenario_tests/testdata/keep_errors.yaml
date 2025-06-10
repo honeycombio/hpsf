@@ -2,13 +2,13 @@ name: keep_errors_test
 version: v0.1.0
 summary: Test for KeepErrors sampler component
 description: |
-  Test configuration with an OTel receiver, TraceConverter, KeepErrors sampler, and HoneycombExporter
+  Test configuration with an OTel receiver, StartSampling, KeepErrors sampler, and HoneycombExporter
 
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: Trace Converter 1
-    kind: TraceConverter
+  - name: Start Sampling 1
+    kind: StartSampling
   - name: Error Sampler
     kind: KeepErrors
     properties:
@@ -27,11 +27,11 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Trace Converter 1
+      component: Start Sampling 1
       port: TracesIn
       type: OTelTraces
   - source:
-      component: Trace Converter 1
+      component: Start Sampling 1
       port: TraceOut
       type: Honeycomb
     destination:

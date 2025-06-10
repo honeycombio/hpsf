@@ -1,8 +1,8 @@
 components:
   - name: otlp_in
     kind: OTelReceiver
-  - name: Trace Converter 1
-    kind: TraceConverter
+  - name: Start Sampling 1
+    kind: StartSampling
     properties:
       - name: Host
         value: myhost.com
@@ -26,6 +26,6 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Trace Converter 1
+      component: Start Sampling 1
       port: Input
       type: OTelTraces

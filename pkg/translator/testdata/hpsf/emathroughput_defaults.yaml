@@ -1,6 +1,6 @@
 components:
   - name: honeycomb_in
-    kind: TraceConverter
+    kind: StartSampling
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: EMAThroughput_1
