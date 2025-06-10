@@ -85,6 +85,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
+		-e HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
 		honeycombio/refinery:latest || exit 1
 	sleep 1
 
@@ -98,6 +99,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container is running"; \
 		docker kill 'smoke-refinery'; \
 		docker rm 'smoke-refinery'; \
+		echo "+++ refinery successfully started up for $(FILE)"; \
 	fi
 
 .PHONY: .smoke_collector
@@ -124,7 +126,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ yq version is less than 4.0.0, please update it"; \
 		exit 1; \
 	fi
-	
+
 	# use yq to remove the usage processor and honeycomb extension from collector config
 	yq -i e \
 		'del(.processors.usage) | \
@@ -155,6 +157,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container is running"; \
 		docker kill 'smoke-collector'; \
 		docker rm 'smoke-collector'; \
+		echo "+++ collector successfully started up for $(FILE)"; \
 	fi
 
 .PHONY: smoke
