@@ -2,7 +2,7 @@ kind: FilterLogBySeverity
 name: Filter Logs by Severity
 style: processor
 type: base
-status: development
+status: alpha
 version: v0.0.1
 summary: Filter Logs by their severity level.
 description: |

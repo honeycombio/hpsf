@@ -2,7 +2,7 @@ kind: ParseLogBodyAsJSON
 name: Parse Log Body As JSON
 style: processor
 type: base
-status: development
+status: alpha
 version: v0.0.1
 summary: Parses log.body as JSON and flattens it into individual log attributes
 description: |
