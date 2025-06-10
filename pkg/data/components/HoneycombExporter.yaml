@@ -36,6 +36,16 @@ properties:
       - noblanks
     default: ${HONEYCOMB_EXPORTER_APIKEY}
     advanced: true
+  - name: MetricsDataset
+    summary: The Honeycomb dataset metrics will be sent to.
+    description: |
+      The Honeycomb dataset metrics will be sent to.
+      The default value is 'metrics'.
+    type: string
+    validations:
+      - noblanks
+    default: metrics
+    advanced: true
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
     description: |
@@ -60,15 +70,6 @@ properties:
       - oneof(all, none)
     default: all
     advanced: true
-  - name: Headers
-    summary: Headers to emit when sending HTTP traffic.
-    description: |
-      Sending data to a backend may require additional headers to be
-      configured. This properties supports sending a map of header keys and
-      values.
-    type: map
-    subtype: header
-    default: {}
   - name: Insecure
     summary: Provide a way to disable TLS export.
     description: |
@@ -133,10 +134,8 @@ templates:
         suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
         value: "{{ .Values.APIKey }}"
-        suppress_if: "{{ not (not (.Values.Headers)) }}"
-      - key: "{{ .ComponentName }}.headers"
-        value: "{{ .Values.Headers | encodeAsMap }}"
-        suppress_if: "{{ not .Values.Headers }}"
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-dataset"
+        value: "{{ .Values.MetricsDataset }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"
         value: "{{ true | encodeAsBool}}"
       - key: "{{ .ComponentName }}.sending_queue.sizer"

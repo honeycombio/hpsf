@@ -16,10 +16,8 @@ components:
         value: myhost.com
       - name: Port
         value: 1234
-      - name: Headers
-        value:
-          x-honeycomb-team: abcdef1234567890abcdef1
-          x-honeycomb-dataset: "custom"
+      - name: MetricsDataset
+        value: custom
       - name: Insecure
         value: true
       - name: BatchTimeout
