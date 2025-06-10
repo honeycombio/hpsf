@@ -1,5 +1,5 @@
 kind: OTelHTTPExporter
-name: OTel HTTP Exporter
+name: Send to Honeycomb
 style: exporter
 logo: opentelemetry
 type: base

@@ -14,9 +14,18 @@ tags:
   - signal:HoneycombEvents
   - vendor:Honeycomb
 ports:
-  - name: Traces
+  - name: HoneycombEvents
     direction: input
     type: HoneycombEvents
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
 properties:
   - name: APIKey
     summary: The API key to use to authenticate with Honeycomb.
@@ -27,6 +36,16 @@ properties:
       - noblanks
     default: ${HONEYCOMB_EXPORTER_APIKEY}
     advanced: true
+  - name: MetricsDataset
+    summary: The Honeycomb dataset metrics will be sent to.
+    description: |
+      The Honeycomb dataset metrics will be sent to.
+      The default value is 'metrics'.
+    type: string
+    validations:
+      - noblanks
+    default: metrics
+    advanced: true
   - name: APIEndpoint
     summary: The Endpoint URL of the Honeycomb API
     description: |
@@ -36,7 +55,7 @@ properties:
     validations:
       - noblanks
       - url
-    default: https://api.honeycomb.io
+    default: https://api.honeycomb.io:443
     advanced: true
   - name: Mode
     summary: Configures when to use the the APIKey.
@@ -51,6 +70,43 @@ properties:
       - oneof(all, none)
     default: all
     advanced: true
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    default: false
+    advanced: true
+  - name: BatchTimeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout.
+    type: duration
+    default: 200ms
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
+    type: int
+    default: 8192
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    summary: The size of a exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/datapoint/log record count.
+      Items will be kept in the queue while the batch is being created.
+    type: int
+    default: 100_000
+    validations:
+      - nonempty
+    advanced: true
 templates:
   - kind: refinery_config
     name: HoneycombExporter_RefineryConfig
@@ -60,6 +116,35 @@ templates:
         value: "{{ .Values.APIEndpoint }}"
       - key: AccessKeys.SendKey
         value: "{{ .Values.APIKey }}"
-        suppress_if: '{{ eq "none" (or .HProps.APIKey .User.APIKey) }}'
+        suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
       - key: AccessKeys.SendKeyMode
         value: "{{ .Values.Mode }}"
+  - kind: collector_config
+    name: honeycombexporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlphttp
+    data:
+      - key: "{{ .ComponentName }}.endpoint"
+        value: "{{ .Values.APIEndpoint }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: "{{ .Values.Insecure | encodeAsBool }}"
+        suppress_if: "{{ not .Values.Insecure }}"
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
+        value: "{{ .Values.APIKey }}"
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-dataset"
+        value: "{{ .Values.MetricsDataset }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"

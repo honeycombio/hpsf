@@ -5,4 +5,4 @@ General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0
 Network:
-    HoneycombAPI: https://api.honeycomb.io
+    HoneycombAPI: https://api.honeycomb.io:443
