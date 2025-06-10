@@ -1,0 +1,62 @@
+kind: ParseAttributeAsJSON
+name: Parse Attribute As JSON
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: Converts an Attribute's JSON string value into individual attributes
+description: |
+  Takes any attribute from a log or span and parses it as JSON into individual attributes
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelLogs
+ports:
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Spans
+    direction: input
+    type: OTelTraces
+  - name: Spans
+    direction: output
+    type: OTelTraces
+properties:
+  - name: Attribute
+    type: string
+    validations:
+      - noblanks
+  - name: Signal
+    type: string
+    subtype: oneof(span, log)
+    validations:
+      - oneof(span, log)
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs, traces]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].conditions[0]"
+        value: "{{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix({{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[0]"
+        value: "set({{ .Values.Signal }}.cache, ParseJSON({{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"]))"
+        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[1]"
+        value: "flatten({{ .Values.Signal }}.cache, \"\")"
+        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
+      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[2]"
+        value: "merge_maps({{ .Values.Signal }}.attributes, {{ .Values.Signal }}.cache, \"upsert\")"
+        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
