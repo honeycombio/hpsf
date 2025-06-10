@@ -22,6 +22,7 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 	// config files if they are different
 	var overwrite bool = false
 
+	// this allows for the make target regenerate_translator_testdata to work instead of editing
 	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
 		overwrite = true
 	}
