@@ -4,7 +4,7 @@ style: sampler
 type: base
 status: alpha
 version: v0.1.0
-summary:  Samples traces based on root span duration
+summary: Samples traces based on root span duration
 description: |
   This sampler checks the duration of the root span in a trace.
   If the root span exceeds the specified duration, the trace will be sampled
