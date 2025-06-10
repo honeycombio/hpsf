@@ -101,7 +101,7 @@ connections:
   - source:
       component: otlp_in2
       port: Traces
-      type: OTelTrace
+      type: OTelTraces
     destination:
       component: otlp_out
       port: Traces

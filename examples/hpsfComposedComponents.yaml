@@ -38,23 +38,23 @@ connections:
       type: HoneycombEvents
     destination:
       component: Sample Based on Errors_1
-      port: In
+      port: Events
       type: HoneycombEvents
   - source:
       component: Sample Based on Errors_1
-      port: Out
+      port: Events
       type: HoneycombEvents
     destination:
       component: Sample Based on Errors_2
-      port: In
+      port: Events
       type: HoneycombEvents
   - source:
       component: Sample Based on Errors_2
-      port: Out
+      port: Events
       type: HoneycombEvents
     destination:
       component: Honeycomb Exporter_1
-      port: Traces
+      port: Events
       type: HoneycombEvents
 layout:
   components:

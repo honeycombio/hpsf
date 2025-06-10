@@ -14,7 +14,7 @@ tags:
   - signal:HoneycombEvents
   - vendor:Honeycomb
 ports:
-  - name: HoneycombEvents
+  - name: Events
     direction: input
     type: HoneycombEvents
   - name: Traces

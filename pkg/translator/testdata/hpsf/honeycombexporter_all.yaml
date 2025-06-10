@@ -42,7 +42,7 @@ connections:
       type: Honeycomb
     destination:
       component: honeycomb
-      port: HoneycombEvents
+      port: Events
       type: HoneycombEvents
   # metrics: otel -> honeycomb
   - source:

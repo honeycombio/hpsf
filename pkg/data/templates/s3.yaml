@@ -54,15 +54,15 @@ connections:
       type: HoneycombEvents
     destination:
       component: EMA Throughput Sampler_1
-      port: Traces
+      port: Events
       type: HoneycombEvents
   - source:
       component: EMA Throughput Sampler_1
-      port: SampledOutput
+      port: Events
       type: HoneycombEvents
     destination:
       component: Honeycomb Exporter_1
-      port: Traces
+      port: Events
       type: HoneycombEvents
   - source:
       component: OTel Receiver_1

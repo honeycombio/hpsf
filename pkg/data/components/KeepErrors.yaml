@@ -15,10 +15,10 @@ tags:
   - vendor:Honeycomb
   - type:error
 ports:
-  - name: In
+  - name: Events
     direction: input
     type: HoneycombEvents
-  - name: Out
+  - name: Events
     direction: output
     type: HoneycombEvents
 properties:

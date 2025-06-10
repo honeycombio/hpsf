@@ -9,6 +9,6 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Start Sampling 1
-      port: Input
+      component: Trace Converter 1
+      port: Traces
       type: OTelTraces
