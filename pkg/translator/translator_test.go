@@ -20,7 +20,12 @@ import (
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	overwrite := false
+	var overwrite bool = false
+
+	// this allows for the make target regenerate_translator_testdata to work instead of editing
+	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
+		overwrite = true
+	}
 
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
