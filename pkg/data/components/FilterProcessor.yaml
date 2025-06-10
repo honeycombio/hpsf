@@ -2,7 +2,7 @@ kind: FilterProcessor
 name: Filter Processor
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.0.0
 summary: A processor that can be used to filter telemetry.
 description: |
