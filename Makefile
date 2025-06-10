@@ -174,3 +174,10 @@ unsmoke:
 	@echo "+++ stopping smoke test"
 	@echo
 	docker stop smoke-proxy
+
+.PHONY: regenerate_translator_tests
+regenerate_translator_tests:
+	@echo
+	@echo "+++ regenerating translator tests"
+	@echo
+	OVERWRITE_TESTDATA=1 go test ./pkg/translator/
