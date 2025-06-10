@@ -133,6 +133,7 @@ templates:
         suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
         value: "{{ .Values.APIKey }}"
+        suppress_if: "{{ not (not (.Values.Headers)) }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .Values.Headers | encodeAsMap }}"
         suppress_if: "{{ not .Values.Headers }}"
