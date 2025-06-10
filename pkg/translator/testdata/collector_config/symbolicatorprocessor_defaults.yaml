@@ -7,7 +7,8 @@ receivers:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     symbolicator/symbolicator:
-        path: /var/sourcemaps
+        local_source_maps:
+            path: /var/sourcemaps
         source_map_store: file_store
     usage: {}
 exporters:

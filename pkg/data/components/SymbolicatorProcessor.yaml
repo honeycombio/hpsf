@@ -43,18 +43,24 @@ templates:
     data:
       - key: "{{ .ComponentName }}.source_map_store"
         value: "{{ .HProps.SourceMapStore }}"
-      # path is only required for file_store
-      - key: "{{ .ComponentName }}.path"
+      # file_store
+      - key: "{{ .ComponentName }}.local_source_maps.path"
         value: "{{ .HProps.Path }}"
-        suppress_if: '{{ eq (or "s3_store" "gcs_store") .HProps.SourceMapStore }}'
-      # region is only required for s3_store
-      - key: "{{ .ComponentName }}.region"
+        suppress_if: '{{ not (eq "file_store" .HProps.SourceMapStore) }}'
+      # s3_store
+      - key: "{{ .ComponentName }}.s3_source_maps.region"
         value: "{{ .HProps.Region }}"
-        suppress_if: '{{ eq (or "file_store" "gcs_store") .HProps.SourceMapStore }}'
-      # bucket and prefix are required for s3_store and gcs_store
-      - key: "{{ .ComponentName }}.bucket"
+        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+      - key: "{{ .ComponentName }}.s3_source_maps.bucket"
         value: "{{ .HProps.Bucket }}"
-        suppress_if: '{{ eq  "file_store" .HProps.SourceMapStore }}'
-      - key: "{{ .ComponentName }}.prefix"
+        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+      - key: "{{ .ComponentName }}.s3_source_maps.prefix"
         value: "{{ .HProps.Prefix }}"
-        suppress_if: '{{ eq  "file_store" .HProps.SourceMapStore }}'
+        suppress_if: '{{ not (eq "s3_store" .HProps.SourceMapStore) }}'
+      # gcs_store
+      - key: "{{ .ComponentName }}.gcs_source_maps.bucket"
+        value: "{{ .HProps.Bucket }}"
+        suppress_if: '{{ not (eq "gcs_store" .HProps.SourceMapStore) }}'
+      - key: "{{ .ComponentName }}.gcs_source_maps.prefix"
+        value: "{{ .HProps.Prefix }}"
+        suppress_if: '{{ not (eq "gcs_store" .HProps.SourceMapStore) }}'
