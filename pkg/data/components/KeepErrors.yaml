@@ -2,7 +2,7 @@ kind: KeepErrors
 name: Keep Errors
 style: sampler
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Keeps traces with errors at a specified rate.
 description: |
@@ -15,10 +15,10 @@ tags:
   - vendor:Honeycomb
   - type:error
 ports:
-  - name: Events
+  - name: In
     direction: input
     type: HoneycombEvents
-  - name: Events
+  - name: Out
     direction: output
     type: HoneycombEvents
 properties:
