@@ -7,9 +7,13 @@ components:
     kind: SymbolicatorProcessor
     properties:
       - name: SourceMapStore
-        value: file_store
-      - name: Path
-        value: /var/sourcemaps
+        value: s3_store
+      - name: Bucket
+        value: my-bucket
+      - name: Region
+        value: us-west-2
+      - name: Prefix
+        value: source-maps/
 connections:
   - source:
       component: otlp_in

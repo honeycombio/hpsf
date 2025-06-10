@@ -7,11 +7,10 @@ receivers:
                 endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
 processors:
     symbolicator/symbolicator:
-        s3_source_maps:
+        gcs_source_maps:
             bucket: my-bucket
             prefix: source-maps/
-            region: us-west-2
-        source_map_store: s3_store
+        source_map_store: gcs_store
     usage: {}
 exporters:
     otlphttp/otlp_out:

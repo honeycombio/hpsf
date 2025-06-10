@@ -21,10 +21,10 @@ ports:
 properties:
   - name: SourceMapStore
     type: string
-    subtype: oneof(file_store, s3_store, gcs_store)
-    default: file_store
+    subtype: oneof(s3_store, gcs_store)
+    default: s3_store
     validations:
-      - oneof(file_store, s3_store, gcs_store)
+      - oneof(s3_store, gcs_store)
   - name: Path
     type: string
   - name: Bucket
@@ -44,10 +44,6 @@ templates:
     data:
       - key: "{{ .ComponentName }}.source_map_store"
         value: "{{ .HProps.SourceMapStore }}"
-      # file_store
-      - key: "{{ .ComponentName }}.local_source_maps.path"
-        value: "{{ .HProps.Path }}"
-        suppress_if: '{{ not (eq "file_store" .HProps.SourceMapStore) }}'
       # s3_store
       - key: "{{ .ComponentName }}.s3_source_maps.region"
         value: "{{ .HProps.Region }}"
