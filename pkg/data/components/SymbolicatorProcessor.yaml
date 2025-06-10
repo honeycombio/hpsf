@@ -22,6 +22,7 @@ properties:
   - name: SourceMapStore
     type: string
     subtype: oneof(file_store, s3_store, gcs_store)
+    default: file_store
     validations:
       - oneof(file_store, s3_store, gcs_store)
   - name: Path
