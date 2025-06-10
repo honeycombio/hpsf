@@ -1,5 +1,9 @@
 # hpsf library changelog
 
+## 0.6.1 2025-06-10
+
+- maint: remove extra test file and update version file. | [Kent Quirk](https://github.com/kentquirk)
+
 ## 0.6.0 2025-06-10
 
 ### Features
