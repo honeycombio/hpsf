@@ -2,7 +2,7 @@ kind: LogDeduplicationProcessor
 name: Log Deduplication Processor
 style: processor
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: A processor that removes duplicate log entries.
 description: |

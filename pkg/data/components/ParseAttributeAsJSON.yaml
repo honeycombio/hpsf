@@ -2,7 +2,7 @@ kind: ParseAttributeAsJSON
 name: Parse Attribute As JSON
 style: processor
 type: base
-status: development
+status: alpha
 version: v0.0.1
 summary: Converts an Attribute's JSON string value into individual attributes
 description: |
