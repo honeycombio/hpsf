@@ -27,7 +27,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/0:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [awss3/s3_out]

@@ -242,7 +242,7 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType Type, pipelineID int, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 
@@ -270,7 +270,7 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building collector template for %s",
 						err, t.Kind)
 				}
-				tmpl, err := t.generateCollectorConfig(ct, userdata)
+				tmpl, err := t.generateCollectorConfig(ct, pipelineID, userdata)
 				if err != nil {
 					return nil, err
 				}
@@ -414,7 +414,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 // this is where we do the actual work of generating the config; this thing knows about
 // the structure of the collector config and how to fill it in
-func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipelineID int, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	t.collName = ct.collectorComponentName
@@ -431,7 +431,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userda
 			if !t.ConnectsUsingAppropriateType(signalType) {
 				continue
 			}
-			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
+			svcKey := fmt.Sprintf("pipelines.%s/%d.%s", signalType, pipelineID, section)
 			for _, kv := range ct.kvs[section] {
 				if kv.suppress_if != "" {
 					// if the suppress_if condition is met, we skip this key

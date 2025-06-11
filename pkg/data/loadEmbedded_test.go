@@ -103,7 +103,7 @@ func TestTemplateComponents(t *testing.T) {
 			require.NoError(t, err)
 			c, ok := components[tt.kind]
 			require.True(t, ok)
-			conf, err := c.GenerateConfig(tt.cType, tt.config)
+			conf, err := c.GenerateConfig(tt.cType, 1, tt.config)
 			require.NoError(t, err)
 			require.NotNil(t, conf)
 			got, err := conf.RenderYAML()

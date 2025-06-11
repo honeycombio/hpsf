@@ -16,7 +16,7 @@ type RefineryInputComponent struct {
 // ensure RefineryInputComponent implements Component
 var _ Component = (*RefineryInputComponent)(nil)
 
-func (c *RefineryInputComponent) GenerateConfig(ct Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c *RefineryInputComponent) GenerateConfig(ct Type, pipelineID int, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	if ct != RefineryConfigType {
 		return nil, nil
 	}

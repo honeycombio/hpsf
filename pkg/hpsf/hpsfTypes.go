@@ -526,6 +526,70 @@ func (h *HPSF) GetStartComponents() []*Component {
 	return startComps
 }
 
+func (h *HPSF) getComponent(name string) *Component {
+	// find the component with the given name
+	for _, c := range h.Components {
+		if c.Name == name {
+			return c
+		}
+	}
+	return nil
+}
+
+func (h *HPSF) isSourceComponent(c *Component) bool {
+	// check if the component is a source of any connection
+	for _, conn := range h.Connections {
+		if conn.Source.Component == c.Name {
+			return true
+		}
+	}
+	return false
+}
+
+// FindAllPipelines generates all paths from the start components to the end
+// components where end components are those that are not sources of any
+// connections. It returns a slice of slices of components, where each inner slice
+// is a path from a start component to an end component. If there are no start
+// components, it returns nil.
+func (h *HPSF) FindAllPipelines() [][]*Component {
+	startComps := h.GetStartComponents()
+	if len(startComps) == 0 {
+		return nil // no start components, no paths
+	}
+
+	var paths [][]*Component
+	var path []*Component
+
+	var findPaths func(*Component)
+	findPaths = func(c *Component) {
+		path = append(path, c)
+		if !h.isSourceComponent(c) {
+			// we reached an end component, save the path
+			paths = append(paths, slices.Clone(path))
+		} else {
+			// for each of these sources, we don't want to visit the same component again,
+			visited := make(map[string]bool)
+			for _, conn := range h.Connections {
+				if conn.Source.Component == c.Name && !visited[conn.Destination.Component] {
+					destComp := h.getComponent(conn.Destination.Component)
+					visited[conn.Destination.Component] = true // mark as visited
+					if destComp != nil {
+						findPaths(destComp) // look deeper
+					}
+				}
+			}
+		}
+		path = path[:len(path)-1] // backtrack
+	}
+
+	// start the search from each start component
+	for _, c := range startComps {
+		findPaths(c)
+	}
+
+	return paths
+}
+
 // visit all components in the HPSF in order of connections, starting from the components
 // that are not destinations of any connections. This is a depth-first search
 // that will visit all components that are reachable from the start components.
