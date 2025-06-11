@@ -1,0 +1,65 @@
+kind: RedactionProcessor
+name: Redaction Processor
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: A processor that can be used to redact attribute values in telemetry.
+description: |
+  This processor allows you to redact attribute values from traces, metrics, and logs based on
+  specified rules.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: AttributeNamePatterns
+    summary: Regular expression patterns of attribute names to redact.
+    description: |
+      A list of regular expression patterns that match attribute names to be redacted.
+      If an attribute name matches any of these patterns, its value will be redacted.
+    type: stringarray
+    validations:
+      - noblanks
+      - nonempty
+    default: []
+  - name: AttributeValuePatterns
+    summary: Regular expression patterns of attribute values to redact.
+    description: |
+      A list of regular expression patterns that match attribute values to be redacted.
+      If an attribute value matches any of these patterns, it will be redacted.
+    type: stringarray
+    validations:
+      - noblanks
+      - nonempty
+    default: []
+templates:
+  - kind: collector_config
+    name: collector_drop_attributes_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: redaction
+    data:
+      - key: "{{ .ComponentName }}.allow_all_keys"
+        value: "{{ true | encodeAsBool }}"
+      - key: "{{ .ComponentName }}.blocked_key_patterns"
+        value: "{{ .Values.AttributeNamePatterns | encodeAsArray  }}"
+        suppress_if: "{{ not .Values.AttributeNamePatterns }}"
+      - key: "{{ .ComponentName }}.blocked_value_patterns"
+        value: "{{ .Values.AttributeValuePatterns | encodeAsArray }}"
+        suppress_if: "{{ not .Values.AttributeValuePatterns }}"
