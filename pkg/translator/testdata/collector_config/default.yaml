@@ -25,15 +25,15 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/3dd1:
+        logs/0bbb:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        metrics/23d2:
+        metrics/22cf:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        traces/d5d3:
+        traces/6c79:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]

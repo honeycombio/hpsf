@@ -109,6 +109,16 @@ func TestDefaultHPSF(t *testing.T) {
 			expectedConfigTestData: "testdata/collector_config/default.yaml",
 		},
 	}
+
+	// set this to true to overwrite the testdata files with the generated
+	// config files if they are different
+	var overwrite bool = false
+
+	// this allows for the make target regenerate_translator_testdata to work instead of editing
+	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
+		overwrite = true
+	}
+
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
@@ -130,8 +140,19 @@ func TestDefaultHPSF(t *testing.T) {
 			got, err := cfg.RenderYAML()
 			require.NoError(t, err)
 
-			assert.Equal(t, expectedConfig, string(got), "in file %s", tC.expectedConfigTestData)
+			if overwrite && !reflect.DeepEqual(expectedConfig, string(got)) {
+				// overwrite the testdata file with the generated config
+				err = os.WriteFile(tC.expectedConfigTestData, got, 0644)
+				require.NoError(t, err)
+				t.Logf("Overwrote %s with generated config", tC.expectedConfigTestData)
+			} else {
+				assert.Equal(t, expectedConfig, string(got), "in file %s", tC.expectedConfigTestData)
+			}
 		})
+	}
+	if overwrite {
+		t.Fail()
+		t.Log("Some testdata files were overwritten. Please review the changes and commit them if they are correct.")
 	}
 }
 
