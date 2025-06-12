@@ -18,8 +18,11 @@ func TestSendToS3Archive(t *testing.T) {
 	// First, verify that the refinery config was generated successfully
 	assert.Len(t, rulesConfig.Samplers, 1, "Expected 1 sampler in refinery config")
 
+	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline, got %v", tracesPipelineNames)
+
 	// Verify the S3 exporter is present in the traces pipeline
-	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "traces")
+	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, tracesPipelineNames[0].String())
 	require.True(t, getResult.Found, "Expected pipeline to be found")
 	assert.Len(t, exporters, 1, "Expected 1 exporter, got %s", exporters)
 

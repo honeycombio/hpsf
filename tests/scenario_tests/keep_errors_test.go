@@ -58,7 +58,10 @@ func TestKeepErrors(t *testing.T) {
 	assert.Equal(t, 1, defaultSampler.DeterministicSampler.SampleRate)
 
 	// verify that the the collectorconfig pipeline includes the exporter to refinery
-	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "traces")
+	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline, got %v", tracesPipelineNames)
+
+	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, tracesPipelineNames[0].String())
 	require.True(t, getResult.Found, "Expected pipeline to be found")
 	assert.Len(t, exporters, 1, "Expected 1 exporter, got %s", exporters)
 	assert.Contains(t, exporters, "otlphttp/Start_Sampling_1", "Expected OTel HTTP exporter")

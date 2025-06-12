@@ -14,7 +14,10 @@ func TestFilterLogsBySeverityDefaults(t *testing.T) {
 	_, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/filter_logs_by_severity_defaults.yaml")
 
 	// Verify the logs pipeline exists and has the correct components
-	receivers, processors, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "logs")
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+
+	receivers, processors, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found, "Expected logs pipeline to be found")
 
 	// Check pipeline components
@@ -38,7 +41,10 @@ func TestFilterLogsBySeverityCustomSeverity(t *testing.T) {
 	_, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/filter_logs_by_severity_all.yaml")
 
 	// Verify the logs pipeline exists and has the correct components
-	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "logs")
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+
+	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found, "Expected logs pipeline to be found")
 
 	assert.Len(t, processors, 2, "Expected 2 processors (usage + filter)")

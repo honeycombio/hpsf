@@ -78,6 +78,17 @@ func GetPipelineConfig(collectorConfig *otelcol.Config, pipelineName string) (re
 
 }
 
+func GetPipelinesByType(collectorConfig *otelcol.Config, pipelineType string) (pipelines []pipeline.ID) {
+	signalType := convertTypeNameToSignal(pipelineType)
+	pipelines = make([]pipeline.ID, 0)
+	for name, _ := range collectorConfig.Service.Pipelines {
+		if name.Signal() == signalType {
+			pipelines = append(pipelines, name)
+		}
+	}
+	return pipelines
+}
+
 func convertTypeNameToSignal(typeName string) pipeline.Signal {
 	switch typeName {
 	case "logs":
