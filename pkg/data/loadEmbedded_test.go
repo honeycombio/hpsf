@@ -103,7 +103,8 @@ func TestTemplateComponents(t *testing.T) {
 			require.NoError(t, err)
 			c, ok := components[tt.kind]
 			require.True(t, ok)
-			conf, err := c.GenerateConfig(tt.cType, 1, tt.config)
+			pipeline := hpsf.PipelineWithSignalType{SignalType: hpsf.CTYPE_METRICS}
+			conf, err := c.GenerateConfig(tt.cType, pipeline, tt.config)
 			require.NoError(t, err)
 			require.NotNil(t, conf)
 			got, err := conf.RenderYAML()

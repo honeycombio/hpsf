@@ -1,6 +1,7 @@
 package hpsf
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
@@ -9,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/dgryski/go-metro"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	y "gopkg.in/yaml.v3"
 )
@@ -26,6 +28,21 @@ const (
 	CTYPE_STRING  ConnectionType = "string"
 	CTYPE_BOOL    ConnectionType = "bool"
 )
+
+func (c ConnectionType) AsCollectorType() string {
+	switch c {
+	case CTYPE_TRACES:
+		return "traces"
+	case CTYPE_LOGS:
+		return "logs"
+	case CTYPE_METRICS:
+		return "metrics"
+	case CTYPE_EVENT:
+		return "events"
+	default:
+		return string(c)
+	}
+}
 
 type PropType string
 
@@ -536,14 +553,32 @@ func (h *HPSF) getComponent(name string) *Component {
 	return nil
 }
 
-func (h *HPSF) isSourceComponent(c *Component) bool {
-	// check if the component is a source of any connection
+func (h *HPSF) isSourceComponent(c *Component, signalType ConnectionType) bool {
+	// check if the component is a source of a connection of this signal type
 	for _, conn := range h.Connections {
-		if conn.Source.Component == c.Name {
+		if conn.Source.Component == c.Name && conn.Source.Type == signalType {
 			return true
 		}
 	}
 	return false
+}
+
+type PipelineWithSignalType struct {
+	SignalType ConnectionType
+	Pipeline   []*Component
+}
+
+func (p PipelineWithSignalType) GetID() string {
+	// return the ID of the pipeline, which is a hash of the names of components in its pipeline
+	// and the signal type, truncated to 4 characters.
+	buf := bytes.Buffer{}
+	for _, comp := range p.Pipeline {
+		buf.WriteString(comp.GetSafeName())
+	}
+	buf.WriteString(string(p.SignalType))
+	hash := metro.Hash64(buf.Bytes(), 0x234da488) // use a fixed seed for reproducibility
+	shash := strconv.FormatUint(hash, 16)
+	return shash[len(shash)-4:] // return the last 4 characters of the hash
 }
 
 // FindAllPipelines generates all paths from the start components to the end
@@ -551,30 +586,41 @@ func (h *HPSF) isSourceComponent(c *Component) bool {
 // connections. It returns a slice of slices of components, where each inner slice
 // is a path from a start component to an end component. If there are no start
 // components, it returns nil.
-func (h *HPSF) FindAllPipelines() [][]*Component {
+func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalType {
 	startComps := h.GetStartComponents()
 	if len(startComps) == 0 {
 		return nil // no start components, no paths
 	}
+	// copy the startComps list, but skip components whose names are not in the receivers map
+	receiverComps := make([]*Component, 0)
+	for _, c := range startComps {
+		if _, ok := receivers[c.Name]; ok {
+			receiverComps = append(receiverComps, c)
+		}
+	}
 
-	var paths [][]*Component
+	var pipelines []PipelineWithSignalType
 	var path []*Component
 
-	var findPaths func(*Component)
-	findPaths = func(c *Component) {
+	var findPaths func(ConnectionType, *Component)
+	findPaths = func(signalType ConnectionType, c *Component) {
 		path = append(path, c)
-		if !h.isSourceComponent(c) {
-			// we reached an end component, save the path
-			paths = append(paths, slices.Clone(path))
+		if !h.isSourceComponent(c, signalType) {
+			// we reached an end component, create a pipeline
+			pipeline := PipelineWithSignalType{
+				SignalType: signalType,
+				Pipeline:   slices.Clone(path),
+			}
+			pipelines = append(pipelines, pipeline)
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
 			visited := make(map[string]bool)
 			for _, conn := range h.Connections {
-				if conn.Source.Component == c.Name && !visited[conn.Destination.Component] {
+				if conn.Source.Component == c.Name && conn.Source.Type == signalType && !visited[conn.Destination.Component] {
 					destComp := h.getComponent(conn.Destination.Component)
 					visited[conn.Destination.Component] = true // mark as visited
 					if destComp != nil {
-						findPaths(destComp) // look deeper
+						findPaths(signalType, destComp) // look deeper
 					}
 				}
 			}
@@ -583,11 +629,13 @@ func (h *HPSF) FindAllPipelines() [][]*Component {
 	}
 
 	// start the search from each start component
-	for _, c := range startComps {
-		findPaths(c)
+	for _, c := range receiverComps {
+		for _, signalType := range []ConnectionType{CTYPE_LOGS, CTYPE_METRICS, CTYPE_TRACES} {
+			findPaths(signalType, c)
+		}
 	}
 
-	return paths
+	return pipelines
 }
 
 // visit all components in the HPSF in order of connections, starting from the components

@@ -3,6 +3,7 @@ module github.com/honeycombio/hpsf
 go 1.23.0
 
 require (
+	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1

@@ -218,6 +218,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	t.maybeAddDefaultSampler(h)
 
 	comps := NewOrderedComponentMap()
+	receiverNames := make(map[string]bool)
 	// make all the components
 	// for _, c := range h.Components {
 	visitFunc := func(c *hpsf.Component) error {
@@ -226,6 +227,11 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 			return err
 		}
 		comps.Set(c.GetSafeName(), comp)
+		if tc, ok := comp.(*config.TemplateComponent); ok {
+			if tc.Style == "receiver" {
+				receiverNames[c.GetSafeName()] = true
+			}
+		}
 		return nil
 	}
 
@@ -253,27 +259,37 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	// destination component. We iterate over all starting components (those
 	// with no incoming connections) and all ending components (those with no
 	// outgoing connections).
-	pipelines := h.FindAllPipelines()
+	pipelines := h.FindAllPipelines(receiverNames)
+	if len(pipelines) == 0 {
+		// there were no complete pipelines found, so we construct dummy pipelines with all the components
+		// so that all the non-piped components can play
+		pipelines = []hpsf.PipelineWithSignalType{
+			{Pipeline: h.Components, SignalType: hpsf.CTYPE_LOGS},
+			{Pipeline: h.Components, SignalType: hpsf.CTYPE_METRICS},
+			{Pipeline: h.Components, SignalType: hpsf.CTYPE_TRACES},
+		}
+	}
+
 	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
 
 	// now we can iterate over the pipelines and generate a configuration for each
-	for pipelineID, pipeline := range pipelines {
+	for _, pipeline := range pipelines {
 		// Start with a base component so we always have a valid config
 		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, pipelineID, userdata)
+		composite, err := base.GenerateConfig(ct, pipeline, userdata)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, comp := range pipeline {
+		for _, comp := range pipeline.Pipeline {
 			// look up the component in the ordered map
 			c, ok := comps.Get(comp.GetSafeName())
 			if !ok {
 				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, pipelineID, userdata)
+			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
 			if err != nil {
 				return nil, err
 			}

@@ -130,7 +130,7 @@ func TestDefaultHPSF(t *testing.T) {
 			got, err := cfg.RenderYAML()
 			require.NoError(t, err)
 
-			assert.Equal(t, expectedConfig, string(got))
+			assert.Equal(t, expectedConfig, string(got), "in file %s", tC.expectedConfigTestData)
 		})
 	}
 }
