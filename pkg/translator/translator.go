@@ -267,6 +267,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 			{Pipeline: h.Components, SignalType: hpsf.CTYPE_LOGS},
 			{Pipeline: h.Components, SignalType: hpsf.CTYPE_METRICS},
 			{Pipeline: h.Components, SignalType: hpsf.CTYPE_TRACES},
+			{Pipeline: h.Components, SignalType: hpsf.CTYPE_HONEY},
 		}
 	}
 

@@ -630,7 +630,7 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalT
 
 	// start the search from each start component
 	for _, c := range receiverComps {
-		for _, signalType := range []ConnectionType{CTYPE_LOGS, CTYPE_METRICS, CTYPE_TRACES} {
+		for _, signalType := range []ConnectionType{CTYPE_LOGS, CTYPE_METRICS, CTYPE_TRACES, CTYPE_HONEY} {
 			findPaths(signalType, c)
 		}
 	}

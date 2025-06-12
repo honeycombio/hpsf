@@ -271,6 +271,9 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
+				if pipeline.SignalType != hpsf.CTYPE_HONEY {
+					continue // rules templates are only for Honeycomb events
+				}
 				rt, err := buildRulesTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building rules template for %s",
@@ -414,7 +417,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 	config := tmpl.NewCollectorConfig()
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
-		for _, signalType := range []hpsf.ConnectionType{hpsf.CTYPE_LOGS, hpsf.CTYPE_METRICS, hpsf.CTYPE_TRACES} {
+		for _, signalType := range []hpsf.ConnectionType{hpsf.CTYPE_LOGS, hpsf.CTYPE_METRICS, hpsf.CTYPE_TRACES, hpsf.CTYPE_HONEY} {
 			if pipeline.SignalType != signalType {
 				continue // skip this signal type if it doesn't match the pipeline
 			}
