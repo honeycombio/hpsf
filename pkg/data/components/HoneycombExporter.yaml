@@ -66,6 +66,7 @@ properties:
       not be used. Defaults to 'all', which means all
       the traffic will be exported using the configured APIKey.
     type: string
+    subtype: oneof(all, none)
     validations:
       - oneof(all, none)
     default: all
