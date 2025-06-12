@@ -594,7 +594,7 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalT
 	// copy the startComps list, but skip components whose names are not in the receivers map
 	receiverComps := make([]*Component, 0)
 	for _, c := range startComps {
-		if _, ok := receivers[c.Name]; ok {
+		if _, ok := receivers[c.GetSafeName()]; ok {
 			receiverComps = append(receiverComps, c)
 		}
 	}
