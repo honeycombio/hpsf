@@ -57,6 +57,7 @@ properties:
     description: |
       Can be used to send data without TLS.
     type: bool
+    subtype: label("Enable TLS export")
     default: false
     advanced: true
   - name: BatchTimeout

@@ -60,6 +60,7 @@ properties:
       Can be used to send data with TLS.
       Since Refinery does not use TLS, this is off by default.
     type: bool
+    subtype: label("Enable TLS export")
     default: false
     advanced: true
   - name: BatchTimeout
