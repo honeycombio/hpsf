@@ -23,7 +23,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces/0:
+        traces/b5aa:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [otlphttp/otlp_out]

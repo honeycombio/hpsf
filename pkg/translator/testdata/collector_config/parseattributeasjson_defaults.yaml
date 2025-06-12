@@ -32,11 +32,11 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/0:
+        logs/be5a:
             receivers: [otlp/otlp_in]
             processors: [usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
-        traces/0:
+        traces/de32:
             receivers: [otlp/otlp_in]
             processors: [usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]

@@ -28,7 +28,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/0:
+        logs/47ec:
             receivers: [otlp/otlp_in]
             processors: [usage, filter/FilterMyLogs]
             exporters: [otlp/otlp_out]
