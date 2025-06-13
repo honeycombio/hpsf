@@ -7,11 +7,9 @@ components:
     kind: SymbolicatorProcessor
     properties:
       - name: SourceMapStore
-        value: gcs_store
+        value: GoogleCloudStorage
       - name: Bucket
         value: my-bucket
-      - name: Region
-        value: us-west-2
       - name: Prefix
         value: source-maps/
 connections:

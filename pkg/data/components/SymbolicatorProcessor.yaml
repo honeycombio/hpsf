@@ -20,16 +20,45 @@ ports:
     type: OTelTraces
 properties:
   - name: SourceMapStore
+    summary: The storage type where where source maps are stored to use for symbolication.
+    description: |
+      The storage type where where source maps are stored to use for symbolication.
+      Options are `AWSS3` and `GoogleCloudStorage`.
+      The default is `AWSS3`.
     type: string
-    subtype: oneof(s3_store, gcs_store)
-    default: s3_store
+    subtype: oneof(AWSS3, GoogleCloudStorage)
+    default: AWSS3
     validations:
-      - oneof(s3_store, gcs_store)
+      - oneof(AWSS3, GoogleCloudStorage)
   - name: Bucket
+    summary: The bucket name where the source maps are stored.
+    description: |
+      The bucket to use for the source map store. This is required.
+      For `AWSS3`, this is the name of the AWS S3 bucket.
+      For `GoogleCloudStorage`, this is the name of the Google Cloud Storage bucket.
+      Examples: `my-source-maps`, `my-gcs-bucket`.
     type: string
+    validations:
+      - noblanks
+      - nonempty
   - name: Region
+    summary: The AWS S3 region where the bucket is located.
+    description: |
+      The region to use for the source map store. This is required if the source map store is `AWSS3`.
+      Examples: `us-east-1`, `us-west-2`, `eu-central-1`.
     type: string
+    validations:
+      - noblanks
+      - nonempty
   - name: Prefix
+    summary: The prefix to use for the source map store.
+    description: |
+      The prefix to use for the source map store. This is optional and can be used to specify a subdirectory within the bucket.
+      If not specified, the root of the bucket will be used.
+      Examples: `source-maps/`, `my-project/source-maps/`.
+    validations:
+      - noblanks
+      - nonempty
     type: string
 templates:
   - kind: collector_config
@@ -40,22 +69,26 @@ templates:
       signalTypes: [traces]
       collectorComponentName: symbolicator
     data:
+      # AWSS3
       - key: "{{ .ComponentName }}.source_map_store"
-        value: "{{ .Values.SourceMapStore }}"
-      # s3_store
+        value: "s3_store"
+        suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.region"
         value: "{{ .Values.Region }}"
-        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
+        suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.bucket"
         value: "{{ .Values.Bucket }}"
-        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
+        suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ not (eq "s3_store" .Values.SourceMapStore) }}'
-      # gcs_store
+        suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
+      # GoogleCloudStorage
+      - key: "{{ .ComponentName }}.source_map_store"
+        value: "gcs_store"
+        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.bucket"
         value: "{{ .Values.Bucket }}"
-        suppress_if: '{{ not (eq "gcs_store" .Values.SourceMapStore) }}'
+        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ not (eq "gcs_store" .Values.SourceMapStore) }}'
+        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SourceMapStore) }}'
