@@ -142,6 +142,10 @@ func positive(val any) bool {
 // ensures that no strings are blank, even in string slices
 // use nonempty to ensure that a slace has at least one value
 func noBlankStrings(val any) bool {
+	// nil happens when there is no default value and no value is supplied
+	if val == nil {
+		return false
+	}
 	switch v := val.(type) {
 	case string:
 		return len(v) > 0
