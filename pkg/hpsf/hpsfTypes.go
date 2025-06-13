@@ -19,25 +19,40 @@ type ConnectionType string
 
 const (
 	CTYPE_UNKNOWN ConnectionType = "unknown"
-	CTYPE_TRACES  ConnectionType = "OTelTraces"
 	CTYPE_LOGS    ConnectionType = "OTelLogs"
 	CTYPE_METRICS ConnectionType = "OTelMetrics"
-	CTYPE_EVENT   ConnectionType = "OTelEvent"
-	CTYPE_HONEY   ConnectionType = "Honeycomb"
+	CTYPE_TRACES  ConnectionType = "OTelTraces"
+	CTYPE_EVENTS  ConnectionType = "OTelEvents"
+	CTYPE_HONEY   ConnectionType = "HoneycombEvents"
 	CTYPE_NUMBER  ConnectionType = "number"
 	CTYPE_STRING  ConnectionType = "string"
 	CTYPE_BOOL    ConnectionType = "bool"
 )
 
+// These are the possible connection types that can be used in the HPSF pipelines.
+var PipelineSignalTypes = []ConnectionType{
+	CTYPE_LOGS,
+	CTYPE_METRICS,
+	CTYPE_TRACES,
+	CTYPE_HONEY,
+}
+
+var CollectorSignalTypes = []ConnectionType{
+	CTYPE_LOGS,
+	CTYPE_METRICS,
+	CTYPE_TRACES,
+	// CTYPE_EVENTS,	// someday
+}
+
 func (c ConnectionType) AsCollectorType() string {
 	switch c {
-	case CTYPE_TRACES:
-		return "traces"
 	case CTYPE_LOGS:
 		return "logs"
 	case CTYPE_METRICS:
 		return "metrics"
-	case CTYPE_EVENT:
+	case CTYPE_TRACES:
+		return "traces"
+	case CTYPE_EVENTS:
 		return "events"
 	default:
 		return string(c)
@@ -526,6 +541,7 @@ type HPSF struct {
 }
 
 // generate a list of components that are not named as the destination of a connection
+// This is used in visiting all the components in graph order, regardless of connection type.
 func (h *HPSF) GetStartComponents() []*Component {
 	startComps := make([]*Component, 0)
 	// make a map of all components that are destinations of connections
@@ -541,6 +557,30 @@ func (h *HPSF) GetStartComponents() []*Component {
 	}
 
 	return startComps
+}
+
+// for a given signal type, generate a list of components that are sources of connections but not destinations
+// of connections. This is used to find the start components of a pipeline.
+func (h *HPSF) GetSourceComponentsFor(signalType ConnectionType) []*Component {
+	sourceComps := make([]*Component, 0)
+	// make a map of all components that are destinations of connections for the given signal type
+	destinations := make(map[string]bool)
+	for _, conn := range h.Connections {
+		if conn.Source.Type == signalType {
+			destinations[conn.Destination.Component] = true
+		}
+	}
+	for _, c := range h.Components {
+		// if the component is a source of a connection and not a destination of a connection, add it to the list
+		if h.isSourceComponent(c, signalType) && !destinations[c.Name] {
+			sourceComps = append(sourceComps, c)
+		}
+	}
+	// sort the components by name
+	slices.SortFunc(sourceComps, func(a, b *Component) int {
+		return strings.Compare(a.Name, b.Name)
+	})
+	return sourceComps
 }
 
 func (h *HPSF) getComponent(name string) *Component {
@@ -587,18 +627,6 @@ func (p PipelineWithSignalType) GetID() string {
 // is a path from a start component to an end component. If there are no start
 // components, it returns nil.
 func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalType {
-	startComps := h.GetStartComponents()
-	if len(startComps) == 0 {
-		return nil // no start components, no paths
-	}
-	// copy the startComps list, but skip components whose names are not in the receivers map
-	receiverComps := make([]*Component, 0)
-	for _, c := range startComps {
-		if _, ok := receivers[c.GetSafeName()]; ok {
-			receiverComps = append(receiverComps, c)
-		}
-	}
-
 	var pipelines []PipelineWithSignalType
 	var path []*Component
 
@@ -629,8 +657,12 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalT
 	}
 
 	// start the search from each start component
-	for _, c := range receiverComps {
-		for _, signalType := range []ConnectionType{CTYPE_LOGS, CTYPE_METRICS, CTYPE_TRACES, CTYPE_HONEY} {
+	for _, signalType := range PipelineSignalTypes {
+		srcComps := h.GetSourceComponentsFor(signalType)
+		if len(srcComps) == 0 {
+			continue // no source components for this signal type
+		}
+		for _, c := range srcComps {
 			findPaths(signalType, c)
 		}
 	}
