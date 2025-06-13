@@ -1,5 +1,16 @@
 # hpsf library changelog
 
+
+## 0.7.0 2025-06-13
+
+### Work
+
+- fix: resolve and render pipelines individually.  (#132) | [Kent Quirk](https://github.com/kentquirk)
+- test: Update Tests to support named pipelines (#133) | [MartinDotNet](https://github.com/martinjt)
+- fix: Add subtype to HoneycombExporter Mode property (#131) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add subtype labels for bool properties (#130) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
+
 ## 0.6.1 2025-06-10
 
 - maint: remove extra test file and update version file. | [Kent Quirk](https://github.com/kentquirk)
