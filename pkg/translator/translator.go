@@ -218,6 +218,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	t.maybeAddDefaultSampler(h)
 
 	comps := NewOrderedComponentMap()
+	receiverNames := make(map[string]bool)
 	// make all the components
 	// for _, c := range h.Components {
 	visitFunc := func(c *hpsf.Component) error {
@@ -226,6 +227,11 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 			return err
 		}
 		comps.Set(c.GetSafeName(), comp)
+		if tc, ok := comp.(*config.TemplateComponent); ok {
+			if tc.Style == "receiver" {
+				receiverNames[c.GetSafeName()] = true
+			}
+		}
 		return nil
 	}
 
@@ -248,25 +254,66 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		comp.AddConnection(conn)
 	}
 
-	// Start with a base component so we always have a valid config
-	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
-	base := config.GenericBaseComponent{Component: dummy}
-	composite, err := base.GenerateConfig(ct, userdata)
-	if err != nil {
-		return nil, err
+	// We need to generate our collection of unique pipelines. A pipeline in
+	// this context is the shortest path from a source component to a
+	// destination component. We iterate over all starting components (those
+	// with no incoming connections) and all ending components (those with no
+	// outgoing connections).
+	pipelines := h.FindAllPipelines(receiverNames)
+	if len(pipelines) == 0 {
+		// there were no complete pipelines found, so we construct dummy pipelines with all the components
+		// so that all the non-piped components can play
+		pipelines = []hpsf.PipelineWithConnectionType{
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
+		}
 	}
 
-	// merge in the config from each of the components
-	for comp := range comps.Items() {
-		compConfig, err := comp.GenerateConfig(ct, userdata)
+	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
+
+	// now we can iterate over the pipelines and generate a configuration for each
+	for _, pipeline := range pipelines {
+		// Start with a base component so we always have a valid config
+		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, pipeline, userdata)
 		if err != nil {
 			return nil, err
 		}
-		if compConfig != nil {
-			composite.Merge(compConfig)
+
+		for _, comp := range pipeline.Pipeline {
+			// look up the component in the ordered map
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				composite.Merge(compConfig)
+			}
 		}
+		composites = append(composites, composite)
 	}
-	return composite, nil
+	// If we have multiple pipelines, we need to merge them into a single config.
+	if len(composites) > 1 {
+		// We can use the Merge method to combine all the configurations into one.
+		finalConfig := composites[0]
+		for _, comp := range composites[1:] {
+			finalConfig.Merge(comp)
+		}
+		return finalConfig, nil
+	} else if len(composites) == 1 {
+		// If we only have one pipeline, we can return it directly.
+		return composites[0], nil
+	}
+	// If we have no pipelines, we return nil.
+	return nil, nil
 }
 
 func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {

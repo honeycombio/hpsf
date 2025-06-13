@@ -26,7 +26,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/6f9-af2:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [otlphttp/Start_Sampling_1]

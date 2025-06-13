@@ -38,15 +38,15 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs:
+        logs/b34-d67:
             receivers: [otlp/otlp]
             processors: [usage]
             exporters: [otlphttp/honeycomb]
-        metrics:
+        metrics/c4b-9f0:
             receivers: [otlp/otlp]
             processors: [usage]
             exporters: [otlphttp/honeycomb]
-        traces:
+        traces/abd-cdb:
             receivers: [otlp/otlp]
             processors: [usage]
             exporters: [otlphttp/refinery]
