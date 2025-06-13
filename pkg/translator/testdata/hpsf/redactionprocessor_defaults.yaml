@@ -5,11 +5,6 @@ components:
     kind: OTelHTTPExporter
   - name: redaction_processor_1
     kind: RedactionProcessor
-    properties:
-      - name: AttributeValuePatternsToRedact
-        value:
-          - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
-          - (5[1-5][0-9]{14})       ## MasterCard number
 connections:
   - source:
       component: otlp_in

@@ -45,7 +45,9 @@ properties:
     validations:
       - noblanks
       - nonempty
-    default: []
+    default:
+      - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
+      - (5[1-5][0-9]{14})       ## MasterCard number
 templates:
   - kind: collector_config
     name: collector_drop_attributes_processor
