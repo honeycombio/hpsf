@@ -48,6 +48,18 @@ properties:
     default:
       - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
       - (5[1-5][0-9]{14})       ## MasterCard number
+  - name: AttributeNamesToNotRedact
+    summary: A list of attribute names that will skip redaction.
+    description: |
+      A list of attribute names that will not be redacted, even if they match the patterns
+      specified in `AttributeNamePatternsToRedact` or `AttributeValuePatternsToRedact`.
+      This can be used to ensure that certain attributes are always preserved.
+    type: stringarray
+    validations:
+      - noblanks
+      - nonempty
+    default: []
+    advanced: true
 templates:
   - kind: collector_config
     name: collector_drop_attributes_processor
@@ -65,3 +77,6 @@ templates:
       - key: "{{ .ComponentName }}.blocked_value_patterns"
         value: "{{ .Values.AttributeValuePatternsToRedact | encodeAsArray }}"
         suppress_if: "{{ not .Values.AttributeValuePatternsToRedact }}"
+      - key: "{{ .ComponentName }}.ignored_keys"
+        value: "{{ .Values.AttributeNamesToNotRedact | encodeAsArray }}"
+        suppress_if: "{{ not .Values.AttributeNamesToNotRedact }}"

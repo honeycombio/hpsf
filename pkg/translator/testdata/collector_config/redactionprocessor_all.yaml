@@ -14,6 +14,9 @@ processors:
         blocked_value_patterns:
             - 4[0-9]{12}(?:[0-9]{3})?
             - (5[1-5][0-9]{14})
+        ignored_keys:
+            - user_id
+            - session_id
     usage: {}
 exporters:
     otlphttp/otlp_out:
