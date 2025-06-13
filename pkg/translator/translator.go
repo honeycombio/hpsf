@@ -263,11 +263,11 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	if len(pipelines) == 0 {
 		// there were no complete pipelines found, so we construct dummy pipelines with all the components
 		// so that all the non-piped components can play
-		pipelines = []hpsf.PipelineWithSignalType{
-			{Pipeline: h.Components, SignalType: hpsf.CTYPE_LOGS},
-			{Pipeline: h.Components, SignalType: hpsf.CTYPE_METRICS},
-			{Pipeline: h.Components, SignalType: hpsf.CTYPE_TRACES},
-			{Pipeline: h.Components, SignalType: hpsf.CTYPE_HONEY},
+		pipelines = []hpsf.PipelineWithConnectionType{
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
 		}
 	}
 

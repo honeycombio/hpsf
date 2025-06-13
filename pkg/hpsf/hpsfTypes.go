@@ -30,13 +30,14 @@ const (
 )
 
 // These are the possible connection types that can be used in the HPSF pipelines.
-var PipelineSignalTypes = []ConnectionType{
+var PipelineConnectionTypes = []ConnectionType{
 	CTYPE_LOGS,
 	CTYPE_METRICS,
 	CTYPE_TRACES,
 	CTYPE_HONEY,
 }
 
+// The collector thinks of these as signal types
 var CollectorSignalTypes = []ConnectionType{
 	CTYPE_LOGS,
 	CTYPE_METRICS,
@@ -44,7 +45,7 @@ var CollectorSignalTypes = []ConnectionType{
 	// CTYPE_EVENTS,	// someday
 }
 
-func (c ConnectionType) AsCollectorType() string {
+func (c ConnectionType) AsCollectorSignalType() string {
 	switch c {
 	case CTYPE_LOGS:
 		return "logs"
@@ -561,18 +562,18 @@ func (h *HPSF) GetStartComponents() []*Component {
 
 // for a given signal type, generate a list of components that are sources of connections but not destinations
 // of connections. This is used to find the start components of a pipeline.
-func (h *HPSF) GetSourceComponentsFor(signalType ConnectionType) []*Component {
+func (h *HPSF) GetSourceComponentsFor(connType ConnectionType) []*Component {
 	sourceComps := make([]*Component, 0)
 	// make a map of all components that are destinations of connections for the given signal type
 	destinations := make(map[string]bool)
 	for _, conn := range h.Connections {
-		if conn.Source.Type == signalType {
+		if conn.Source.Type == connType {
 			destinations[conn.Destination.Component] = true
 		}
 	}
 	for _, c := range h.Components {
 		// if the component is a source of a connection and not a destination of a connection, add it to the list
-		if h.isSourceComponent(c, signalType) && !destinations[c.Name] {
+		if h.isSourceComponent(c, connType) && !destinations[c.Name] {
 			sourceComps = append(sourceComps, c)
 		}
 	}
@@ -593,62 +594,67 @@ func (h *HPSF) getComponent(name string) *Component {
 	return nil
 }
 
-func (h *HPSF) isSourceComponent(c *Component, signalType ConnectionType) bool {
+func (h *HPSF) isSourceComponent(c *Component, connType ConnectionType) bool {
 	// check if the component is a source of a connection of this signal type
 	for _, conn := range h.Connections {
-		if conn.Source.Component == c.Name && conn.Source.Type == signalType {
+		if conn.Source.Component == c.Name && conn.Source.Type == connType {
 			return true
 		}
 	}
 	return false
 }
 
-type PipelineWithSignalType struct {
-	SignalType ConnectionType
-	Pipeline   []*Component
+// PipelineWithConnectionType is designed to hold a linear set of components
+// connected by a specific connection type. We generate all possible pipelines
+// as a slice of this type.
+type PipelineWithConnectionType struct {
+	ConnType ConnectionType
+	Pipeline []*Component
 }
 
-func (p PipelineWithSignalType) GetID() string {
+func (p PipelineWithConnectionType) GetID() string {
 	// return the ID of the pipeline, which is a hash of the names of components in its pipeline
-	// and the signal type, truncated to 4 characters.
+	// and the connection type, truncated to 6 characters.
 	buf := bytes.Buffer{}
 	for _, comp := range p.Pipeline {
 		buf.WriteString(comp.GetSafeName())
 	}
-	buf.WriteString(string(p.SignalType))
+	buf.WriteString(string(p.ConnType))
 	hash := metro.Hash64(buf.Bytes(), 0x234da488) // use a fixed seed for reproducibility
 	shash := strconv.FormatUint(hash, 16)
-	return shash[len(shash)-4:] // return the last 4 characters of the hash
+	ix := len(shash)
+	return shash[ix-6:ix-3] + "-" + shash[ix-3:] // return something like "1a2-b3c"
 }
 
-// FindAllPipelines generates all paths from the start components to the end
-// components where end components are those that are not sources of any
-// connections. It returns a slice of slices of components, where each inner slice
-// is a path from a start component to an end component. If there are no start
-// components, it returns nil.
-func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalType {
-	var pipelines []PipelineWithSignalType
+// FindAllPipelines generates all paths for a given connection type, from the
+// start components (not a destination of that connection type) to the end components
+// (not sources of that connection type). It
+// returns a slice of slices of components, where each inner slice is a path
+// from a start component to an end component. If there are no start components,
+// it returns nil.
+func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithConnectionType {
+	var pipelines []PipelineWithConnectionType
 	var path []*Component
 
 	var findPaths func(ConnectionType, *Component)
-	findPaths = func(signalType ConnectionType, c *Component) {
+	findPaths = func(connType ConnectionType, c *Component) {
 		path = append(path, c)
-		if !h.isSourceComponent(c, signalType) {
+		if !h.isSourceComponent(c, connType) {
 			// we reached an end component, create a pipeline
-			pipeline := PipelineWithSignalType{
-				SignalType: signalType,
-				Pipeline:   slices.Clone(path),
+			pipeline := PipelineWithConnectionType{
+				ConnType: connType,
+				Pipeline: slices.Clone(path),
 			}
 			pipelines = append(pipelines, pipeline)
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
 			visited := make(map[string]bool)
 			for _, conn := range h.Connections {
-				if conn.Source.Component == c.Name && conn.Source.Type == signalType && !visited[conn.Destination.Component] {
+				if conn.Source.Component == c.Name && conn.Source.Type == connType && !visited[conn.Destination.Component] {
 					destComp := h.getComponent(conn.Destination.Component)
 					visited[conn.Destination.Component] = true // mark as visited
 					if destComp != nil {
-						findPaths(signalType, destComp) // look deeper
+						findPaths(connType, destComp) // look deeper
 					}
 				}
 			}
@@ -657,13 +663,13 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithSignalT
 	}
 
 	// start the search from each start component
-	for _, signalType := range PipelineSignalTypes {
-		srcComps := h.GetSourceComponentsFor(signalType)
+	for _, connType := range PipelineConnectionTypes {
+		srcComps := h.GetSourceComponentsFor(connType)
 		if len(srcComps) == 0 {
 			continue // no source components for this signal type
 		}
 		for _, c := range srcComps {
-			findPaths(signalType, c)
+			findPaths(connType, c)
 		}
 	}
 

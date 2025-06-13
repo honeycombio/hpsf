@@ -21,7 +21,7 @@ const (
 // We will need to convert the dotted paths into real ones later.
 // The pipeline identifies which pipeline is being generated.
 type Component interface {
-	GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithSignalType, userdata map[string]any) (tmpl.TemplateConfig, error)
+	GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error)
 	AddConnection(*hpsf.Connection)
 }
 
@@ -34,7 +34,7 @@ func NewNullComponent() *NullComponent {
 // ensure that NullComponent implements Component
 var _ Component = (*NullComponent)(nil)
 
-func (c *NullComponent) GenerateConfig(Type, hpsf.PipelineWithSignalType, map[string]any) (tmpl.TemplateConfig, error) {
+func (c *NullComponent) GenerateConfig(Type, hpsf.PipelineWithConnectionType, map[string]any) (tmpl.TemplateConfig, error) {
 	return nil, nil
 }
 
@@ -51,7 +51,7 @@ type GenericBaseComponent struct {
 // ensure that GenericBaseComponent implements Component
 var _ Component = (*GenericBaseComponent)(nil)
 
-func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithSignalType, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
 		return tmpl.DottedConfig{
