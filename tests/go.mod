@@ -3,15 +3,19 @@ module github.com/honeycombio/hpsf/tests
 go 1.24.1
 
 require (
-	github.com/honeycombio/hpsf v0.0.0-00010101000000-000000000000
+	github.com/honeycombio/hpsf v0.6.1
 	github.com/honeycombio/opentelemetry-collector-configs/honeycombextension v0.0.0-20250529172854-29e92f8bd7cb
 	github.com/honeycombio/opentelemetry-collector-configs/usageprocessor v0.1.0
 	github.com/honeycombio/refinery v1.21.1-0.20250604165426-312ddc7c2c94
+	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.127.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.127.0
+	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.127.0
 	github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor v0.127.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/collector/exporter v0.127.0
 	go.opentelemetry.io/collector/extension v1.33.0
 	go.opentelemetry.io/collector/receiver v1.33.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 replace github.com/honeycombio/opentelemetry-collector-configs/usageprocessor => github.com/honeycombio/opentelemetry-collector-configs/usageprocessor v0.0.0-20250529172854-29e92f8bd7cb
@@ -42,6 +46,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/creasty/defaults v1.8.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33 // indirect
 	github.com/ebitengine/purego v0.8.4 // indirect
 	github.com/expr-lang/expr v1.17.3 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -60,11 +65,8 @@ require (
 	github.com/mostynb/go-grpc-compression v1.2.3 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/open-telemetry/opamp-go v0.19.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter v0.127.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/extension/opampcustommessages v0.127.0 // indirect
 	github.com/open-telemetry/opentelemetry-collector-contrib/pkg/batchperresourceattr v0.127.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v0.127.0 // indirect
-	github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor v0.127.0 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.3 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
@@ -143,7 +145,6 @@ require (
 	golang.org/x/crypto v0.38.0 // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
@@ -193,7 +194,7 @@ require (
 	go.opentelemetry.io/collector/otelcol v0.127.0
 	go.opentelemetry.io/collector/pdata v1.33.0 // indirect
 	go.opentelemetry.io/collector/pdata/pprofile v0.127.0 // indirect
-	go.opentelemetry.io/collector/pipeline v0.127.0 // indirect
+	go.opentelemetry.io/collector/pipeline v0.127.0
 	go.opentelemetry.io/collector/processor v1.33.0
 	go.opentelemetry.io/collector/processor/processorhelper v0.127.0 // indirect
 	go.opentelemetry.io/collector/receiver/otlpreceiver v0.127.0
