@@ -26,7 +26,7 @@ ports:
     direction: input
     type: OTelLogs
 properties:
-  - name: AttributeNamePatterns
+  - name: AttributeNamePatternsToRedact
     summary: Regular expression patterns of attribute names to redact.
     description: |
       A list of regular expression patterns that match attribute names to be redacted.
@@ -36,7 +36,7 @@ properties:
       - noblanks
       - nonempty
     default: []
-  - name: AttributeValuePatterns
+  - name: AttributeValuePatternsToRedact
     summary: Regular expression patterns of attribute values to redact.
     description: |
       A list of regular expression patterns that match attribute values to be redacted.
@@ -58,8 +58,8 @@ templates:
       - key: "{{ .ComponentName }}.allow_all_keys"
         value: "{{ true | encodeAsBool }}"
       - key: "{{ .ComponentName }}.blocked_key_patterns"
-        value: "{{ .Values.AttributeNamePatterns | encodeAsArray  }}"
-        suppress_if: "{{ not .Values.AttributeNamePatterns }}"
+        value: "{{ .Values.AttributeNamePatternsToRedact | encodeAsArray  }}"
+        suppress_if: "{{ not .Values.AttributeNamePatternsToRedact }}"
       - key: "{{ .ComponentName }}.blocked_value_patterns"
-        value: "{{ .Values.AttributeValuePatterns | encodeAsArray }}"
-        suppress_if: "{{ not .Values.AttributeValuePatterns }}"
+        value: "{{ .Values.AttributeValuePatternsToRedact | encodeAsArray }}"
+        suppress_if: "{{ not .Values.AttributeValuePatternsToRedact }}"

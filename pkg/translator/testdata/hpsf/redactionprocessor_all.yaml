@@ -6,7 +6,7 @@ components:
   - name: redaction_processor_1
     kind: RedactionProcessor
     properties:
-      - name: AttributeNamePatterns
+      - name: AttributeNamePatternsToRedact
         value:
           - ".*api_key.*"
           - ".*token.*"
