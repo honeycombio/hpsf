@@ -62,7 +62,7 @@ properties:
     type: string
 templates:
   - kind: collector_config
-    name: otel_symbolicator
+    name: hny_symbolicator_processor
     format: collector
     meta:
       componentSection: processors
