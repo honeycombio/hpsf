@@ -62,7 +62,7 @@ properties:
     type: string
 templates:
   - kind: collector_config
-    name: otel_logdedup
+    name: otel_symbolicator
     format: collector
     meta:
       componentSection: processors
