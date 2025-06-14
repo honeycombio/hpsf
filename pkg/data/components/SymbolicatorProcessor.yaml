@@ -20,9 +20,9 @@ ports:
     type: OTelTraces
 properties:
   - name: SourceMapStore
-    summary: The storage type where where source maps are stored to use for symbolication.
+    summary: The storage type where source maps are stored to use for symbolication.
     description: |
-      The storage type where where source maps are stored to use for symbolication.
+      The storage type where source maps are stored to use for symbolication.
       Options are `AWSS3` and `GoogleCloudStorage`.
       The default is `AWSS3`.
     type: string
