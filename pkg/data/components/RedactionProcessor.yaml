@@ -62,7 +62,7 @@ properties:
     advanced: true
 templates:
   - kind: collector_config
-    name: collector_drop_attributes_processor
+    name: otel_redaction_processor
     format: collector
     meta:
       componentSection: processors
