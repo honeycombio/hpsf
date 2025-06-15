@@ -2,4 +2,4 @@ AccessKeys:
     SendKey: test
     SendKeyMode: all
 Network:
-    HoneycombAPI: https://api.honeycomb.io:443
+    HoneycombAPI: https://api.honeycomb.io
