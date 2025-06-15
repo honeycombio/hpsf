@@ -1,0 +1,44 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Honeycomb Exporter_1
+    kind: HoneycombExporter
+  - name: Send to S3 Archive_1
+    kind: SendToS3Archive
+  - name: Filter Logs by Severity_1
+    kind: FilterLogBySeverity
+  - name: Send to OTLP
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to S3 Archive_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: OTel Receiver_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Honeycomb Exporter_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to OTLP
+      port: Logs
+      type: OTelLogs
