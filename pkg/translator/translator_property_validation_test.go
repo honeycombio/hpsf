@@ -13,24 +13,25 @@ import (
 func TestPropertyValidation(t *testing.T) {
 
 	t.Run("Validate should error if a noblanks string is not supplied and there is no default", func(t *testing.T) {
-		translator := NewEmptyTranslator()
 
-		noBlanksComponent := config.TemplateComponent{
+		testComponent := config.TemplateComponent{
 			Kind: "NoBlanksComponent",
 			Properties: []config.TemplateProperty{
 				{Name: "Mandatory", Type: hpsf.PTYPE_STRING, Validations: []string{"noblanks"}},
 			},
 		}
 
+		translator := NewEmptyTranslator()
+
 		translator.InstallComponents(map[string]config.TemplateComponent{
-			noBlanksComponent.Kind: noBlanksComponent,
+			testComponent.Kind: testComponent,
 		})
 
 		hpsfDocument := hpsf.HPSF{
 			Components: []*hpsf.Component{
 				{
 					Name: "TestComponent",
-					Kind: noBlanksComponent.Kind,
+					Kind: testComponent.Kind,
 				},
 			},
 		}
@@ -40,7 +41,7 @@ func TestPropertyValidation(t *testing.T) {
 		require.IsType(t, validator.Result{}, err)
 		validationError := err.(validator.Result)
 		fieldValidationError := validationError.Details[0].(*hpsf.HPSFError)
-		require.Equal(t, noBlanksComponent.Properties[0].Name, fieldValidationError.Property)
+		require.Equal(t, testComponent.Properties[0].Name, fieldValidationError.Property)
 		assert.Equal(t, "failed to validate property", fieldValidationError.Reason)
 		assert.Equal(t, "TestComponent", fieldValidationError.Component)
 		assert.Equal(t, hpsf.ErrorSeverity("E"), fieldValidationError.Severity)
@@ -49,7 +50,7 @@ func TestPropertyValidation(t *testing.T) {
 	t.Run("Validate should error if a noblanks string is not supplied and there is a default", func(t *testing.T) {
 		translator := NewEmptyTranslator()
 
-		noBlanksComponent := config.TemplateComponent{
+		testComponent := config.TemplateComponent{
 			Kind: "NoBlanksComponent",
 			Properties: []config.TemplateProperty{
 				{Name: "Mandatory", Type: hpsf.PTYPE_STRING, Validations: []string{"noblanks"}, Default: "default"},
@@ -57,14 +58,14 @@ func TestPropertyValidation(t *testing.T) {
 		}
 
 		translator.InstallComponents(map[string]config.TemplateComponent{
-			noBlanksComponent.Kind: noBlanksComponent,
+			testComponent.Kind: testComponent,
 		})
 
 		hpsfDocument := hpsf.HPSF{
 			Components: []*hpsf.Component{
 				{
 					Name: "TestComponent",
-					Kind: noBlanksComponent.Kind,
+					Kind: testComponent.Kind,
 				},
 			},
 		}
