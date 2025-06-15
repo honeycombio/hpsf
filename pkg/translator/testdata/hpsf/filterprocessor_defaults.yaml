@@ -5,6 +5,9 @@ components:
     kind: OTelHTTPExporter
   - name: drop_container_1
     kind: FilterProcessor
+    properties:
+      - name: Signal
+        value: traces
 connections:
   - source:
       component: otlp_in

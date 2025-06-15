@@ -6,6 +6,8 @@ components:
   - name: drop_container_1
     kind: FilterProcessor
     properties:
+      - name: Signal
+        value: traces
       - name: Rules
         value:
           traces:

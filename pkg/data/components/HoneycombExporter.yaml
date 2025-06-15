@@ -54,7 +54,6 @@ properties:
     type: string
     validations:
       - noblanks
-      - url
     default: https://api.honeycomb.io:443
     advanced: true
   - name: Mode
