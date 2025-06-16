@@ -1,0 +1,32 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Info Logs only
+    kind: FilterLogBySeverity
+  - name: Honeycomb Exporter_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Info Logs only
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Info Logs only
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Honeycomb Exporter_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: OTel Receiver_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Honeycomb Exporter_1
+      port: Logs
+      type: OTelLogs
