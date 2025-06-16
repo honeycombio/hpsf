@@ -138,11 +138,14 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 		}
 
 		// Get the template properties from the template component.
-		tprops := tmpl.Props()
+		templateProperties := tmpl.Props()
+		var mappedSuppliedProperties map[string]hpsf.Property
+
+		mappedSuppliedProperties = make(map[string]hpsf.Property)
 		for _, prop := range c.Properties {
-			// validate each property against the template component's basic validation rules
-			tp, ok := tprops[prop.Name]
-			if !ok {
+			mappedSuppliedProperties[prop.Name] = prop
+			_, propertyFound := templateProperties[prop.Name]
+			if !propertyFound {
 				// If the property is not found in the template component's
 				// properties, something's messed up. This means the property is
 				// not defined in the template component.
@@ -150,17 +153,25 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 					WithComponent(c.Name).
 					WithProperty(prop.Name)
 			}
+		}
+		for _, prop := range templateProperties {
+			// validate each property against the template component's basic validation rules
+			suppliedProperty, propertyFound := mappedSuppliedProperties[prop.Name]
+			if !propertyFound {
+				// If the property is not supplied, use the default value from the template component.
+				suppliedProperty = hpsf.Property{Name: prop.Name, Value: prop.Default}
+			}
 
 			// Now validate the property against the template property's validation rules.
-			if err := tp.Validate(prop); err != nil {
+			if validateError := prop.Validate(suppliedProperty); validateError != nil {
 				// if the property fails validation, add the error to the result
 				// this means the property itself has some issues
 				// we want to include the component name and property name in the error message for clarity
-				herr := hpsf.NewError("failed to validate property").
-					WithCause(err).
+				hspfError := hpsf.NewError("failed to validate property").
+					WithCause(validateError).
 					WithComponent(c.Name).
 					WithProperty(prop.Name)
-				result.Add(herr)
+				result.Add(hspfError)
 			}
 		}
 	}
