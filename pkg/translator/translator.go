@@ -2,6 +2,7 @@ package translator
 
 import (
 	"fmt"
+	"iter"
 	"slices"
 
 	"maps"
@@ -70,7 +71,7 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
-func (t *Translator) MakeConfigComponent(component hpsf.Component) (config.Component, error) {
+func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if ok {
@@ -167,58 +168,156 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	return result.ErrOrNil()
 }
 
+// OrderedComponentMap is a generic map that maintains the order of insertion.
+// It is used to ensure that the order of components and properties is preserved
+// when generating the configuration.
+type OrderedComponentMap struct {
+	// Keys is the list of keys in the order they were added.
+	Keys []string
+	// Values is the map of keys to values.
+	Values map[string]config.Component
+}
+
+func NewOrderedComponentMap() *OrderedComponentMap {
+	return &OrderedComponentMap{
+		Keys:   make([]string, 0),
+		Values: make(map[string]config.Component),
+	}
+}
+
+// Set adds a key-value pair to the ordered map.
+func (om *OrderedComponentMap) Set(key string, value config.Component) {
+	if _, exists := om.Values[key]; !exists {
+		// Only add the key to the Keys slice if it doesn't already exist
+		om.Keys = append(om.Keys, key)
+	}
+	om.Values[key] = value
+}
+
+// Get retrieves a value from the ordered map by key.
+func (om *OrderedComponentMap) Get(key string) (config.Component, bool) {
+	value, exists := om.Values[key]
+	return value, exists
+}
+
+// Items returns a Go iterable
+func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
+	return func(yield func(config.Component) bool) {
+		for _, key := range om.Keys {
+			if value, exists := om.Values[key]; exists {
+				if !yield(value) {
+					return
+				}
+			}
+		}
+	}
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
 	t.maybeAddDefaultSampler(h)
 
-	comps := make(map[string]config.Component)
+	comps := NewOrderedComponentMap()
+	receiverNames := make(map[string]bool)
 	// make all the components
-	for _, c := range h.Components {
+	// for _, c := range h.Components {
+	visitFunc := func(c *hpsf.Component) error {
 		comp, err := t.MakeConfigComponent(c)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		comps[c.GetSafeName()] = comp
+		comps.Set(c.GetSafeName(), comp)
+		if tc, ok := comp.(*config.TemplateComponent); ok {
+			if tc.Style == "receiver" {
+				receiverNames[c.GetSafeName()] = true
+			}
+		}
+		return nil
+	}
+
+	if err := h.VisitComponents(visitFunc); err != nil {
+		return nil, fmt.Errorf("failed to create components: %w", err)
 	}
 
 	// now add the connections
 	for _, conn := range h.Connections {
-		comp, ok := comps[conn.Source.GetSafeName()]
+		comp, ok := comps.Get(conn.Source.GetSafeName())
 		if !ok {
 			return nil, fmt.Errorf("unknown source component %s in connection", conn.Source.Component)
 		}
 		comp.AddConnection(conn)
 
-		comp, ok = comps[conn.Destination.GetSafeName()]
+		comp, ok = comps.Get(conn.Destination.GetSafeName())
 		if !ok {
 			return nil, fmt.Errorf("unknown target component %s in connection", conn.Destination.Component)
 		}
 		comp.AddConnection(conn)
 	}
 
-	// Start with a base component so we always have a valid config
-	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
-	base := config.GenericBaseComponent{Component: dummy}
-	composite, err := base.GenerateConfig(ct, userdata)
-	if err != nil {
-		return nil, err
+	// We need to generate our collection of unique pipelines. A pipeline in
+	// this context is the shortest path from a source component to a
+	// destination component. We iterate over all starting components (those
+	// with no incoming connections) and all ending components (those with no
+	// outgoing connections).
+	pipelines := h.FindAllPipelines(receiverNames)
+	if len(pipelines) == 0 {
+		// there were no complete pipelines found, so we construct dummy pipelines with all the components
+		// so that all the non-piped components can play
+		pipelines = []hpsf.PipelineWithConnectionType{
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
+		}
 	}
 
-	// merge in the config from each of the components
-	for _, comp := range comps {
-		compConfig, err := comp.GenerateConfig(ct, userdata)
+	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
+
+	// now we can iterate over the pipelines and generate a configuration for each
+	for _, pipeline := range pipelines {
+		// Start with a base component so we always have a valid config
+		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, pipeline, userdata)
 		if err != nil {
 			return nil, err
 		}
-		if compConfig != nil {
-			composite.Merge(compConfig)
+
+		for _, comp := range pipeline.Pipeline {
+			// look up the component in the ordered map
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				composite.Merge(compConfig)
+			}
 		}
+		composites = append(composites, composite)
 	}
-	return composite, nil
+	// If we have multiple pipelines, we need to merge them into a single config.
+	if len(composites) > 1 {
+		// We can use the Merge method to combine all the configurations into one.
+		finalConfig := composites[0]
+		for _, comp := range composites[1:] {
+			finalConfig.Merge(comp)
+		}
+		return finalConfig, nil
+	} else if len(composites) == 1 {
+		// If we only have one pipeline, we can return it directly.
+		return composites[0], nil
+	}
+	// If we have no pipelines, we return nil.
+	return nil, nil
 }
 
 func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c hpsf.Component) bool {
+	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
 		if component, ok := t.components[c.Kind]; ok {
 			if component.Style != "sampler" {
 				return false
@@ -234,7 +333,7 @@ func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
 		return false
 	})
 	if !foundDefaultSampler {
-		h.Components = append(h.Components, hpsf.Component{
+		h.Components = append(h.Components, &hpsf.Component{
 			Name: "defaultSampler",
 			Kind: "DeterministicSampler",
 			Properties: []hpsf.Property{

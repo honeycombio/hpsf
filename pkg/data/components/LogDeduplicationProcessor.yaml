@@ -13,10 +13,10 @@ tags:
   - service:collector
   - signal:OTelLogs
 ports:
-  - name: LogsIn
+  - name: Logs
     direction: input
     type: OTelLogs
-  - name: LogsOut
+  - name: Logs
     direction: output
     type: OTelLogs
 properties:

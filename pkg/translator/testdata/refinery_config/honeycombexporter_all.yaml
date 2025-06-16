@@ -5,4 +5,4 @@ General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0
 Network:
-    HoneycombAPI: https://alternative.honeycomb.io
+    HoneycombAPI: https://alternative.honeycomb.io:8080

@@ -1,0 +1,24 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: redaction_processor_1
+    kind: RedactionProcessor
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: redaction_processor_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: redaction_processor_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

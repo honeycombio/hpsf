@@ -1,6 +1,6 @@
 components:
   - name: honeycomb_in
-    kind: TraceConverter
+    kind: StartSampling
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: EMAThroughput_1
@@ -17,17 +17,17 @@ components:
 connections:
   - source:
       component: honeycomb_in
-      port: TraceOut
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: EMAThroughput_1
-      port: Input
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
   - source:
       component: EMAThroughput_1
-      port: Kept
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: honeycomb_out
       port: Traces
-      type: Honeycomb
+      type: HoneycombEvents

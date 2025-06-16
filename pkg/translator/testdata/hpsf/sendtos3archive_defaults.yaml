@@ -1,0 +1,17 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: s3_out
+    kind: SendToS3Archive
+    properties:
+      - name: Bucket
+        value: my-bucket
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: s3_out
+      port: Traces
+      type: OTelTraces

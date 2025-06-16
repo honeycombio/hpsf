@@ -23,7 +23,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/788-de3:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [otlphttp/otlp_out]

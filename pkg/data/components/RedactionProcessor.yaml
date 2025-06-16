@@ -1,0 +1,79 @@
+kind: RedactionProcessor
+name: Redaction Processor
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: A processor that can be used to redact attribute values in telemetry.
+description: |
+  This processor allows you to redact attribute values from traces, metrics, and logs based on
+  specified rules.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  - name: AttributeNamePatternsToRedact
+    summary: Regular expression patterns of attribute names to redact.
+    description: |
+      A list of regular expression patterns that match attribute names to be redacted.
+      If an attribute name matches any of these patterns, its value will be redacted.
+    type: stringarray
+    validations:
+      - noblanks
+    default: []
+  - name: AttributeValuePatternsToRedact
+    summary: Regular expression patterns of attribute values to redact.
+    description: |
+      A list of regular expression patterns that match attribute values to be redacted.
+      If an attribute value matches any of these patterns, it will be redacted.
+    type: stringarray
+    validations:
+      - noblanks
+    default:
+      - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
+      - (5[1-5][0-9]{14})       ## MasterCard number
+  - name: AttributeNamesToNotRedact
+    summary: A list of attribute names that will skip redaction.
+    description: |
+      A list of attribute names that will not be redacted, even if they match the patterns
+      specified in `AttributeNamePatternsToRedact` or `AttributeValuePatternsToRedact`.
+      This can be used to ensure that certain attributes are always preserved.
+    type: stringarray
+    validations:
+      - noblanks
+    default: []
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_redaction_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: redaction
+    data:
+      - key: "{{ .ComponentName }}.allow_all_keys"
+        value: "{{ true | encodeAsBool }}"
+      - key: "{{ .ComponentName }}.blocked_key_patterns"
+        value: "{{ .Values.AttributeNamePatternsToRedact | encodeAsArray  }}"
+        suppress_if: "{{ not .Values.AttributeNamePatternsToRedact }}"
+      - key: "{{ .ComponentName }}.blocked_value_patterns"
+        value: "{{ .Values.AttributeValuePatternsToRedact | encodeAsArray }}"
+        suppress_if: "{{ not .Values.AttributeValuePatternsToRedact }}"
+      - key: "{{ .ComponentName }}.ignored_keys"
+        value: "{{ .Values.AttributeNamesToNotRedact | encodeAsArray }}"
+        suppress_if: "{{ not .Values.AttributeNamesToNotRedact }}"

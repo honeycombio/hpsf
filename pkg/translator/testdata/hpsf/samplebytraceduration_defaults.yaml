@@ -1,0 +1,24 @@
+components:
+  - name: honeycomb_in
+    kind: StartSampling
+  - name: honeycomb_out
+    kind: HoneycombExporter
+  - name: Sampler_1
+    kind: SampleByTraceDuration
+connections:
+  - source:
+      component: honeycomb_in
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Sampler_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Sampler_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb_out
+      port: Events
+      type: HoneycombEvents

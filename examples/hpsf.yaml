@@ -2,15 +2,15 @@ components:
   - name: DeterministicSampler_1
     kind: DeterministicSampler
     ports:
-      - name: Input
+      - name: Events
         direction: input
-        type: Honeycomb
-      - name: Kept
+        type: HoneycombEvents
+      - name: Events
         direction: output
-        type: Honeycomb
-      - name: Dropped
+        type: HoneycombEvents
+      - name: Events
         direction: output
-        type: Honeycomb
+        type: HoneycombEvents
     properties:
       - name: Environment
         value: __default__
@@ -21,9 +21,9 @@ components:
   - name: HoneycombExporter_2
     kind: HoneycombExporter
     ports:
-      - name: TraceOut
+      - name: Events
         direction: output
-        type: Honeycomb
+        type: HoneycombEvents
     properties:
       - name: Port
         value: 4317
@@ -31,9 +31,9 @@ components:
   - name: HoneycombExporter_1
     kind: HoneycombExporter
     ports:
-      - name: Traces
+      - name: Events
         direction: input
-        type: Honeycomb
+        type: HoneycombEvents
     properties:
       - name: Dataset
         value: mytraces
@@ -44,20 +44,20 @@ components:
 connections:
   - source:
       component: HoneycombExporter_2
-      port: TraceOut
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: DeterministicSampler_1
-      port: Input
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
   - source:
       component: DeterministicSampler_1
-      port: Kept
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
     destination:
       component: HoneycombExporter_1
-      port: Traces
-      type: Honeycomb
+      port: Events
+      type: HoneycombEvents
 layout:
   frame:
     width: 1765

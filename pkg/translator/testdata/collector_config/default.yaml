@@ -25,15 +25,15 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs:
+        logs/200-bbb:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        metrics:
+        metrics/012-2cf:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        traces:
+        traces/f16-c79:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/OTel_HTTP_Exporter_1]

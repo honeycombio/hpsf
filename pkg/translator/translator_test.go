@@ -20,7 +20,12 @@ import (
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	overwrite := false
+	var overwrite bool = false
+
+	// this allows for the make target regenerate_translator_testdata to work instead of editing
+	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
+		overwrite = true
+	}
 
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
@@ -104,6 +109,16 @@ func TestDefaultHPSF(t *testing.T) {
 			expectedConfigTestData: "testdata/collector_config/default.yaml",
 		},
 	}
+
+	// set this to true to overwrite the testdata files with the generated
+	// config files if they are different
+	var overwrite bool = false
+
+	// this allows for the make target regenerate_translator_testdata to work instead of editing
+	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
+		overwrite = true
+	}
+
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 
@@ -125,8 +140,19 @@ func TestDefaultHPSF(t *testing.T) {
 			got, err := cfg.RenderYAML()
 			require.NoError(t, err)
 
-			assert.Equal(t, expectedConfig, string(got))
+			if overwrite && !reflect.DeepEqual(expectedConfig, string(got)) {
+				// overwrite the testdata file with the generated config
+				err = os.WriteFile(tC.expectedConfigTestData, got, 0644)
+				require.NoError(t, err)
+				t.Logf("Overwrote %s with generated config", tC.expectedConfigTestData)
+			} else {
+				assert.Equal(t, expectedConfig, string(got), "in file %s", tC.expectedConfigTestData)
+			}
 		})
+	}
+	if overwrite {
+		t.Fail()
+		t.Log("Some testdata files were overwritten. Please review the changes and commit them if they are correct.")
 	}
 }
 
@@ -186,4 +212,124 @@ func TestTranslatorValidation(t *testing.T) {
 			require.NoError(t, errors.Unwrap(err))
 		})
 	}
+}
+
+func TestOrderedComponentMap(t *testing.T) {
+	// Create a mock component for testing
+	mockComponent := func(name string) config.Component {
+		comp := &hpsf.Component{Name: name, Kind: "test"}
+		tc := config.GenericBaseComponent{Component: *comp}
+		return &tc
+	}
+
+	t.Run("NewOrderedComponentMap creates empty map", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		require.NotNil(t, ocm)
+		require.Empty(t, ocm.Keys)
+		require.Empty(t, ocm.Values)
+	})
+
+	t.Run("Set adds key-value pairs in order", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		comp1 := mockComponent("comp1")
+		comp2 := mockComponent("comp2")
+		comp3 := mockComponent("comp3")
+
+		ocm.Set("key1", comp1)
+		ocm.Set("key2", comp2)
+		ocm.Set("key3", comp3)
+
+		require.Len(t, ocm.Keys, 3)
+		require.Len(t, ocm.Values, 3)
+		require.Equal(t, []string{"key1", "key2", "key3"}, ocm.Keys)
+
+		// Check values are stored correctly
+		val, ok := ocm.Values["key1"]
+		require.True(t, ok)
+		require.Equal(t, comp1, val)
+	})
+
+	t.Run("Set overwrites existing value without duplicating key", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		comp1 := mockComponent("comp1")
+		comp2 := mockComponent("comp2")
+		updatedComp := mockComponent("updated")
+
+		ocm.Set("key1", comp1)
+		ocm.Set("key2", comp2)
+		ocm.Set("key1", updatedComp) // Overwrite key1
+
+		require.Len(t, ocm.Keys, 2)
+		require.Len(t, ocm.Values, 2)
+		require.Equal(t, []string{"key1", "key2"}, ocm.Keys)
+
+		// Check the value was updated
+		val, ok := ocm.Values["key1"]
+		require.True(t, ok)
+		require.Equal(t, updatedComp, val)
+	})
+
+	t.Run("Get retrieves values correctly", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		comp1 := mockComponent("comp1")
+
+		ocm.Set("key1", comp1)
+
+		// Get existing key
+		val, ok := ocm.Get("key1")
+		require.True(t, ok)
+		require.Equal(t, comp1, val)
+
+		// Get non-existent key
+		val, ok = ocm.Get("nonexistent")
+		require.False(t, ok)
+		require.Nil(t, val)
+	})
+
+	t.Run("Items returns components in insertion order", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		comp1 := mockComponent("comp1")
+		comp2 := mockComponent("comp2")
+		comp3 := mockComponent("comp3")
+
+		ocm.Set("key2", comp2) // Deliberately not inserting in key order
+		ocm.Set("key1", comp1)
+		ocm.Set("key3", comp3)
+
+		// Collect items from iterator
+		var items []config.Component
+		for comp := range ocm.Items() {
+			items = append(items, comp)
+		}
+
+		// Check order matches insertion order, not key order
+		require.Len(t, items, 3)
+		require.Equal(t, comp2, items[0])
+		require.Equal(t, comp1, items[1])
+		require.Equal(t, comp3, items[2])
+	})
+
+	t.Run("Items with early exit", func(t *testing.T) {
+		ocm := NewOrderedComponentMap()
+		comp1 := mockComponent("comp1")
+		comp2 := mockComponent("comp2")
+		comp3 := mockComponent("comp3")
+
+		ocm.Set("key1", comp1)
+		ocm.Set("key2", comp2)
+		ocm.Set("key3", comp3)
+
+		// Counter to track number of iterations
+		count := 0
+
+		// Use Items iterator but return false after first item to stop iteration
+		for comp := range ocm.Items() {
+			count++
+			require.Equal(t, comp1, comp)
+			// Exit after first item
+			break
+		}
+
+		require.Equal(t, 1, count, "Iterator should have stopped after first item")
+	})
 }

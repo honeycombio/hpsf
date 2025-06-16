@@ -1,0 +1,32 @@
+name: parselogbodyasjson_processor_test
+version: v0.1.0
+summary: Test for ParseLogBodyAsJSON processor
+description: |
+  Test configuration with an OTel receiver, ParseLogBodyAsJSON processor,
+  and OTel HTTP exporter. This tests parsing log.body as JSON.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: parse_log_body_1
+    kind: ParseLogBodyAsJSON
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: parse_log_body_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: parse_log_body_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs

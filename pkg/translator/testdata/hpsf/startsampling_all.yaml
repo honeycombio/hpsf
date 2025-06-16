@@ -1,0 +1,31 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: Start Sampling 1
+    kind: StartSampling
+    properties:
+      - name: Host
+        value: myhost.com
+      - name: Port
+        value: 1234
+      - name: Headers
+        value:
+          x-honeycomb-dataset: "custom"
+          x-honeycomb-team: "${HONEYCOMB_API_KEY}"
+      - name: UseTLS
+        value: true
+      - name: BatchTimeout
+        value: 30s
+      - name: BatchSize
+        value: 200_000
+      - name: QueueSize
+        value: 2_000_000
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling 1
+      port: Traces
+      type: OTelTraces

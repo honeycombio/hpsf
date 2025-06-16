@@ -3,7 +3,7 @@ GOTESTCMD = $(if $(shell command -v gotestsum),gotestsum --junitfile ./test_resu
 
 .PHONY: test
 #: run all tests
-test: test_with_race test_all
+test: test_with_race test_all test_scenarios
 
 .PHONY: test_with_race
 #: run only tests tagged with potential race conditions
@@ -20,6 +20,14 @@ test_all: test_results
 	@echo "+++ testing - all the tests"
 	@echo
 	$(call GOTESTCMD,$@) -tags all --timeout 60s -v ./...
+
+.PHONY: test_scenarios
+#: run all tests in tests/scenario_tests
+test_scenarios: test_results
+	@echo
+	@echo "+++ testing - scenario tests"
+	@echo
+	cd tests/scenario_tests && $(call GOTESTCMD,$@) -tags all --timeout 60s -v ./...
 
 test_results:
 	@mkdir -p test_results
@@ -77,6 +85,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
+		-e HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
 		honeycombio/refinery:latest || exit 1
 	sleep 1
 
@@ -90,6 +99,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container is running"; \
 		docker kill 'smoke-refinery'; \
 		docker rm 'smoke-refinery'; \
+		echo "+++ refinery successfully started up for $(FILE)"; \
 	fi
 
 .PHONY: .smoke_collector
@@ -116,7 +126,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ yq version is less than 4.0.0, please update it"; \
 		exit 1; \
 	fi
-	
+
 	# use yq to remove the usage processor and honeycomb extension from collector config
 	yq -i e \
 		'del(.processors.usage) | \
@@ -147,6 +157,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container is running"; \
 		docker kill 'smoke-collector'; \
 		docker rm 'smoke-collector'; \
+		echo "+++ collector successfully started up for $(FILE)"; \
 	fi
 
 .PHONY: smoke
@@ -163,3 +174,10 @@ unsmoke:
 	@echo "+++ stopping smoke test"
 	@echo
 	docker stop smoke-proxy
+
+.PHONY: regenerate_translator_testdata
+regenerate_translator_testdata:
+	@echo
+	@echo "+++ regenerating translator testdata"
+	@echo
+	OVERWRITE_TESTDATA=1 go test ./pkg/translator/

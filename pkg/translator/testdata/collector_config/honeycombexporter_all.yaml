@@ -1,0 +1,54 @@
+receivers:
+    otlp/otlp:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+exporters:
+    otlphttp/honeycomb:
+        endpoint: https://alternative.honeycomb.io:8080
+        headers:
+            x-honeycomb-dataset: custom
+            x-honeycomb-team: abcdef1234567890abcdef1
+        sending_queue:
+            batch:
+                flush_timeout: 30s
+                max_size: 200000
+                min_size: 200000
+            enabled: true
+            queue_size: 2000000
+            sizer: items
+        tls:
+            insecure: true
+    otlphttp/refinery:
+        endpoint: http://${STRAWS_REFINERY_SERVICE}:80
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+        tls:
+            insecure: true
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/b34-d67:
+            receivers: [otlp/otlp]
+            processors: [usage]
+            exporters: [otlphttp/honeycomb]
+        metrics/c4b-9f0:
+            receivers: [otlp/otlp]
+            processors: [usage]
+            exporters: [otlphttp/honeycomb]
+        traces/abd-cdb:
+            receivers: [otlp/otlp]
+            processors: [usage]
+            exporters: [otlphttp/refinery]

@@ -1,0 +1,53 @@
+name: parseattributeasjson_custom_test
+version: v0.1.0
+summary: Test for ParseAttributeAsJSON with custom configuration
+description: |
+  Test configuration with an OTel receiver, ParseAttributeAsJSON using custom settings,
+  and OTel HTTP exporter. This tests a custom field "json_payload" and signal "logs".
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: json_parser_1
+    kind: ParseAttributeAsJSON
+    properties:
+      - name: Attribute
+        value: "json_payload"
+      - name: Signal
+        value: "log"
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: json_parser_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: json_parser_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: json_parser_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Logs
+      type: OTelLogs

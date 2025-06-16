@@ -1,0 +1,54 @@
+name: s3_exporter_test
+version: v0.1.0
+summary: Test for S3 exporter
+description: |
+  Test configuration with an OTel receiver connected to an S3 exporter with various properties configured
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: My S3 Backend
+    kind: SendToS3Archive
+    properties:
+      - name: Bucket
+        value: test-bucket
+      - name: Region
+        value: us-west-2
+      - name: Prefix
+        value: telemetry-data/
+      - name: PartitionFormat
+        value: year=%Y/month=%m/day=%d/hour=%H
+      - name: Marshaler
+        value: otlp_proto
+      - name: Timeout
+        value: 10s
+      - name: BatchSize
+        value: 50000
+      - name: QueueSize
+        value: 500000
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: My S3 Backend
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: My S3 Backend
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: OTel Receiver 1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: My S3 Backend
+      port: Logs
+      type: OTelLogs

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -160,8 +159,8 @@ type TemplateComponent struct {
 
 // SetHPSF stores the original component's details and may modify their contents. To
 // prevent the original being modified, the argument here should never be changed to a pointer.
-func (t *TemplateComponent) SetHPSF(c hpsf.Component) {
-	t.hpsf = &c
+func (t *TemplateComponent) SetHPSF(c *hpsf.Component) {
+	t.hpsf = c
 }
 
 // HProps is a template helper that gets a map of all properties specified in the hpsf document.
@@ -224,13 +223,7 @@ func (t *TemplateComponent) ComponentName() string {
 }
 
 // Tests if this component has a connection with this signal type
-func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool {
-	typeMapping := map[string]hpsf.ConnectionType{
-		"traces":  hpsf.CTYPE_TRACES,
-		"logs":    hpsf.CTYPE_LOGS,
-		"metrics": hpsf.CTYPE_METRICS,
-	}
-	connType := typeMapping[signalType]
+func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.ConnectionType) bool {
 	for _, conn := range t.connections {
 		if conn.Source.Type == connType || conn.Destination.Type == connType {
 			return true
@@ -242,9 +235,14 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(signalType string) bool
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
+
+	// we might have more than one template for the same config type,
+	// so we need to generate all of them and return the merged result.
+	generatedTemplates := make([]tmpl.TemplateConfig, 0)
+
 	for _, template := range t.Templates {
 		if template.Kind == cfgType {
 			switch template.Format {
@@ -254,29 +252,54 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, userdata map[string]any
 					return nil, fmt.Errorf("error %w building dotted config template for %s",
 						err, t.Kind)
 				}
-				return t.generateDottedConfig(dct, userdata)
+				tmpl, err := t.generateDottedConfig(dct, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			case "collector":
 				ct, err := buildCollectorTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building collector template for %s",
 						err, t.Kind)
 				}
-				return t.generateCollectorConfig(ct, userdata)
+				tmpl, err := t.generateCollectorConfig(ct, pipeline, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
+				if pipeline.ConnType != hpsf.CTYPE_HONEY {
+					continue // rules templates are only for Honeycomb events
+				}
 				rt, err := buildRulesTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				return t.generateRulesConfig(rt, userdata)
+				tmpl, err := t.generateRulesConfig(rt, userdata)
+				if err != nil {
+					return nil, err
+				}
+				generatedTemplates = append(generatedTemplates, tmpl)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
 		}
 	}
-	return nil, nil
+
+	if len(generatedTemplates) == 0 {
+		return nil, nil // no templates found for this config type
+	}
+
+	ret := generatedTemplates[0]
+	for _, tmpl := range generatedTemplates[1:] {
+		ret = ret.Merge(tmpl)
+	}
+
+	return ret, nil
 }
 
 func (t *TemplateComponent) AddConnection(conn *hpsf.Connection) {
@@ -387,24 +410,22 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 // this is where we do the actual work of generating the config; this thing knows about
 // the structure of the collector config and how to fill it in
-func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, userdata map[string]any) (*tmpl.CollectorConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	t.collName = ct.collectorComponentName
 	config := tmpl.NewCollectorConfig()
 	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
-		for _, signalType := range []string{"traces", "logs", "metrics"} {
-			// if the signal type is not in the list of signal types for this collector
-			// and the signal type is not traces, skip it
-			if !slices.Contains(ct.signalTypes, signalType) {
-				continue
+		for _, signalType := range hpsf.CollectorSignalTypes {
+			if pipeline.ConnType != signalType {
+				continue // skip this signal type if it doesn't match the pipeline
 			}
 			// if this template doesn't have a connection for this signal type, skip it
 			if !t.ConnectsUsingAppropriateType(signalType) {
 				continue
 			}
-			svcKey := fmt.Sprintf("pipelines.%s.%s", signalType, section)
+			svcKey := fmt.Sprintf("pipelines.%s/%s.%s", signalType.AsCollectorSignalType(), pipeline.GetID(), section)
 			for _, kv := range ct.kvs[section] {
 				if kv.suppress_if != "" {
 					// if the suppress_if condition is met, we skip this key

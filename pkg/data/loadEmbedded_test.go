@@ -64,6 +64,7 @@ func TestTemplateComponents(t *testing.T) {
 		name       string
 		kind       string
 		cType      config.Type
+		sType      hpsf.ConnectionType
 		config     map[string]any
 		wantOutput string
 	}{
@@ -71,6 +72,7 @@ func TestTemplateComponents(t *testing.T) {
 			name:       "HoneycombExporter to refinery config",
 			kind:       "HoneycombExporter",
 			cType:      config.RefineryConfigType,
+			sType:      hpsf.CTYPE_HONEY,
 			config:     map[string]any{"APIKey": "test"},
 			wantOutput: "HoneycombExporter_output_refinery_config.yaml",
 		},
@@ -78,6 +80,7 @@ func TestTemplateComponents(t *testing.T) {
 			name:       "DeterministicSampler to refinery rules",
 			kind:       "DeterministicSampler",
 			cType:      config.RefineryRulesType,
+			sType:      hpsf.CTYPE_HONEY,
 			config:     map[string]any{"Environment": "staging", "SampleRate": 42},
 			wantOutput: "DeterministicSampler_output_refinery_rules.yaml",
 		},
@@ -85,6 +88,7 @@ func TestTemplateComponents(t *testing.T) {
 			name:  "EMAThroughputSampler to refinery rules",
 			kind:  "EMAThroughput",
 			cType: config.RefineryRulesType,
+			sType: hpsf.CTYPE_HONEY,
 			config: map[string]any{
 				"Environment":          "staging",
 				"GoalThroughputPerSec": 42,
@@ -103,7 +107,8 @@ func TestTemplateComponents(t *testing.T) {
 			require.NoError(t, err)
 			c, ok := components[tt.kind]
 			require.True(t, ok)
-			conf, err := c.GenerateConfig(tt.cType, tt.config)
+			pipeline := hpsf.PipelineWithConnectionType{ConnType: tt.sType}
+			conf, err := c.GenerateConfig(tt.cType, pipeline, tt.config)
 			require.NoError(t, err)
 			require.NotNil(t, conf)
 			got, err := conf.RenderYAML()

@@ -1,14 +1,43 @@
 components:
-  - name: honeycomb_in
-    kind: TraceConverter
-  - name: honeycomb_out
+  - name: otlp
+    kind: OTelReceiver
+  - name: refinery
+    kind: StartSampling
+  - name: honeycomb
     kind: HoneycombExporter
 connections:
+  # traces: otel -> trace_converter -> refinery -> honeycomb
   - source:
-      component: honeycomb_in
-      port: TraceOut
-      type: Honeycomb
-    destination:
-      component: honeycomb_out
+      component: otlp
       port: Traces
-      type: Honeycomb
+      type: OTelTraces
+    destination:
+      component: refinery
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: refinery
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb
+      port: Events
+      type: HoneycombEvents
+  # metrics: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: honeycomb
+      port: Metrics
+      type: OTelMetrics
+  # logs: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: honeycomb
+      port: Logs
+      type: OTelLogs

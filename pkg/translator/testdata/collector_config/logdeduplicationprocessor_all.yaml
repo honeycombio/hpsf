@@ -26,7 +26,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs:
+        logs/567-c82:
             receivers: [otlp/otlp_in]
             processors: [usage, logdedup/DedupMyLogs]
             exporters: [otlp/otlp_out]
