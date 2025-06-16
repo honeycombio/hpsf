@@ -10,6 +10,8 @@ components:
         value: GoogleCloudStorage
       - name: Bucket
         value: my-bucket
+      - name: Region
+        value: us-west-2
       - name: Prefix
         value: source-maps/
 connections:
