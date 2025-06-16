@@ -1,5 +1,19 @@
 # hpsf library changelog
 
+## 0.8.0 2025-06-16
+
+### Features
+
+- feat: Add Symbolicator component (#109) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add APIPort parameter to HoneycombExporter (#139) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add Redaction Processor component (#129) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
+- fix: don't ever generate "Field", always use "Fields" (#141) | [Kent Quirk](https://github.com/kentquirk)
+- fix(validation): Fixed the validation for properties that aren't supplied (#136) | [MartinDotNet](https://github.com/martinjt)
+- fix: Remove nonempty validators for redact properties (#140) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- test: Added test for the various multiple pipeline scenarios (#134) | [MartinDotNet](https://github.com/martinjt)
+- fix: Update StartSampling UseTLS label (#138) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- fix: Update redaction component tests logs pipeline names (#137) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
 
 ## 0.7.0 2025-06-13
 
