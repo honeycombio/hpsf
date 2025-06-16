@@ -7,7 +7,9 @@ components:
     kind: HoneycombExporter
     properties:
       - name: APIEndpoint
-        value: https://alternative.honeycomb.io:8080
+        value: https://alternative.honeycomb.io
+      - name: APIPort
+        value: 8080
       - name: APIKey
         value: abcdef1234567890abcdef1 # a validly-formatted key
       - name: Mode

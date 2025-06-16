@@ -55,7 +55,17 @@ properties:
     validations:
       - noblanks
       - url
-    default: https://api.honeycomb.io:443
+    default: https://api.honeycomb.io
+    advanced: true
+  - name: APIPort
+    summary: The port on which to send traffic.
+    description: |
+      The port on which to send outgoing traffic. Default is 443, which is
+      the value expected by Honeycomb.
+    type: int
+    validations:
+      - inrange(1, 65535)
+    default: 443
     advanced: true
   - name: Mode
     summary: Configures when to use the the APIKey.
@@ -115,7 +125,7 @@ templates:
     format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ .Values.APIEndpoint }}"
+        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
       - key: AccessKeys.SendKey
         value: "{{ .Values.APIKey }}"
         suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
@@ -130,7 +140,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ .Values.APIEndpoint }}"
+        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"
