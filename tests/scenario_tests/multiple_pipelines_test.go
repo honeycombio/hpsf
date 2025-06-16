@@ -24,14 +24,14 @@ func TestMultiplePipelines(t *testing.T) {
 	assert.NotEqual(t, secondLogsPipeline.Exporters[0], firstLogsPipeline.Exporters[0], "Expected different exporters in pipelines")
 
 	//  pipelines:
-	// 	  logs:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage, filter/Filter_Logs_by_Severity_1]
-	// 	    exporters: [otlphttp/Honeycomb_Exporter_1]
-	// 	  logs/1:
-	// 	    receivers: [otlp/OTel_Receiver_1]
+	//    logs:
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage, filter/Filter_Logs_by_Severity_1]
+	//      exporters: [otlphttp/Honeycomb_Exporter_1]
+	//    logs/1:
+	//      receivers: [otlp/OTel_Receiver_1]
 	//      processors: [usage]
-	// 	    exporters: [awss3/Send_to_S3_Archive_1]
+	//      exporters: [awss3/Send_to_S3_Archive_1]
 
 }
 
@@ -77,11 +77,11 @@ func TestMultiplePipelinesMultipleExporters(t *testing.T) {
 	//    logs/1:
 	//      receivers: [otlp/OTel_Receiver_1]
 	//      processors: [usage]
-	//     e xporters: [awss3/Send_to_S3_Archive_1]
+	//      exporters: [awss3/Send_to_S3_Archive_1]
 	//    logs/2:
 	//      receivers: [otlp/OTel_Receiver_1]
 	//      processors: [usage, filter/Filter_Logs_by_Severity_1]
-	//     e xporters: [otlphttp/Send_to_OTLP]
+	//      exporters: [otlphttp/Send_to_OTLP]
 
 }
 
@@ -134,17 +134,17 @@ func TestMultiplePipelinesSubProcessors(t *testing.T) {
 
 	// pipelines:
 	//    logs:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage, filter/Filter_Logs_by_Severity_1, transform/Parse_Log_Body_As_JSON_1]
-	// 	    exporters: [otlphttp/Send_to_OTLP]
-	// 	  logs/1:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage]
-	// 	    exporters: [awss3/Send_to_S3_Archive_1]
-	// 	  logs/2:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage, filter/Filter_Logs_by_Severity_1]
-	// 	   exporters: [otlphttp/Honeycomb_Exporter_1]
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage, filter/Filter_Logs_by_Severity_1, transform/Parse_Log_Body_As_JSON_1]
+	//      exporters: [otlphttp/Send_to_OTLP]
+	//    logs/1:
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage]
+	//      exporters: [awss3/Send_to_S3_Archive_1]
+	//    logs/2:
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage, filter/Filter_Logs_by_Severity_1]
+	//     exporters: [otlphttp/Honeycomb_Exporter_1]
 
 }
 
@@ -185,11 +185,11 @@ func TestMultiplePipelinesSingleExporter(t *testing.T) {
 
 	// pipelines:
 	//    logs:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage, filter/Info_Logs_only]
-	// 	    exporters: [otlphttp/Honeycomb_Exporter_1]
-	// 	  logs/1:
-	// 	    receivers: [otlp/OTel_Receiver_1]
-	// 	    processors: [usage]
-	// 	    exporters: [otlphttp/Honeycomb_Exporter_1]
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage, filter/Info_Logs_only]
+	//      exporters: [otlphttp/Honeycomb_Exporter_1]
+	//    logs/1:
+	//      receivers: [otlp/OTel_Receiver_1]
+	//      processors: [usage]
+	//      exporters: [otlphttp/Honeycomb_Exporter_1]
 }
