@@ -29,7 +29,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/0e6-66e:
             receivers: [otlp/otlp_in]
             processors: [usage, symbolicator/symbolicator]
             exporters: [otlphttp/otlp_out]
