@@ -34,7 +34,6 @@ properties:
     type: stringarray
     validations:
       - noblanks
-      - nonempty
     default: []
   - name: AttributeValuePatternsToRedact
     summary: Regular expression patterns of attribute values to redact.
@@ -44,7 +43,6 @@ properties:
     type: stringarray
     validations:
       - noblanks
-      - nonempty
     default:
       - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
       - (5[1-5][0-9]{14})       ## MasterCard number
@@ -57,7 +55,6 @@ properties:
     type: stringarray
     validations:
       - noblanks
-      - nonempty
     default: []
     advanced: true
 templates:
