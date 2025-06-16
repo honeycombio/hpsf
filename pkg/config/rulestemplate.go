@@ -30,11 +30,7 @@ func (r *rulesCondition) Render(prefix string) (map[string]any, error) {
 	if r.index >= 0 {
 		c = fmt.Sprintf("%sConditions[%d]", prefix, r.index)
 	}
-	if len(r.fields) == 1 {
-		dc[c+".Field"] = r.fields[0]
-	} else {
-		dc[c+".Fields"] = r.fields
-	}
+	dc[c+".Fields"] = r.fields
 	dc[c+".Operator"] = r.op
 	if r.op == "exists" || r.op == "not_exists" {
 		// if the operator is exists or not_exists, we don't need a value or datatype
