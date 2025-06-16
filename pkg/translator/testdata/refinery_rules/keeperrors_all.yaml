@@ -7,7 +7,8 @@ Samplers:
         RulesBasedSampler:
             Rules:
                 - Conditions:
-                    - Field: phred
+                    - Fields:
+                        - phred
                       Operator: exists
                   Name: Keep traces with errors at a sample rate of 123
                   SampleRate: 123

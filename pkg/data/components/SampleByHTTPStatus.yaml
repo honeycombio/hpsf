@@ -75,7 +75,7 @@ templates:
       - key: Rules[1].SampleRate
         value: "{{ .Values.UserErrorRate | encodeAsInt }}"
       - key: "Rules[1].!condition!"
-        value: "ix=1;f=http.status_code,http.response.status_code;o=>=;d=i;v=400"
+        value: "ix=0;f=http.status_code,http.response.status_code;o=>=;d=i;v=400"
       - key: Rules[2].Name
         value: "Sample remainder at {{ .Values.DefaultRate }}"
       - key: Rules[2].SampleRate
