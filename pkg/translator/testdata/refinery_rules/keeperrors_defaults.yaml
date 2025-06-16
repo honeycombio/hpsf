@@ -4,7 +4,8 @@ Samplers:
         RulesBasedSampler:
             Rules:
                 - Conditions:
-                    - Field: error
+                    - Fields:
+                        - error
                       Operator: exists
                   Name: Keep traces with errors at a sample rate of 1
                   SampleRate: 1

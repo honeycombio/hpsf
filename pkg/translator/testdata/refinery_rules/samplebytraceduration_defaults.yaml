@@ -5,7 +5,8 @@ Samplers:
             Rules:
                 - Conditions:
                     - Datatype: int
-                      Field: duration_ms
+                      Fields:
+                        - duration_ms
                       Operator: '>='
                       Value: "1000"
                   Name: If a trace lasts longer than 1000, sample at 1

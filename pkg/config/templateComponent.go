@@ -396,6 +396,14 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 	case map[string]string:
 		return k, nil
 	case []string:
+		for i, v := range k {
+			// we need to expand the template for each value in the array
+			expanded, err := t.expandTemplateVariable(v, userdata)
+			if err != nil {
+				return nil, err
+			}
+			k[i] = expanded
+		}
 		return k, nil
 	case int:
 		return k, nil

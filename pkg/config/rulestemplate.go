@@ -30,11 +30,7 @@ func (r *rulesCondition) Render(prefix string) (map[string]any, error) {
 	if r.index >= 0 {
 		c = fmt.Sprintf("%sConditions[%d]", prefix, r.index)
 	}
-	if len(r.fields) == 1 {
-		dc[c+".Field"] = r.fields[0]
-	} else {
-		dc[c+".Fields"] = r.fields
-	}
+	dc[c+".Fields"] = r.fields
 	dc[c+".Operator"] = r.op
 	if r.op == "exists" || r.op == "not_exists" {
 		// if the operator is exists or not_exists, we don't need a value or datatype
@@ -75,14 +71,14 @@ func splitCondition(condition any) *rulesCondition {
 			}
 			k := strings.TrimSpace(kv[0])
 			v := strings.TrimSpace(kv[1])
-			if k == "fs" {
+			if k == "f" {
 				m[k] = strings.Split(v, ",")
 			} else {
 				m[k] = v
 			}
 		}
 
-		// only the fs case can be a []strings, every other v is a string
+		// only the f case is a []string, every other v is a string
 		cond := &rulesCondition{index: -1}
 		for k, v := range m {
 			switch k {
@@ -94,8 +90,6 @@ func splitCondition(condition any) *rulesCondition {
 					return nil
 				}
 			case "f":
-				cond.fields = append(cond.fields, v.(string))
-			case "fs":
 				cond.fields = v.([]string)
 			case "o":
 				cond.op = v.(string)

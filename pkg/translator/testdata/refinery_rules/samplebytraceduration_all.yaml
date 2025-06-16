@@ -8,7 +8,8 @@ Samplers:
             Rules:
                 - Conditions:
                     - Datatype: int
-                      Field: duration_ms
+                      Fields:
+                        - duration_ms
                       Operator: '>='
                       Value: "45"
                   Name: If a trace lasts longer than 45, sample at 17

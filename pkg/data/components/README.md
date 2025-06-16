@@ -156,13 +156,12 @@ For refinery rules, a special key of `"!condition!"` indicates that its value fi
 
 ```yaml
       - key: "!condition!"
-        value: "ix=0;fs=http.status_code,http.response.status_code;o=>=;d=i;v=500"
+        value: "ix=0;f=http.status_code,http.response.status_code;o=>=;d=i;v=500"
 ```
 
 Possible field names are:
 * `ix` -- index; the value should be an integer ordering for this condition. No two conditions in the same rule should have the same index.
-* `f` -- field name
-* `fs` -- multiple fields in a comma-separated list
+* `f` -- one or more fields in a comma-separated list
 * `o` -- operator; the Refinery operator
 * `d` -- datatype; one of `float`, `string`, `int`, or `bool`, or the first letter of these
 * `v` -- value; the constant value being compared
