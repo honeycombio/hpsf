@@ -43,7 +43,7 @@ func TestKeepErrors(t *testing.T) {
 	condition := rule.Conditions[0]
 
 	// Test field name (from FieldName property)
-	assert.Equal(t, "error_field", condition.Field)
+	assert.Equal(t, "error_field", condition.Fields[0])
 
 	// Test operator (from template: o=exists)
 	assert.Equal(t, "exists", condition.Operator)
