@@ -247,7 +247,7 @@ const (
 
 type Port struct {
 	Name      string         `yaml:"name"`
-	Direction string         `yaml:"direction"`
+	Direction Direction      `yaml:"direction"`
 	Type      ConnectionType `yaml:"type"`
 }
 
@@ -322,7 +322,23 @@ func NewError(reason string) *HPSFError {
 	}
 }
 
+func NewErrorf(format string, args ...any) *HPSFError {
+	reason := fmt.Sprintf(format, args...)
+	return &HPSFError{
+		Severity: SEV_ERROR,
+		Reason:   reason,
+	}
+}
+
 func NewWarning(reason string) *HPSFError {
+	return &HPSFError{
+		Severity: SEV_WARN,
+		Reason:   reason,
+	}
+}
+
+func NewWarningf(format string, args ...any) *HPSFError {
+	reason := fmt.Sprintf(format, args...)
 	return &HPSFError{
 		Severity: SEV_WARN,
 		Reason:   reason,
@@ -341,8 +357,8 @@ func (c *Component) Validate() error {
 	// ports, because those come from the templatecomponents, but composite
 	// components might have ports, so we do want to check them if they exist
 	for _, p := range c.Ports {
-		if p.Direction != string(DIR_INPUT) && p.Direction != string(DIR_OUTPUT) {
-			result.Add(NewError("Port " + p.Name + " Direction must be 'Input' or 'Output'").WithComponent(c.Name))
+		if p.Direction != DIR_INPUT && p.Direction != DIR_OUTPUT {
+			result.Add(NewErrorf("Port %s Direction must be 'Input' or 'Output'", p.Name).WithComponent(c.Name))
 		}
 	}
 	// any properties specified need to have a value
@@ -754,50 +770,6 @@ func getValidKeys(p any) []string {
 		}
 	}
 	return keys
-}
-
-// Validate checks that the HPSF is valid, returning a list of errors if it is not.
-// If it detects minor issues that can be corrected, it will fix them and return.
-// For example, if a property specifies that it requires an integer but the value
-// is a string that can be parsed as an integer, it will parse it and store the
-// result as an integer in the value.
-func (h *HPSF) Validate() error {
-	result := validator.NewResult("hpsf validation errors")
-
-	// if the HPSF is empty, it's invalid
-	if len(h.Components) == 0 && len(h.Containers) == 0 {
-		result.Add(errors.New("empty HPSF is not valid"))
-	}
-
-	for _, c := range h.Components {
-		e := c.Validate()
-		result.Add(e)
-	}
-	for _, c := range h.Connections {
-		e := c.Validate()
-		result.Add(e)
-	}
-	for _, c := range h.Containers {
-		e := c.Validate()
-		result.Add(e)
-	}
-
-	// crosscheck the components and connections to make sure that all connections
-	// have valid source and destination components
-	components := make(map[string]bool)
-	for _, c := range h.Components {
-		components[c.Name] = true
-	}
-	for _, c := range h.Connections {
-		if _, ok := components[c.Source.Component]; !ok {
-			result.Add(NewError("Connection source component not found").WithComponent(c.Source.Component))
-		}
-		if _, ok := components[c.Destination.Component]; !ok {
-			result.Add(NewError("Connection destination component not found").WithComponent(c.Destination.Component))
-		}
-	}
-
-	return result.ErrOrNil()
 }
 
 // EnsureHPSFYAML returns an error if the input is not HPSF yaml or invalid HPSF
