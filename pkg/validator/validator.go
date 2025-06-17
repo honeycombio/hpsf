@@ -70,6 +70,7 @@ func (e Result) IsEmpty() bool {
 	return e.Len() == 0
 }
 
+// ErrOrNil returns the Result as an error if it contains any errors, or nil if it is empty.
 func (e Result) ErrOrNil() error {
 	if e.IsEmpty() {
 		return nil
