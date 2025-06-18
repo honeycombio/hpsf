@@ -14,9 +14,11 @@ tags:
   - sampler:deterministic
   - sampler:rate
 ports:
+  # inputs
   - name: Events
     direction: input
     type: HoneycombEvents
+  # outputs
   - name: Events
     direction: output
     type: HoneycombEvents

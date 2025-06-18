@@ -13,9 +13,11 @@ tags:
   - service:collector
   - signal:OTelLogs
 ports:
+  # inputs
   - name: Logs
     direction: input
     type: OTelLogs
+  # outputs
   - name: Logs
     direction: output
     type: OTelLogs

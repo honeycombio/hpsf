@@ -18,15 +18,16 @@ tags:
   - signal:OTelMetrics
   - signal:OTelLogs
 ports:
+  # inputs
   - name: Traces
-    direction: output
+    direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: output
-    type: OTelMetrics
   - name: Logs
-    direction: output
+    direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 templates:
   - kind: collector_config
     name: nop_receiver_collector

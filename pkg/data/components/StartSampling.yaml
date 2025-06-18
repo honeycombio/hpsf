@@ -15,12 +15,14 @@ tags:
   - signal:HoneycombEvents
   - vendor:Honeycomb
 ports:
+  # inputs
   - name: Traces
     direction: input
     type: OTelTraces
   - name: Logs
     direction: input
     type: OTelLogs
+  # outputs
   - name: Events
     direction: output
     type: HoneycombEvents

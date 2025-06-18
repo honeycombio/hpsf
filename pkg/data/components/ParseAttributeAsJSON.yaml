@@ -14,18 +14,20 @@ tags:
   - signal:OTelTraces
   - signal:OTelLogs
 ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
   - name: Logs
     direction: input
     type: OTelLogs
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
   - name: Logs
     direction: output
     type: OTelLogs
-  - name: Spans
-    direction: input
-    type: OTelTraces
-  - name: Spans
-    direction: output
-    type: OTelTraces
 properties:
   - name: Attribute
     type: string
