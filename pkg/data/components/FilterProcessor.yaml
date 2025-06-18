@@ -19,12 +19,21 @@ ports:
   - name: Traces
     direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: input
-    type: OTelMetrics
+  - name: Traces
+    direction: output
+    type: OTelTraces
   - name: Logs
     direction: input
     type: OTelLogs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
 properties:
   - name: Rules
     type: rule

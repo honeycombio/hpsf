@@ -15,15 +15,15 @@ tags:
   - signal:HoneycombEvents
   - vendor:Honeycomb
 ports:
+  - name: Events
+    direction: output
+    type: HoneycombEvents
   - name: Traces
     direction: input
     type: OTelTraces
   - name: Logs
     direction: input
     type: OTelLogs
-  - name: Events
-    direction: output
-    type: HoneycombEvents
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen.

@@ -18,12 +18,12 @@ ports:
   - name: Traces
     direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: input
-    type: OTelMetrics
   - name: Logs
     direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 properties:
   - name: Bucket
     summary: The S3 bucket in which to store the data.

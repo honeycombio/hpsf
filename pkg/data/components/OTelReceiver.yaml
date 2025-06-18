@@ -19,12 +19,12 @@ ports:
   - name: Traces
     direction: output
     type: OTelTraces
-  - name: Metrics
-    direction: output
-    type: OTelMetrics
   - name: Logs
     direction: output
     type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen

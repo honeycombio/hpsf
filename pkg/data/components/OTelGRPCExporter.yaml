@@ -18,12 +18,12 @@ ports:
   - name: Traces
     direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: input
-    type: OTelMetrics
   - name: Logs
     direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 properties:
   - name: Headers
     summary: Headers to emit when sending gRPC traffic.

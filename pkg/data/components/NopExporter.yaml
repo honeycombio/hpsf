@@ -21,12 +21,12 @@ ports:
   - name: Traces
     direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: input
-    type: OTelMetrics
   - name: Logs
     direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 templates:
   - kind: collector_config
     name: nop_exporter_collector
