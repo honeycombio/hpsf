@@ -13,9 +13,11 @@ tags:
   - category:filter
   - signal:OTelLogs
 ports:
+  # inputs
   - name: Logs
     direction: input
     type: OTelLogs
+  # outputs
   - name: Logs
     direction: output
     type: OTelLogs

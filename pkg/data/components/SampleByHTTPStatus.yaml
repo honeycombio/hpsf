@@ -17,9 +17,11 @@ tags:
   - vendor:Honeycomb
   - type:error
 ports:
+  # inputs
   - name: Events
     direction: input
     type: HoneycombEvents
+  # outputs
   - name: Events
     direction: output
     type: HoneycombEvents

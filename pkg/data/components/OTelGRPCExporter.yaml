@@ -15,6 +15,7 @@ tags:
   - signal:OTelMetrics
   - signal:OTelLogs
 ports:
+  # inputs
   - name: Traces
     direction: input
     type: OTelTraces

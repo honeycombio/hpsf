@@ -12,9 +12,11 @@ tags:
   - service:collector
   - signal:OtelTraces
 ports:
+  # inputs
   - name: Traces
     direction: input
     type: OTelTraces
+  # outputs
   - name: Traces
     direction: output
     type: OTelTraces
