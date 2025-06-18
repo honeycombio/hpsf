@@ -1,5 +1,15 @@
 # hpsf library changelog
 
+## 0.9.0 2025-06-18
+
+### Features
+
+- feat: Add syntax-level validations to HPSF (#143) | [Kent Quirk](https://github.com/kentquirk)
+
+### Maintenance
+
+- maint: Update existing component ports with a consistent order (#144) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
 ## 0.8.0 2025-06-16
 
 ### Features
