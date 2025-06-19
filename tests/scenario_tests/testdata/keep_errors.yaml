@@ -12,8 +12,6 @@ components:
   - name: Error Sampler
     kind: KeepErrors
     properties:
-      - name: Environment
-        value: production
       - name: FieldName
         value: error_field
       - name: SampleRate

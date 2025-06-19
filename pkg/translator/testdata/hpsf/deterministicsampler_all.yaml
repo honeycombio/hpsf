@@ -6,8 +6,6 @@ components:
   - name: DeterministicSampler_1
     kind: DeterministicSampler
     properties:
-      - name: Environment
-        value: test
       - name: SampleRate
         value: 90
 connections:
