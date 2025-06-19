@@ -4,8 +4,6 @@ components:
     properties:
       - name: SampleRate
         value: 99
-      - name: Environment
-        value: staging
   - name: HoneycombExporter_2
     kind: HoneycombExporter
   - name: HoneycombExporter_1
