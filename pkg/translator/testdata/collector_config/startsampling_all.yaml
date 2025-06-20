@@ -9,18 +9,17 @@ processors:
     usage: {}
 exporters:
     otlphttp/Start_Sampling_1:
-        endpoint: https://https://myhost.com:1234
-        headers:
-            x-honeycomb-dataset: custom
-            x-honeycomb-team: ${HONEYCOMB_API_KEY}
+        endpoint: http://${STRAWS_REFINERY_SERVICE}:80
         sending_queue:
             batch:
-                flush_timeout: 30s
-                max_size: 200000
-                min_size: 200000
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
             enabled: true
-            queue_size: 2000000
+            queue_size: 100000
             sizer: items
+        tls:
+            insecure: true
 extensions:
     honeycomb: {}
 service:
