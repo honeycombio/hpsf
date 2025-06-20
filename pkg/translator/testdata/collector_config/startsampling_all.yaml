@@ -9,7 +9,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/Start_Sampling_1:
-        endpoint: https://myhost.com:1234
+        endpoint: https://https://myhost.com:1234
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}

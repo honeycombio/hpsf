@@ -14,9 +14,9 @@ components:
         value: abcdef1234567890abcdef1 # a validly-formatted key
       - name: Mode
         value: none
-      - name: Host
-        value: myhost.com
-      - name: Port
+      - name: APIEndpoint
+        value: https://myhost.com
+      - name: APIPort
         value: 1234
       - name: MetricsDataset
         value: custom
