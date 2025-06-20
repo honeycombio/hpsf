@@ -206,7 +206,7 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 		}
 
 		if srcComp.GetPort(conn.Source.PortName) == nil {
-			err := hpsf.NewErrorf("source component does not a port called %s", conn.Source.PortName).
+			err := hpsf.NewErrorf("source component does not have a port called %s", conn.Source.PortName).
 				WithComponent(conn.Source.Component)
 			result.Add(err)
 		}
@@ -217,7 +217,7 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 		}
 
 		if dstComp.GetPort(conn.Destination.PortName) == nil {
-			err := hpsf.NewErrorf("destination component does not a port called %s", conn.Destination.PortName).
+			err := hpsf.NewErrorf("destination component does not have a port called %s", conn.Destination.PortName).
 				WithComponent(conn.Destination.Component)
 			result.Add(err)
 		}
@@ -227,10 +227,12 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 
 // validateStartSampling checks that there is at most one component with the "StartSampling" kind. If it exists,
 // there must be at least one sampler in the configuration. If it does not exist, there can be no samplers in the configuration.
+// There must also be only one connection from the StartSampling component to a sampler.
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF start sampling validation errors")
 	// iterate over the components and check for the StartSampling component
 	startSamplingCount := 0
+	var startSamplingComp string
 	for _, c := range h.Components {
 		tmpl, ok := templateComps[c.GetSafeName()]
 		if !ok {
@@ -239,6 +241,7 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 
 		if tmpl.Kind == "StartSampling" {
 			startSamplingCount++
+			startSamplingComp = c.GetSafeName()
 			if startSamplingCount > 1 {
 				err := hpsf.NewError("only one StartSampling component is allowed").
 					WithComponent(c.Name)
@@ -280,6 +283,28 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 			result.Add(err)
 		}
 	}
+	// now we need to check that there is only one connection from the StartSampling component to a sampler
+	if startSamplingCount == 1 {
+		samplerConnections := 0
+		for _, conn := range h.Connections {
+			if conn.Source.GetSafeName() == startSamplingComp {
+				// check if the destination is a sampler
+				dstComp, ok := templateComps[conn.Destination.GetSafeName()]
+				if !ok {
+					continue
+				}
+				if dstComp.Style == "sampler" {
+					samplerConnections++
+				}
+			}
+		}
+		if samplerConnections != 1 {
+			err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
+				WithComponent(startSamplingComp)
+			result.Add(err)
+		}
+	}
+
 	return result
 }
 
@@ -314,8 +339,9 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	}
 
 	result.Add(t.validateProperties(h, templateComps))
-	result.Add(t.validateSamplerConnections(h, templateComps))
 	result.Add(t.validateConnectionPorts(h, templateComps))
+	result.Add(t.validateStartSampling(h, templateComps))
+	result.Add(t.validateSamplerConnections(h, templateComps))
 
 	return result.ErrOrNil()
 }

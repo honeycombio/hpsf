@@ -342,6 +342,11 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 		reasons string // comma-separated list of expected error contents, one for each error in the Details of the result
 	}{
 		{"duplicate names", "testdata/bad_hpsf/dup_names.yaml", "duplicate component name"},
+		{"missing component", "testdata/bad_hpsf/missing_comp.yaml", "destination component not found,source component not found"},
+		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "no StartSampling component,exactly one"},
+		{"multiple sampler paths", "testdata/bad_hpsf/multiple_sample_paths.yaml", "exactly one connection to a sampler"},
+		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
+		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "destination component does not have a port"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -374,13 +379,14 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 			contents := strings.Split(tt.reasons, ",")
 			if len(contents) != len(result.Details) {
 				t.Errorf("Translator.ValidateConfig() returned %d errors, expected %d", len(result.Details), len(contents))
+				t.FailNow()
 			}
 			for i, detail := range result.Details {
 				if !strings.Contains(detail.Error(), strings.TrimSpace(contents[i])) {
-					t.Errorf("Translator.ValidateConfig() error %d did not contain expected text: %q", i, strings.TrimSpace(contents[i]))
+					t.Errorf("Translator.ValidateConfig() error %d did not contain expected text: %q, got: %s",
+						i, strings.TrimSpace(contents[i]), detail.Error())
 				}
 			}
-			t.Logf("Translator.ValidateConfig() returned %d errors as expected", len(result.Details))
 		})
 	}
 }
