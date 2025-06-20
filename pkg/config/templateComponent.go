@@ -175,7 +175,8 @@ func (t *TemplateComponent) HProps() map[string]any {
 	return props
 }
 
-// helper for templates
+// Props is a helper for templates that gets all properties in a template
+// component as a map. It's mainly used to look up property defaults.
 func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	props := make(map[string]TemplateProperty)
 	for _, prop := range t.Properties {
@@ -184,11 +185,11 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	return props
 }
 
+// Values is a helper for templates to get the data values that are available in
+// the component including those specified as defaults and the environment. This
+// composes HProps, User, and Properties into a single map that can be used in
+// templates. You can still use them individually for special cases.
 func (t *TemplateComponent) Values() map[string]any {
-	// this is a helper for templates to get the data values that are available
-	// in the component including those specified as defaults and the
-	// environment. This composes HProps, User, and Properties into a single map
-	// that can be used in templates.
 	result := make(map[string]any)
 	for k, v := range t.HProps() {
 		if !_isZeroValue(v) {
@@ -230,6 +231,16 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.Connectio
 		}
 	}
 	return false
+}
+
+func (t *TemplateComponent) GetPort(name string) *TemplatePort {
+	// returns the port with the given name, or nil if it doesn't exist
+	for _, port := range t.Ports {
+		if port.Name == name {
+			return &port
+		}
+	}
+	return nil
 }
 
 // // ensure that TemplateComponent implements Component
@@ -325,6 +336,7 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 }
 
 // undecorate removes type decorations from strings and returns the desired type.
+// These decorations were placed there by the functions in helpers.go.
 // Since everything that comes out of a Go template is a string, for things that
 // needed to not be strings, we flagged them with a decoration indicating the
 // desired type. Now we need to do some extra work to make sure that we return

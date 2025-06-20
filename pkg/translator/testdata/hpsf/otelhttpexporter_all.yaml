@@ -5,7 +5,7 @@ components:
     kind: OTelHTTPExporter
     properties:
       - name: Host
-        value: myhost.com
+        value: https://myhost.com
       - name: Port
         value: 1234
       - name: Headers

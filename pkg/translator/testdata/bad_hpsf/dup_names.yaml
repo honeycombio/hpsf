@@ -1,0 +1,13 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+    properties:
+      - name: Host
+        value: testtest
+      - name: GRPCPort
+        value: 9922
+      - name: HTTPPort
+        value: 1234
+  # same name as otlp_in, but different kind
+  - name: otlp_in
+    kind: OTelGRPCExporter
