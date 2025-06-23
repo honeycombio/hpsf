@@ -1,0 +1,24 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: remove_attributes_1
+    kind: RemoveAttributeProcessor
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: remove_attributes_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: remove_attributes_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
