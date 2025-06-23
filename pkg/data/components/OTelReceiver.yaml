@@ -36,6 +36,7 @@ properties:
     type: string
     validations:
       - noblanks
+      - hostorip
     default: ${STRAWS_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
@@ -45,7 +46,7 @@ properties:
       The OTel default is 4317. Set to 0 to disable gRPC.
     type: int
     validations:
-      - inrange(1, 65535)
+      - inrange(0, 65535)
     default: 4317
     advanced: true
   - name: HTTPPort
@@ -55,7 +56,7 @@ properties:
       The OTel default is 4318. Set to 0 to disable HTTP.
     type: int
     validations:
-      - inrange(1, 65535)
+      - inrange(0, 65535)
     default: 4318
     advanced: true
 templates:

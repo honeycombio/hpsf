@@ -48,15 +48,15 @@ properties:
     default: metrics
     advanced: true
   - name: APIEndpoint
-    summary: The Endpoint URL of the Honeycomb API
+    summary: The hostname or IP of the Honeycomb API endpoint.
     description: |
-      The Endpoint URL of the Honeycomb API.
-      This is normally https://api.honeycomb.io, but can be overridden.
+      The hostname or IP of the Honeycomb API endpoint
+      This is normally api.honeycomb.io, but can be overridden.
     type: string
     validations:
       - noblanks
-      - url
-    default: https://api.honeycomb.io
+      - hostorip
+    default: api.honeycomb.io
     advanced: true
   - name: APIPort
     summary: The port on which to send traffic.
@@ -126,7 +126,7 @@ templates:
     format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
+        value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
       - key: AccessKeys.SendKey
         value: "{{ .Values.APIKey }}"
         suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'

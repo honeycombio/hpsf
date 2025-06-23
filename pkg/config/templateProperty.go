@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -73,6 +74,10 @@ func getValidationRule(validation string) func(val any) bool {
 	case "url":
 		// url will check if the value can be parsed as a URL
 		return isURL
+	case "hostorip":
+		// hostorip will check if the value is a valid host or IP address
+		// without a scheme or port.
+		return isHostOrIP
 	case "duration":
 		// duration will check if the value can be parsed as a duration string
 		return isDuration
@@ -205,8 +210,15 @@ func oneof(options ...string) func(val any) bool {
 
 // checks that the value can be parsed as a URL and contains a non-empty scheme and host.
 // it also should not contain a port
+// we special-case environment variable expansions
 func isURL(val any) bool {
-	u, ok := url.Parse(fmt.Sprint(val))
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	u, ok := url.Parse(s)
 	if ok != nil {
 		return false
 	}
@@ -220,6 +232,34 @@ func isURL(val any) bool {
 		return false
 	}
 	return true
+}
+
+// Matches a valid hostname without checking it on the net. This pattern taken from
+// https://github.com/asaskevich/govalidator/blob/master/patterns.go#L33
+// The govalidator library is big, intended to validate structs, and
+// uses reflect, so we don't want to depend on it just for this pattern.
+var dnsNamePat = regexp.MustCompile(`^([a-zA-Z0-9_]{1}[a-zA-Z0-9_-]{0,62}){1}(\.[a-zA-Z0-9_]{1}[a-zA-Z0-9_-]{0,62})*[\._]?$`)
+
+// checks if the value is a valid host or IP address without a scheme or port
+// we special-case environment variable expansions
+func isHostOrIP(val any) bool {
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	ip := net.ParseIP(s)
+	if ip != nil {
+		return true
+	}
+
+	if dnsNamePat.MatchString(s) {
+		// If it matches the DNS name pattern, we're going to say it's a valid host
+		return true
+	}
+
+	return false
 }
 
 // isDuration checks if the value can be parsed as a duration string
