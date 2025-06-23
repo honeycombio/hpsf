@@ -9,8 +9,7 @@ description: |
   This processor allows you to remove attributes from traces, metrics, and logs by
   specifying a list of attribute names. It can be used to filter out sensitive or
   unnecessary information from your telemetry data.
-  The processor supports the removal of attributes from both resource and span levels
-  for traces, and from metrics and logs as well.
+  The processor supports the removal of attributes in resources, spans, metrics, and logs.
 tags:
   - category:processor
   - service:collector
@@ -40,38 +39,14 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: ResourceAttributeNames
-    summary: A list of resource attribute names to be removed from the telemetry data.
+  - name: Attributes
+    summary: A list of attribute names to remove.
     description: |
-      A list of resource attribute names to be removed.
+      A list of attribute names that will be removed from the telemetry data.
     type: stringarray
     validations:
       - noblanks
-    default: []
-  - name: SpanAttributeNames
-    summary: A list of span attribute names to be removed from the telemetry data.
-    description: |
-      A list of span attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
-  - name: MetricAttributeNames
-    summary: A list of metric attribute names to be removed from the telemetry data.
-    description: |
-      A list of metric attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
-  - name: LogAttributeNames
-    summary: A list of log attribute names to be removed from the telemetry data.
-    description: |
-      A list of log attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
+      - noempty
 templates:
   - kind: collector_config
     name: otel_remove_attributes_processor
@@ -85,22 +60,16 @@ templates:
         value: "ignore"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.SpanAttributeNames | encodeAsArrayWithFormat \"delete_key(span.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.SpanAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(span.attributes, \\\"%s\\\")\" }}"
       # Metric statements
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.MetricAttributeNames | encodeAsArrayWithFormat \"delete_key(metric.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.MetricAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(metric.attributes, \\\"%s\\\")\" }}"
       # Log statements
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.LogAttributeNames | encodeAsArrayWithFormat \"delete_key(log.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.LogAttributeNames }}"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(log.attributes, \\\"%s\\\")\" }}"

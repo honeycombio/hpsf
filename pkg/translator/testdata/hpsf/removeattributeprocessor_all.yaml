@@ -6,18 +6,10 @@ components:
   - name: remove_attributes_1
     kind: RemoveAttributeProcessor
     properties:
-      - name: ResourceAttributeNames
+      - name: Attributes
         value:
-          - "resource_attribute_name"
-      - name: SpanAttributeNames
-        value:
-          - "span_attribute_name"
-      - name: MetricAttributeNames
-        value:
-          - "metric_attribute_name"
-      - name: LogAttributeNames
-        value:
-          - "log_attribute_name"
+          - "attribute_name"
+          - "another_attribute_name"
 connections:
   - source:
       component: otlp_in
