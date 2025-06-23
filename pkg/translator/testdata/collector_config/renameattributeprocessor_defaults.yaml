@@ -1,0 +1,40 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+processors:
+    transform/rename_attributes_1:
+        error_mode: ignore
+        log_statements:
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
+            - set(log.attributes["old_attr"], log.attributes["new_attr"])
+        metric_statements:
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
+            - set(metric.attributes["old_attr"], metric.attributes["new_attr"])
+        trace_statements:
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
+            - set(span.attributes["old_attr"], span.attributes["new_attr"])
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/1cb-36a:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/rename_attributes_1]
+            exporters: [otlphttp/otlp_out]
