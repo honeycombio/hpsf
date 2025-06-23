@@ -5,7 +5,7 @@ components:
     kind: OTelGRPCExporter
     properties:
       - name: Host
-        value: https://myhost.com
+        value: myhost.com
       - name: Port
         value: 1234
       - name: Headers

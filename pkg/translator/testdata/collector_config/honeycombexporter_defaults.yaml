@@ -9,7 +9,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/honeycomb:
-        endpoint: https://api.honeycomb.io:443
+        endpoint: api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
             x-honeycomb-team: ${HONEYCOMB_EXPORTER_APIKEY}
