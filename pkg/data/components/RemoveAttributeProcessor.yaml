@@ -46,7 +46,7 @@ properties:
     type: stringarray
     validations:
       - noblanks
-      - noempty
+      - nonempty
 templates:
   - kind: collector_config
     name: otel_remove_attributes_processor
