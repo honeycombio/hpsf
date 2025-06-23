@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -37,6 +38,7 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"buildurl":      buildurl,
 		"comment":       comment,
 		"encodeAsArray": encodeAsArray,
 		"encodeAsBool":  encodeAsBool,
@@ -53,6 +55,36 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// buildurl constructs a URL based on the provided parameters. A path is optional.
+func buildurl(args ...any) string {
+	var insecure bool
+	var port int
+	var host, path string
+	if len(args) == 4 {
+		path = args[3].(string)
+	} else if len(args) == 3 {
+		path = ""
+	} else {
+		return ""
+	}
+	insecure = args[0].(bool)
+	host = args[1].(string)
+	port = _asInt(args[2])
+	scheme := "https"
+	if insecure {
+		scheme = "http"
+	}
+
+	url := fmt.Sprintf("%s://%s:%d", scheme, host, port)
+	if path != "" {
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		url += path
+	}
+	return url
 }
 
 // places a comment in the output file, even if the specified comment has multiple lines
@@ -306,4 +338,19 @@ func _getStringsFrom(value any) []string {
 		}
 	}
 	return result
+}
+
+// Converts a value to an int, handling various types.
+func _asInt(a any) int {
+	switch v := a.(type) {
+	case int:
+		return v
+	case float64:
+		return int(v)
+	case string:
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return 0
 }

@@ -50,7 +50,7 @@ func TestHPSF_Validate(t *testing.T) {
     kind: OTelGRPCExporter
     properties:
       - name: Host
-        value: myhost.com
+        value: https://myhost.com
       - name: Port
         value: 1234
       - name: Headers
@@ -91,7 +91,7 @@ func TestHPSF_ValidateFailures(t *testing.T) {
     kind: OTelGRPCExporter
     properties:
       - name: Host
-        value: myhost.com
+        value: https://myhost.com
       - name: Port
         value: 1234
       - name: Headers

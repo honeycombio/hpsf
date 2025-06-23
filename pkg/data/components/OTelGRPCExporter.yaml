@@ -41,7 +41,8 @@ properties:
     type: string
     validations:
       - noblanks
-    default: https://api.honeycomb.io
+      - hostorip
+    default: api.honeycomb.io
     advanced: true
   - name: Port
     summary: The port on which to send gRPC traffic.

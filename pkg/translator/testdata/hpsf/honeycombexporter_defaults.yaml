@@ -3,6 +3,8 @@ components:
     kind: OTelReceiver
   - name: refinery
     kind: StartSampling
+  - name: sampler
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
 connections:
@@ -19,6 +21,14 @@ connections:
       component: refinery
       port: Events
       type: HoneycombEvents
+    destination:
+      component: sampler
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: sampler
+      port: Events
+      type: Honeycomb
     destination:
       component: honeycomb
       port: Events
