@@ -1,13 +1,14 @@
 kind: HoneycombExporter
-name: Honeycomb Exporter
+name: Send to Honeycomb
 style: exporter
 logo: honeycomb
 type: base
 status: alpha
 version: v0.1.0
-summary: Sends traces to Honeycomb in Honeycomb's event format.
+summary: Sends telemetry to Honeycomb's data store for real-time analysis.
 description: |
-  This component exports traces to Honeycomb in Honeycomb's event format.
+  This component sends traces, logs, metrics, and Honeycomb-formatted 
+  events to the Honeycomb's data store for real-time analysis.
 tags:
   - category:exporter
   - service:refinery
