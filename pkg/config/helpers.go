@@ -75,24 +75,38 @@ func encodeAsArray(arr any) string {
 	}
 }
 
-// encodeAsArrayWithFormat takes a slice and a format string, and returns a string
+// encodeAsArrayWithFormat take a format string and a value, and returns a string
 // intended to be expanded later into an array when it's rendered to YAML.
-func encodeAsArrayWithFormat(format string, arr any) string {
-	var newArr []string
-	switch a := arr.(type) {
-	case []string:
-		newArr = a
+// The format string can contain one or two %s placeholders, and the value can be
+// either a slice of any or a map of string to any.
+func encodeAsArrayWithFormat(format string, val any) string {
+	switch v := val.(type) {
 	case []any:
-		newArr = _getStringsFrom(a)
+		arr := make([]string, 0, len(v))
+		for _, v := range v {
+			arr = append(arr, fmt.Sprintf(format, v))
+		}
+		return encodeAsArray(arr)
+	case map[string]any:
+		switch strings.Count(format, "%s") {
+		case 1: // if one %s, we just use the key
+			arr := make([]string, 0, len(v))
+			for k := range v {
+				arr = append(arr, fmt.Sprintf(format, k))
+			}
+			return encodeAsArray(arr)
+		case 2: // if two %s, we use both key and value
+			arr := make([]string, 0, len(v))
+			for k, v := range v {
+				arr = append(arr, fmt.Sprintf(format, k, v))
+			}
+			return encodeAsArray(arr)
+		default:
+			return ""
+		}
 	default:
 		return ""
 	}
-
-	// loop through the array and apply the format string to each element
-	for i, v := range newArr {
-		newArr[i] = fmt.Sprintf(format, v)
-	}
-	return encodeAsArray(newArr)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker

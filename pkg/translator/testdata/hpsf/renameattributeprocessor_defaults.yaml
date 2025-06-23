@@ -1,0 +1,28 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: rename_attributes_1
+    kind: RenameAttributeProcessor
+    properties:
+      - name: Attributes
+        value:
+          old_attr: "new_attr"
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: rename_attributes_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: rename_attributes_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

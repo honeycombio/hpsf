@@ -1,0 +1,76 @@
+kind: RenameAttributeProcessor
+name: Rename Attribute Processor
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: A processor that can be used to rename attributes in telemetry.
+description: |
+  This processor allows you to rename attributes from traces, metrics, and logs by
+  specifying a list of attribute names. It can be used to modify or standardize
+  attribute names in your telemetry data.
+  The processor supports the renaming of attributes in resources, spans, metrics, and logs.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: Attributes
+    summary: A map of attributes to rename.
+    description: |
+      A map where the key is the old attribute name and the value is the new attribute name.
+      This can be used to rename attributes in traces, metrics, and logs.
+    type: map
+    validations:
+     - noblanks
+     - nonempty
+templates:
+  - kind: collector_config
+    name: otel_remove_attributes_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      # Trace statements
+      - key: "{{ .ComponentName }}.trace_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+      - key: "{{ .ComponentName }}.trace_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(span.attributes[\\\"%s\\\"], span.attributes[\\\"%s\\\"])\" }}"
+      # metric statements (resource attributes)
+      - key: "{{ .ComponentName }}.metric_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+      - key: "{{ .ComponentName }}.metric_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(metric.attributes[\\\"%s\\\"], metric.attributes[\\\"%s\\\"])\" }}"
+      # log statements (resource attributes)
+      - key: "{{ .ComponentName }}.log_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+      - key: "{{ .ComponentName }}.log_statements"
+        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(log.attributes[\\\"%s\\\"], log.attributes[\\\"%s\\\"])\" }}"
