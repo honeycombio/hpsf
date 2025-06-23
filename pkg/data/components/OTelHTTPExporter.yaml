@@ -1,11 +1,11 @@
 kind: OTelHTTPExporter
-name: Send to Honeycomb
+name: Send OTel via HTTP
 style: exporter
 logo: opentelemetry
 type: base
 status: alpha
 version: v0.1.0
-summary: Sends telemetry in OTLP (OpenTelemetry) format via HTTP.
+summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
 description: |
   Exports OpenTelemetry signals using OTLP via HTTP.
 tags:

@@ -56,6 +56,7 @@ properties:
       configured. This properties supports sending a map of header keys and
       values.
     type: map
+    advanced: true
   - name: UseTLS
     summary: Provide a way to enable TLS export.
     description: |
