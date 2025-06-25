@@ -1,5 +1,12 @@
 # hpsf library changelog
 
+## 0.11.0 2025-06-25
+
+### Fixes
+
+- fix: automatically set otlp http exporter scheme based on insecure (#153) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- fix: Fix rule rendering bug related to indexing (#154) | [Kent Quirk](https://github.com/Kent Quirk)
+
 ## 0.10.0 2025-06-24
 
 ### Features
