@@ -16,16 +16,16 @@ func TestKeepErrors(t *testing.T) {
 	// Verify that the refinery rules config was generated successfully
 	assert.Equal(t, 2, rulesConfig.RulesVersion)
 
-	// Check that the default environment defaultSampler was created
-	defaultSampler, exists := rulesConfig.Samplers["__default__"]
-	require.True(t, exists, "Expected '__default__' environment sampler to exist")
+	// Check that the production environment sampler was created
+	productionSampler, exists := rulesConfig.Samplers["production"]
+	require.True(t, exists, "Expected 'production' environment sampler to exist")
 
 	// Verify that it's a RulesBasedSampler
-	require.NotNil(t, defaultSampler.RulesBasedSampler, "Expected __default__ sampler to be a RulesBasedSampler")
+	require.NotNil(t, productionSampler.RulesBasedSampler, "Expected production sampler to be a RulesBasedSampler")
 
 	// Check that there's exactly one rule
-	rules := defaultSampler.RulesBasedSampler.Rules
-	assert.Len(t, rules, 1, "Expected 1 rule in __default__ sampler")
+	rules := productionSampler.RulesBasedSampler.Rules
+	assert.Len(t, rules, 1, "Expected 1 rule in production sampler")
 
 	// Verify the rule properties from the KeepErrors template
 	rule := rules[0]
@@ -47,6 +47,15 @@ func TestKeepErrors(t *testing.T) {
 
 	// Test operator (from template: o=exists)
 	assert.Equal(t, "exists", condition.Operator)
+
+	// Verify that the default environment also has a sampler (should be DeterministicSampler)
+	defaultSampler, exists := rulesConfig.Samplers["__default__"]
+	require.True(t, exists, "Expected '__default__' environment sampler to exist")
+
+	// The default should be a DeterministicSampler with rate 1
+	require.NotNil(t, defaultSampler.DeterministicSampler, "Expected default sampler to be a DeterministicSampler")
+
+	assert.Equal(t, 1, defaultSampler.DeterministicSampler.SampleRate)
 
 	// verify that the the collectorconfig pipeline includes the exporter to refinery
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")

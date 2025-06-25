@@ -27,6 +27,14 @@ ports:
     type: HoneycombEvents
     note: "The traces that are sampled (retained for further processing)"
 properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler.
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
   - name: GoalThroughputPerSec
     summary: The target throughput to achieve (in events per second).
     description: |
@@ -71,7 +79,7 @@ templates:
     name: EMA_Throughput_Rules
     format: rules
     meta:
-      env: "__default__"
+      env: "{{ .Values.Environment }}"
       sampler: EMAThroughputSampler
     data:
       - key: GoalThroughputPerSec

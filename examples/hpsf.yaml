@@ -11,6 +11,13 @@ components:
       - name: Events
         direction: output
         type: HoneycombEvents
+    properties:
+      - name: Environment
+        value: __default__
+        type: string
+      - name: SampleRate
+        value: 10
+        type: int
   - name: HoneycombExporter_2
     kind: HoneycombExporter
     ports:

@@ -6,6 +6,8 @@ components:
   - name: sampler
     kind: SampleByHTTPStatus
     properties:
+      - name: Environment
+        value: test
       - name: ErrorRate
         value: 90
       - name: UserErrorRate

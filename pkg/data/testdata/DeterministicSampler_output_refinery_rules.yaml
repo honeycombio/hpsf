@@ -2,4 +2,7 @@ RulesVersion: 2
 Samplers:
     __default__:
         DeterministicSampler:
+            SampleRate: 1
+    staging:
+        DeterministicSampler:
             SampleRate: 42

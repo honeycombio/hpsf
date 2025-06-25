@@ -24,6 +24,14 @@ ports:
     direction: output
     type: HoneycombEvents
 properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler.
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
   - name: Duration
     summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
     description: |
@@ -48,7 +56,7 @@ templates:
     name: KeepErrors_RefineryRules
     format: rules
     meta:
-      env: "__default__"
+      env: "{{ .Values.Environment }}"
       sampler: RulesBasedSampler
     data:
       - key: Rules[0].Name

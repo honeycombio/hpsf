@@ -6,6 +6,8 @@ components:
   - name: sampler
     kind: KeepErrors
     properties:
+      - name: Environment
+        value: test
       - name: SampleRate
         value: 123
       - name: FieldName

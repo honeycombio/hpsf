@@ -6,6 +6,8 @@ components:
   - name: sampler
     kind: SampleByTraceDuration
     properties:
+      - name: Environment
+        value: test
       - name: SampleRate
         value: 17
       - name: Duration

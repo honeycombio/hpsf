@@ -26,6 +26,14 @@ ports:
     direction: output
     type: HoneycombEvents
 properties:
+  - name: Environment
+    summary: The environment in which to enable the sampler.
+    description: |
+      The environment in which to enable the sampler. If this field is
+      not specified, the sampler will be enabled in the __default__ environment,
+      which is what is used if the environment specified in the trace is not found.
+    type: string
+    default: "__default__"
   - name: ErrorRate
     summary: The sample rate to use if the trace contains error spans (http 500s).
     description: |
@@ -55,7 +63,7 @@ templates:
     name: Drop_RefineryRules
     format: rules
     meta:
-      env: "__default__"
+      env: "{{ .Values.Environment }}"
       sampler: RulesBasedSampler
     data:
       - key: Rules[0].Name
