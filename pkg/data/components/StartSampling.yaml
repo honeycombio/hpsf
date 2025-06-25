@@ -106,7 +106,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "http{{ if .Values.UseTLS }}s{{ end }}://{{ .Values.Host }}:{{ .Values.Port }}"
+        value: "{{ buildurl (not .Values.UseTLS) .Values.Host .Values.Port }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ not .Values.UseTLS | encodeAsBool }}"
         suppress_if: "{{ .Values.UseTLS }}"
