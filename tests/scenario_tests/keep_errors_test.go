@@ -16,7 +16,7 @@ func TestKeepErrors(t *testing.T) {
 	// Verify that the refinery rules config was generated successfully
 	assert.Equal(t, 2, rulesConfig.RulesVersion)
 
-	// Check that the production environment defaultSampler was created
+	// Check that the default environment defaultSampler was created
 	defaultSampler, exists := rulesConfig.Samplers["__default__"]
 	require.True(t, exists, "Expected '__default__' environment sampler to exist")
 
