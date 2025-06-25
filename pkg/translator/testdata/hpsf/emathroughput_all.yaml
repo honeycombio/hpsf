@@ -6,8 +6,6 @@ components:
   - name: EMAThroughput_1
     kind: EMAThroughput
     properties:
-      - name: Environment
-        value: test
       - name: AdjustmentInterval
         value: 120
       - name: FieldList
