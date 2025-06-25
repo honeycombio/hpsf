@@ -207,12 +207,6 @@ func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 	}
 	baseIndices := dc.FindIndexedValues()
 	for k, v := range otherDotted {
-		// if we haven't seen this key before, we can just add it
-		if _, ok := dc[k]; !ok {
-			dc[k] = v
-			continue
-		}
-
 		// let's check if we need to adjust the value based on indices
 		otherKey, otherIndex, ok := findIndexedValue(k)
 		if ok {
