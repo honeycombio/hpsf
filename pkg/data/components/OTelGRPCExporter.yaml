@@ -1,11 +1,11 @@
 kind: OTelGRPCExporter
-name: OTel gRPC Exporter
+name: Send OTel via gRPC
 type: base
 style: exporter
 logo: opentelemetry
 status: alpha
 version: v0.1.0
-summary: Sends telemetry in OTLP (OpenTelemetry) format via gRPC.
+summary: Sends telemetry in OpenTelemetry (OTLP) format via gRPC.
 description: |
   Exports OpenTelemetry signals using OTLP via gRPC.
 tags:
@@ -41,7 +41,8 @@ properties:
     type: string
     validations:
       - noblanks
-    default: https://api.honeycomb.io
+      - hostorip
+    default: api.honeycomb.io
     advanced: true
   - name: Port
     summary: The port on which to send gRPC traffic.

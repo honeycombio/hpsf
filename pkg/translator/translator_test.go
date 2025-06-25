@@ -12,6 +12,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	yamlv3 "gopkg.in/yaml.v3"
@@ -332,4 +333,60 @@ func TestOrderedComponentMap(t *testing.T) {
 
 		require.Equal(t, 1, count, "Iterator should have stopped after first item")
 	})
+}
+
+func TestTranslator_ValidateBadConfigs(t *testing.T) {
+	tests := []struct {
+		name    string
+		file    string
+		reasons string // comma-separated list of expected error contents, one for each error in the Details of the result
+	}{
+		{"duplicate names", "testdata/bad_hpsf/dup_names.yaml", "duplicate component name"},
+		{"missing component", "testdata/bad_hpsf/missing_comp.yaml", "destination component not found,source component not found"},
+		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "no StartSampling component,exactly one"},
+		{"multiple sampler paths", "testdata/bad_hpsf/multiple_sample_paths.yaml", "exactly one connection to a sampler"},
+		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
+		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "destination component does not have a port"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := os.ReadFile(tt.file)
+			require.NoError(t, err)
+			var inputData = string(b)
+
+			var h *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+			err = dec.Decode(&h)
+			require.NoError(t, err)
+
+			trans := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			trans.InstallComponents(comps)
+
+			err = trans.ValidateConfig(h)
+			if err == nil {
+				t.Errorf("Translator.ValidateConfig() did not error when it should have")
+			}
+			result, ok := err.(validator.Result)
+			if !ok {
+				t.Errorf("Translator.ValidateConfig() did not return a validator.Result, got %T", err)
+				t.Fail()
+			}
+			if result.IsEmpty() {
+				t.Errorf("Translator.ValidateConfig() returned empty result, expected errors")
+			}
+			contents := strings.Split(tt.reasons, ",")
+			if len(contents) != len(result.Details) {
+				t.Errorf("Translator.ValidateConfig() returned %d errors, expected %d", len(result.Details), len(contents))
+				t.FailNow()
+			}
+			for i, detail := range result.Details {
+				if !strings.Contains(detail.Error(), strings.TrimSpace(contents[i])) {
+					t.Errorf("Translator.ValidateConfig() error %d did not contain expected text: %q, got: %s",
+						i, strings.TrimSpace(contents[i]), detail.Error())
+				}
+			}
+		})
+	}
 }

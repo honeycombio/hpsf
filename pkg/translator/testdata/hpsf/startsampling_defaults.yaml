@@ -3,6 +3,10 @@ components:
     kind: OTelReceiver
   - name: Start Sampling 1
     kind: StartSampling
+  - name: sampler
+    kind: DeterministicSampler
+  - name: honeycomb
+    kind: HoneycombExporter
 connections:
   - source:
       component: otlp_in
@@ -12,3 +16,19 @@ connections:
       component: Start Sampling 1
       port: Traces
       type: OTelTraces
+  - source:
+      component: Start Sampling 1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: sampler
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: sampler
+      port: Events
+      type: Honeycomb
+    destination:
+      component: honeycomb
+      port: Events
+      type: HoneycombEvents

@@ -9,7 +9,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/honeycomb:
-        endpoint: https://alternative.honeycomb.io:8080
+        endpoint: alternative.honeycomb.io:8080
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: abcdef1234567890abcdef1

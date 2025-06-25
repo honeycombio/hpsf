@@ -1,5 +1,15 @@
 # hpsf library changelog
 
+## 0.10.0 2025-06-24
+
+### Features
+
+- feat: More sophisticated validations for hpsf (#148) | [Kent Quirk](https://github.com/kentquirk)
+
+### Fixes
+
+- fix: minor updates to component names & properties (#151) | [Jessica Parsons](https://github.com/verythorough)
+
 ## 0.9.0 2025-06-18
 
 ### Features
