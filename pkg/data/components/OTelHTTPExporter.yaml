@@ -102,13 +102,13 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ .Values.Host }}:{{ .Values.Port }}"
+        value: "http{{ if not .Values.Insecure }}s{{ end }}://{{ .Values.Host }}:{{ .Values.Port }}"
       - key: "{{ .ComponentName }}.tls.insecure"
-        value: "{{ .HProps.Insecure | encodeAsBool }}"
-        suppress_if: "{{ not .HProps.Insecure }}"
+        value: "{{ .Values.Insecure | encodeAsBool }}"
+        suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers"
-        value: "{{ .HProps.Headers | encodeAsMap }}"
-        suppress_if: "{{ not .HProps.Headers }}"
+        value: "{{ .Values.Headers | encodeAsMap }}"
+        suppress_if: "{{ not .Values.Headers }}"
       - key: "{{ .ComponentName }}.sending_queue.queue_size"
         value: "{{ .Values.QueueSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"
