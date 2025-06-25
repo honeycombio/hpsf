@@ -15,7 +15,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/otlp_out:
-        endpoint: api.honeycomb.io:443
+        endpoint: https://api.honeycomb.io:443
         sending_queue:
             batch:
                 flush_timeout: 200ms

@@ -9,7 +9,7 @@ processors:
     usage: {}
 exporters:
     otlphttp/OTel_HTTP_Exporter_1:
-        endpoint: api.honeycomb.io:443
+        endpoint: https://api.honeycomb.io:443
         headers:
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
         sending_queue:
