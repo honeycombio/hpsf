@@ -36,7 +36,7 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${STRAWS_REFINERY_SERVICE}
+    default: ${HTP_REFINERY_SERVICE}
     advanced: true
   - name: Port
     summary: The port on which Refinery is listening for HTTP traffic.

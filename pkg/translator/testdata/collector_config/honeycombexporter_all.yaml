@@ -2,9 +2,9 @@ receivers:
     otlp/otlp:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
 exporters:
@@ -24,7 +24,7 @@ exporters:
         tls:
             insecure: true
     otlphttp/refinery:
-        endpoint: http://${STRAWS_REFINERY_SERVICE}:80
+        endpoint: http://${HTP_REFINERY_SERVICE}:80
         sending_queue:
             batch:
                 flush_timeout: 200ms

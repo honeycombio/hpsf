@@ -21,7 +21,7 @@ components:
     kind: HoneycombExporter
     properties:
       - name: APIKey
-        value: ${HONEYCOMB_EXPORTER_APIKEY}
+        value: ${HTP_HONEYCOMB_EXPORTER_APIKEY}
   - name: EMA Throughput Sampler_1
     kind: EMAThroughput
     properties:

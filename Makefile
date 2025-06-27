@@ -85,7 +85,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		-e HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
+		-e HTP_HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
 		honeycombio/refinery:latest || exit 1
 	sleep 1
 
@@ -141,8 +141,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-collector \
 		--entrypoint /otelcol-contrib \
 		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
-		-e STRAWS_COLLECTOR_POD_IP=localhost \
-		-e STRAWS_REFINERY_POD_IP=localhost \
+		-e HTP_COLLECTOR_POD_IP=localhost \
+		-e HTP_REFINERY_POD_IP=localhost \
 		honeycombio/supervised-collector:latest \
 		--config /etc/otelcol-contrib/config.yaml || exit 1
 	sleep 1
