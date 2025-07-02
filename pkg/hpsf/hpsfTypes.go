@@ -24,6 +24,7 @@ const (
 	CTYPE_TRACES  ConnectionType = "OTelTraces"
 	CTYPE_EVENTS  ConnectionType = "OTelEvents"
 	CTYPE_HONEY   ConnectionType = "HoneycombEvents"
+	CTYPE_SAMPLE  ConnectionType = "SampleData"
 	CTYPE_NUMBER  ConnectionType = "number"
 	CTYPE_STRING  ConnectionType = "string"
 	CTYPE_BOOL    ConnectionType = "bool"
@@ -35,6 +36,7 @@ var PipelineConnectionTypes = []ConnectionType{
 	CTYPE_METRICS,
 	CTYPE_TRACES,
 	CTYPE_HONEY,
+	CTYPE_SAMPLE,
 }
 
 // The collector thinks of these as signal types

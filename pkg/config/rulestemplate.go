@@ -168,7 +168,7 @@ func buildRulesTemplate(t TemplateData) (*rulesTemplate, error) {
 	return r, nil
 }
 
-func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, userdata map[string]any) (*tmpl.RulesConfig, error) {
+func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl.RulesComponentType, userdata map[string]any) (*tmpl.RulesConfig, error) {
 	dc := tmpl.NewDottedConfig(nil)
 
 	env, err := t.expandTemplateVariable(rt.env, userdata)
@@ -209,11 +209,11 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, userdata map[
 			dc[keyPrefix+key] = value
 		}
 	}
-	ec := tmpl.EnvConfig{
-		Name:       rt.env,
-		ConfigData: dc,
-	}
-	rc := tmpl.NewRulesConfig()
-	rc.Envs = append(rc.Envs, ec)
+	// ec := tmpl.EnvConfig{
+	// 	Name:       rt.env,
+	// 	ConfigData: dc,
+	// }
+	rc := tmpl.NewRulesConfig(compType)
+	// rc.Envs = append(rc.Envs, ec)
 	return rc, nil
 }

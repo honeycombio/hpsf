@@ -225,7 +225,7 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 	return result
 }
 
-// validateStartSampling checks that there is at most one component with the "StartSampling" kind. If it exists,
+// validateStartSampling checks that there is at most one component with the "startsampling" style. If it exists,
 // there must be at least one sampler in the configuration. If it does not exist, there can be no samplers in the configuration.
 // There must also be only one connection from the StartSampling component to a sampler.
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
@@ -239,7 +239,7 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 			continue
 		}
 
-		if tmpl.Kind == "StartSampling" {
+		if tmpl.Style == "startsampling" {
 			startSamplingCount++
 			startSamplingComp = c.GetSafeName()
 			if startSamplingCount > 1 {
@@ -446,6 +446,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
+			{Pipeline: h.Components, ConnType: hpsf.CTYPE_SAMPLE},
 		}
 	}
 

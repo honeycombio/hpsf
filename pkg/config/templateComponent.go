@@ -282,15 +282,15 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
-				if pipeline.ConnType != hpsf.CTYPE_HONEY {
-					continue // rules templates are only for Honeycomb events
+				if pipeline.ConnType != hpsf.CTYPE_SAMPLE {
+					continue // rules templates are only for sampling pipelines
 				}
 				rt, err := buildRulesTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				tmpl, err := t.generateRulesConfig(rt, userdata)
+				tmpl, err := t.generateRulesConfig(rt, tmpl.RCTFromStyle(t.Style), userdata)
 				if err != nil {
 					return nil, err
 				}
