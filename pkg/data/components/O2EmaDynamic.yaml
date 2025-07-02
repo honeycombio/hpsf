@@ -1,0 +1,82 @@
+kind: O2EMADynamic
+name: O2 EMA Dynamic Sampler
+version: v0.1.0
+style: sampler
+type: base
+status: alpha
+summary: An Exponential Moving Average (EMA) sampler designed to achieve a target Sample Rate.
+description: |
+  This is an Exponential Moving Average (EMA) sampler designed to achieve a
+  target sample rate based on trying to achieve representative
+  quantities of the specified sampling keys. The keys should be chosen from fields
+  with relatively low cardinality, such as HTTP method, status code, etc.
+tags:
+  - category:sampling
+  - service:refinery
+  - signal:HoneycombEvents
+  - sampler:ema
+  - sampler:dynamic
+ports:
+  # inputs
+  - name: Sample
+    direction: input
+    type: SampleData
+  # outputs
+  - name: Events
+    direction: output
+    type: HoneycombEvents
+    note: "The traces that are sampled (retained for further processing)"
+properties:
+  - name: GoalSampleRate
+    summary: The target sample rate to achieve.
+    description: |
+      The desired sample rate to achieve. Note that this is a target, and the
+      actual throughput may vary. The accuracy of this sampler is heavily
+      dependent on 1. the type and volume of traffic; 2. the cardinality and
+      distribution of the sampling keys per AdjustmentInterval; 3. the
+      AdjustmentInterval.
+    type: int
+    validations:
+      - positive
+    default: 100
+  - name: AdjustmentInterval
+    summary: The interval (in seconds) between adjustments of the sampling rate
+    description: |
+      The interval (in seconds) at which to adjust the sampling rate. This
+      is the time window over which the sampler will adjust the sampling
+      rate to try to achieve the target throughput. The smaller the
+      interval, the more responsive the sampler will be to changes in
+      traffic patterns, but the more volatile the sampling rate will be.
+    type: int
+    validations:
+      - positive
+    default: 60
+    advanced: true
+  - name: FieldList
+    summary: The field names of the keys to use for controlling sampling
+    description: |
+      The field names of keys to use for sampling. These should be chosen
+      from fields with relatively low cardinality, such as HTTP method,
+      status code, etc. The sampler will try to achieve representative
+      quantities of the specified sampling keys, while ensuring that at least
+      one instance of every distinct value of each key is sampled.
+      There is no default; this field must be specified.
+    type: stringarray
+    validations:
+      - noblanks
+      - nonempty
+    default: []
+templates:
+  - kind: refinery_rules
+    name: EMA_Throughput_Rules
+    format: rules
+    meta:
+      env: "__default__"
+      sampler: EMAThroughputSampler
+    data:
+      - key: GoalSampleRate
+        value: "{{ .Values.GoalSampleRate | encodeAsInt }}"
+      - key: AdjustmentInterval
+        value: "{{ .Values.AdjustmentInterval }}s"
+      - key: FieldList
+        value: "{{ .Values.FieldList | encodeAsArray }}"

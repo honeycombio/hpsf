@@ -1,0 +1,37 @@
+kind: O2SamplerDrop
+name: O2 Drop
+style: sampler
+type: base
+status: development
+version: v0.1.0
+summary: Drops all traces
+description: |
+  This sampler drops all traces.
+tags:
+  - category:refinery_sampler
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Sample
+    direction: input
+    type: SampleData
+properties:
+  - name: RuleName
+    summary: The name of the rule (used in Refinery debugging).
+    description: |
+      The rule name that will show up in metadata for traces that match this rule. If not set,
+      the name of this component will be used.
+    type: string
+templates:
+  - kind: refinery_rules
+    name: DropAll_RefineryRules
+    format: rules
+    meta:
+      sampler: RulesBasedSampler
+    data:
+      - key: Name
+        value: "{{ firstnonzero .Values.RuleName .ComponentName }}"
+      - key: Drop
+        value: true
