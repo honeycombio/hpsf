@@ -116,7 +116,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		case Condition:
 			// condition always has a rule-based sampler attached to it
 			// so we can write it into the startsampling at index 0 because we know it's first
-			keyPrefix = "RulesBasedSampler.Rules.Conditions.0."
+			keyPrefix = "RulesBasedSampler.Rules.Conditions.0.Rules.0"
 		case Sampler:
 			// in this case, we are merging a sampler directly into a startsampling
 			// so we inject the sampler at the environment level
