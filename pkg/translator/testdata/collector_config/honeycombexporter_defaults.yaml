@@ -12,7 +12,7 @@ exporters:
         endpoint: api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
-            x-honeycomb-team: ${HTP_HONEYCOMB_EXPORTER_APIKEY}
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
         sending_queue:
             batch:
                 flush_timeout: 200ms

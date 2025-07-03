@@ -36,7 +36,7 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${HTP_HONEYCOMB_EXPORTER_APIKEY}
+    default: ${HTP_EXPORTER_APIKEY}
     advanced: true
   - name: MetricsDataset
     summary: The Honeycomb dataset metrics will be sent to.

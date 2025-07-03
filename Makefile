@@ -85,7 +85,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		-e HTP_HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
+		-e HTP_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
 		honeycombio/refinery:latest || exit 1
 	sleep 1
 
