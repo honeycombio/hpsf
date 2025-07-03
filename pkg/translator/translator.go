@@ -441,7 +441,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	if len(pipelines) == 0 {
 		// there were no complete pipelines found, so we construct dummy pipelines with all the components
 		// so that all the non-piped components can play
-		pipelines = []hpsf.PipelineWithConnectionType{
+		pipelines = []hpsf.PipelineWithConnections{
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
 			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
@@ -474,7 +474,9 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 				return nil, err
 			}
 			if compConfig != nil {
-				composite.Merge(compConfig)
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
 			}
 		}
 		composites = append(composites, composite)
@@ -484,7 +486,9 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		// We can use the Merge method to combine all the configurations into one.
 		finalConfig := composites[0]
 		for _, comp := range composites[1:] {
-			finalConfig.Merge(comp)
+			if err := finalConfig.Merge(comp); err != nil {
+				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
+			}
 		}
 		return finalConfig, nil
 	} else if len(composites) == 1 {

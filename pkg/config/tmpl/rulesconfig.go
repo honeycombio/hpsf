@@ -9,6 +9,7 @@ import (
 type RulesComponentType string
 
 const (
+	Output        RulesComponentType = "output"
 	StartSampling RulesComponentType = "startsampling"
 	Condition     RulesComponentType = "condition"
 	Sampler       RulesComponentType = "sampler"
@@ -22,25 +23,34 @@ func RCTFromStyle(style string) RulesComponentType {
 		return Condition
 	case "sampler":
 		return Sampler
-	default:
+	default: // we don't need output because it's not a style
 		return ""
 	}
 }
 
-// Defines the configuration for a rules-based sampler in the Refinery.
-// The private 'style' field is used to determine the type of component that created the object
-// so that Merge can be done correctly.
+// Defines the configuration for a rules-based sampler in the Refinery. This is
+// a dual-purpose object: before merge, it holds the private fields so that we
+// can defer the rendering of the samplers until we merge the results. This is
+// because the final position of sampler configurations will depend on how they
+// are wired. After merge, it has been converted to an object that can be
+// rendered directly to YAML. The private 'compType' field is used to determine
+// the type of component that created the object so that Merge can be done
+// correctly; objects ready for rendering will have a compType of Output.
 type RulesConfig struct {
 	Version  int
 	Samplers map[string]*V2SamplerChoice `yaml:"Samplers,omitempty"`
 	compType RulesComponentType          `yaml:"-"`
+	meta     map[string]string           `yaml:"-"`
+	kvs      map[string]any              `yaml:"-"`
 }
 
-func NewRulesConfig(rct RulesComponentType) *RulesConfig {
+func NewRulesConfig(rct RulesComponentType, meta map[string]string, kvs map[string]any) *RulesConfig {
 	return &RulesConfig{
 		Version:  2,
 		Samplers: make(map[string]*V2SamplerChoice),
 		compType: rct,
+		meta:     meta,
+		kvs:      kvs,
 	}
 }
 
@@ -79,20 +89,60 @@ func (rc *RulesConfig) RenderYAML() ([]byte, error) {
 	return data, nil
 }
 
-func (rc *RulesConfig) Merge(other TemplateConfig) TemplateConfig {
+func (rc *RulesConfig) Merge(other TemplateConfig) error {
 	otherRC, ok := other.(*RulesConfig)
 	if !ok {
 		// if the other TemplateConfig is not a RulesConfig, we can't merge it
-		return rc
+		return fmt.Errorf("cannot merge %T with RulesConfig", other)
 	}
 
-	// our merge types are:
-	// condition into startsampling (for a condition sampler attached to a startsampling)
-	// sampler into startsampling (for a sampler attached to a startsampling)
-	// startsampling into startsampling (when we merge two startsampling rules for different environments)
-	// so if rc is not a startsampling, we can't merge
-	if rc.compType != StartSampling {
-		return rc
+	// All merges convert the kvs (which is a path-based key and value) to a renderable Refinery configuration,
+	// and also flag the output with type "output".
+	// Our possible merge types are:
+	// - into startsampling from condition (for a condition sampler attached to a startsampling)
+	// - into startsampling from sampler (for a sampler attached directly to a startsampling)
+	// - into output from condition (for chained conditions)
+	// - into output from sampler (for a sampler attached to a condition)
+	// - into output from output (when we merge two completed startsampling rules for different environments)
+	// We'll do a nested switch here to handle the different cases.
+
+	switch rc.compType {
+	case StartSampling:
+		rc.compType = Output // we will now treat this as an output
+		sampler := &V2SamplerChoice{}
+
+		var keyPrefix string
+		switch otherRC.compType {
+		case Condition:
+			// condition always has a rule-based sampler attached to it
+			// so we can write it into the startsampling at index 0 because we know it's first
+			keyPrefix = "RulesBasedSampler.Rules.Conditions.0."
+		case Sampler:
+			// in this case, we are merging a sampler directly into a startsampling
+			// so we inject the sampler at the environment level
+			keyPrefix = otherRC.meta["sampler"] + "."
+		default:
+			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid start merge type", other)
+		}
+
+		for key, value := range otherRC.kvs {
+			SetMemberValue(keyPrefix+key, sampler, value)
+		}
+		rc.Samplers[otherRC.meta["env"]] = sampler
+
+	case Output:
+		switch otherRC.compType {
+		case Condition:
+			// we need to figure out our index by looking at the RulesBasedSampler.Rules.Conditions
+			// and then we can write the sampler into the output at that index
+			// conditionIndex := len(rc.Samplers[otherRC.meta["env"]].Rules.Conditions)
+		case Sampler:
+		case Output:
+		default:
+			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
+		}
+	default:
+		return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid merge type", other)
 	}
 
 	for otherEnv, otherSampler := range otherRC.Samplers {
@@ -100,10 +150,10 @@ func (rc *RulesConfig) Merge(other TemplateConfig) TemplateConfig {
 		if _, ok := rc.Samplers[otherEnv]; ok {
 			// we can only scream here, this shouldn't happen and should have been caught
 			// in validation
-			fmt.Printf("environment %s already exists in RulesConfig, merge will be incorrect", otherEnv)
+			return fmt.Errorf("environment %s already exists in RulesConfig, cannot merge", otherEnv)
 		}
 		// otherwise, we add it to the map
 		rc.Samplers[otherEnv] = otherSampler
 	}
-	return rc
+	return nil
 }

@@ -107,7 +107,7 @@ func TestTemplateComponents(t *testing.T) {
 			require.NoError(t, err)
 			c, ok := components[tt.kind]
 			require.True(t, ok)
-			pipeline := hpsf.PipelineWithConnectionType{ConnType: tt.sType}
+			pipeline := hpsf.PipelineWithConnections{ConnType: tt.sType}
 			conf, err := c.GenerateConfig(tt.cType, pipeline, tt.config)
 			require.NoError(t, err)
 			require.NotNil(t, conf)

@@ -1,6 +1,7 @@
 package tmpl
 
 import (
+	"fmt"
 	"strings"
 
 	y "gopkg.in/yaml.v3"
@@ -173,18 +174,18 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 
 // Merge merges another TemplateConfig into this one, but only if it's really
 // a CollectorConfig. If it's not, it just returns this config unmodified.
-func (cc *CollectorConfig) Merge(other TemplateConfig) TemplateConfig {
+func (cc *CollectorConfig) Merge(other TemplateConfig) error {
 	otherCC, ok := other.(*CollectorConfig)
 	if !ok {
 		// if the other TemplateConfig is not a CollectorConfig, we can't merge it
-		return cc
+		return fmt.Errorf("cannot merge %T with CollectorConfig", other)
 	}
 	for section, items := range otherCC.Sections {
 		for k, v := range items {
 			cc.Set(section, k, v)
 		}
 	}
-	return cc
+	return nil
 }
 
 // NewCollectorConfig creates a new CollectorConfig with an empty map of sections.
