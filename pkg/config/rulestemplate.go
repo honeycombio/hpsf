@@ -123,15 +123,8 @@ func buildRulesTemplate(t TemplateData) (*rulesTemplate, error) {
 				return r, fmt.Errorf("expected string for sampler, got %T", mv)
 			}
 		default:
-			return r, fmt.Errorf("unknown meta key %q", mk)
+			// we're going to ignore any other meta keys for now; maybe we can be more strict later
 		}
-	}
-
-	if r.env == "" {
-		return r, fmt.Errorf("missing env in meta")
-	}
-	if r.sampler == "" {
-		return r, fmt.Errorf("missing sampler in meta")
 	}
 
 	for _, d := range t.Data {
@@ -168,22 +161,25 @@ func buildRulesTemplate(t TemplateData) (*rulesTemplate, error) {
 	return r, nil
 }
 
-func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl.RulesComponentType, userdata map[string]any) (*tmpl.RulesConfig, error) {
-	dc := tmpl.NewDottedConfig(nil)
+// we expand template variables here, but we don't actually apply the kvs yet;
+// that's deferred until merge time.
+func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl.RulesComponentType, pipelineIndex int, userdata map[string]any) (*tmpl.RulesConfig, error) {
+	kvs := make(map[string]any)
+	meta := make(map[string]string)
+	meta[tmpl.MetaPipelineIndex] = strconv.Itoa(pipelineIndex)
 
 	env, err := t.expandTemplateVariable(rt.env, userdata)
 	if err != nil {
 		return nil, err
 	}
-	rt.env = env
+	meta[tmpl.MetaEnv] = env
 
 	sampler, err := t.expandTemplateVariable(rt.sampler, userdata)
 	if err != nil {
 		return nil, err
 	}
-	rt.sampler = sampler
+	meta[tmpl.MetaSampler] = sampler
 
-	keyPrefix := "Samplers." + rt.env + "." + rt.sampler + "."
 	for _, kv := range rt.kvs {
 		// do the key
 		key, err := t.expandTemplateVariable(kv.key, userdata)
@@ -206,14 +202,9 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl
 			return nil, err
 		}
 		if kv.value != "" {
-			dc[keyPrefix+key] = value
+			kvs[key] = value
 		}
 	}
-	// ec := tmpl.EnvConfig{
-	// 	Name:       rt.env,
-	// 	ConfigData: dc,
-	// }
-	rc := tmpl.NewRulesConfig(compType)
-	// rc.Envs = append(rc.Envs, ec)
+	rc := tmpl.NewRulesConfig(compType, meta, kvs)
 	return rc, nil
 }

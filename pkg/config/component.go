@@ -54,14 +54,12 @@ var _ Component = (*GenericBaseComponent)(nil)
 func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
-		return tmpl.DottedConfig{
+		return &tmpl.DottedConfig{
 			"General.ConfigurationVersion": 2,
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
 	case RefineryRulesType:
-		return &tmpl.RulesConfig{
-			Version: 2,
-		}, nil
+		return tmpl.NewRulesConfig(tmpl.Output, nil, nil), nil
 	case CollectorConfigType:
 		return tmpl.NewCollectorConfig(), nil
 	default:

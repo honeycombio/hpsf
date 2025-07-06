@@ -2,6 +2,7 @@ package tmpl
 
 import (
 	"fmt"
+	"strconv"
 
 	y "gopkg.in/yaml.v3"
 )
@@ -24,7 +25,7 @@ func RCTFromStyle(style string) RulesComponentType {
 	case "sampler":
 		return Sampler
 	default: // we don't need output because it's not a style
-		return ""
+		return "unknown" + "(" + RulesComponentType(style) + ")"
 	}
 }
 
@@ -43,6 +44,13 @@ type RulesConfig struct {
 	meta     map[string]string           `yaml:"-"`
 	kvs      map[string]any              `yaml:"-"`
 }
+
+// keys used to index the metadata map in RulesConfig
+const (
+	MetaPipelineIndex = "pipeline_index"
+	MetaEnv           = "env"
+	MetaSampler       = "sampler"
+)
 
 func NewRulesConfig(rct RulesComponentType, meta map[string]string, kvs map[string]any) *RulesConfig {
 	return &RulesConfig{
@@ -116,11 +124,11 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		case Condition:
 			// condition always has a rule-based sampler attached to it
 			// so we can write it into the startsampling at index 0 because we know it's first
-			keyPrefix = "RulesBasedSampler.Rules.Conditions.0.Rules.0"
+			keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
 		case Sampler:
 			// in this case, we are merging a sampler directly into a startsampling
 			// so we inject the sampler at the environment level
-			keyPrefix = otherRC.meta["sampler"] + "."
+			keyPrefix = rc.meta[MetaSampler] + "."
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid start merge type", other)
 		}
@@ -128,21 +136,46 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		for key, value := range otherRC.kvs {
 			SetMemberValue(keyPrefix+key, sampler, value)
 		}
-		rc.Samplers[otherRC.meta["env"]] = sampler
+		rc.Samplers[rc.meta[MetaEnv]] = sampler
 
 	case Output:
 		switch otherRC.compType {
+		case StartSampling:
+			// this is what happens at the start of a pipeline
+			rc.Version = otherRC.Version
+			rc.compType = otherRC.compType
+			rc.meta = otherRC.meta
+			rc.kvs = otherRC.kvs
 		case Condition:
-			// we need to figure out our index by looking at the RulesBasedSampler.Rules.Conditions
-			// and then we can write the sampler into the output at that index
-			// conditionIndex := len(rc.Samplers[otherRC.meta["env"]].Rules.Conditions)
+			// We know the pipeline_index (ruleIndex) is in rc.meta.
+			// We need to figure out the condition index by looking at the RulesBasedSampler.Rules.Conditions
+			// at the correct index, and then we can write the sampler into the output at that index
+
+			// this was put here by Itoa so we don't worry about errors
+			ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
+			conditionIndex := len(rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules[ruleIndex].Conditions)
+			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.Conditions.%d.", ruleIndex, conditionIndex)
+
+			sampler := rc.Samplers[rc.meta[MetaEnv]]
+			for key, value := range otherRC.kvs {
+				SetMemberValue(keyPrefix+key, sampler, value)
+			}
+			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Sampler:
+			ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
+			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+			sampler := rc.Samplers[rc.meta[MetaEnv]]
+			for key, value := range otherRC.kvs {
+				SetMemberValue(keyPrefix+key, sampler, value)
+			}
+			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Output:
+			return fmt.Errorf("output to output merge is not yet supported")
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
 		}
 	default:
-		return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid merge type", other)
+		return fmt.Errorf("cannot merge into RulesConfig because '%s' is not a valid component type", rc.compType)
 	}
 
 	for otherEnv, otherSampler := range otherRC.Samplers {
