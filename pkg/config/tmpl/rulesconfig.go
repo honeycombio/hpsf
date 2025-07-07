@@ -170,23 +170,22 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			}
 			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Output:
-			return fmt.Errorf("output to output merge is not yet supported")
+			// if they have the same environment, and both are rules-based, we
+			// add to the rules slice. if they have different environments, we
+			// add to the Samplers map.
+			if rc.meta[MetaEnv] == otherRC.meta[MetaEnv] {
+				rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules = append(
+					rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules,
+					otherRC.Samplers[otherRC.meta[MetaEnv]].RulesBasedSampler.Rules...)
+			} else {
+				// we need to add the other environment's sampler to the map
+				rc.Samplers[otherRC.meta[MetaEnv]] = otherRC.Samplers[otherRC.meta[MetaEnv]]
+			}
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
 		}
 	default:
 		return fmt.Errorf("cannot merge into RulesConfig because '%s' is not a valid component type", rc.compType)
-	}
-
-	for otherEnv, otherSampler := range otherRC.Samplers {
-		// if this environment already exists, we have a problem
-		if _, ok := rc.Samplers[otherEnv]; ok {
-			// we can only scream here, this shouldn't happen and should have been caught
-			// in validation
-			return fmt.Errorf("environment %s already exists in RulesConfig, cannot merge", otherEnv)
-		}
-		// otherwise, we add it to the map
-		rc.Samplers[otherEnv] = otherSampler
 	}
 	return nil
 }

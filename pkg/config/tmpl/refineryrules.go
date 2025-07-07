@@ -106,10 +106,10 @@ type RulesBasedSamplerRule struct {
 }
 
 type RulesBasedSamplerCondition struct {
-	Field    string                            `yaml:"Field"`
+	Field    string                            `yaml:"Field,omitempty"`
 	Fields   []string                          `yaml:"Fields,omitempty"`
-	Operator string                            `yaml:"Operator"`
-	Value    any                               `yaml:"Value"`
+	Operator string                            `yaml:"Operator,omitempty"`
+	Value    any                               `yaml:"Value,omitempty"`
 	Datatype string                            `yaml:"Datatype,omitempty"`
 	Matches  func(value any, exists bool) bool `yaml:"-"`
 }

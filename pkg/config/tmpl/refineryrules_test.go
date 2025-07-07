@@ -33,3 +33,14 @@ func TestSetMemberValue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, Duration(10*time.Second), vsc.WindowedThroughputSampler.UpdateFrequency)
 }
+
+func TestSetMemberValueFields(t *testing.T) {
+	vsc := &V2SamplerChoice{}
+	err := SetMemberValue("RulesBasedSampler.Rules.0.Conditions.0.Fields", vsc, []string{"field1", "field2"})
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"field1", "field2"}, vsc.RulesBasedSampler.Rules[0].Conditions[0].Fields)
+
+	err = SetMemberValue("RulesBasedSampler.Rules.0.Conditions.0.Field", vsc, "field3")
+	assert.NoError(t, err)
+	assert.Equal(t, "field3", vsc.RulesBasedSampler.Rules[0].Conditions[0].Field)
+}

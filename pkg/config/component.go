@@ -54,7 +54,8 @@ var _ Component = (*GenericBaseComponent)(nil)
 func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
-		return &tmpl.DottedConfig{
+		// DottedConfig is already a map, so we don't need a pointer
+		return tmpl.DottedConfig{
 			"General.ConfigurationVersion": 2,
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
