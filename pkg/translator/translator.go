@@ -231,79 +231,79 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF start sampling validation errors")
 	// iterate over the components and check for the StartSampling component
-	startSamplingCount := 0
-	var startSamplingComp string
-	for _, c := range h.Components {
-		tmpl, ok := templateComps[c.GetSafeName()]
-		if !ok {
-			continue
-		}
+	// startSamplingCount := 0
+	// var startSamplingComp string
+	// for _, c := range h.Components {
+	// 	tmpl, ok := templateComps[c.GetSafeName()]
+	// 	if !ok {
+	// 		continue
+	// 	}
 
-		if tmpl.Style == "startsampling" {
-			startSamplingCount++
-			startSamplingComp = c.GetSafeName()
-			if startSamplingCount > 1 {
-				err := hpsf.NewError("only one StartSampling component is allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
-		}
-	}
-	if startSamplingCount == 0 {
-		// if there is no StartSampling component, we cannot have any samplers in the configuration
-		for _, c := range h.Components {
-			tmpl, ok := templateComps[c.GetSafeName()]
-			if !ok {
-				continue
-			}
+	// 	if tmpl.Style == "startsampling" {
+	// 		startSamplingCount++
+	// 		startSamplingComp = c.GetSafeName()
+	// 		if startSamplingCount > 1 {
+	// 			err := hpsf.NewError("only one StartSampling component is allowed").
+	// 				WithComponent(c.Name)
+	// 			result.Add(err)
+	// 		}
+	// 	}
+	// }
+	// if startSamplingCount == 0 {
+	// 	// if there is no StartSampling component, we cannot have any samplers in the configuration
+	// 	for _, c := range h.Components {
+	// 		tmpl, ok := templateComps[c.GetSafeName()]
+	// 		if !ok {
+	// 			continue
+	// 		}
 
-			if tmpl.Style == "sampler" {
-				err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
-		}
-	} else {
-		// if there is a StartSampling component, we must have at least one sampler in the configuration
-		hasSampler := false
-		for _, c := range h.Components {
-			tmpl, ok := templateComps[c.GetSafeName()]
-			if !ok {
-				continue
-			}
+	// 		if tmpl.Style == "sampler" {
+	// 			err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
+	// 				WithComponent(c.Name)
+	// 			result.Add(err)
+	// 		}
+	// 	}
+	// } else {
+	// 	// if there is a StartSampling component, we must have at least one sampler in the configuration
+	// 	hasSampler := false
+	// 	for _, c := range h.Components {
+	// 		tmpl, ok := templateComps[c.GetSafeName()]
+	// 		if !ok {
+	// 			continue
+	// 		}
 
-			if tmpl.Style == "sampler" {
-				hasSampler = true
-				break
-			}
-		}
-		if !hasSampler {
-			err := hpsf.NewError("if there is a StartSampling component, at least one sampler is required").
-				WithComponent("StartSampling")
-			result.Add(err)
-		}
-	}
-	// now we need to check that there is only one connection from the StartSampling component to a sampler
-	if startSamplingCount == 1 {
-		samplerConnections := 0
-		for _, conn := range h.Connections {
-			if conn.Source.GetSafeName() == startSamplingComp {
-				// check if the destination is a sampler
-				dstComp, ok := templateComps[conn.Destination.GetSafeName()]
-				if !ok {
-					continue
-				}
-				if dstComp.Style == "sampler" {
-					samplerConnections++
-				}
-			}
-		}
-		if samplerConnections != 1 {
-			err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
-				WithComponent(startSamplingComp)
-			result.Add(err)
-		}
-	}
+	// 		if tmpl.Style == "sampler" {
+	// 			hasSampler = true
+	// 			break
+	// 		}
+	// 	}
+	// 	if !hasSampler {
+	// 		err := hpsf.NewError("if there is a StartSampling component, at least one sampler is required").
+	// 			WithComponent("StartSampling")
+	// 		result.Add(err)
+	// 	}
+	// }
+	// // now we need to check that there is only one connection from the StartSampling component to a sampler
+	// if startSamplingCount == 1 {
+	// 	samplerConnections := 0
+	// 	for _, conn := range h.Connections {
+	// 		if conn.Source.GetSafeName() == startSamplingComp {
+	// 			// check if the destination is a sampler
+	// 			dstComp, ok := templateComps[conn.Destination.GetSafeName()]
+	// 			if !ok {
+	// 				continue
+	// 			}
+	// 			if dstComp.Style == "sampler" {
+	// 				samplerConnections++
+	// 			}
+	// 		}
+	// 	}
+	// 	if samplerConnections != 1 {
+	// 		err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
+	// 			WithComponent(startSamplingComp)
+	// 		result.Add(err)
+	// 	}
+	// }
 
 	return result
 }
@@ -462,6 +462,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 			return nil, err
 		}
 
+		mergedSomething := false
 		for _, comp := range pipeline.Pipeline {
 			// look up the component in the ordered map
 			c, ok := comps.Get(comp.GetSafeName())
@@ -477,9 +478,12 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 				if err := composite.Merge(compConfig); err != nil {
 					return nil, fmt.Errorf("failed to merge component config: %w", err)
 				}
+				mergedSomething = true
 			}
 		}
-		composites = append(composites, composite)
+		if mergedSomething {
+			composites = append(composites, composite)
+		}
 	}
 	// If we have multiple pipelines, we need to merge them into a single config.
 	if len(composites) > 1 {
