@@ -18,6 +18,50 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
+func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
+	deleteExtras := false
+
+	allComponents := make(map[string]struct{})
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	for _, comp := range comps {
+		allComponents[strings.ToLower(comp.Kind)] = struct{}{}
+	}
+
+	subdirs := []string{"collector_config", "refinery_config", "refinery_rules", "hpsf"}
+	for _, subdir := range subdirs {
+		testFiles, err := os.ReadDir("testdata/" + subdir)
+		require.NoError(t, err)
+
+		// for every file in our subdir, we expect to find a component in the hpsf package
+		// that has the same name as portion of the filename before the _.
+		// look it up in the components map
+		for _, file := range testFiles {
+			if !file.IsDir() && strings.HasSuffix(file.Name(), ".yaml") {
+				fullname := path.Join("testdata", subdir, file.Name())
+				t.Run(fullname, func(t *testing.T) {
+					// get the component name from the file name by splitting on the underscore
+					// and taking the first part
+					parts := strings.Split(file.Name(), "_")
+					componentName := strings.ToLower(parts[0])
+
+					// check if the component exists in the map
+					if _, ok := allComponents[componentName]; !ok {
+						t.Errorf("No matching component found for test file %s", file.Name())
+
+						if deleteExtras {
+							// if deleteExtras is true, delete the file
+							err := os.Remove(fullname)
+							require.NoError(t, err)
+							t.Logf("Deleted test file %s because no matching component was found", file.Name())
+						}
+					}
+				})
+			}
+		}
+	}
+}
+
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
