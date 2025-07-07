@@ -1,13 +1,13 @@
-kind: O2EMAThroughput
-name: O2 EMA Throughput Sampler
+kind: EMADynamic
+name: EMA Dynamic Sampler
 version: v0.1.0
 style: sampler
 type: base
 status: alpha
-summary: An Exponential Moving Average (EMA) sampler designed to achieve a target throughput (in events per second).
+summary: An Exponential Moving Average (EMA) sampler designed to achieve a target Sample Rate.
 description: |
   This is an Exponential Moving Average (EMA) sampler designed to achieve a
-  target throughput (in events per second) based on trying to achieve representative
+  target sample rate based on trying to achieve representative
   quantities of the specified sampling keys. The keys should be chosen from fields
   with relatively low cardinality, such as HTTP method, status code, etc.
 tags:
@@ -15,7 +15,7 @@ tags:
   - service:refinery
   - signal:HoneycombEvents
   - sampler:ema
-  - sampler:throughput
+  - sampler:dynamic
 ports:
   # inputs
   - name: Sample
@@ -27,14 +27,14 @@ ports:
     type: HoneycombEvents
     note: "The traces that are sampled (retained for further processing)"
 properties:
-  - name: GoalThroughputPerSec
-    summary: The target throughput to achieve (in events per second).
+  - name: GoalSampleRate
+    summary: The target sample rate to achieve.
     description: |
-      The desired throughput to achieve (in events per second, NOT traces
-      per second). Note that this is a target, and the actual throughput may
-      vary. The accuracy of this sampler is heavily dependent on 1. the type
-      and volume of traffic; 2. the cardinality and distribution of the
-      sampling keys per AdjustmentInterval; 3. the AdjustmentInterval.
+      The desired sample rate to achieve. Note that this is a target, and the
+      actual throughput may vary. The accuracy of this sampler is heavily
+      dependent on 1. the type and volume of traffic; 2. the cardinality and
+      distribution of the sampling keys per AdjustmentInterval; 3. the
+      AdjustmentInterval.
     type: int
     validations:
       - positive
@@ -68,15 +68,17 @@ properties:
     default: []
 templates:
   - kind: refinery_rules
-    name: EMA_Throughput_Rules
+    name: EMA_Dynamic_Rules
     format: rules
     meta:
       env: "__default__"
-      sampler: EMAThroughputSampler
+      sampler: RulesBasedSampler
     data:
-      - key: GoalThroughputPerSec
-        value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
-      - key: AdjustmentInterval
+      - key: Name
+        value: "{{ or .Values.RuleName .ComponentName }}"
+      - key: Sampler.EMADynamicSampler.GoalSampleRate
+        value: "{{ .Values.GoalSampleRate | encodeAsInt }}"
+      - key: Sampler.EMADynamicSampler.AdjustmentInterval
         value: "{{ .Values.AdjustmentInterval }}s"
-      - key: FieldList
+      - key: Sampler.EMADynamicSampler.FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"

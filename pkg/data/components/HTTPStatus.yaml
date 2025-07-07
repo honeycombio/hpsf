@@ -1,5 +1,5 @@
-kind: O2HTTPStatus
-name: O2 HTTP Status
+kind: HTTPStatus
+name: HTTP Status
 style: condition
 type: base
 status: alpha
@@ -46,11 +46,16 @@ properties:
       - positive
 templates:
   - kind: refinery_rules
-    name: StatusCodeComparator
+    name: StatusCodeCondition
     format: rules
     meta:
-      env: "__default__"
-      sampler: RulesBasedSampler
+      condition: true
     data:
-      - key: "Rules[0].!condition!"
-        value: "ix=0;f=http.status_code,http.response.status_code;o={{ .Values.Operator }};d=i;v={{ .Values.Value }}"
+      - key: Fields
+        value: [http.status_code, http.response.status_code]
+      - key: Operator
+        value: "{{ .Values.Operator }}"
+      - key: Value
+        value: "{{ .Values.Value | encodeAsInt }}"
+      - key: Datatype
+        value: int

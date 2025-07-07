@@ -1,5 +1,5 @@
-kind: O2ErrorExists
-name: O2 Error Exists
+kind: ErrorExists
+name: Error Exists
 style: condition
 type: base
 status: development
@@ -22,7 +22,7 @@ ports:
     direction: output
     type: SampleData
 properties:
-  - name: ErrorField
+  - name: ErrorFields
     summary:
       The name of the field(s) to check for errors. If any of these fields exist in any span of a trace,
       the test will pass.
@@ -35,11 +35,12 @@ properties:
     default: ["error"]
 templates:
   - kind: refinery_rules
-    name: KeepErrors_RefineryRules
+    name: ErrorExistsCondition
     format: rules
     meta:
-      env: __default__
-      sampler: RulesBasedSampler
+      condition: true
     data:
-      - key: "Rules[0].!condition!"
-        value: "ix=0;f={{ .Values.ErrorField }};o=exists"
+      - key: Fields
+        value: "{{ .Values.ErrorFields | encodeAsArray}}"
+      - key: Operator
+        value: exists

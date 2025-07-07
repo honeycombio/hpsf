@@ -1,12 +1,12 @@
-kind: O2SamplerKeepAll
-name: O2 Keep All
+kind: SamplerDrop
+name: Drop
 style: sampler
 type: base
 status: development
 version: v0.1.0
-summary: Keeps all traces that reach this sampler.
+summary: Drops all traces
 description: |
-  This sampler keeps (samples) all traces, setting SampleRate to 1.
+  This sampler drops all traces.
 tags:
   - category:refinery_sampler
   - service:refinery
@@ -17,10 +17,6 @@ ports:
   - name: Sample
     direction: input
     type: SampleData
-  # outputs
-  - name: Events
-    direction: output
-    type: HoneycombEvents
 properties:
   - name: RuleName
     summary: The name of the rule (used in Refinery debugging).
@@ -30,12 +26,12 @@ properties:
     type: string
 templates:
   - kind: refinery_rules
-    name: KeepAll_RefineryRules
+    name: DropAll_RefineryRules
     format: rules
     meta:
       sampler: RulesBasedSampler
     data:
       - key: Name
-        value: "{{ firstnonzero .Values.RuleName .ComponentName }}"
-      - key: SampleRate
-        value: 1
+        value: "{{ or .Values.RuleName .ComponentName }}"
+      - key: Drop
+        value: true

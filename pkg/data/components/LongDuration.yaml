@@ -1,28 +1,28 @@
-kind: SampleByTraceDuration
-name: Sample By Trace Duration
-style: sampler
+kind: LongDuration
+name: Long Duration
+style: condition
 type: base
-status: alpha
+status: development
 version: v0.1.0
-summary: Samples traces based on root span duration
+summary: Makes a decision based on root span duration
 description: |
-  This sampler checks the duration of the root span in a trace.
+  This checks the duration of the root span in a trace.
   If the root span exceeds the specified duration, the trace will be sampled
   at the specified rate (default 1).
 tags:
-  - category:refinery_rule
+  - category:refinery_rule_condition
   - service:refinery
   - vendor:Honeycomb
   - type:error
 ports:
   # inputs
-  - name: Events
+  - name: Match
     direction: input
-    type: HoneycombEvents
+    type: SampleData
   # outputs
-  - name: Events
+  - name: And
     direction: output
-    type: HoneycombEvents
+    type: SampleData
 properties:
   - name: Duration
     summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
@@ -45,15 +45,16 @@ properties:
       - positive
 templates:
   - kind: refinery_rules
-    name: KeepErrors_RefineryRules
+    name: LongDurationCondition
     format: rules
     meta:
-      env: "__default__"
-      sampler: RulesBasedSampler
+      condition: true
     data:
-      - key: Rules[0].Name
-        value: "If a trace lasts longer than {{ .Values.Duration }}, sample at {{ .Values.SampleRate }}"
-      - key: Rules[0].SampleRate
-        value: "{{ .Values.SampleRate | encodeAsInt }}"
-      - key: "Rules[0].!condition!"
-        value: "ix=0;f=duration_ms;o=>=;v={{ .Values.Duration }};d=i"
+      - key: Field
+        value: duration_ms
+      - key: Operator
+        value: ">="
+      - key: Value
+        value: "{{ .Values.Duration | encodeAsInt }}"
+      - key: Datatype
+        value: int

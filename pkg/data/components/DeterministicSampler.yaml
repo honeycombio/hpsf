@@ -15,9 +15,9 @@ tags:
   - sampler:rate
 ports:
   # inputs
-  - name: Events
+  - name: Sample
     direction: input
-    type: HoneycombEvents
+    type: SampleData
   # outputs
   - name: Events
     direction: output
@@ -43,5 +43,7 @@ templates:
       env: "__default__"
       sampler: DeterministicSampler
     data:
+      - key: Name
+        value: "{{ or .Values.RuleName .ComponentName }}"
       - key: SampleRate
         value: "{{ .Values.SampleRate | encodeAsInt }}"

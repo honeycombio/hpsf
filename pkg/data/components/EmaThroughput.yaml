@@ -18,9 +18,9 @@ tags:
   - sampler:throughput
 ports:
   # inputs
-  - name: Events
+  - name: Sample
     direction: input
-    type: HoneycombEvents
+    type: SampleData
   # outputs
   - name: Events
     direction: output
@@ -74,9 +74,11 @@ templates:
       env: "__default__"
       sampler: EMAThroughputSampler
     data:
-      - key: GoalThroughputPerSec
+      - key: Name
+        value: "{{ or .Values.RuleName .ComponentName }}"
+      - key: Sampler.EMAThroughputSampler.GoalThroughputPerSec
         value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
-      - key: AdjustmentInterval
+      - key: Sampler.EMAThroughputSampler.AdjustmentInterval
         value: "{{ .Values.AdjustmentInterval }}s"
-      - key: FieldList
+      - key: Sampler.EMAThroughputSampler.FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"
