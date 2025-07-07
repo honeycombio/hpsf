@@ -37,6 +37,10 @@ func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
 		// that has the same name as portion of the filename before the _.
 		// look it up in the components map
 		for _, file := range testFiles {
+			if file.Name() == "default.yaml" {
+				// don't mess with the default.yaml file
+				continue
+			}
 			if !file.IsDir() && strings.HasSuffix(file.Name(), ".yaml") {
 				fullname := path.Join("testdata", subdir, file.Name())
 				t.Run(fullname, func(t *testing.T) {
