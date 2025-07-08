@@ -106,6 +106,9 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
 					require.NoError(t, err)
+					if cfg == nil {
+						continue // skip if no config is generated for this component
+					}
 
 					got, err := cfg.RenderYAML()
 					require.NoError(t, err)

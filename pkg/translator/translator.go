@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"iter"
 	"slices"
+	"sort"
 
 	"maps"
 
@@ -450,6 +451,29 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		}
 	}
 
+	// sort pipelines by connection type and the component name and port name of the
+	// first connection in the pipeline
+	sort.Slice(pipelines, func(i, j int) bool {
+		if pipelines[i].ConnType != pipelines[j].ConnType {
+			return pipelines[i].ConnType < pipelines[j].ConnType
+		}
+
+		// if either pipeline has no connections, we can determine the order by the presence of connections
+		if len(pipelines[i].Connections) == 0 || len(pipelines[j].Connections) == 0 {
+			return len(pipelines[i].Connections) == 0
+		}
+
+		// If both pipelines have connections, we can compare the first connection in each pipeline.
+		// We compare by the source component name first
+		if pipelines[i].Connections[0].Source.Component != pipelines[j].Connections[0].Source.Component {
+			return pipelines[i].Connections[0].Source.Component < pipelines[j].Connections[0].Source.Component
+		}
+		// now compare the port names (this is what orders multiple pipelines from startsampling)
+		// This assumes that the port names are sorted in the same order as the port indexes,
+		// since port indexes are not available here.
+		return pipelines[i].Connections[0].Source.PortName < pipelines[j].Connections[0].Source.PortName
+	})
+
 	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
 
 	// now we can iterate over the pipelines and generate a configuration for each
@@ -522,7 +546,7 @@ func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
 	if !foundDefaultSampler {
 		h.Components = append(h.Components, &hpsf.Component{
 			Name: "defaultSampler",
-			Kind: "DeterministicSampler",
+			Kind: "Deterministic",
 			Properties: []hpsf.Property{
 				{
 					Name:  "SampleRate",

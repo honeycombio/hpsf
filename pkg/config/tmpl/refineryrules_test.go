@@ -44,3 +44,12 @@ func TestSetMemberValueFields(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "field3", vsc.RulesBasedSampler.Rules[0].Conditions[0].Field)
 }
+
+func TestSetMemberValueZeroValue(t *testing.T) {
+	vsc := &V2SamplerChoice{}
+	err := SetMemberValue("RulesBasedSampler.Rules.0.SampleRate", vsc, 1000)
+	assert.NoError(t, err)
+	assert.Equal(t, 1000, vsc.RulesBasedSampler.Rules[0].SampleRate)
+	// Verify that unrelated fields remain nil/uninitialized
+	assert.Nil(t, vsc.RulesBasedSampler.Rules[0].Conditions)
+}

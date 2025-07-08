@@ -181,6 +181,7 @@ func setSliceElementValue(field reflect.Value, index int, subKey string, value a
 // This code uses reflection. The go proverb says "Clear is better than clever. Reflection is never clear."
 // This is an example of that, but the alternative is a whole bunch of type-specific code to do this for every possible type.
 // It was written with a lot of help from Claude, and passes its tests.
+// If this function returns an error, it is almost certainly due to a component design issue.
 func SetMemberValue(key string, member any, value any) error {
 	memberValue := reflect.ValueOf(member)
 	// Always dereference pointer(s) to get to the struct for FieldByName
@@ -199,7 +200,7 @@ func SetMemberValue(key string, member any, value any) error {
 	if len(parts) == 2 {
 		field := memberValue.FieldByName(parts[0])
 		if !field.IsValid() {
-			return fmt.Errorf("member %s is not a valid field", parts[0])
+			return fmt.Errorf("member %s is not a valid field in type %T", parts[0], memberValue.Interface())
 		}
 
 		// Always initialize pointer fields if nil before recursing
@@ -228,6 +229,9 @@ func SetMemberValue(key string, member any, value any) error {
 		return SetMemberValue(parts[1], nextMember, value)
 	} else {
 		field := memberValue.FieldByName(parts[0])
+		if !field.IsValid() {
+			return fmt.Errorf("field %s not found in type %T", parts[0], memberValue.Interface())
+		}
 		if field.Kind() == reflect.Ptr {
 			if field.IsNil() {
 				field.Set(reflect.New(field.Type().Elem()))

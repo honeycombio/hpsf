@@ -14,6 +14,7 @@ const (
 	StartSampling RulesComponentType = "startsampling"
 	Condition     RulesComponentType = "condition"
 	Sampler       RulesComponentType = "sampler"
+	Dropper       RulesComponentType = "dropper"
 )
 
 func RCTFromStyle(style string) RulesComponentType {
@@ -24,6 +25,8 @@ func RCTFromStyle(style string) RulesComponentType {
 		return Condition
 	case "sampler":
 		return Sampler
+	case "dropper":
+		return Dropper
 	default: // we don't need output because it's not a style
 		return "unknown" + "(" + RulesComponentType(style) + ")"
 	}
@@ -127,14 +130,19 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
 		case Sampler:
 			// in this case, we are merging a sampler directly into a startsampling
-			// so we inject the sampler at the environment level
-			keyPrefix = rc.meta[MetaSampler] + "."
+			// so we use the new sampler's type as the key prefix
+			keyPrefix = fmt.Sprintf("%s.", otherRC.meta[MetaSampler])
+		case Dropper:
+			// The refinery syntax for drop is terrible, so we have to handle it specially.
+			keyPrefix = fmt.Sprintf("%s.Rules.%s.", otherRC.meta[MetaSampler], rc.meta[MetaPipelineIndex])
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid start merge type", other)
 		}
 
 		for key, value := range otherRC.kvs {
-			SetMemberValue(keyPrefix+key, sampler, value)
+			if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+				return err
+			}
 		}
 		rc.Samplers[rc.meta[MetaEnv]] = sampler
 
@@ -158,15 +166,28 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 
 			sampler := rc.Samplers[rc.meta[MetaEnv]]
 			for key, value := range otherRC.kvs {
-				SetMemberValue(keyPrefix+key, sampler, value)
+				if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
 			}
 			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Sampler:
+			// we need to check if the sampler is connected to a condition or not. If not, we
+			// add it directly to the Samplers map, otherwise we add it to the
+			// RulesBasedSampler.Rules slice at the correct index.
 			ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
-			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+			samplerType := otherRC.meta[MetaSampler]
 			sampler := rc.Samplers[rc.meta[MetaEnv]]
+			var keyPrefix string
+			if sampler.RulesBasedSampler == nil || len(sampler.RulesBasedSampler.Rules) == 0 {
+				keyPrefix = fmt.Sprintf("%s.", samplerType)
+			} else {
+				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+			}
 			for key, value := range otherRC.kvs {
-				SetMemberValue(keyPrefix+key, sampler, value)
+				if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
 			}
 			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Output:
