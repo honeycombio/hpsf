@@ -3,11 +3,15 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: StartSampling
-  - name: EMAThroughput Sampler_1
-    kind: EMAThroughput
+  - name: EMADynamic Sampler_1
+    kind: EMADynamic
     properties:
-      - name: FieldList # FieldList is a required property without a default value
-        value: [http.method, http.status_code]
+      - name: GoalSampleRate
+        value: 120
+      - name: AdjustmentInterval
+        value: 99
+      - name: FieldList
+        value: [http.status_code]
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
@@ -24,11 +28,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: EMAThroughput Sampler_1
+      component: EMADynamic Sampler_1
       port: Sample
       type: SampleData
   - source:
-      component: EMAThroughput Sampler_1
+      component: EMADynamic Sampler_1
       port: Events
       type: HoneycombEvents
     destination:

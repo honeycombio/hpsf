@@ -1,0 +1,8 @@
+version: 2
+Samplers:
+    __default__:
+        EMADynamicSampler:
+            GoalSampleRate: 120
+            AdjustmentInterval: 1m39s
+            FieldList:
+                - http.status_code

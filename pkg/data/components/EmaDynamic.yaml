@@ -72,13 +72,11 @@ templates:
     format: rules
     meta:
       env: "__default__"
-      sampler: RulesBasedSampler
+      sampler: EMADynamicSampler
     data:
-      - key: Name
-        value: "{{ or .Values.RuleName .ComponentName }}"
-      - key: Sampler.EMADynamicSampler.GoalSampleRate
+      - key: GoalSampleRate
         value: "{{ .Values.GoalSampleRate | encodeAsInt }}"
-      - key: Sampler.EMADynamicSampler.AdjustmentInterval
+      - key: AdjustmentInterval
         value: "{{ .Values.AdjustmentInterval }}s"
-      - key: Sampler.EMADynamicSampler.FieldList
+      - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"

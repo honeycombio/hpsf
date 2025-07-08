@@ -1,8 +1,8 @@
 version: 2
 Samplers:
     __default__:
-        EMAThroughputSampler:
-            GoalThroughputPerSec: 100
+        EMADynamicSampler:
+            GoalSampleRate: 100
             AdjustmentInterval: 1m0s
             FieldList:
                 - http.method

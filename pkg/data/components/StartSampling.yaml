@@ -145,4 +145,4 @@ templates:
     format: rules
     meta:
       env: __default__
-      sampler: RulesBasedSampler
+      sampler: unknown

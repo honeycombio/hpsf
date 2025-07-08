@@ -1,0 +1,13 @@
+version: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - SampleRate: 1
+                  Conditions:
+                    - Fields:
+                        - http.status_code
+                        - http.response.status_code
+                      Operator: '!='
+                      Value: 444
+                      Datatype: int

@@ -1,0 +1,11 @@
+version: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - SampleRate: 1
+                  Conditions:
+                    - Field: duration_ms
+                      Operator: '>='
+                      Value: 1000
+                      Datatype: int

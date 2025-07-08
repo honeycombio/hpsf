@@ -74,11 +74,9 @@ templates:
       env: "__default__"
       sampler: EMAThroughputSampler
     data:
-      - key: Name
-        value: "{{ or .Values.RuleName .ComponentName }}"
-      - key: Sampler.EMAThroughputSampler.GoalThroughputPerSec
+      - key: GoalThroughputPerSec
         value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
-      - key: Sampler.EMAThroughputSampler.AdjustmentInterval
+      - key: AdjustmentInterval
         value: "{{ .Values.AdjustmentInterval }}s"
-      - key: Sampler.EMAThroughputSampler.FieldList
+      - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"

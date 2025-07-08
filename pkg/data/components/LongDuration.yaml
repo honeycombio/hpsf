@@ -34,15 +34,6 @@ properties:
     default: 1000
     validations:
       - positive
-  - name: SampleRate
-    summary: The sample rate to use if the trace exceeds the duration.
-    description: |
-      The sample rate to use if the rule matches. Example: 10 to keep 1 out of
-      10 traces.
-    type: int
-    default: 1
-    validations:
-      - positive
 templates:
   - kind: refinery_rules
     name: LongDurationCondition

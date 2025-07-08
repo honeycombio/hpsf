@@ -3,11 +3,10 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: StartSampling
-  - name: EMAThroughput Sampler_1
-    kind: EMAThroughput
-    properties:
-      - name: FieldList # FieldList is a required property without a default value
-        value: [http.method, http.status_code]
+  - name: Long Duration_1
+    kind: LongDuration
+  - name: Keep All_1
+    kind: SamplerKeepAll
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
@@ -24,11 +23,19 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: EMAThroughput Sampler_1
+      component: Long Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Long Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
       port: Sample
       type: SampleData
   - source:
-      component: EMAThroughput Sampler_1
+      component: Keep All_1
       port: Events
       type: HoneycombEvents
     destination:

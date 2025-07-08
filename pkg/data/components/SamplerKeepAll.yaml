@@ -33,9 +33,7 @@ templates:
     name: KeepAll_RefineryRules
     format: rules
     meta:
-      sampler: RulesBasedSampler
+      sampler: DeterministicSampler
     data:
-      - key: Name
-        value: "{{ or .Values.RuleName .ComponentName }}"
       - key: SampleRate
         value: 1
