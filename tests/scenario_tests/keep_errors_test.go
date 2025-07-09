@@ -37,7 +37,7 @@ func TestKeepErrors(t *testing.T) {
 	// Test sample rate (from templates: Rules[0].SampleRate)
 	assert.Equal(t, 5, rule.SampleRate)
 
-	// Test rule conditions (from templates: Rules[0].!condition!)
+	// Test rule conditions
 	assert.Len(t, rule.Conditions, 1, "Expected 1 condition")
 
 	condition := rule.Conditions[0]
