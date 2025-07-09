@@ -5,8 +5,6 @@ components:
     kind: StartSampling
   - name: SamplerDrop Sampler_1
     kind: SamplerDrop
-  - name: Send to Honeycomb_1
-    kind: HoneycombExporter
 connections:
   - source:
       component: OTel Receiver_1
@@ -24,11 +22,3 @@ connections:
       component: SamplerDrop Sampler_1
       port: Sample
       type: SampleData
-  - source:
-      component: SamplerDrop Sampler_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents

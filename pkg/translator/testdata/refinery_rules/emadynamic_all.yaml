@@ -1,4 +1,4 @@
-version: 2
+RulesVersion: 2
 Samplers:
     __default__:
         EMADynamicSampler:

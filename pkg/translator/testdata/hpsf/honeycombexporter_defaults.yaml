@@ -19,12 +19,12 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
-      port: Events
-      type: HoneycombEvents
+      port: Rule 1
+      type: SampleData
     destination:
       component: sampler
-      port: Events
-      type: HoneycombEvents
+      port: Sample
+      type: SampleData
   - source:
       component: sampler
       port: Events

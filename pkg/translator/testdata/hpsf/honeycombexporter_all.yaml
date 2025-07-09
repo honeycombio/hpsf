@@ -38,16 +38,16 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
-      port: Events
+      port: Rule 1
       type: Honeycomb
     destination:
       component: sampler
-      port: Events
-      type: HoneycombEvents
+      port: Sample
+      type: SampleData
   - source:
       component: sampler
       port: Events
-      type: Honeycomb
+      type: HoneycombEvents
     destination:
       component: honeycomb
       port: Events

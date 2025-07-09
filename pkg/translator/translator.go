@@ -160,6 +160,7 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 }
 
 // this checks that there is exactly one connection on the input and output of each sampler
+// and condition component.
 func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF sampler connection validation errors")
 	// iterate over the components and check for samplers
@@ -172,8 +173,8 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 			continue
 		}
 
-		if tmpl.Style == "sampler" {
-			// check the connections for the sampler
+		if tmpl.Style == "sampler" || tmpl.Style == "condition" {
+			// check the connections for the component
 			inputs := 0
 			outputs := 0
 			for _, conn := range h.Connections {
@@ -185,7 +186,7 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 				}
 			}
 			if inputs != 1 || outputs != 1 {
-				err := hpsf.NewError("sampler must have exactly one input and one output connection").
+				err := hpsf.NewError("sampler and condition components must have exactly one input and one output connection").
 					WithComponent(c.Name)
 				result.Add(err)
 			}
@@ -225,6 +226,11 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 	}
 	return result
 }
+
+// The rules for sampling in HPSF are as follows:
+// - If there are any sampling components, there must be at least one "startsampling" component.
+// - Each pipeline connected to a "startsampling" component must have exactly one sampler.
+// - There may be multiple "condition" components between startsampling and the sampler.
 
 // validateStartSampling checks that there is at most one component with the "startsampling" style. If it exists,
 // there must be at least one sampler in the configuration. If it does not exist, there can be no samplers in the configuration.
