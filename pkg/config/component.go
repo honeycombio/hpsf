@@ -71,3 +71,41 @@ func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWith
 func (c *GenericBaseComponent) AddConnection(conn *hpsf.Connection) {
 	c.Connections = append(c.Connections, conn)
 }
+
+// UnconfiguredRefineryComponent is used when the user has not added
+// any components to the refinery configuration yet. It provides just
+// the basic configuration needed to start a refinery.
+type UnconfiguredRefineryComponent struct {
+	Component   hpsf.Component
+	Connections []*hpsf.Connection
+}
+
+// ensure that UnconfiguredRefineryComponent implements Component
+var _ Component = (*UnconfiguredRefineryComponent)(nil)
+
+func (c UnconfiguredRefineryComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	switch ct {
+	case RefineryConfigType:
+		// DottedConfig is already a map, so we don't need a pointer
+		return tmpl.DottedConfig{
+			"General.ConfigurationVersion": 2,
+			"General.MinRefineryVersion":   "v2.0",
+		}, nil
+	case RefineryRulesType:
+		rules := tmpl.NewRulesConfig(tmpl.Output, nil, nil)
+		rules.Samplers["__default__"] = &tmpl.V2SamplerChoice{
+			DeterministicSampler: &tmpl.DeterministicSamplerConfig{
+				SampleRate: 1,
+			},
+		}
+		return rules, nil
+	case CollectorConfigType:
+		return tmpl.NewCollectorConfig(), nil
+	default:
+		return nil, nil
+	}
+}
+
+func (c *UnconfiguredRefineryComponent) AddConnection(conn *hpsf.Connection) {
+	c.Connections = append(c.Connections, conn)
+}

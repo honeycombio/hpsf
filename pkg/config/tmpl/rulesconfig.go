@@ -41,7 +41,7 @@ func RCTFromStyle(style string) RulesComponentType {
 // the type of component that created the object so that Merge can be done
 // correctly; objects ready for rendering will have a compType of Output.
 type RulesConfig struct {
-	Version  int
+	Version  int                         `yaml:"RulesVersion,omitempty"`
 	Samplers map[string]*V2SamplerChoice `yaml:"Samplers,omitempty"`
 	compType RulesComponentType          `yaml:"-"`
 	meta     map[string]string           `yaml:"-"`

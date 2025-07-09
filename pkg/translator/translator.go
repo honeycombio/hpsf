@@ -393,9 +393,6 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
-	t.maybeAddDefaultSampler(h)
-
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
@@ -474,12 +471,13 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		return pipelines[i].Connections[0].Source.PortName < pipelines[j].Connections[0].Source.PortName
 	})
 
+	// we need a dummy component to start with so that we can always have a valid config
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
 
 	// now we can iterate over the pipelines and generate a configuration for each
 	for _, pipeline := range pipelines {
 		// Start with a base component so we always have a valid config
-		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 		base := config.GenericBaseComponent{Component: dummy}
 		composite, err := base.GenerateConfig(ct, pipeline, userdata)
 		if err != nil {
@@ -523,8 +521,10 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		// If we only have one pipeline, we can return it directly.
 		return composites[0], nil
 	}
-	// If we have no pipelines, we return nil.
-	return nil, nil
+
+	// Start with a base component so we always have a valid config
+	refineryBase := config.UnconfiguredRefineryComponent{Component: dummy}
+	return refineryBase.GenerateConfig(ct, hpsf.PipelineWithConnections{}, nil)
 }
 
 func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
