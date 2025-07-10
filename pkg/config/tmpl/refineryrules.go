@@ -157,7 +157,7 @@ func setSliceElementValue(field reflect.Value, index int, subKey string, value a
 	}
 
 	if subKey != "" {
-		return SetMemberValue(subKey, nextMember, value)
+		return setMemberValue(subKey, nextMember, value)
 	} else {
 		if field.Index(index).Kind() == reflect.Ptr && field.Index(index).IsNil() {
 			field.Index(index).Set(reflect.New(field.Index(index).Type().Elem()))
@@ -176,13 +176,13 @@ func setSliceElementValue(field reflect.Value, index int, subKey string, value a
 	}
 }
 
-// SetMemberValue sets a value on a member of a struct, including nested structs, slices, and maps, dereferencing pointers as needed.
+// setMemberValue sets a value on a member of a struct, including nested structs, slices, and maps, dereferencing pointers as needed.
 // It also handles Duration type conversion.
 // This code uses reflection. The go proverb says "Clear is better than clever. Reflection is never clear."
 // This is an example of that, but the alternative is a whole bunch of type-specific code to do this for every possible type.
 // It was written with a lot of help from Claude, and passes its tests.
 // If this function returns an error, it is almost certainly due to a component design issue.
-func SetMemberValue(key string, member any, value any) error {
+func setMemberValue(key string, member any, value any) error {
 	memberValue := reflect.ValueOf(member)
 	// Always dereference pointer(s) to get to the struct for FieldByName
 	for memberValue.Kind() == reflect.Ptr {
@@ -226,7 +226,7 @@ func SetMemberValue(key string, member any, value any) error {
 		if field.Kind() != reflect.Ptr && field.CanAddr() {
 			nextMember = field.Addr().Interface()
 		}
-		return SetMemberValue(parts[1], nextMember, value)
+		return setMemberValue(parts[1], nextMember, value)
 	} else {
 		field := memberValue.FieldByName(parts[0])
 		if !field.IsValid() {

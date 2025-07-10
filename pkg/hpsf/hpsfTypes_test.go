@@ -399,7 +399,7 @@ func TestHPSF_VisitComponents(t *testing.T) {
 	}
 }
 
-func TestHPSF_FindAllPipelines(t *testing.T) {
+func TestHPSF_FindAllPaths(t *testing.T) {
 	// Create a simple HPSF with 3 components connected in a line: A -> B -> C
 	hpsf := &HPSF{
 		Kind:    "test",
@@ -438,31 +438,31 @@ func TestHPSF_FindAllPipelines(t *testing.T) {
 		},
 	}
 
-	// Find all pipelines
-	pipelines := hpsf.FindAllPipelines(nil)
+	// Find all paths
+	paths := hpsf.FindAllPaths(nil)
 
-	// Should find exactly one pipeline for CTYPE_TRACES
-	assert.Len(t, pipelines, 1, "Should find exactly one pipeline")
+	// Should find exactly one path for CTYPE_TRACES
+	assert.Len(t, paths, 1, "Should find exactly one path")
 
-	pipeline := pipelines[0]
-	assert.Equal(t, CTYPE_TRACES, pipeline.ConnType, "Pipeline should be for traces")
+	path := paths[0]
+	assert.Equal(t, CTYPE_TRACES, path.ConnType, "Path should be for traces")
 
-	// Should have 3 components in the pipeline
-	assert.Len(t, pipeline.Pipeline, 3, "Pipeline should have 3 components")
-	assert.Equal(t, "component_a", pipeline.Pipeline[0].Name, "First component should be component_a")
-	assert.Equal(t, "component_b", pipeline.Pipeline[1].Name, "Second component should be component_b")
-	assert.Equal(t, "component_c", pipeline.Pipeline[2].Name, "Third component should be component_c")
+	// Should have 3 components in the path
+	assert.Len(t, path.Path, 3, "Path should have 3 components")
+	assert.Equal(t, "component_a", path.Path[0].Name, "First component should be component_a")
+	assert.Equal(t, "component_b", path.Path[1].Name, "Second component should be component_b")
+	assert.Equal(t, "component_c", path.Path[2].Name, "Third component should be component_c")
 
 	// Should have exactly 2 connections (A->B and B->C)
-	assert.Len(t, pipeline.Connections, 2, "Pipeline should have exactly 2 connections")
+	assert.Len(t, path.Connections, 2, "Pipeline should have exactly 2 connections")
 
 	// Verify the first connection (A->B)
-	assert.Equal(t, "component_a", pipeline.Connections[0].Source.Component, "First connection source should be component_a")
-	assert.Equal(t, "component_b", pipeline.Connections[0].Destination.Component, "First connection destination should be component_b")
+	assert.Equal(t, "component_a", path.Connections[0].Source.Component, "First connection source should be component_a")
+	assert.Equal(t, "component_b", path.Connections[0].Destination.Component, "First connection destination should be component_b")
 
 	// Verify the second connection (B->C)
-	assert.Equal(t, "component_b", pipeline.Connections[1].Source.Component, "Second connection source should be component_b")
-	assert.Equal(t, "component_c", pipeline.Connections[1].Destination.Component, "Second connection destination should be component_c")
+	assert.Equal(t, "component_b", path.Connections[1].Source.Component, "Second connection source should be component_b")
+	assert.Equal(t, "component_c", path.Connections[1].Destination.Component, "Second connection destination should be component_c")
 }
 
 func TestHPSF_FindAllPipelines_MultiplePaths(t *testing.T) {
@@ -529,33 +529,33 @@ func TestHPSF_FindAllPipelines_MultiplePaths(t *testing.T) {
 		},
 	}
 
-	// Find all pipelines
-	pipelines := hpsf.FindAllPipelines(nil)
+	// Find all paths
+	paths := hpsf.FindAllPaths(nil)
 
-	// Should find exactly two pipelines for CTYPE_TRACES
-	assert.Len(t, pipelines, 2, "Should find exactly two pipelines")
+	// Should find exactly two paths for CTYPE_TRACES
+	assert.Len(t, paths, 2, "Should find exactly two paths")
 
-	// Both pipelines should have the same connection type
-	for _, pipeline := range pipelines {
-		assert.Equal(t, CTYPE_TRACES, pipeline.ConnType, "All pipelines should be for traces")
-		assert.Len(t, pipeline.Pipeline, 3, "Each pipeline should have 3 components")
-		assert.Equal(t, "component_a", pipeline.Pipeline[0].Name, "First component should be component_a")
-		assert.Equal(t, "component_c", pipeline.Pipeline[2].Name, "Last component should be component_c")
-		assert.Len(t, pipeline.Connections, 2, "Each pipeline should have exactly 2 connections")
+	// Both paths should have the same connection type
+	for _, path := range paths {
+		assert.Equal(t, CTYPE_TRACES, path.ConnType, "All paths should be for traces")
+		assert.Len(t, path.Path, 3, "Each path should have 3 components")
+		assert.Equal(t, "component_a", path.Path[0].Name, "First component should be component_a")
+		assert.Equal(t, "component_c", path.Path[2].Name, "Last component should be component_c")
+		assert.Len(t, path.Connections, 2, "Each path should have exactly 2 connections")
 	}
 
 	// Verify that we have both paths: A->B->C and A->D->C
 	foundPath1 := false
 	foundPath2 := false
 
-	for _, pipeline := range pipelines {
-		switch pipeline.Pipeline[1].Name {
+	for _, path := range paths {
+		switch path.Path[1].Name {
 		case "component_b":
 			foundPath1 = true
-			assert.Equal(t, "component_b", pipeline.Connections[0].Destination.Component, "Path 1 should go through component_b")
+			assert.Equal(t, "component_b", path.Connections[0].Destination.Component, "Path 1 should go through component_b")
 		case "component_d":
 			foundPath2 = true
-			assert.Equal(t, "component_d", pipeline.Connections[0].Destination.Component, "Path 2 should go through component_d")
+			assert.Equal(t, "component_d", path.Connections[0].Destination.Component, "Path 2 should go through component_d")
 		}
 	}
 

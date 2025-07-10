@@ -263,7 +263,7 @@ func (t *TemplateComponent) GetPortIndex(name string) int {
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 
@@ -308,12 +308,15 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 						err, t.Kind)
 				}
 
-				// We need to know which pipeline we're generating rules for, so we look up the
-				// connection leading to this component.
+				// We might need to know which collection of rules we're
+				// generating rules for, (basically which startsampling port
+				// we're connected to) so we look up the connection leading to
+				// this component. If we find one, we can use its source port
+				// name to look up an index. If we don't find one, it's safe to
+				// assume that the index is 0, which is the default.
 				conn := pipeline.GetConnectionLeadingTo(t.hpsf.GetSafeName())
 				index := 0
 				if conn != nil {
-					// we have a connection, so we can use its source port name to look up an index
 					index = t.GetPortIndex(conn.Source.GetSafeName())
 				}
 
@@ -464,7 +467,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 // this is where we do the actual work of generating the config; this thing knows about
 // the structure of the collector config and how to fill it in
-func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PipelineWithConnections, userdata map[string]any) (*tmpl.CollectorConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PathWithConnections, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	t.collName = ct.collectorComponentName

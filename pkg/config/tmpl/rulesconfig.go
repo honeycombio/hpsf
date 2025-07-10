@@ -148,7 +148,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		}
 
 		for key, value := range otherRC.kvs {
-			if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+			if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 				return err
 			}
 		}
@@ -174,7 +174,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 
 			sampler := rc.Samplers[rc.meta[MetaEnv]]
 			for key, value := range otherRC.kvs {
-				if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 					return err
 				}
 			}
@@ -193,7 +193,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
 			}
 			for key, value := range otherRC.kvs {
-				if err := SetMemberValue(keyPrefix+key, sampler, value); err != nil {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 					return err
 				}
 			}

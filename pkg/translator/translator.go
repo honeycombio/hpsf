@@ -3,7 +3,6 @@ package translator
 import (
 	"fmt"
 	"iter"
-	"slices"
 	"sort"
 
 	"maps"
@@ -436,69 +435,69 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		comp.AddConnection(conn)
 	}
 
-	// We need to generate our collection of unique pipelines. A pipeline in
+	// We need to generate our collection of unique paths. A pipeline in
 	// this context is the shortest path from a source component to a
 	// destination component. We iterate over all starting components (those
 	// with no incoming connections) and all ending components (those with no
 	// outgoing connections).
-	pipelines := h.FindAllPipelines(receiverNames)
-	if len(pipelines) == 0 {
-		// there were no complete pipelines found, so we construct dummy pipelines with all the components
-		// so that all the non-piped components can play
-		pipelines = []hpsf.PipelineWithConnections{
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_SAMPLE},
+	paths := h.FindAllPaths(receiverNames)
+	if len(paths) == 0 {
+		// there were no complete paths found, so we construct dummy paths with all the components
+		// so that all the unconnected components can play
+		paths = []hpsf.PathWithConnections{
+			{Path: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Path: h.Components, ConnType: hpsf.CTYPE_HONEY},
+			{Path: h.Components, ConnType: hpsf.CTYPE_SAMPLE},
 		}
 	}
 
-	// sort pipelines by connection type and the component name and port name of the
-	// first connection in the pipeline
-	sort.Slice(pipelines, func(i, j int) bool {
-		if pipelines[i].ConnType != pipelines[j].ConnType {
-			return pipelines[i].ConnType < pipelines[j].ConnType
+	// sort paths by connection type and the component name and port name of the
+	// first connection in the path
+	sort.Slice(paths, func(i, j int) bool {
+		if paths[i].ConnType != paths[j].ConnType {
+			return paths[i].ConnType < paths[j].ConnType
 		}
 
-		// if either pipeline has no connections, we can determine the order by the presence of connections
-		if len(pipelines[i].Connections) == 0 || len(pipelines[j].Connections) == 0 {
-			return len(pipelines[i].Connections) == 0
+		// if either path has no connections, we can determine the order by the presence of connections
+		if len(paths[i].Connections) == 0 || len(paths[j].Connections) == 0 {
+			return len(paths[i].Connections) == 0
 		}
 
-		// If both pipelines have connections, we can compare the first connection in each pipeline.
+		// If both paths have connections, we can compare the first connection in each path.
 		// We compare by the source component name first
-		if pipelines[i].Connections[0].Source.Component != pipelines[j].Connections[0].Source.Component {
-			return pipelines[i].Connections[0].Source.Component < pipelines[j].Connections[0].Source.Component
+		if paths[i].Connections[0].Source.Component != paths[j].Connections[0].Source.Component {
+			return paths[i].Connections[0].Source.Component < paths[j].Connections[0].Source.Component
 		}
-		// now compare the port names (this is what orders multiple pipelines from startsampling)
+		// now compare the port names (this is what orders multiple paths from startsampling)
 		// This assumes that the port names are sorted in the same order as the port indexes,
 		// since port indexes are not available here.
-		return pipelines[i].Connections[0].Source.PortName < pipelines[j].Connections[0].Source.PortName
+		return paths[i].Connections[0].Source.PortName < paths[j].Connections[0].Source.PortName
 	})
 
 	// we need a dummy component to start with so that we can always have a valid config
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
-	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
+	composites := make([]tmpl.TemplateConfig, 0, len(paths))
 
-	// now we can iterate over the pipelines and generate a configuration for each
-	for _, pipeline := range pipelines {
+	// now we can iterate over the paths and generate a configuration for each
+	for _, path := range paths {
 		// Start with a base component so we always have a valid config
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, pipeline, userdata)
+		composite, err := base.GenerateConfig(ct, path, userdata)
 		if err != nil {
 			return nil, err
 		}
 
 		mergedSomething := false
-		for _, comp := range pipeline.Pipeline {
+		for _, comp := range path.Path {
 			// look up the component in the ordered map
 			c, ok := comps.Get(comp.GetSafeName())
 			if !ok {
-				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
+				return nil, fmt.Errorf("unknown component %s in path", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, userdata)
 			if err != nil {
 				return nil, err
 			}
@@ -530,35 +529,5 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 
 	// Start with a base component so we always have a valid config
 	refineryBase := config.UnconfiguredRefineryComponent{Component: dummy}
-	return refineryBase.GenerateConfig(ct, hpsf.PipelineWithConnections{}, nil)
-}
-
-func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
-		if component, ok := t.components[c.Kind]; ok {
-			if component.Style != "sampler" {
-				return false
-			}
-			p := c.GetProperty("Environment")
-			if p != nil {
-				return p.Value == "__default__"
-			}
-			return slices.ContainsFunc(component.Properties, func(p config.TemplateProperty) bool {
-				return p.Name == "Environment" && p.Default == "__default__"
-			})
-		}
-		return false
-	})
-	if !foundDefaultSampler {
-		h.Components = append(h.Components, &hpsf.Component{
-			Name: "defaultSampler",
-			Kind: "Deterministic",
-			Properties: []hpsf.Property{
-				{
-					Name:  "SampleRate",
-					Value: 1,
-				},
-			},
-		})
-	}
+	return refineryBase.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 }
