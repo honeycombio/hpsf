@@ -47,7 +47,7 @@ func buildRulesTemplate(t TemplateData) (*rulesTemplate, error) {
 
 // we expand template variables here, but we don't actually apply the kvs yet;
 // that's deferred until merge time.
-func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl.RulesComponentType, pipelineIndex int, userdata map[string]any) (*tmpl.RulesConfig, error) {
+func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl.RulesMergeType, pipelineIndex int, userdata map[string]any) (*tmpl.RulesConfig, error) {
 	kvs := make(map[string]any)
 	meta := make(map[string]string)
 	meta[tmpl.MetaPipelineIndex] = strconv.Itoa(pipelineIndex)

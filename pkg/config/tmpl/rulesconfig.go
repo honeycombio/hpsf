@@ -7,17 +7,18 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
-type RulesComponentType int
+type RulesMergeType int
 
-// These are the types of components that can be used. They are marked as "style"
-// inside the components.
+// RulesMergeType represents the types of entities that can be combined to generate rules.
+// For components, they come from the "style" inside the components. But we also have the
+// output type which is not a component, but is used internally to help with the merging of samplers.
 // - StartSampling is the type of component that starts the sampling process.
 // - Condition represents a conditional branch in the rules.
 // - Sampler represents a sampler in the rules.
 // - Dropper is a sampler with no output.
-// - Output is not actually a component, but is used internally to help with the merging of samplers.
+// - Output is not a component, but is used internally to help with the merging of samplers.
 const (
-	Unknown RulesComponentType = iota
+	Unknown RulesMergeType = iota
 	StartSampling
 	Condition
 	Sampler
@@ -25,7 +26,7 @@ const (
 	Output
 )
 
-func String(rct RulesComponentType) string {
+func String(rct RulesMergeType) string {
 	switch rct {
 	case StartSampling:
 		return "startsampling"
@@ -42,7 +43,7 @@ func String(rct RulesComponentType) string {
 	}
 }
 
-func RCTFromStyle(style string) (RulesComponentType, error) {
+func RCTFromStyle(style string) (RulesMergeType, error) {
 	switch style {
 	case "startsampling":
 		return StartSampling, nil
@@ -68,7 +69,7 @@ func RCTFromStyle(style string) (RulesComponentType, error) {
 type RulesConfig struct {
 	Version  int                         `yaml:"RulesVersion,omitempty"`
 	Samplers map[string]*V2SamplerChoice `yaml:"Samplers,omitempty"`
-	compType RulesComponentType          `yaml:"-"`
+	compType RulesMergeType              `yaml:"-"`
 	meta     map[string]string           `yaml:"-"`
 	kvs      map[string]any              `yaml:"-"`
 }
@@ -80,7 +81,7 @@ const (
 	MetaSampler       = "sampler"
 )
 
-func NewRulesConfig(rct RulesComponentType, meta map[string]string, kvs map[string]any) *RulesConfig {
+func NewRulesConfig(rct RulesMergeType, meta map[string]string, kvs map[string]any) *RulesConfig {
 	return &RulesConfig{
 		Version:  2,
 		Samplers: make(map[string]*V2SamplerChoice),
