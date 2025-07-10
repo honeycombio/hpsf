@@ -26,8 +26,8 @@ const (
 	Output
 )
 
-func String(rct RulesMergeType) string {
-	switch rct {
+func String(rmt RulesMergeType) string {
+	switch rmt {
 	case StartSampling:
 		return "startsampling"
 	case Condition:
@@ -43,7 +43,7 @@ func String(rct RulesMergeType) string {
 	}
 }
 
-func RCTFromStyle(style string) (RulesMergeType, error) {
+func RMTFromStyle(style string) (RulesMergeType, error) {
 	switch style {
 	case "startsampling":
 		return StartSampling, nil
@@ -81,11 +81,11 @@ const (
 	MetaSampler       = "sampler"
 )
 
-func NewRulesConfig(rct RulesMergeType, meta map[string]string, kvs map[string]any) *RulesConfig {
+func NewRulesConfig(rmt RulesMergeType, meta map[string]string, kvs map[string]any) *RulesConfig {
 	return &RulesConfig{
 		Version:  2,
 		Samplers: make(map[string]*V2SamplerChoice),
-		compType: rct,
+		compType: rmt,
 		meta:     meta,
 		kvs:      kvs,
 	}
