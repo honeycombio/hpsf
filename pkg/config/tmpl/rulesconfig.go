@@ -7,28 +7,53 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
-type RulesComponentType string
+type RulesComponentType int
 
+// These are the types of components that can be used. They are marked as "style"
+// inside the components.
+// - StartSampling is the type of component that starts the sampling process.
+// - Condition represents a conditional branch in the rules.
+// - Sampler represents a sampler in the rules.
+// - Dropper is a sampler with no output.
+// - Output is not actually a component, but is used internally to help with the merging of samplers.
 const (
-	Output        RulesComponentType = "output"
-	StartSampling RulesComponentType = "startsampling"
-	Condition     RulesComponentType = "condition"
-	Sampler       RulesComponentType = "sampler"
-	Dropper       RulesComponentType = "dropper"
+	Unknown RulesComponentType = iota
+	StartSampling
+	Condition
+	Sampler
+	Dropper
+	Output
 )
 
-func RCTFromStyle(style string) RulesComponentType {
+func String(rct RulesComponentType) string {
+	switch rct {
+	case StartSampling:
+		return "startsampling"
+	case Condition:
+		return "condition"
+	case Sampler:
+		return "sampler"
+	case Dropper:
+		return "dropper"
+	case Output:
+		return "output"
+	default:
+		return "unknown"
+	}
+}
+
+func RCTFromStyle(style string) (RulesComponentType, error) {
 	switch style {
 	case "startsampling":
-		return StartSampling
+		return StartSampling, nil
 	case "condition":
-		return Condition
+		return Condition, nil
 	case "sampler":
-		return Sampler
+		return Sampler, nil
 	case "dropper":
-		return Dropper
+		return Dropper, nil
 	default: // we don't need output because it's not a style
-		return "unknown" + "(" + RulesComponentType(style) + ")"
+		return Unknown, fmt.Errorf("unknown RulesComponentType: %s", style)
 	}
 }
 
@@ -71,24 +96,6 @@ func (rc *RulesConfig) RenderToMap(m map[string]any) map[string]any {
 	// If we decide we want this, we can have it call RenderYAML and then
 	// unmarshal the YAML into a map.
 
-	// if m == nil {
-	// 	m = make(map[string]any)
-	// }
-	// m["RulesVersion"] = rc.Version
-	// foundDefault := false
-	// for _, env := range rc.Envs {
-	// 	if env.Name == "__default__" {
-	// 		foundDefault = true
-	// 	}
-	// 	m = env.ConfigData.RenderToMap(m)
-	// }
-	// if !foundDefault {
-	// 	// if we don't have a default env, we need to add one
-	// 	defaultConfig := DottedConfig{
-	// 		"Samplers.__default__.DeterministicSampler.SampleRate": 1,
-	// 	}
-	// 	m = defaultConfig.RenderToMap(m)
-	// }
 	return m
 }
 

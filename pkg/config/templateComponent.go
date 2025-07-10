@@ -317,7 +317,12 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 					index = t.GetPortIndex(conn.Source.GetSafeName())
 				}
 
-				tmpl, err := t.generateRulesConfig(rt, tmpl.RCTFromStyle(t.Style), index, userdata)
+				rct, err := tmpl.RCTFromStyle(t.Style)
+				if err != nil {
+					return nil, fmt.Errorf("error %w getting RulesComponentType from style %s for %s",
+						err, t.Style, t.Kind)
+				}
+				tmpl, err := t.generateRulesConfig(rt, rct, index, userdata)
 				if err != nil {
 					return nil, err
 				}
