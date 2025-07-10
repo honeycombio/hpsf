@@ -213,7 +213,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
 		}
 	default:
-		return fmt.Errorf("cannot merge into RulesConfig because '%s' is not a valid component type", rc.compType)
+		return fmt.Errorf("cannot merge into RulesConfig because '%v' is not a valid component type", rc.compType)
 	}
 	return nil
 }
