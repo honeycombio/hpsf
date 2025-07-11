@@ -108,6 +108,23 @@ func (rc *RulesConfig) RenderYAML() ([]byte, error) {
 	return data, nil
 }
 
+// Checks if the sampler type is one of the permitted downstream sampler types.
+// We leave deterministic samplers out of this list (even though they're
+// technically permitted) because they are handled specially in the rules
+// config anyway.
+func isDownstreamSamplerType(samplerType string) bool {
+	switch samplerType {
+	case "EMADynamicSampler",
+		"EMAThroughputSampler",
+		"WindowedThroughputSampler",
+		"DynamicSampler",
+		"TotalThroughputSampler":
+		return true
+	default:
+		return false
+	}
+}
+
 func (rc *RulesConfig) Merge(other TemplateConfig) error {
 	otherRC, ok := other.(*RulesConfig)
 	if !ok {
@@ -190,7 +207,11 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			if sampler.RulesBasedSampler == nil || len(sampler.RulesBasedSampler.Rules) == 0 {
 				keyPrefix = fmt.Sprintf("%s.", samplerType)
 			} else {
-				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+				if isDownstreamSamplerType(samplerType) {
+					keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%d.Sampler.%s.", ruleIndex, samplerType)
+				} else {
+					keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+				}
 			}
 			for key, value := range otherRC.kvs {
 				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
