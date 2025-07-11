@@ -8,10 +8,11 @@ receivers:
 processors:
     usage: {}
 exporters:
-    otlphttp/OTel_HTTP_Exporter_1:
+    otlphttp/Honeycomb_Exporter_1:
         endpoint: https://api.honeycomb.io:443
         headers:
-            x-honeycomb-team: ${HONEYCOMB_API_KEY}
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
         sending_queue:
             batch:
                 flush_timeout: 200ms
@@ -25,15 +26,15 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/200-bbb:
+        logs/5d5-96d:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
-            exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        metrics/012-2cf:
+            exporters: [otlphttp/Honeycomb_Exporter_1]
+        metrics/11b-8e8:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
-            exporters: [otlphttp/OTel_HTTP_Exporter_1]
-        traces/f16-c79:
+            exporters: [otlphttp/Honeycomb_Exporter_1]
+        traces/9e7-14c:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
-            exporters: [otlphttp/OTel_HTTP_Exporter_1]
+            exporters: [otlphttp/Honeycomb_Exporter_1]

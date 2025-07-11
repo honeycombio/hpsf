@@ -142,7 +142,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
+        value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"
