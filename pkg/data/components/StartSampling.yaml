@@ -1,12 +1,13 @@
 kind: StartSampling
 name: Start Sampling
-style: processor
+style: startsampling
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Converts traces and logs to a format for sampling
 description: |
-  Converts traces and logs to a format for advanced tail-based sampling with Refinery.
+  Converts traces and logs to a format for advanced tail-based sampling with Refinery. Also contains some advanced
+  configuration options for sending data to Refinery; most installations will not need to change these.
 tags:
   - category:converter
   - service:refinery
@@ -23,9 +24,22 @@ ports:
     direction: input
     type: OTelLogs
   # outputs
-  - name: Events
+  - name: Rule 1
     direction: output
-    type: HoneycombEvents
+    type: SampleData
+    index: 0
+  - name: Rule 2
+    direction: output
+    type: SampleData
+    index: 1
+  - name: Rule 3
+    direction: output
+    type: SampleData
+    index: 2
+  - name: Rule 4
+    direction: output
+    type: SampleData
+    index: 3
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen.
@@ -106,7 +120,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ buildurl (not .Values.UseTLS) .Values.Host .Values.Port }}"
+        value: "http{{ if .Values.UseTLS }}s{{ end }}://{{ .Values.Host }}:{{ .Values.Port }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ not .Values.UseTLS | encodeAsBool }}"
         suppress_if: "{{ .Values.UseTLS }}"
@@ -126,3 +140,9 @@ templates:
       - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
         value: "{{ .Values.BatchSize | encodeAsInt }}"
       # service is not part of the template, it's generated automatically by the collectorConfig
+  - kind: refinery_rules
+    name: StartSampling_RefineryRules
+    format: rules
+    meta:
+      env: __default__
+      sampler: unknown

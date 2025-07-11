@@ -1,8 +1,8 @@
 components:
+  - name: sampler
+    kind: Deterministic
   - name: honeycomb_out
     kind: HoneycombExporter
-  - name: sampler
-    kind: SampleByTraceDuration
 connections:
   - source:
       component: sampler

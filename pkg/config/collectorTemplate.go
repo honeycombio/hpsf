@@ -50,7 +50,7 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 		case map[string]string:
 			kv.value = val
 		case []any:
-			sl := make([]string, len(val))
+			sl := make([]string, 0, len(val))
 			for _, v := range val {
 				if _, ok := v.(string); !ok {
 					return kv, false

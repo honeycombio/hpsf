@@ -24,6 +24,7 @@ const (
 	CTYPE_TRACES  ConnectionType = "OTelTraces"
 	CTYPE_EVENTS  ConnectionType = "OTelEvents"
 	CTYPE_HONEY   ConnectionType = "HoneycombEvents"
+	CTYPE_SAMPLE  ConnectionType = "SampleData"
 	CTYPE_NUMBER  ConnectionType = "number"
 	CTYPE_STRING  ConnectionType = "string"
 	CTYPE_BOOL    ConnectionType = "bool"
@@ -35,6 +36,7 @@ var PipelineConnectionTypes = []ConnectionType{
 	CTYPE_METRICS,
 	CTYPE_TRACES,
 	CTYPE_HONEY,
+	CTYPE_SAMPLE,
 }
 
 // The collector thinks of these as signal types
@@ -620,19 +622,31 @@ func (h *HPSF) isSourceComponent(c *Component, connType ConnectionType) bool {
 	return false
 }
 
-// PipelineWithConnectionType is designed to hold a linear set of components
-// connected by a specific connection type. We generate all possible pipelines
-// as a slice of this type.
-type PipelineWithConnectionType struct {
-	ConnType ConnectionType
-	Pipeline []*Component
+// PathWithConnections is designed to hold a linear set of components
+// connected by a specific connection type, along with the specific
+// sets of connections used. We generate all possible paths
+// and store them in a slice of these.
+type PathWithConnections struct {
+	ConnType    ConnectionType
+	Path        []*Component
+	Connections []*Connection
 }
 
-func (p PipelineWithConnectionType) GetID() string {
-	// return the ID of the pipeline, which is a hash of the names of components in its pipeline
+func (p PathWithConnections) GetConnectionLeadingTo(componentName string) *Connection {
+	// find the connection that leads to the given component name
+	for _, conn := range p.Connections {
+		if conn.Destination.Component == componentName {
+			return conn
+		}
+	}
+	return nil // no connection found leading to this component
+}
+
+func (p PathWithConnections) GetID() string {
+	// return the ID of the path, which is a hash of the names of components in its path
 	// and the connection type, truncated to 6 characters.
 	buf := bytes.Buffer{}
-	for _, comp := range p.Pipeline {
+	for _, comp := range p.Path {
 		buf.WriteString(comp.GetSafeName())
 	}
 	buf.WriteString(string(p.ConnType))
@@ -642,26 +656,28 @@ func (p PipelineWithConnectionType) GetID() string {
 	return shash[ix-6:ix-3] + "-" + shash[ix-3:] // return something like "1a2-b3c"
 }
 
-// FindAllPipelines generates all paths for a given connection type, from the
+// FindAllPaths generates all paths for a given connection type, from the
 // start components (not a destination of that connection type) to the end components
 // (not sources of that connection type). It
 // returns a slice of slices of components, where each inner slice is a path
 // from a start component to an end component. If there are no start components,
 // it returns nil.
-func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithConnectionType {
-	var pipelines []PipelineWithConnectionType
+func (h *HPSF) FindAllPaths(receivers map[string]bool) []PathWithConnections {
+	var paths []PathWithConnections
 	var path []*Component
+	var connections []*Connection
 
-	var findPaths func(ConnectionType, *Component)
-	findPaths = func(connType ConnectionType, c *Component) {
+	var findPaths func(ConnectionType, *Component, []*Connection)
+	findPaths = func(connType ConnectionType, c *Component, conns []*Connection) {
 		path = append(path, c)
 		if !h.isSourceComponent(c, connType) {
-			// we reached an end component, create a pipeline
-			pipeline := PipelineWithConnectionType{
-				ConnType: connType,
-				Pipeline: slices.Clone(path),
+			// we reached an end component, create a path
+			path := PathWithConnections{
+				ConnType:    connType,
+				Path:        slices.Clone(path),
+				Connections: slices.Clone(conns),
 			}
-			pipelines = append(pipelines, pipeline)
+			paths = append(paths, path)
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
 			visited := make(map[string]bool)
@@ -670,7 +686,9 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithConnect
 					destComp := h.getComponent(conn.Destination.Component)
 					visited[conn.Destination.Component] = true // mark as visited
 					if destComp != nil {
-						findPaths(connType, destComp) // look deeper
+						// Add this connection to our path and continue
+						newConns := append(conns, conn)
+						findPaths(connType, destComp, newConns) // look deeper
 					}
 				}
 			}
@@ -685,11 +703,11 @@ func (h *HPSF) FindAllPipelines(receivers map[string]bool) []PipelineWithConnect
 			continue // no source components for this signal type
 		}
 		for _, c := range srcComps {
-			findPaths(connType, c)
+			findPaths(connType, c, connections)
 		}
 	}
 
-	return pipelines
+	return paths
 }
 
 // visit all components in the HPSF in order of connections, starting from the components

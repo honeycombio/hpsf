@@ -1,0 +1,25 @@
+# This validates that multiple samplers can compose their rules
+components:
+  - name: Sample Based on HTTP Status_1
+    kind: SampleByHTTPStatus
+  - name: Keep Errors_1
+    kind: KeepErrors
+connections:
+  - source:
+      component: Keep Errors_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Sample Based on HTTP Status_1
+      port: Events
+      type: HoneycombEvents
+layout:
+  components:
+    - name: Sample Based on HTTP Status_1
+      position:
+        x: 180
+        y: -360
+    - name: Keep Errors_1
+      position:
+        x: 0
+        y: -360

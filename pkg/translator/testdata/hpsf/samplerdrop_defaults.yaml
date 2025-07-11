@@ -1,0 +1,24 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: StartSampling
+  - name: SamplerDrop Sampler_1
+    kind: SamplerDrop
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: SamplerDrop Sampler_1
+      port: Sample
+      type: SampleData
