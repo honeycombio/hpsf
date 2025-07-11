@@ -21,7 +21,7 @@ const (
 // We will need to convert the dotted paths into real ones later.
 // The pipeline identifies which pipeline is being generated.
 type Component interface {
-	GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error)
+	GenerateConfig(cfgType Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error)
 	AddConnection(*hpsf.Connection)
 }
 
@@ -34,7 +34,7 @@ func NewNullComponent() *NullComponent {
 // ensure that NullComponent implements Component
 var _ Component = (*NullComponent)(nil)
 
-func (c *NullComponent) GenerateConfig(Type, hpsf.PipelineWithConnectionType, map[string]any) (tmpl.TemplateConfig, error) {
+func (c *NullComponent) GenerateConfig(Type, hpsf.PathWithConnections, map[string]any) (tmpl.TemplateConfig, error) {
 	return nil, nil
 }
 
@@ -51,17 +51,16 @@ type GenericBaseComponent struct {
 // ensure that GenericBaseComponent implements Component
 var _ Component = (*GenericBaseComponent)(nil)
 
-func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
+		// DottedConfig is already a map, so we don't need a pointer
 		return tmpl.DottedConfig{
 			"General.ConfigurationVersion": 2,
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
 	case RefineryRulesType:
-		return &tmpl.RulesConfig{
-			Version: 2,
-		}, nil
+		return tmpl.NewRulesConfig(tmpl.Output, nil, nil), nil
 	case CollectorConfigType:
 		return tmpl.NewCollectorConfig(), nil
 	default:
@@ -70,5 +69,43 @@ func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PipelineWith
 }
 
 func (c *GenericBaseComponent) AddConnection(conn *hpsf.Connection) {
+	c.Connections = append(c.Connections, conn)
+}
+
+// UnconfiguredRefineryComponent is used when the user has not added
+// any components to the refinery configuration yet. It provides just
+// the basic configuration needed to start a refinery.
+type UnconfiguredRefineryComponent struct {
+	Component   hpsf.Component
+	Connections []*hpsf.Connection
+}
+
+// ensure that UnconfiguredRefineryComponent implements Component
+var _ Component = (*UnconfiguredRefineryComponent)(nil)
+
+func (c UnconfiguredRefineryComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	switch ct {
+	case RefineryConfigType:
+		// DottedConfig is already a map, so we don't need a pointer
+		return tmpl.DottedConfig{
+			"General.ConfigurationVersion": 2,
+			"General.MinRefineryVersion":   "v2.0",
+		}, nil
+	case RefineryRulesType:
+		rules := tmpl.NewRulesConfig(tmpl.Output, nil, nil)
+		rules.Samplers["__default__"] = &tmpl.V2SamplerChoice{
+			DeterministicSampler: &tmpl.DeterministicSamplerConfig{
+				SampleRate: 1,
+			},
+		}
+		return rules, nil
+	case CollectorConfigType:
+		return tmpl.NewCollectorConfig(), nil
+	default:
+		return nil, nil
+	}
+}
+
+func (c *UnconfiguredRefineryComponent) AddConnection(conn *hpsf.Connection) {
 	c.Connections = append(c.Connections, conn)
 }

@@ -26,10 +26,16 @@ import (
 // data to flow in or out of the component. A port can be either an input
 // or an output, and has a datatype; at least for now, ports of different
 // types cannot be connected to each other.
+
+// Index is an optional field that can be used to indicate that this port
+// should be treated as an indexed port (e.g. for use in a pipeline). The
+// index values for ports should be sequential within a given component, and
+// should start at 1. If the index is not specified, it is assumed to be 0.
 type TemplatePort struct {
 	Name      string              `yaml:"name"`
 	Direction string              `yaml:"direction"`
 	Type      hpsf.ConnectionType `yaml:"type"`
+	Index     int                 `yaml:"index,omitempty"`
 	Note      string              `yaml:"note,omitempty"`
 }
 
@@ -243,10 +249,21 @@ func (t *TemplateComponent) GetPort(name string) *TemplatePort {
 	return nil
 }
 
+func (t *TemplateComponent) GetPortIndex(name string) int {
+	// Returns the index for a given port name, or 0 if it's unspecified.
+	// This implies that indices start at 1.
+	for _, port := range t.Ports {
+		if port.Name == name {
+			return port.Index
+		}
+	}
+	return 0
+}
+
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 
@@ -282,15 +299,33 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
-				if pipeline.ConnType != hpsf.CTYPE_HONEY {
-					continue // rules templates are only for Honeycomb events
+				if pipeline.ConnType != hpsf.CTYPE_SAMPLE {
+					continue // rules templates are only for sampling pipelines
 				}
 				rt, err := buildRulesTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				tmpl, err := t.generateRulesConfig(rt, userdata)
+
+				// We might need to know which collection of rules we're
+				// generating rules for, (basically which startsampling port
+				// we're connected to) so we look up the connection leading to
+				// this component. If we find one, we can use its source port
+				// name to look up an index. If we don't find one, it's safe to
+				// assume that the index is 0, which is the default.
+				conn := pipeline.GetConnectionLeadingTo(t.hpsf.GetSafeName())
+				index := 0
+				if conn != nil {
+					index = t.GetPortIndex(conn.Source.GetSafeName())
+				}
+
+				rmt, err := tmpl.RMTFromStyle(t.Style)
+				if err != nil {
+					return nil, fmt.Errorf("error %w getting RulesComponentType from style %s for %s",
+						err, t.Style, t.Kind)
+				}
+				tmpl, err := t.generateRulesConfig(rt, rmt, index, userdata)
 				if err != nil {
 					return nil, err
 				}
@@ -307,7 +342,9 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 
 	ret := generatedTemplates[0]
 	for _, tmpl := range generatedTemplates[1:] {
-		ret = ret.Merge(tmpl)
+		if err := ret.Merge(tmpl); err != nil {
+			return nil, fmt.Errorf("failed to merge template: %w", err)
+		}
 	}
 
 	return ret, nil
@@ -430,7 +467,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 // this is where we do the actual work of generating the config; this thing knows about
 // the structure of the collector config and how to fill it in
-func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (*tmpl.CollectorConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PathWithConnections, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	t.collName = ct.collectorComponentName

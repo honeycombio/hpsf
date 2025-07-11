@@ -18,9 +18,9 @@ tags:
   - sampler:throughput
 ports:
   # inputs
-  - name: Events
+  - name: Sample
     direction: input
-    type: HoneycombEvents
+    type: SampleData
   # outputs
   - name: Events
     direction: output

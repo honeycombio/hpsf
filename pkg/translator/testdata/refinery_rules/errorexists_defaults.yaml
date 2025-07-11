@@ -1,0 +1,10 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - SampleRate: 1
+                  Conditions:
+                    - Fields:
+                        - error
+                      Operator: exists

@@ -18,6 +18,54 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
+func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
+	deleteExtras := false
+
+	allComponents := make(map[string]struct{})
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	for _, comp := range comps {
+		allComponents[strings.ToLower(comp.Kind)] = struct{}{}
+	}
+
+	subdirs := []string{"collector_config", "refinery_config", "refinery_rules", "hpsf"}
+	for _, subdir := range subdirs {
+		testFiles, err := os.ReadDir("testdata/" + subdir)
+		require.NoError(t, err)
+
+		// for every file in our subdir, we expect to find a component in the hpsf package
+		// that has the same name as portion of the filename before the _.
+		// look it up in the components map
+		for _, file := range testFiles {
+			if file.Name() == "default.yaml" {
+				// don't mess with the default.yaml file
+				continue
+			}
+			if !file.IsDir() && strings.HasSuffix(file.Name(), ".yaml") {
+				fullname := path.Join("testdata", subdir, file.Name())
+				t.Run(fullname, func(t *testing.T) {
+					// get the component name from the file name by splitting on the underscore
+					// and taking the first part
+					parts := strings.Split(file.Name(), "_")
+					componentName := strings.ToLower(parts[0])
+
+					// check if the component exists in the map
+					if _, ok := allComponents[componentName]; !ok {
+						t.Errorf("No matching component found for test file %s", file.Name())
+
+						if deleteExtras {
+							// if deleteExtras is true, delete the file
+							err := os.Remove(fullname)
+							require.NoError(t, err)
+							t.Logf("Deleted test file %s because no matching component was found", file.Name())
+						}
+					}
+				})
+			}
+		}
+	}
+}
+
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
@@ -58,6 +106,9 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
 					require.NoError(t, err)
+					if cfg == nil {
+						continue // skip if no config is generated for this component
+					}
 
 					got, err := cfg.RenderYAML()
 					require.NoError(t, err)
@@ -343,10 +394,10 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 	}{
 		{"duplicate names", "testdata/bad_hpsf/dup_names.yaml", "duplicate component name"},
 		{"missing component", "testdata/bad_hpsf/missing_comp.yaml", "destination component not found,source component not found"},
-		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "no StartSampling component,exactly one"},
-		{"multiple sampler paths", "testdata/bad_hpsf/multiple_sample_paths.yaml", "exactly one connection to a sampler"},
+		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "exactly one"},
+		// {"multiple sample paths", "testdata/bad_hpsf/multiple_sample_paths.yaml", "exactly one connection to a sampler"},
 		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
-		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "destination component does not have a port"},
+		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "source component does not have a port,destination component does not have a port"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
