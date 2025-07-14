@@ -2,7 +2,7 @@ kind: Dropper
 name: Drop
 style: dropper
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Drops all traces
 description: |

@@ -2,7 +2,7 @@ kind: ErrorExistsCondition
 name: Check for Errors
 style: condition
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Checks if an error exists in any span of a trace
 description: |

@@ -2,7 +2,7 @@ kind: SamplingSequencer
 name: Start Sampling
 style: startsampling
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Converts traces and logs to a format for sampling
 description: |

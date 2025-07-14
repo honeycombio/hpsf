@@ -2,7 +2,7 @@ kind: KeepAllSampler
 name: Keep All
 style: sampler
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Keeps all traces that reach this sampler.
 description: |

@@ -2,7 +2,7 @@ kind: LongDurationCondition
 name: Check Duration
 style: condition
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Makes a decision based on root span duration
 description: |
