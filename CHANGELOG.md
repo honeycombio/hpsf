@@ -1,5 +1,24 @@
 # hpsf library changelog
 
+## 0.12.0 2025-07-26
+
+### Feature
+
+- feat: rewrite the way refinery samplers work (#159) | [Kent Quirk](https://github.com/Kent Quirk)
+
+### Maintenance
+
+- maint: bump sampling components to alpha (#168) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: Add a couple of Refinery scenario tests (#167) | [Kent Quirk](https://github.com/Kent Quirk)
+- maint: rename processors components to match naming guidelines (#166) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: rename receivers components to match naming guidelines (#165) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: rename exporters components to match naming guidelines (#164) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: rename startsamplers/droppers components to match naming guidelines (#163) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: rename condition components to match naming guidelines (#162) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: rename sampler components to match naming guidelines (#161) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: update env vars to use HTP_ prefix (#158) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+
 ## 0.11.0 2025-06-25
 
 ### Fixes
