@@ -1,5 +1,5 @@
-kind: OTelDebugExporter
-name: OTel Debug Exporter
+kind: DebugExporter
+name: Send to stdout
 style: exporter
 logo: opentelemetry
 type: base
