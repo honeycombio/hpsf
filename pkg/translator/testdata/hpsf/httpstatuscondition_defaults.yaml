@@ -3,11 +3,8 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: StartSampling
-  - name: Long Duration_1
-    kind: LongDuration
-    properties:
-      - name: Duration
-        value: 777
+  - name: HTTP Status_1
+    kind: HTTPStatusCondition
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -26,11 +23,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Long Duration_1
+      component: HTTP Status_1
       port: Match
       type: SampleData
   - source:
-      component: Long Duration_1
+      component: HTTP Status_1
       port: And
       type: SampleData
     destination:
