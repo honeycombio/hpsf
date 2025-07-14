@@ -4,7 +4,7 @@ components:
   - name: Start Sampling 1
     kind: StartSampling
   - name: Deterministic 1
-    kind: Deterministic
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
 connections:

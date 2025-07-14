@@ -4,9 +4,9 @@ components:
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: sampler1
-    kind: Deterministic
+    kind: DeterministicSampler
   - name: sampler2
-    kind: Deterministic
+    kind: DeterministicSampler
 connections:
   - source:
       component: start

@@ -4,7 +4,7 @@ components:
   - name: refinery
     kind: StartSampling
   - name: sampler
-    kind: Deterministic
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
     properties:

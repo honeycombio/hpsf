@@ -4,7 +4,7 @@ components:
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: EMAThroughput_1
-    kind: EMAThroughput
+    kind: EMAThroughputSampler
     properties:
       - name: AdjustmentInterval
         value: 120

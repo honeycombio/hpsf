@@ -1,6 +1,6 @@
 components:
   - name: sampler
-    kind: Deterministic
+    kind: DeterministicSampler
   - name: honeycomb_out
     kind: HoneycombExporter
 connections:

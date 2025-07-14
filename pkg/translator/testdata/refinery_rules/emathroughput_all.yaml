@@ -1,8 +1,0 @@
-RulesVersion: 2
-Samplers:
-    __default__:
-        EMAThroughputSampler:
-            GoalThroughputPerSec: 1337
-            AdjustmentInterval: 1m6s
-            FieldList:
-                - http.status_code
