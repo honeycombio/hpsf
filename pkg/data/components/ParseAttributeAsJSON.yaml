@@ -1,4 +1,4 @@
-kind: ParseAttributeAsJSON
+kind: AttributeJSONParsingProcessor
 name: Parse Attribute As JSON
 style: processor
 type: base

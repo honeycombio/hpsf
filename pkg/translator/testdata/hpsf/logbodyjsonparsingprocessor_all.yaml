@@ -2,23 +2,20 @@ components:
   - name: otlp_in
     kind: OTelReceiver
   - name: otlp_out
-    kind: OTelGRPCExporter
-  - name: FilterMyLogs
-    kind: FilterLogBySeverity
-    properties:
-      - name: Severity
-        value: Error
+    kind: OTelHTTPExporter
+  - name: json_parser_1
+    kind: LogBodyJSONParsingProcessor
 connections:
   - source:
       component: otlp_in
       port: Logs
       type: OTelLogs
     destination:
-      component: FilterMyLogs
+      component: json_parser_1
       port: Logs
       type: OTelLogs
   - source:
-      component: FilterMyLogs
+      component: json_parser_1
       port: Logs
       type: OTelLogs
     destination:

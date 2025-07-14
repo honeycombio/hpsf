@@ -6,11 +6,11 @@ components:
   - name: Send to S3 Archive_1
     kind: S3ArchiveExporter
   - name: Filter Logs by Severity_1
-    kind: FilterLogBySeverity
+    kind: LogSeverityFilterProcessor
   - name: Send to OTLP
     kind: OTelHTTPExporter
   - name: Parse Log Body As JSON_1
-    kind: ParseLogBodyAsJSON
+    kind: LogBodyJSONParsingProcessor
 connections:
   - source:
       component: OTel Receiver_1

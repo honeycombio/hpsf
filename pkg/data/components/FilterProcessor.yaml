@@ -1,5 +1,5 @@
-kind: FilterProcessor
-name: Filter Processor
+kind: CustomFilterProcessor
+name: Filter by Custom OTTL
 style: processor
 type: base
 status: development

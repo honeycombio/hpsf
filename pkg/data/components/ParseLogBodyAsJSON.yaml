@@ -1,4 +1,4 @@
-kind: ParseLogBodyAsJSON
+kind: LogBodyJSONParsingProcessor
 name: Parse Log Body As JSON
 style: processor
 type: base

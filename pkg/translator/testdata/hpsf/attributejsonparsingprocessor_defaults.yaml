@@ -4,12 +4,12 @@ components:
   - name: otlp_out
     kind: OTelHTTPExporter
   - name: json_parser_1
-    kind: ParseAttributeAsJSON
+    kind: AttributeJSONParsingProcessor
     properties:
       - name: Attribute
         value: "json_data"
       - name: Signal
-        value: "span"
+        value: "log"
 connections:
   - source:
       component: otlp_in
