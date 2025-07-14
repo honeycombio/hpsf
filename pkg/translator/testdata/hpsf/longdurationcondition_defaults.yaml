@@ -3,8 +3,8 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: StartSampling
-  - name: Error Exists_1
-    kind: ErrorExists
+  - name: Long Duration_1
+    kind: LongDurationCondition
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -23,11 +23,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Error Exists_1
+      component: Long Duration_1
       port: Match
       type: SampleData
   - source:
-      component: Error Exists_1
+      component: Long Duration_1
       port: And
       type: SampleData
     destination:

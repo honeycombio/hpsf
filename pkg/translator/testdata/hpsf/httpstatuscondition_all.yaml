@@ -4,7 +4,7 @@ components:
   - name: Start Sampling_1
     kind: StartSampling
   - name: HTTP Status_1
-    kind: HTTPStatus
+    kind: HTTPStatusCondition
     properties:
       - name: Operator
         value: "!="

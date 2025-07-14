@@ -1,5 +1,5 @@
-kind: LongDuration
-name: Long Duration
+kind: LongDurationCondition
+name: Check Duration
 style: condition
 type: base
 status: development

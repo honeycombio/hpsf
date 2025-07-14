@@ -1,5 +1,5 @@
-kind: HTTPStatus
-name: HTTP Status
+kind: HTTPStatusCondition
+name: Check HTTP Status
 style: condition
 type: base
 status: alpha

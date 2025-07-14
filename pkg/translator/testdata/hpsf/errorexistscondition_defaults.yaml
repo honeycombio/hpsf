@@ -4,7 +4,7 @@ components:
   - name: Start Sampling_1
     kind: StartSampling
   - name: Error Exists_1
-    kind: ErrorExists
+    kind: ErrorExistsCondition
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
