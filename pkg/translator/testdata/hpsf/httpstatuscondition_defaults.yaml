@@ -2,7 +2,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: SamplingRuleHandler
+    kind: SamplingSequencer
   - name: HTTP Status_1
     kind: HTTPStatusCondition
   - name: Keep All_1

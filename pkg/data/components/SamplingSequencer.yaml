@@ -1,4 +1,4 @@
-kind: SamplingRuleHandler
+kind: SamplingSequencer
 name: Start Sampling
 style: startsampling
 type: base

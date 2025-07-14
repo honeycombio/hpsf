@@ -12,7 +12,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: Start Sampling 1
-    kind: SamplingRuleHandler
+    kind: SamplingSequencer
   - name: EMA Throughput 1
     kind: EMAThroughputSampler
     properties:

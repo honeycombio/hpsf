@@ -2,7 +2,7 @@ components:
   - name: otlp
     kind: OTelReceiver
   - name: refinery
-    kind: SamplingRuleHandler
+    kind: SamplingSequencer
   - name: sampler
     kind: DeterministicSampler
   - name: honeycomb
