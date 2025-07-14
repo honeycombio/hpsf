@@ -3,15 +3,8 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: StartSampling
-  - name: EMADynamic Sampler_1
-    kind: EMADynamic
-    properties:
-      - name: GoalSampleRate
-        value: 120
-      - name: AdjustmentInterval
-        value: 99
-      - name: FieldList
-        value: [http.status_code]
+  - name: Deterministic Sampler_1
+    kind: DeterministicSampler
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
@@ -28,11 +21,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: EMADynamic Sampler_1
+      component: Deterministic Sampler_1
       port: Sample
       type: SampleData
   - source:
-      component: EMADynamic Sampler_1
+      component: Deterministic Sampler_1
       port: Events
       type: HoneycombEvents
     destination:

@@ -4,7 +4,7 @@ components:
   - name: Start Sampling_1
     kind: StartSampling
   - name: EMADynamic Sampler_1
-    kind: EMADynamic
+    kind: EMADynamicSampler
     properties:
       - name: FieldList # FieldList is a required property without a default value
         value: [http.method, http.status_code]

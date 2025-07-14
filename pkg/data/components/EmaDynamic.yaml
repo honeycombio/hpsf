@@ -1,5 +1,5 @@
-kind: EMADynamic
-name: EMA Dynamic Sampler
+kind: EMADynamicSampler
+name: Sample Proportionally by Key
 version: v0.1.0
 style: sampler
 type: base

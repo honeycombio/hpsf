@@ -1,5 +1,5 @@
-kind: Deterministic
-name: Deterministic Sampler
+kind: DeterministicSampler
+name: Sample at a Fixed Rate
 style: sampler
 type: base
 status: alpha

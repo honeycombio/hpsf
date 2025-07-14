@@ -4,7 +4,10 @@ components:
   - name: Start Sampling_1
     kind: StartSampling
   - name: Deterministic Sampler_1
-    kind: Deterministic
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 120
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
