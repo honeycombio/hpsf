@@ -1,5 +1,5 @@
 kind: NopReceiver
-name: DefaultNopReceiver
+name: Receive Nothing
 version: v0.1.0
 style: receiver
 logo: opentelemetry
