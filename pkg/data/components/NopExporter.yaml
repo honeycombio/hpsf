@@ -1,5 +1,5 @@
 kind: NopExporter
-name: DefaultNopExporter
+name: Export Nothing
 version: v0.1.0
 style: exporter
 logo: opentelemetry

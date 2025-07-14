@@ -2,7 +2,7 @@ components:
   - name: otlp_in
     kind: OTelReceiver
   - name: otlp_out
-    kind: OTelDebugExporter
+    kind: DebugExporter
     properties:
       - name: Verbosity
         value: detailed

@@ -1,4 +1,4 @@
-kind: SendToS3Archive
+kind: S3ArchiveExporter
 name: Send to S3 Archive
 type: base
 style: exporter
