@@ -1,5 +1,5 @@
 kind: OTelReceiver
-name: OTel Receiver
+name: Receive OTel
 style: receiver
 logo: opentelemetry
 type: base
