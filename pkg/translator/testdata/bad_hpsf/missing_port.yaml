@@ -1,6 +1,6 @@
 components:
   - name: honeycomb_in
-    kind: StartSampling
+    kind: SamplingRuleHandler
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: EMAThroughput_1

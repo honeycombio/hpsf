@@ -2,7 +2,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: StartSampling
+    kind: SamplingRuleHandler
   - name: Long Duration_1
     kind: LongDurationCondition
   - name: Keep All_1

@@ -1,4 +1,4 @@
-kind: StartSampling
+kind: SamplingRuleHandler
 name: Start Sampling
 style: startsampling
 type: base

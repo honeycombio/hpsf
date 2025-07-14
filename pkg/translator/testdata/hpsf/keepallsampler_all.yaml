@@ -2,7 +2,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: StartSampling
+    kind: SamplingRuleHandler
   - name: SamplerKeepAll Sampler_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1

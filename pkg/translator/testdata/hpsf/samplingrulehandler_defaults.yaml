@@ -2,7 +2,7 @@ components:
   - name: otlp_in
     kind: OTelReceiver
   - name: Start Sampling 1
-    kind: StartSampling
+    kind: SamplingRuleHandler
   - name: Deterministic 1
     kind: DeterministicSampler
   - name: honeycomb

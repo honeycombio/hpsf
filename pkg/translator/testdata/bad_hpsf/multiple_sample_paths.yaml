@@ -1,6 +1,6 @@
 components:
   - name: start
-    kind: StartSampling
+    kind: SamplingRuleHandler
   - name: honeycomb_out
     kind: HoneycombExporter
   - name: sampler1
