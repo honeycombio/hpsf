@@ -2,7 +2,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: StartSampling
+    kind: SamplingSequencer
   - name: EMADynamic Sampler_1
     kind: EMADynamicSampler
     properties:

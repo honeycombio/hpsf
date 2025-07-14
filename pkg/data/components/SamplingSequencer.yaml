@@ -1,4 +1,4 @@
-kind: StartSampling
+kind: SamplingSequencer
 name: Start Sampling
 style: startsampling
 type: base

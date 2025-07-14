@@ -2,9 +2,9 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: StartSampling
+    kind: SamplingSequencer
   - name: SamplerDrop Sampler_1
-    kind: SamplerDrop
+    kind: Dropper
 connections:
   - source:
       component: OTel Receiver_1
