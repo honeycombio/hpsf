@@ -1,4 +1,4 @@
-kind: FilterLogBySeverity
+kind: LogSeverityFilterProcessor
 name: Filter Logs by Severity
 style: processor
 type: base

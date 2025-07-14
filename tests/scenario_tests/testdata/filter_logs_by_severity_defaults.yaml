@@ -8,7 +8,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: Log Severity Filter
-    kind: FilterLogBySeverity
+    kind: LogSeverityFilterProcessor
   - name: OTel Exporter 1
     kind: OTelHTTPExporter
 

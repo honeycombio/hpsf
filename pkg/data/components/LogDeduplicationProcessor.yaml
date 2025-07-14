@@ -1,5 +1,5 @@
 kind: LogDeduplicationProcessor
-name: Log Deduplication Processor
+name: Deduplicate Logs
 style: processor
 type: base
 status: development
