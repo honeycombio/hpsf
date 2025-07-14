@@ -9,7 +9,7 @@ components:
       - name: Duration
         value: 777
   - name: Keep All_1
-    kind: SamplerKeepAll
+    kind: KeepAllSampler
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:

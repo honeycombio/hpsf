@@ -1,4 +1,4 @@
-kind: SamplerKeepAll
+kind: KeepAllSampler
 name: Keep All
 style: sampler
 type: base
