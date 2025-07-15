@@ -1,6 +1,12 @@
 # hpsf library changelog
 
-## 0.12.0 2025-07-26
+## 0.12.0 2025-07-16
+
+### Feature
+
+- feat: Use the sampler name as the rule name when generating refinery configs (#170) | [Kent Quirk](https://github.com/KentQuirk)
+
+## 0.12.0 2025-07-16
 
 ### Feature
 
