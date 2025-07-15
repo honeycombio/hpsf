@@ -64,6 +64,9 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl
 	}
 	meta[tmpl.MetaSampler] = sampler
 
+	// Add the component name to metadata for use during merge
+	meta["component_name"] = t.hpsf.GetSafeName()
+
 	for _, kv := range rt.kvs {
 		// do the key
 		key, err := t.expandTemplateVariable(kv.key, userdata)
@@ -89,6 +92,7 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl
 			kvs[key] = value
 		}
 	}
+
 	rc := tmpl.NewRulesConfig(compType, meta, kvs)
 	return rc, nil
 }

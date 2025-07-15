@@ -3,7 +3,8 @@ Samplers:
     __default__:
         RulesBasedSampler:
             Rules:
-                - SampleRate: 1
+                - Name: Keep_All_1
+                  SampleRate: 1
                   Conditions:
                     - Fields:
                         - error

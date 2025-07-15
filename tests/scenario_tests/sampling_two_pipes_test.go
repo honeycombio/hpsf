@@ -49,6 +49,8 @@ func TestTwoSamplingPipes(t *testing.T) {
 	assert.Equal(t, 400, cond1.Value, "Expected value 400")
 	assert.Equal(t, "int", cond1.Datatype, "Expected int datatype")
 	assert.Equal(t, 100, rule1.SampleRate, "Expected sample rate of 100")
+	// Check the rule has the correct Name field
+	assert.Equal(t, "Deterministic_Sampler_1", rule1.Name, "Expected rule name to be the sampler component name")
 
 	// Rule 2: error exists AND duration_ms >= 1000, SampleRate: 1
 	rule2 := defaultSampler.RulesBasedSampler.Rules[1]
@@ -63,4 +65,6 @@ func TestTwoSamplingPipes(t *testing.T) {
 	assert.Equal(t, 1000, cond2b.Value, "Expected value 1000")
 	assert.Equal(t, "int", cond2b.Datatype, "Expected int datatype")
 	assert.Equal(t, 1, rule2.SampleRate, "Expected sample rate of 1")
+	// Check the rule has the correct Name field
+	assert.Equal(t, "Keep_All_1", rule2.Name, "Expected rule name to be the sampler component name")
 }
