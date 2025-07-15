@@ -3,6 +3,7 @@ package tmpl
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	y "gopkg.in/yaml.v3"
 )
@@ -79,6 +80,7 @@ const (
 	MetaPipelineIndex = "pipeline_index"
 	MetaEnv           = "env"
 	MetaSampler       = "sampler"
+	MetaComponentName = "component_name"
 )
 
 func NewRulesConfig(rmt RulesMergeType, meta map[string]string, kvs map[string]any) *RulesConfig {
@@ -125,6 +127,11 @@ func isDownstreamSamplerType(samplerType string) bool {
 	}
 }
 
+// Add the Name field if we're creating a rule (keyPrefix starts with "RulesBasedSampler.Rules." but doesn't contain "Conditions")
+func shouldAddNameField(keyPrefix string) bool {
+	return strings.HasPrefix(keyPrefix, "RulesBasedSampler.Rules.") && !strings.Contains(keyPrefix, "Conditions")
+}
+
 func (rc *RulesConfig) Merge(other TemplateConfig) error {
 	otherRC, ok := other.(*RulesConfig)
 	if !ok {
@@ -167,6 +174,14 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		for key, value := range otherRC.kvs {
 			if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 				return err
+			}
+		}
+
+		if shouldAddNameField(keyPrefix) {
+			if componentName, exists := otherRC.meta[MetaComponentName]; exists {
+				if err := setMemberValue(keyPrefix+"Name", sampler, componentName); err != nil {
+					return err
+				}
 			}
 		}
 		rc.Samplers[rc.meta[MetaEnv]] = sampler
@@ -216,6 +231,13 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			for key, value := range otherRC.kvs {
 				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 					return err
+				}
+			}
+			if shouldAddNameField(keyPrefix) {
+				if componentName, exists := otherRC.meta[MetaComponentName]; exists {
+					if err := setMemberValue(keyPrefix+"Name", sampler, componentName); err != nil {
+						return err
+					}
 				}
 			}
 			rc.Samplers[rc.meta[MetaEnv]] = sampler

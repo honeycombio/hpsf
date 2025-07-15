@@ -3,4 +3,5 @@ Samplers:
     __default__:
         RulesBasedSampler:
             Rules:
-                - Drop: true
+                - Name: SamplerDrop_Sampler_1
+                  Drop: true

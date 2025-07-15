@@ -54,4 +54,7 @@ func TestFirstSamplingPipe(t *testing.T) {
 
 	// Check the rule has SampleRate: 1 (KeepAllSampler is translated to SampleRate: 1)
 	assert.Equal(t, 1, rule.SampleRate, "Expected sample rate of 1")
+
+	// Check the rule has the correct Name field
+	assert.Equal(t, "Keep_All_1", rule.Name, "Expected rule name to be the sampler component name")
 }

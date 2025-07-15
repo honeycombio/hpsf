@@ -17,13 +17,6 @@ ports:
   - name: Sample
     direction: input
     type: SampleData
-properties:
-  - name: RuleName
-    summary: The name of the rule (used in Refinery debugging).
-    description: |
-      The rule name that will show up in metadata for traces that match this rule. If not set,
-      the name of this component will be used.
-    type: string
 templates:
   - kind: refinery_rules
     name: DropAll_RefineryRules
