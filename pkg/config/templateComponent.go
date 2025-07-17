@@ -308,16 +308,24 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PathWithC
 						err, t.Kind)
 				}
 
-				// We might need to know which collection of rules we're
-				// generating rules for, (basically which startsampling port
-				// we're connected to) so we look up the connection leading to
-				// this component. If we find one, we can use its source port
-				// name to look up an index. If we don't find one, it's safe to
-				// assume that the index is 0, which is the default.
-				conn := pipeline.GetConnectionLeadingTo(t.hpsf.GetSafeName())
+				// Determine the pipeline index based on the SamplingSequencer's port
+				// This index will be propagated through the merge chain
 				index := 0
-				if conn != nil {
-					index = t.GetPortIndex(conn.Source.GetSafeName())
+				if t.Style == "startsampling" {
+					// For SamplingSequencer, determine index from the connection leading to it
+					conn := pipeline.GetConnectionLeadingTo(t.hpsf.GetSafeName())
+					if conn != nil {
+						index = t.GetPortIndex(conn.Source.PortName)
+					}
+				} else {
+					// For downstream components, find the SamplingSequencer in
+					// the path (it's always the first component in the
+					// pipeline) and determine the index from its output port
+					if len(pipeline.Connections) > 0 {
+						firstConn := pipeline.Connections[0]
+						// Use GetPortIndex to determine the index from the port name
+						index = t.GetPortIndex(firstConn.Source.PortName)
+					}
 				}
 
 				rmt, err := tmpl.RMTFromStyle(t.Style)

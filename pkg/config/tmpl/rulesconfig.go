@@ -102,7 +102,36 @@ func (rc *RulesConfig) RenderToMap(m map[string]any) map[string]any {
 	return m
 }
 
+// maybePromoteSingleRuleSampler checks if any of the samplers in the RulesConfig should be
+// promoted to the top level. This is idiomatic in Refinery rules, where our generation might
+// have inserted a rule with no conditions and a single sampler. In this case, we can
+// promote the sampler to the top level.
+func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
+	for env, sampler := range rc.Samplers {
+		if sampler != nil && sampler.RulesBasedSampler != nil && len(sampler.RulesBasedSampler.Rules) == 1 {
+			rule := sampler.RulesBasedSampler.Rules[0]
+			if len(rule.Conditions) == 0 && rule.Sampler != nil {
+				// Replace the V2SamplerChoice with the underlying sampler
+				if rule.Sampler.DynamicSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{DynamicSampler: rule.Sampler.DynamicSampler}
+				} else if rule.Sampler.EMADynamicSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{EMADynamicSampler: rule.Sampler.EMADynamicSampler}
+				} else if rule.Sampler.EMAThroughputSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{EMAThroughputSampler: rule.Sampler.EMAThroughputSampler}
+				} else if rule.Sampler.WindowedThroughputSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{WindowedThroughputSampler: rule.Sampler.WindowedThroughputSampler}
+				} else if rule.Sampler.TotalThroughputSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{TotalThroughputSampler: rule.Sampler.TotalThroughputSampler}
+				} else if rule.Sampler.DeterministicSampler != nil {
+					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
+				}
+			}
+		}
+	}
+}
+
 func (rc *RulesConfig) RenderYAML() ([]byte, error) {
+	rc.maybePromoteSingleRuleSampler()
 	data, err := y.Marshal(rc)
 	if err != nil {
 		return nil, err
@@ -161,12 +190,20 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		switch otherRC.compType {
 		case Condition:
 			// condition always has a rule-based sampler attached to it
-			// so we can write it into the startsampling at index 0 because we know it's first
+			// so we can write it into the startsampling at the pipeline index
 			keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
 		case Sampler:
 			// in this case, we are merging a sampler directly into a startsampling
 			// so we use the new sampler's type as the key prefix
-			keyPrefix = fmt.Sprintf("%s.", otherRC.meta[MetaSampler])
+			// The pipeline index should be propagated from the SamplingSequencer
+			// For downstream samplers, we need to create a rule at the correct index
+			samplerType := otherRC.meta[MetaSampler]
+			if isDownstreamSamplerType(samplerType) {
+				// Create a rule-based sampler with the correct index and sampler type
+				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Sampler.%s.", rc.meta[MetaPipelineIndex], samplerType)
+			} else {
+				keyPrefix = fmt.Sprintf("%s.", samplerType)
+			}
 		case Dropper:
 			// The refinery syntax for drop is terrible, so we have to handle it specially.
 			keyPrefix = fmt.Sprintf("%s.Rules.%s.", otherRC.meta[MetaSampler], rc.meta[MetaPipelineIndex])
@@ -234,7 +271,8 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			// we need to check if the sampler is connected to a condition or not. If not, we
 			// add it directly to the Samplers map, otherwise we add it to the
 			// RulesBasedSampler.Rules slice at the correct index.
-			ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
+			// The pipeline index is propagated from the upstream component.
+			ruleIndex, _ := strconv.Atoi(otherRC.meta[MetaPipelineIndex])
 			samplerType := otherRC.meta[MetaSampler]
 			sampler := rc.Samplers[rc.meta[MetaEnv]]
 			var keyPrefix string
