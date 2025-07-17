@@ -127,9 +127,12 @@ func isDownstreamSamplerType(samplerType string) bool {
 	}
 }
 
-// Add the Name field if we're creating a rule (keyPrefix starts with "RulesBasedSampler.Rules." but doesn't contain "Conditions")
+// Add the Name field if we're creating a rule (keyPrefix starts with
+// "RulesBasedSampler.Rules." but doesn't contain "Conditions" or ".Sampler.").
 func shouldAddNameField(keyPrefix string) bool {
-	return strings.HasPrefix(keyPrefix, "RulesBasedSampler.Rules.") && !strings.Contains(keyPrefix, "Conditions")
+	return strings.HasPrefix(keyPrefix, "RulesBasedSampler.Rules.") &&
+		!strings.Contains(keyPrefix, "Conditions") &&
+		!strings.Contains(keyPrefix, ".Sampler.")
 }
 
 func (rc *RulesConfig) Merge(other TemplateConfig) error {
@@ -233,9 +236,25 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 					return err
 				}
 			}
+			// Only set Name if keyPrefix is at the rule level (not inside .Sampler.)
 			if shouldAddNameField(keyPrefix) {
-				if componentName, exists := otherRC.meta[MetaComponentName]; exists {
-					if err := setMemberValue(keyPrefix+"Name", sampler, componentName); err != nil {
+				componentName, exists := otherRC.meta[MetaComponentName]
+				if !exists {
+					// Fallback: try to get component name from current RC's meta
+					componentName, exists = rc.meta[MetaComponentName]
+				}
+				if exists {
+					if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%d.Name", ruleIndex), sampler, componentName); err != nil {
+						return err
+					}
+				}
+			}
+
+			// For downstream samplers, always set the rule's Name field to the sampler's component name
+			if isDownstreamSamplerType(samplerType) {
+				componentName, exists := otherRC.meta[MetaComponentName]
+				if exists {
+					if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%d.Name", ruleIndex), sampler, componentName); err != nil {
 						return err
 					}
 				}

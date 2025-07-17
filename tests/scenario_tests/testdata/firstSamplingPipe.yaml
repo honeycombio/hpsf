@@ -5,8 +5,11 @@ components:
     kind: SamplingSequencer
   - name: Long Duration_1
     kind: LongDurationCondition
-  - name: Keep All_1
-    kind: KeepAllSampler
+  - name: EMA1
+    kind: EMADynamicSampler
+    properties:
+      - name: FieldList
+        value: [http.method, http.status_code]
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
@@ -31,11 +34,11 @@ connections:
       port: And
       type: SampleData
     destination:
-      component: Keep All_1
+      component: EMA1
       port: Sample
       type: SampleData
   - source:
-      component: Keep All_1
+      component: EMA1
       port: Events
       type: HoneycombEvents
     destination:
@@ -56,7 +59,7 @@ layout:
       position:
         x: 478
         y: 0
-    - name: Keep All_1
+    - name: EMA1
       position:
         x: 669
         y: 0
