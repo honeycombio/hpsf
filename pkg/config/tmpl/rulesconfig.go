@@ -204,10 +204,26 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 
 			// this was put here by Itoa so we don't worry about errors
 			ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
-			conditionIndex := len(rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules[ruleIndex].Conditions)
+			sampler := rc.Samplers[rc.meta[MetaEnv]]
+
+			// Ensure the sampler and RulesBasedSampler exist
+			if sampler == nil {
+				sampler = &V2SamplerChoice{}
+				rc.Samplers[rc.meta[MetaEnv]] = sampler
+			}
+			if sampler.RulesBasedSampler == nil {
+				sampler.RulesBasedSampler = &RulesBasedSamplerConfig{}
+			}
+			if len(sampler.RulesBasedSampler.Rules) <= ruleIndex {
+				// Extend the rules slice to accommodate the new rule
+				for i := len(sampler.RulesBasedSampler.Rules); i <= ruleIndex; i++ {
+					sampler.RulesBasedSampler.Rules = append(sampler.RulesBasedSampler.Rules, &RulesBasedSamplerRule{})
+				}
+			}
+
+			conditionIndex := len(sampler.RulesBasedSampler.Rules[ruleIndex].Conditions)
 			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.Conditions.%d.", ruleIndex, conditionIndex)
 
-			sampler := rc.Samplers[rc.meta[MetaEnv]]
 			for key, value := range otherRC.kvs {
 				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
 					return err
@@ -265,9 +281,20 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			// add to the rules slice. if they have different environments, we
 			// add to the Samplers map.
 			if rc.meta[MetaEnv] == otherRC.meta[MetaEnv] {
-				rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules = append(
-					rc.Samplers[rc.meta[MetaEnv]].RulesBasedSampler.Rules,
-					otherRC.Samplers[otherRC.meta[MetaEnv]].RulesBasedSampler.Rules...)
+				sampler := rc.Samplers[rc.meta[MetaEnv]]
+				if sampler == nil {
+					sampler = &V2SamplerChoice{}
+					rc.Samplers[rc.meta[MetaEnv]] = sampler
+				}
+				if sampler.RulesBasedSampler == nil {
+					sampler.RulesBasedSampler = &RulesBasedSamplerConfig{}
+				}
+				otherSampler := otherRC.Samplers[otherRC.meta[MetaEnv]]
+				if otherSampler != nil && otherSampler.RulesBasedSampler != nil {
+					sampler.RulesBasedSampler.Rules = append(
+						sampler.RulesBasedSampler.Rules,
+						otherSampler.RulesBasedSampler.Rules...)
+				}
 			} else {
 				// we need to add the other environment's sampler to the map
 				rc.Samplers[otherRC.meta[MetaEnv]] = otherRC.Samplers[otherRC.meta[MetaEnv]]
