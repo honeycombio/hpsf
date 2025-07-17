@@ -128,9 +128,8 @@ func isDownstreamSamplerType(samplerType string) bool {
 }
 
 // Add the Name field if we're creating a rule (keyPrefix starts with
-// "RulesBasedSampler.Rules." but doesn't contain "Conditions")
+// "RulesBasedSampler.Rules." but doesn't contain "Conditions" or ".Sampler.").
 func shouldAddNameField(keyPrefix string) bool {
-	// Only add Name if we're at the rule level, not inside Sampler or Conditions
 	return strings.HasPrefix(keyPrefix, "RulesBasedSampler.Rules.") &&
 		!strings.Contains(keyPrefix, "Conditions") &&
 		!strings.Contains(keyPrefix, ".Sampler.")
