@@ -52,9 +52,10 @@ func TestFirstSamplingPipe(t *testing.T) {
 	assert.Equal(t, 1000, condition.Value, "Expected duration value of 1000")
 	assert.Equal(t, "int", condition.Datatype, "Expected int datatype")
 
-	// Check the rule has SampleRate: 1 (KeepAllSampler is translated to SampleRate: 1)
-	assert.Equal(t, 1, rule.SampleRate, "Expected sample rate of 1")
-
 	// Check the rule has the correct Name field
-	assert.Equal(t, "Keep_All_1", rule.Name, "Expected rule name to be the sampler component name")
+	assert.Equal(t, "EMA1", rule.Name, "Expected rule name to be the sampler component name")
+
+	// Check that the rule has an EMADynamicSampler configuration
+	require.NotNil(t, rule.Sampler, "Expected sampler configuration")
+	require.NotNil(t, rule.Sampler.EMADynamicSampler, "Expected EMADynamicSampler configuration")
 }
