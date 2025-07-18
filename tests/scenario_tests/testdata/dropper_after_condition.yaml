@@ -1,0 +1,87 @@
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check for Errors_1
+    kind: ErrorExistsCondition
+  - name: Drop_1
+    kind: Dropper
+  - name: Sample by Events per Second_1
+    kind: EMAThroughputSampler
+    properties:
+      - name: GoalThroughputPerSec
+        value: 200
+      - name: AdjustmentInterval
+        value: 60
+      - name: FieldList
+        value: ["http.method", "http.status_code"]
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Check for Errors_1
+      port: And
+      type: SampleData
+    destination:
+      component: Drop_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Check for Errors_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Sample by Events per Second_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample by Events per Second_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+layout:
+  components:
+    - name: Receive OTel_1
+      position:
+        x: 50
+        y: 0
+    - name: Start Sampling_1
+      position:
+        x: 277
+        y: 0
+    - name: Check for Errors_1
+      position:
+        x: 680
+        y: 0
+    - name: Drop_1
+      position:
+        x: 875
+        y: 0
+    - name: Sample by Events per Second_1
+      position:
+        x: 660
+        y: 160
+    - name: Send to Honeycomb_1
+      position:
+        x: 1060
+        y: 160

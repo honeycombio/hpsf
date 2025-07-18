@@ -441,3 +441,102 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 		})
 	}
 }
+
+func TestSampling(t *testing.T) {
+	c := `
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check for Errors_1
+    kind: ErrorExistsCondition
+  - name: Drop_1
+    kind: Dropper
+  - name: Sample by Events per Second_1
+    kind: EMAThroughputSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Check for Errors_1
+      port: And
+      type: SampleData
+    destination:
+      component: Drop_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Check for Errors_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Sample by Events per Second_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample by Events per Second_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+layout:
+  components:
+    - name: Receive OTel_1
+      position:
+        x: 50
+        y: 0
+    - name: Start Sampling_1
+      position:
+        x: 277
+        y: 0
+    - name: Check for Errors_1
+      position:
+        x: 680
+        y: 0
+    - name: Drop_1
+      position:
+        x: 875
+        y: 0
+    - name: Sample by Events per Second_1
+      position:
+        x: 660
+        y: 160
+    - name: Send to Honeycomb_1
+      position:
+        x: 1060
+        y: 160
+`
+
+	var h *hpsf.HPSF
+	dec := yamlv3.NewDecoder(strings.NewReader(c))
+	err := dec.Decode(&h)
+	require.NoError(t, err)
+
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+
+	x, err := tlater.GenerateConfig(h, config.RefineryRulesType, nil)
+	require.NoError(t, err)
+	require.NotNil(t, x)
+}

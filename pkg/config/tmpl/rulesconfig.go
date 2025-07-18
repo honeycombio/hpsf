@@ -110,20 +110,26 @@ func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
 	for env, sampler := range rc.Samplers {
 		if sampler != nil && sampler.RulesBasedSampler != nil && len(sampler.RulesBasedSampler.Rules) == 1 {
 			rule := sampler.RulesBasedSampler.Rules[0]
-			if len(rule.Conditions) == 0 && rule.Sampler != nil {
-				// Replace the V2SamplerChoice with the underlying sampler
-				if rule.Sampler.DynamicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{DynamicSampler: rule.Sampler.DynamicSampler}
-				} else if rule.Sampler.EMADynamicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{EMADynamicSampler: rule.Sampler.EMADynamicSampler}
-				} else if rule.Sampler.EMAThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{EMAThroughputSampler: rule.Sampler.EMAThroughputSampler}
-				} else if rule.Sampler.WindowedThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{WindowedThroughputSampler: rule.Sampler.WindowedThroughputSampler}
-				} else if rule.Sampler.TotalThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{TotalThroughputSampler: rule.Sampler.TotalThroughputSampler}
-				} else if rule.Sampler.DeterministicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
+			if len(rule.Conditions) == 0 {
+				if rule.Sampler != nil {
+					// Replace the V2SamplerChoice with the underlying sampler
+					if rule.Sampler.DynamicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{DynamicSampler: rule.Sampler.DynamicSampler}
+					} else if rule.Sampler.EMADynamicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{EMADynamicSampler: rule.Sampler.EMADynamicSampler}
+					} else if rule.Sampler.EMAThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{EMAThroughputSampler: rule.Sampler.EMAThroughputSampler}
+					} else if rule.Sampler.WindowedThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{WindowedThroughputSampler: rule.Sampler.WindowedThroughputSampler}
+					} else if rule.Sampler.TotalThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{TotalThroughputSampler: rule.Sampler.TotalThroughputSampler}
+					} else if rule.Sampler.DeterministicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
+					}
+				} else if !rule.Drop {
+					// The rules sampler had no conditions, no samplers set, and was not dropping.
+					// We default to grabbing the 1 rule's SampleRate and making a deterministic sampler.
+					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: &DeterministicSamplerConfig{SampleRate: rule.SampleRate}}
 				}
 			}
 		}
@@ -201,6 +207,9 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			if isDownstreamSamplerType(samplerType) {
 				// Create a rule-based sampler with the correct index and sampler type
 				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Sampler.%s.", rc.meta[MetaPipelineIndex], samplerType)
+			} else if samplerType == "DeterministicSampler" {
+				// The DeterministicSampler needs a special case because the RulesBasedSampler supports a SampleRate field directly on the rule.
+				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.", rc.meta[MetaPipelineIndex])
 			} else {
 				keyPrefix = fmt.Sprintf("%s.", samplerType)
 			}
@@ -336,6 +345,25 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			} else {
 				// we need to add the other environment's sampler to the map
 				rc.Samplers[otherRC.meta[MetaEnv]] = otherRC.Samplers[otherRC.meta[MetaEnv]]
+			}
+		case Dropper:
+			ruleIndex, _ := strconv.Atoi(otherRC.meta[MetaPipelineIndex])
+			sampler := rc.Samplers[rc.meta[MetaEnv]]
+			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+			for key, value := range otherRC.kvs {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
+			}
+			componentName, exists := otherRC.meta[MetaComponentName]
+			if !exists {
+				// Fallback: try to get component name from current RC's meta
+				componentName, exists = rc.meta[MetaComponentName]
+			}
+			if exists {
+				if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%d.Name", ruleIndex), sampler, componentName); err != nil {
+					return err
+				}
 			}
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
