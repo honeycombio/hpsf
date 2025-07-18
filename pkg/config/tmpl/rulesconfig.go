@@ -337,6 +337,25 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 				// we need to add the other environment's sampler to the map
 				rc.Samplers[otherRC.meta[MetaEnv]] = otherRC.Samplers[otherRC.meta[MetaEnv]]
 			}
+		case Dropper:
+			ruleIndex, _ := strconv.Atoi(otherRC.meta[MetaPipelineIndex])
+			sampler := rc.Samplers[rc.meta[MetaEnv]]
+			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.", ruleIndex)
+			for key, value := range otherRC.kvs {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
+			}
+			componentName, exists := otherRC.meta[MetaComponentName]
+			if !exists {
+				// Fallback: try to get component name from current RC's meta
+				componentName, exists = rc.meta[MetaComponentName]
+			}
+			if exists {
+				if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%d.Name", ruleIndex), sampler, componentName); err != nil {
+					return err
+				}
+			}
 		default:
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid output merge type", other)
 		}
