@@ -110,20 +110,24 @@ func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
 	for env, sampler := range rc.Samplers {
 		if sampler != nil && sampler.RulesBasedSampler != nil && len(sampler.RulesBasedSampler.Rules) == 1 {
 			rule := sampler.RulesBasedSampler.Rules[0]
-			if len(rule.Conditions) == 0 && rule.Sampler != nil {
-				// Replace the V2SamplerChoice with the underlying sampler
-				if rule.Sampler.DynamicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{DynamicSampler: rule.Sampler.DynamicSampler}
-				} else if rule.Sampler.EMADynamicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{EMADynamicSampler: rule.Sampler.EMADynamicSampler}
-				} else if rule.Sampler.EMAThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{EMAThroughputSampler: rule.Sampler.EMAThroughputSampler}
-				} else if rule.Sampler.WindowedThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{WindowedThroughputSampler: rule.Sampler.WindowedThroughputSampler}
-				} else if rule.Sampler.TotalThroughputSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{TotalThroughputSampler: rule.Sampler.TotalThroughputSampler}
-				} else if rule.Sampler.DeterministicSampler != nil {
-					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
+			if len(rule.Conditions) == 0 {
+				if rule.Sampler != nil {
+					// Replace the V2SamplerChoice with the underlying sampler
+					if rule.Sampler.DynamicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{DynamicSampler: rule.Sampler.DynamicSampler}
+					} else if rule.Sampler.EMADynamicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{EMADynamicSampler: rule.Sampler.EMADynamicSampler}
+					} else if rule.Sampler.EMAThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{EMAThroughputSampler: rule.Sampler.EMAThroughputSampler}
+					} else if rule.Sampler.WindowedThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{WindowedThroughputSampler: rule.Sampler.WindowedThroughputSampler}
+					} else if rule.Sampler.TotalThroughputSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{TotalThroughputSampler: rule.Sampler.TotalThroughputSampler}
+					} else if rule.Sampler.DeterministicSampler != nil {
+						rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
+					}
+				} else if !rule.Drop {
+					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: &DeterministicSamplerConfig{SampleRate: rule.SampleRate}}
 				}
 			}
 		}

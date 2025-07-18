@@ -11,7 +11,7 @@ import (
 )
 
 func TestSampleDefaultDeterministic(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/sample_default_deterministic.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/sample_rules_default_deterministic.yaml")
 
 	// Verify the traces pipeline exists and has the correct components
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
