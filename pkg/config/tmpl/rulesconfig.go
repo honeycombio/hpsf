@@ -127,6 +127,8 @@ func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
 						rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: rule.Sampler.DeterministicSampler}
 					}
 				} else if !rule.Drop {
+					// The rules sampler had no conditions, no samplers set, and was not dropping.
+					// We default to grabbing the 1 rule's SampleRate and making a deterministic sampler.
 					rc.Samplers[env] = &V2SamplerChoice{DeterministicSampler: &DeterministicSamplerConfig{SampleRate: rule.SampleRate}}
 				}
 			}
@@ -206,6 +208,7 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 				// Create a rule-based sampler with the correct index and sampler type
 				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Sampler.%s.", rc.meta[MetaPipelineIndex], samplerType)
 			} else if samplerType == "DeterministicSampler" {
+				// The DeterministicSampler needs a special case because the RulesBasedSampler supports a SampleRate field directly on the rule.
 				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.", rc.meta[MetaPipelineIndex])
 			} else {
 				keyPrefix = fmt.Sprintf("%s.", samplerType)
