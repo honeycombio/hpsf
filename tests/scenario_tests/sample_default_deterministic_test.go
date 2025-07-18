@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDropperAfterCondition(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/dropper_after_condition.yaml")
+func TestSampleDefaultDeterministic(t *testing.T) {
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/sample_default_deterministic.yaml")
 
 	// Verify the traces pipeline exists and has the correct components
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
@@ -42,21 +42,23 @@ func TestDropperAfterCondition(t *testing.T) {
 	require.NotNil(t, defaultSampler.RulesBasedSampler, "Expected RulesBasedSampler configuration")
 	assert.Len(t, defaultSampler.RulesBasedSampler.Rules, 2, "Expected 2 rules in the sampler")
 
-	// Check the first rule is a Drop with a condition
+	// Check the first rule is a EMAThroughputSampler with a condition
 	rule1 := defaultSampler.RulesBasedSampler.Rules[0]
-	assert.Equal(t, "Drop_1", rule1.Name, "Expected rule 1 name to match component name")
+	assert.Equal(t, "Sample_by_Events_per_Second_1", rule1.Name, "Expected rule 1 name to match component name")
 	assert.Len(t, rule1.Conditions, 1, "Expected 1 condition in rule 1")
-	assert.Len(t, rule1.Conditions[0].Fields, 1, "Expected 1 Fields in condition 1")
-	assert.Equal(t, "error", rule1.Conditions[0].Fields[0], "Expected error field in rule 1")
-	assert.Equal(t, "exists", rule1.Conditions[0].Operator, "Expected exists operator in rule 1")
-	assert.True(t, rule1.Drop, "Expected this rule to drop")
+	assert.Equal(t, "duration_ms", rule1.Conditions[0].Field, "Expected duration_ms field in rule 1")
+	assert.Equal(t, ">=", rule1.Conditions[0].Operator, "Expected >= operator in rule 1")
+	assert.Equal(t, 1000, rule1.Conditions[0].Value, "Expected value 1000 in rule 1")
+	assert.Equal(t, "int", rule1.Conditions[0].Datatype, "Expected int datatype in rule 1")
+	require.NotNil(t, rule1.Sampler.EMAThroughputSampler, "Expected EMAThroughputSampler in rule 2")
+	assert.Equal(t, 200, rule1.Sampler.EMAThroughputSampler.GoalThroughputPerSec, "Expected GoalThroughputPerSec in rule 2")
+	assert.Equal(t, time.Duration(60)*time.Second, time.Duration(rule1.Sampler.EMAThroughputSampler.AdjustmentInterval), "Expected AdjustmentInterval in rule 2")
+	assert.ElementsMatch(t, []string{"http.method", "http.status_code"}, rule1.Sampler.EMAThroughputSampler.FieldList, "Expected FieldList in rule 2")
 
-	// Check the second rule is an EMAThroughputSampler
+	// Check the second rule is a DeterministicSampler without condition
 	rule2 := defaultSampler.RulesBasedSampler.Rules[1]
-	assert.Nil(t, rule2.Conditions, "Expected no conditions in rule 2")
-	assert.NotNil(t, rule2.Sampler, "Expected sampler configuration in rule 2")
-	assert.NotNil(t, rule2.Sampler.EMAThroughputSampler, "Expected EMAThroughputSampler in rule 2")
-	assert.Equal(t, 200, rule2.Sampler.EMAThroughputSampler.GoalThroughputPerSec, "Expected GoalThroughputPerSec in rule 2")
-	assert.Equal(t, time.Duration(60)*time.Second, time.Duration(rule2.Sampler.EMAThroughputSampler.AdjustmentInterval), "Expected AdjustmentInterval in rule 2")
-	assert.ElementsMatch(t, []string{"http.method", "http.status_code"}, rule2.Sampler.EMAThroughputSampler.FieldList, "Expected FieldList in rule 2")
+	assert.Equal(t, "Sample_at_a_Fixed_Rate_1", rule2.Name, "Expected rule 2 name to match component name")
+	assert.Len(t, rule2.Conditions, 0, "Expected 0 conditions in rule 3")
+	assert.Nil(t, rule2.Sampler, "Expected no sampler in rule 2")
+	assert.Equal(t, 100, rule2.SampleRate, "Expected SampleRate of 100 in rule 2")
 }

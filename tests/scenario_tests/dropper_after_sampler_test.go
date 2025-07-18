@@ -37,11 +37,11 @@ func TestDropperAfterSampler(t *testing.T) {
 	defaultSampler, exists := rulesConfig.Samplers["__default__"]
 	require.True(t, exists, "Expected __default__ sampler to exist")
 
-	// Verify the sampler is a RulesBasedSampler with two rules
+	// Verify the sampler is a RulesBasedSampler with 1 rule
 	require.NotNil(t, defaultSampler.RulesBasedSampler, "Expected RulesBasedSampler configuration")
 	assert.Len(t, defaultSampler.RulesBasedSampler.Rules, 1, "Expected 1 rules in the sampler")
 
-	// Check the first rule is a DeterministicSampler with a condition
+	// Check the first rule is a Drop without condition
 	rule1 := defaultSampler.RulesBasedSampler.Rules[0]
 	assert.Equal(t, "Drop_1", rule1.Name, "Expected rule 1 name to match component name")
 	assert.Len(t, rule1.Conditions, 0, "Expected 0 conditions in rule 1")

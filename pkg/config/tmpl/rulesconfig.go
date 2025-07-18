@@ -201,6 +201,8 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			if isDownstreamSamplerType(samplerType) {
 				// Create a rule-based sampler with the correct index and sampler type
 				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Sampler.%s.", rc.meta[MetaPipelineIndex], samplerType)
+			} else if samplerType == "DeterministicSampler" {
+				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.", rc.meta[MetaPipelineIndex])
 			} else {
 				keyPrefix = fmt.Sprintf("%s.", samplerType)
 			}
