@@ -1,5 +1,5 @@
 AccessKeys:
-    SendKey: ${HTP_EXPORTER_APIKEY}
+    SendKey: ${HONEYCOMB_EXPORTER_APIKEY}
     SendKeyMode: all
 General:
     ConfigurationVersion: 2
