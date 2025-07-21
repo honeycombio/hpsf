@@ -132,19 +132,19 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		'del(.processors.usage) | \
 		 del(.extensions.honeycomb) | \
 		 del(.service.extensions[] | select(. == "honeycomb")) | \
-		 del(.service.pipelines.traces.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.metrics.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.logs.processors[] | select(. == "usage"))' \
+		 del(.service.pipelines.traces*.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.metrics*.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.logs*.processors[] | select(. == "usage"))' \
 		tmp/collector-config.yaml || exit 1
 
 	# run collector with the generated config
 	docker run -d --name smoke-collector \
-		--entrypoint /otelcol-contrib \
-		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
+		--entrypoint /honeycomb-otelcol \
+		-v ./tmp/collector-config.yaml:/config.yaml \
 		-e HTP_COLLECTOR_POD_IP=localhost \
 		-e HTP_REFINERY_POD_IP=localhost \
 		honeycombio/supervised-collector:latest \
-		--config /etc/otelcol-contrib/config.yaml || exit 1
+		--config /config.yaml || exit 1
 	sleep 1
 
 	# check if the container is running
