@@ -35,7 +35,6 @@ properties:
     type: string
     subtype: oneof(basic, normal, detailed)
     validations:
-      - noblanks
       - oneof(basic, normal, detailed)
     default: basic
 templates:
