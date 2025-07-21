@@ -1,6 +1,13 @@
 # hpsf library changelog
 
-## 0.12.0 2025-07-16
+## 0.11.1 2025-07-18 (hotfix)
+
+### Fixes
+
+- maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+    - Plus test data fixes and Go version consistency
+
+## 0.13.0 2025-07-16
 
 ### Feature
 
