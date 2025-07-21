@@ -1,5 +1,19 @@
 # hpsf library changelog
 
+## 0.14.0 2025-07-21
+
+### Fixes
+
+- fix: add default signal to AttributeJSONParsingProcessor (#180) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: refinery rules bugs (#176) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: handle paths with just a complex sampler (#175) | [Kent Quirk](https://github.com/KentQuirk)
+- fix: nil pointer failure for sampler indexing (#174) | [Kent Quirk](https://github.com/KentQuirk)
+- fix: Set the name field properly with downstream samplers (#172) | [Kent Quirk](https://github.com/KentQuirk)
+
+### Maintenance
+
+- maint: rename component files (#173) | [Kent Quirk](https://github.com/KentQuirk)
+
 ## 0.11.1 2025-07-18 (hotfix)
 
 ### Fixes
