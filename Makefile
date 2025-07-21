@@ -94,6 +94,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-refinery'; \
 		docker rm 'smoke-refinery'; \
+		echo "+++ refinery failed to started up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -152,6 +153,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-collector'; \
 		docker rm 'smoke-collector'; \
+		echo "+++ collector failed to start up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -160,13 +162,17 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ collector successfully started up for $(FILE)"; \
 	fi
 
-.PHONY: smoke
+.PHONY: smoke_templates
 #: run smoke tests for HPSF templates
-smoke: pkg/data/templates/*.yaml
+smoke_templates: pkg/data/templates/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
+
+.PHONY: smoke
+#: run smoke tests for HPSF templates
+smoke: smoke_templates
 
 .PHONY: unsmoke
 unsmoke:
