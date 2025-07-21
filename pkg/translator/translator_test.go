@@ -394,8 +394,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 	}{
 		{"duplicate names", "testdata/bad_hpsf/dup_names.yaml", "duplicate component name"},
 		{"missing component", "testdata/bad_hpsf/missing_comp.yaml", "destination component not found,source component not found"},
-		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "exactly one"},
-		// {"multiple sample paths", "testdata/bad_hpsf/multiple_sample_paths.yaml", "exactly one connection to a sampler"},
+		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "no samplers are allowed,exactly one input connection"},
 		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
 		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "source component does not have a port,destination component does not have a port"},
 	}
