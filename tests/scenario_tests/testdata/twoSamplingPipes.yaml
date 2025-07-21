@@ -1,0 +1,116 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Error Exists_1
+    kind: ErrorExistsCondition
+  - name: Long Duration_1
+    kind: LongDurationCondition
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+  - name: HTTP Status_1
+    kind: HTTPStatusCondition
+  - name: Deterministic Sampler_1
+    kind: DeterministicSampler
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Error Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Error Exists_1
+      port: And
+      type: SampleData
+    destination:
+      component: Long Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Long Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: HTTP Status_1
+      port: Match
+      type: SampleData
+  - source:
+      component: HTTP Status_1
+      port: And
+      type: SampleData
+    destination:
+      component: Deterministic Sampler_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Deterministic Sampler_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+layout:
+  components:
+    - name: OTel Receiver_1
+      position:
+        x: 50
+        y: 0
+    - name: Start Sampling_1
+      position:
+        x: 282
+        y: 0
+    - name: Error Exists_1
+      position:
+        x: 478
+        y: 0
+    - name: Long Duration_1
+      position:
+        x: 653
+        y: 0
+    - name: Keep All_1
+      position:
+        x: 844
+        y: 0
+    - name: Send to Honeycomb_1
+      position:
+        x: 1028
+        y: 0
+    - name: HTTP Status_1
+      position:
+        x: 480
+        y: 120
+    - name: Deterministic Sampler_1
+      position:
+        x: 700
+        y: 140

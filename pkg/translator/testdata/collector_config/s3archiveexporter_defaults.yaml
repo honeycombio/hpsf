@@ -1,0 +1,33 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+exporters:
+    awss3/s3_out:
+        marshaler: otlp_proto
+        s3uploader:
+            compression: gzip
+            s3_bucket: my-bucket
+        sending_queue:
+            batch:
+                flush_timeout: 60s
+                max_size: 100000
+                min_size: 100000
+            enabled: true
+            queue_size: 1000000
+            sizer: items
+        timeout: 5s
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/ae5-d11:
+            receivers: [otlp/otlp_in]
+            processors: [usage]
+            exporters: [awss3/s3_out]

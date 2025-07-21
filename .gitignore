@@ -1,8 +1,13 @@
 .DS_Store
 .vscode
+.cursorrules
 test_results/
 tmp/
 
 # GoLand IDEA
 /.idea/
 *.iml
+
+# AI
+CLAUDE.md
+.claude/

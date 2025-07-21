@@ -5,14 +5,39 @@
 ### Fixes
 
 - maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/TylerHelmuth)
-  - Plus test data fixes and Go version consistency
+    - Plus test data fixes and Go version consistency
+
+## 0.13.0 2025-07-16
+
+### Feature
+
+- feat: Use the sampler name as the rule name when generating refinery configs (#170) | [Kent Quirk](https://github.com/KentQuirk)
+
+## 0.12.0 2025-07-16
+
+### Feature
+
+- feat: rewrite the way refinery samplers work (#159) | [Kent Quirk](https://github.com/KentQuirk)
+
+### Maintenance
+
+- maint: bump sampling components to alpha (#168) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: Add a couple of Refinery scenario tests (#167) | [Kent Quirk](https://github.com/KentQuirk)
+- maint: rename processors components to match naming guidelines (#166) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename receivers components to match naming guidelines (#165) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename exporters components to match naming guidelines (#164) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename startsamplers/droppers components to match naming guidelines (#163) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename condition components to match naming guidelines (#162) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename sampler components to match naming guidelines (#161) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: update env vars to use HTP_ prefix (#158) | [Tyler Helmuth](https://github.com/TylerHelmuth)
 
 ## 0.11.0 2025-06-25
 
 ### Fixes
 
-- fix: automatically set otlp http exporter scheme based on insecure (#153) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
-- fix: Fix rule rendering bug related to indexing (#154) | [Kent Quirk](https://github.com/Kent Quirk)
+- fix: automatically set otlp http exporter scheme based on insecure (#153) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: Fix rule rendering bug related to indexing (#154) | [Kent Quirk](https://github.com/KentQuirk)
 
 ## 0.10.0 2025-06-24
 

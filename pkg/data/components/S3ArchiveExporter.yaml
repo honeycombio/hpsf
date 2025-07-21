@@ -1,0 +1,142 @@
+kind: S3ArchiveExporter
+name: Send to S3 Archive
+type: base
+style: exporter
+logo: awss3
+status: alpha
+version: v0.1.0
+summary: Sends the telemetry to AWS S3
+description: |
+  Sends the telemetry S3 for long-term storage to the location you choose.
+tags:
+  - category:exporter
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+properties:
+  - name: Bucket
+    summary: The S3 bucket in which to store the data.
+    description: |
+      The name of the S3 bucket in which to store the data. This is a required field.
+    type: string
+    validations:
+      - noblanks
+  - name: Region
+    summary: The AWS region in which to store the data.
+    description: |
+      The region in which to store the data.
+    type: string
+    default: us-east-1
+  - name: Prefix
+    summary: The prefix to use when writing files to S3.
+    description: |
+      The prefix to use when writing files to S3.
+    type: string
+  # advanced properties
+  - name: PartitionFormat
+    summary: The partition format to use when writing files to S3.
+    description: |
+      The partition format to use when writing files to S3. The default value is `year=%Y/month=%m/day=%d/hour=%H/minute=%M`.
+    type: string
+    default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
+    advanced: true
+  - name: Timeout
+    summary: The timeout to use when writing files to S3.
+    description: |
+      The timeout to use when writing files to S3. The default value is `5s`.
+    type: duration
+    default: 5s
+    validations:
+      - duration
+    advanced: true
+  - name: Marshaler
+    summary: The marshaler to use when writing files to S3.
+    description: |
+      The marshaler to use when writing files to S3. The default value is `otlp_json`.
+    type: string
+    subtype: oneof(otlp_json, otlp_proto)
+    default: otlp_proto
+    validations:
+      - oneof(otlp_json, otlp_proto)
+    advanced: true
+  - name: BatchTimeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout.
+    type: duration
+    default: 60s
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
+    type: int
+    default: 100_000
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    summary: The size of a exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/datapoint/log record count.
+      Items will be kept in the queue while the batch is being created.
+    type: int
+    default: 1_000_000
+    validations:
+      - nonempty
+    advanced: true
+templates:
+  - name: s3_exporter_collector
+    kind: collector_config
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: awss3
+    data:
+      - key: "{{ .ComponentName }}.s3uploader.s3_bucket"
+        value: "{{ .Values.Bucket }}"
+      - key: "{{ .ComponentName }}.s3uploader.region"
+        value: "{{ .Values.Region }}"
+        suppress_if: "{{ not .HProps.Region }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_prefix"
+        value: "{{ .Values.Prefix }}"
+        suppress_if: "{{ not .HProps.Prefix }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_partition_format"
+        value: "{{ .Values.PartitionFormat }}"
+        suppress_if: "{{ not .HProps.PartitionFormat }}"
+      - key: "{{ .ComponentName }}.s3uploader.compression"
+        value: "gzip"
+      - key: "{{ .ComponentName }}.timeout"
+        value: "{{ .Values.Timeout }}"
+        suppress_if: "{{ not .Values.Timeout }}"
+      - key: "{{ .ComponentName }}.marshaler"
+        value: "{{ .Values.Marshaler }}"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"

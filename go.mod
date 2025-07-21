@@ -2,6 +2,8 @@ module github.com/honeycombio/hpsf
 
 go 1.24.0
 
+toolchain go1.24.2
+
 require (
 	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33
 	github.com/jessevdk/go-flags v1.6.1
@@ -11,6 +13,8 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	golang.org/x/sys v0.21.0 // indirect
+	golang.org/x/sys v0.33.0 // indirect
+	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )

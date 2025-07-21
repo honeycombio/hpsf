@@ -2,7 +2,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Info Logs only
-    kind: FilterLogBySeverity
+    kind: LogSeverityFilterProcessor
   - name: Honeycomb Exporter_1
     kind: HoneycombExporter
 connections:

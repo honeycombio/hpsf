@@ -3,7 +3,7 @@ package translator
 import (
 	"fmt"
 	"iter"
-	"slices"
+	"sort"
 
 	"maps"
 
@@ -159,6 +159,7 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 }
 
 // this checks that there is exactly one connection on the input and output of each sampler
+// and condition component.
 func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF sampler connection validation errors")
 	// iterate over the components and check for samplers
@@ -171,8 +172,8 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 			continue
 		}
 
-		if tmpl.Style == "sampler" {
-			// check the connections for the sampler
+		if tmpl.Style == "sampler" || tmpl.Style == "condition" {
+			// check the connections for the component
 			inputs := 0
 			outputs := 0
 			for _, conn := range h.Connections {
@@ -184,7 +185,7 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 				}
 			}
 			if inputs != 1 || outputs != 1 {
-				err := hpsf.NewError("sampler must have exactly one input and one output connection").
+				err := hpsf.NewError("sampler and condition components must have exactly one input and one output connection").
 					WithComponent(c.Name)
 				result.Add(err)
 			}
@@ -225,85 +226,90 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 	return result
 }
 
-// validateStartSampling checks that there is at most one component with the "StartSampling" kind. If it exists,
+// The rules for sampling in HPSF are as follows:
+// - If there are any sampling components, there must be at least one "startsampling" component.
+// - Each pipeline connected to a "startsampling" component must have exactly one sampler.
+// - There may be multiple "condition" components between startsampling and the sampler.
+
+// validateStartSampling checks that there is at most one component with the "startsampling" style. If it exists,
 // there must be at least one sampler in the configuration. If it does not exist, there can be no samplers in the configuration.
 // There must also be only one connection from the StartSampling component to a sampler.
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF start sampling validation errors")
 	// iterate over the components and check for the StartSampling component
-	startSamplingCount := 0
-	var startSamplingComp string
-	for _, c := range h.Components {
-		tmpl, ok := templateComps[c.GetSafeName()]
-		if !ok {
-			continue
-		}
+	// startSamplingCount := 0
+	// var startSamplingComp string
+	// for _, c := range h.Components {
+	// 	tmpl, ok := templateComps[c.GetSafeName()]
+	// 	if !ok {
+	// 		continue
+	// 	}
 
-		if tmpl.Kind == "StartSampling" {
-			startSamplingCount++
-			startSamplingComp = c.GetSafeName()
-			if startSamplingCount > 1 {
-				err := hpsf.NewError("only one StartSampling component is allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
-		}
-	}
-	if startSamplingCount == 0 {
-		// if there is no StartSampling component, we cannot have any samplers in the configuration
-		for _, c := range h.Components {
-			tmpl, ok := templateComps[c.GetSafeName()]
-			if !ok {
-				continue
-			}
+	// 	if tmpl.Style == "startsampling" {
+	// 		startSamplingCount++
+	// 		startSamplingComp = c.GetSafeName()
+	// 		if startSamplingCount > 1 {
+	// 			err := hpsf.NewError("only one StartSampling component is allowed").
+	// 				WithComponent(c.Name)
+	// 			result.Add(err)
+	// 		}
+	// 	}
+	// }
+	// if startSamplingCount == 0 {
+	// 	// if there is no StartSampling component, we cannot have any samplers in the configuration
+	// 	for _, c := range h.Components {
+	// 		tmpl, ok := templateComps[c.GetSafeName()]
+	// 		if !ok {
+	// 			continue
+	// 		}
 
-			if tmpl.Style == "sampler" {
-				err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
-		}
-	} else {
-		// if there is a StartSampling component, we must have at least one sampler in the configuration
-		hasSampler := false
-		for _, c := range h.Components {
-			tmpl, ok := templateComps[c.GetSafeName()]
-			if !ok {
-				continue
-			}
+	// 		if tmpl.Style == "sampler" {
+	// 			err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
+	// 				WithComponent(c.Name)
+	// 			result.Add(err)
+	// 		}
+	// 	}
+	// } else {
+	// 	// if there is a StartSampling component, we must have at least one sampler in the configuration
+	// 	hasSampler := false
+	// 	for _, c := range h.Components {
+	// 		tmpl, ok := templateComps[c.GetSafeName()]
+	// 		if !ok {
+	// 			continue
+	// 		}
 
-			if tmpl.Style == "sampler" {
-				hasSampler = true
-				break
-			}
-		}
-		if !hasSampler {
-			err := hpsf.NewError("if there is a StartSampling component, at least one sampler is required").
-				WithComponent("StartSampling")
-			result.Add(err)
-		}
-	}
-	// now we need to check that there is only one connection from the StartSampling component to a sampler
-	if startSamplingCount == 1 {
-		samplerConnections := 0
-		for _, conn := range h.Connections {
-			if conn.Source.GetSafeName() == startSamplingComp {
-				// check if the destination is a sampler
-				dstComp, ok := templateComps[conn.Destination.GetSafeName()]
-				if !ok {
-					continue
-				}
-				if dstComp.Style == "sampler" {
-					samplerConnections++
-				}
-			}
-		}
-		if samplerConnections != 1 {
-			err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
-				WithComponent(startSamplingComp)
-			result.Add(err)
-		}
-	}
+	// 		if tmpl.Style == "sampler" {
+	// 			hasSampler = true
+	// 			break
+	// 		}
+	// 	}
+	// 	if !hasSampler {
+	// 		err := hpsf.NewError("if there is a StartSampling component, at least one sampler is required").
+	// 			WithComponent("StartSampling")
+	// 		result.Add(err)
+	// 	}
+	// }
+	// // now we need to check that there is only one connection from the StartSampling component to a sampler
+	// if startSamplingCount == 1 {
+	// 	samplerConnections := 0
+	// 	for _, conn := range h.Connections {
+	// 		if conn.Source.GetSafeName() == startSamplingComp {
+	// 			// check if the destination is a sampler
+	// 			dstComp, ok := templateComps[conn.Destination.GetSafeName()]
+	// 			if !ok {
+	// 				continue
+	// 			}
+	// 			if dstComp.Style == "sampler" {
+	// 				samplerConnections++
+	// 			}
+	// 		}
+	// 	}
+	// 	if samplerConnections != 1 {
+	// 		err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
+	// 			WithComponent(startSamplingComp)
+	// 		result.Add(err)
+	// 	}
+	// }
 
 	return result
 }
@@ -392,9 +398,6 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
-	t.maybeAddDefaultSampler(h)
-
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
@@ -432,94 +435,99 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		comp.AddConnection(conn)
 	}
 
-	// We need to generate our collection of unique pipelines. A pipeline in
+	// We need to generate our collection of unique paths. A pipeline in
 	// this context is the shortest path from a source component to a
 	// destination component. We iterate over all starting components (those
 	// with no incoming connections) and all ending components (those with no
 	// outgoing connections).
-	pipelines := h.FindAllPipelines(receiverNames)
-	if len(pipelines) == 0 {
-		// there were no complete pipelines found, so we construct dummy pipelines with all the components
-		// so that all the non-piped components can play
-		pipelines = []hpsf.PipelineWithConnectionType{
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
+	paths := h.FindAllPaths(receiverNames)
+	if len(paths) == 0 {
+		// there were no complete paths found, so we construct dummy paths with all the components
+		// so that all the unconnected components can play
+		paths = []hpsf.PathWithConnections{
+			{Path: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Path: h.Components, ConnType: hpsf.CTYPE_HONEY},
+			{Path: h.Components, ConnType: hpsf.CTYPE_SAMPLE},
 		}
 	}
 
-	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
+	// sort paths by connection type and the component name and port name of the
+	// first connection in the path
+	sort.Slice(paths, func(i, j int) bool {
+		if paths[i].ConnType != paths[j].ConnType {
+			return paths[i].ConnType < paths[j].ConnType
+		}
 
-	// now we can iterate over the pipelines and generate a configuration for each
-	for _, pipeline := range pipelines {
+		// if either path has no connections, we can determine the order by the presence of connections
+		if len(paths[i].Connections) == 0 || len(paths[j].Connections) == 0 {
+			return len(paths[i].Connections) == 0
+		}
+
+		// If both paths have connections, we can compare the first connection in each path.
+		// We compare by the source component name first
+		if paths[i].Connections[0].Source.Component != paths[j].Connections[0].Source.Component {
+			return paths[i].Connections[0].Source.Component < paths[j].Connections[0].Source.Component
+		}
+		// now compare the port names (this is what orders multiple paths from startsampling)
+		// This assumes that the port names are sorted in the same order as the port indexes,
+		// since port indexes are not available here.
+		return paths[i].Connections[0].Source.PortName < paths[j].Connections[0].Source.PortName
+	})
+
+	// we need a dummy component to start with so that we can always have a valid config
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+	composites := make([]tmpl.TemplateConfig, 0, len(paths))
+
+	// now we can iterate over the paths and generate a configuration for each
+	for _, path := range paths {
 		// Start with a base component so we always have a valid config
-		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, pipeline, userdata)
+		composite, err := base.GenerateConfig(ct, path, userdata)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, comp := range pipeline.Pipeline {
+		mergedSomething := false
+		for _, comp := range path.Path {
 			// look up the component in the ordered map
 			c, ok := comps.Get(comp.GetSafeName())
 			if !ok {
-				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
+				return nil, fmt.Errorf("unknown component %s in path", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, userdata)
 			if err != nil {
 				return nil, err
 			}
 			if compConfig != nil {
-				composite.Merge(compConfig)
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
 			}
 		}
-		composites = append(composites, composite)
+		if mergedSomething {
+			composites = append(composites, composite)
+		}
 	}
 	// If we have multiple pipelines, we need to merge them into a single config.
 	if len(composites) > 1 {
 		// We can use the Merge method to combine all the configurations into one.
 		finalConfig := composites[0]
 		for _, comp := range composites[1:] {
-			finalConfig.Merge(comp)
+			if err := finalConfig.Merge(comp); err != nil {
+				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
+			}
 		}
 		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
 		return composites[0], nil
 	}
-	// If we have no pipelines, we return nil.
-	return nil, nil
-}
 
-func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
-		if component, ok := t.components[c.Kind]; ok {
-			if component.Style != "sampler" {
-				return false
-			}
-			p := c.GetProperty("Environment")
-			if p != nil {
-				return p.Value == "__default__"
-			}
-			return slices.ContainsFunc(component.Properties, func(p config.TemplateProperty) bool {
-				return p.Name == "Environment" && p.Default == "__default__"
-			})
-		}
-		return false
-	})
-	if !foundDefaultSampler {
-		h.Components = append(h.Components, &hpsf.Component{
-			Name: "defaultSampler",
-			Kind: "DeterministicSampler",
-			Properties: []hpsf.Property{
-				{
-					Name:  "SampleRate",
-					Value: 1,
-				},
-			},
-		})
-	}
+	// Start with a base component so we always have a valid config
+	refineryBase := config.UnconfiguredRefineryComponent{Component: dummy}
+	return refineryBase.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 }

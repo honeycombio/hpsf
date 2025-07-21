@@ -1,0 +1,61 @@
+kind: HTTPStatusCondition
+name: Check HTTP Status
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Sets sampling rates based on HTTP status codes
+description: |
+  Samples HTTP errors based on the http status of processes within the trace.
+  If any span a trace has a status code in the 500s, it will be sampled
+  at the error rate. If any span has a status code in the 400s,
+  it will be sampled at the user error rate.
+  All other traces will be sampled at the default rate.
+tags:
+  - category:refinery_rule
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Operator
+    summary: The comparison operator to use when evaluating status codes.
+    description: |
+      The comparison operator to use when evaluating status codes.
+      Supported operators are: =, !=, <, <=, >, >=
+    type: string
+    subtype: oneof(=, !=, <, <=, >, >=)
+    default: ">="
+    validations:
+      - oneof(=, !=, <, <=, >, >=)
+  - name: Value
+    summary: The Value to compare status codes against.
+    description: |
+      The Value to compare status codes against. This is typically 400 or 500.
+    type: int
+    default: 400
+    validations:
+      - positive
+templates:
+  - kind: refinery_rules
+    name: StatusCodeCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Fields
+        value: [http.status_code, http.response.status_code]
+      - key: Operator
+        value: "{{ .Values.Operator }}"
+      - key: Value
+        value: "{{ .Values.Value | encodeAsInt }}"
+      - key: Datatype
+        value: int

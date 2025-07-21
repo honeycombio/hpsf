@@ -1,0 +1,28 @@
+kind: Dropper
+name: Drop
+style: dropper
+type: base
+status: alpha
+version: v0.1.0
+summary: Drops all traces
+description: |
+  This sampler drops all traces.
+tags:
+  - category:refinery_sampler
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Sample
+    direction: input
+    type: SampleData
+templates:
+  - kind: refinery_rules
+    name: DropAll_RefineryRules
+    format: rules
+    meta:
+      sampler: RulesBasedSampler
+    data:
+      - key: Drop
+        value: true

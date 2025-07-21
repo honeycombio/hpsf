@@ -1,5 +1,5 @@
 kind: SymbolicatorProcessor
-name: Symbolicator Processor
+name: Symbolicate JavaScript Stack Traces
 style: processor
 type: base
 status: development

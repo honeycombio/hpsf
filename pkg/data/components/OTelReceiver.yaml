@@ -1,5 +1,5 @@
 kind: OTelReceiver
-name: OTel Receiver
+name: Receive OTel
 style: receiver
 logo: opentelemetry
 type: base
@@ -37,7 +37,7 @@ properties:
     validations:
       - noblanks
       - hostorip
-    default: ${STRAWS_COLLECTOR_POD_IP}
+    default: ${HTP_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
     summary: The port on which to listen for gRPC traffic.
