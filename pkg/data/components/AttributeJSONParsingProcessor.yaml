@@ -36,6 +36,7 @@ properties:
   - name: Signal
     type: string
     subtype: oneof(span, log)
+    default: log
     validations:
       - oneof(span, log)
 templates:

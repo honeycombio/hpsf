@@ -8,8 +8,6 @@ components:
     properties:
       - name: Attribute
         value: "json_data"
-      - name: Signal
-        value: "log"
 connections:
   - source:
       component: otlp_in
