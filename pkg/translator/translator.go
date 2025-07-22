@@ -172,7 +172,7 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 			continue
 		}
 
-		if tmpl.Style == "sampler" || tmpl.Style == "condition" {
+		if tmpl.Style == "sampler" || tmpl.Style == "dropper" || tmpl.Style == "condition" {
 			// check the connections for the component
 			inputs := 0
 			outputs := 0
@@ -184,8 +184,13 @@ func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[
 					outputs++
 				}
 			}
-			if inputs != 1 || outputs != 1 {
-				err := hpsf.NewError("sampler and condition components must have exactly one input and one output connection").
+			if inputs != 1 {
+				err := hpsf.NewError("sampler, dropper, and condition components must have exactly one input connection").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+			if outputs != 1 && tmpl.Style != "dropper" {
+				err := hpsf.NewError("sampler and condition components must have exactly one output connection").
 					WithComponent(c.Name)
 				result.Add(err)
 			}
@@ -226,90 +231,155 @@ func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[str
 	return result
 }
 
-// The rules for sampling in HPSF are as follows:
-// - If there are any sampling components, there must be at least one "startsampling" component.
-// - Each pipeline connected to a "startsampling" component must have exactly one sampler.
-// - There may be multiple "condition" components between startsampling and the sampler.
+// findPathComponents finds all the components in paths starting from the given component.
+// It returns a slice of component names that represent all components in paths
+// that start from the given component.
+func (t *Translator) findPathComponents(h *hpsf.HPSF, startComp string) []string {
+	visited := make(map[string]bool)
+	components := make([]string, 0)
 
-// validateStartSampling checks that there is at most one component with the "startsampling" style. If it exists,
-// there must be at least one sampler in the configuration. If it does not exist, there can be no samplers in the configuration.
-// There must also be only one connection from the StartSampling component to a sampler.
+	var dfs func(comp string)
+	dfs = func(comp string) {
+		if visited[comp] {
+			return
+		}
+		visited[comp] = true
+		components = append(components, comp)
+
+		// Continue traversing to find all connected components
+		for _, conn := range h.Connections {
+			if conn.Source.GetSafeName() == comp {
+				dfs(conn.Destination.GetSafeName())
+			}
+		}
+	}
+
+	dfs(startComp)
+	return components
+}
+
+// The rules for sampling in HPSF are as follows:
+// - If there are any sampling components, there must be at least one component with style "startsampling".
+// - Each path connected to a "startsampling" component's output must lead to exactly one "sampler" or "dropper".
+// - There may be multiple "condition" components between startsampling and the sampler or dropper.
+// - Every path on a startsampler except the one with the highest index must connect to a condition.
+// - Droppers can terminate a path (since they do not have an output port).
+// - The output of samplers must be connected to an "exporter" component.
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
 	result := validator.NewResult("HPSF start sampling validation errors")
-	// iterate over the components and check for the StartSampling component
-	// startSamplingCount := 0
-	// var startSamplingComp string
-	// for _, c := range h.Components {
-	// 	tmpl, ok := templateComps[c.GetSafeName()]
-	// 	if !ok {
-	// 		continue
-	// 	}
+	startSamplingCount := 0
+	var startSamplingComp string
+	for _, c := range h.Components {
+		tmpl, ok := templateComps[c.GetSafeName()]
+		if !ok {
+			continue
+		}
 
-	// 	if tmpl.Style == "startsampling" {
-	// 		startSamplingCount++
-	// 		startSamplingComp = c.GetSafeName()
-	// 		if startSamplingCount > 1 {
-	// 			err := hpsf.NewError("only one StartSampling component is allowed").
-	// 				WithComponent(c.Name)
-	// 			result.Add(err)
-	// 		}
-	// 	}
-	// }
-	// if startSamplingCount == 0 {
-	// 	// if there is no StartSampling component, we cannot have any samplers in the configuration
-	// 	for _, c := range h.Components {
-	// 		tmpl, ok := templateComps[c.GetSafeName()]
-	// 		if !ok {
-	// 			continue
-	// 		}
+		if tmpl.Style == "startsampling" {
+			startSamplingCount++
+			startSamplingComp = c.GetSafeName()
+			if startSamplingCount > 1 {
+				err := hpsf.NewError("only one StartSampling component is allowed").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+		}
+	}
+	if startSamplingCount == 0 {
+		// if there is no StartSampling component, we cannot have any samplers in the configuration
+		for _, c := range h.Components {
+			tmpl, ok := templateComps[c.GetSafeName()]
+			if !ok {
+				continue
+			}
 
-	// 		if tmpl.Style == "sampler" {
-	// 			err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
-	// 				WithComponent(c.Name)
-	// 			result.Add(err)
-	// 		}
-	// 	}
-	// } else {
-	// 	// if there is a StartSampling component, we must have at least one sampler in the configuration
-	// 	hasSampler := false
-	// 	for _, c := range h.Components {
-	// 		tmpl, ok := templateComps[c.GetSafeName()]
-	// 		if !ok {
-	// 			continue
-	// 		}
+			if tmpl.Style == "sampler" {
+				err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+		}
+	} else {
+		// if there is a StartSampling component, we must have at least one sampler or dropper in the configuration
+		hasSamplerOrDropper := false
+		for _, c := range h.Components {
+			tmpl, ok := templateComps[c.GetSafeName()]
+			if !ok {
+				continue
+			}
 
-	// 		if tmpl.Style == "sampler" {
-	// 			hasSampler = true
-	// 			break
-	// 		}
-	// 	}
-	// 	if !hasSampler {
-	// 		err := hpsf.NewError("if there is a StartSampling component, at least one sampler is required").
-	// 			WithComponent("StartSampling")
-	// 		result.Add(err)
-	// 	}
-	// }
-	// // now we need to check that there is only one connection from the StartSampling component to a sampler
-	// if startSamplingCount == 1 {
-	// 	samplerConnections := 0
-	// 	for _, conn := range h.Connections {
-	// 		if conn.Source.GetSafeName() == startSamplingComp {
-	// 			// check if the destination is a sampler
-	// 			dstComp, ok := templateComps[conn.Destination.GetSafeName()]
-	// 			if !ok {
-	// 				continue
-	// 			}
-	// 			if dstComp.Style == "sampler" {
-	// 				samplerConnections++
-	// 			}
-	// 		}
-	// 	}
-	// 	if samplerConnections != 1 {
-	// 		err := hpsf.NewError("StartSampling component must have exactly one connection to a sampler").
-	// 			WithComponent(startSamplingComp)
-	// 		result.Add(err)
-	// 	}
-	// }
+			if tmpl.Style == "sampler" || tmpl.Style == "dropper" {
+				hasSamplerOrDropper = true
+				break
+			}
+		}
+		if !hasSamplerOrDropper {
+			err := hpsf.NewError("if there is a StartSampling component, at least one sampler or dropper is required").
+				WithComponent("StartSampling")
+			result.Add(err)
+		}
+	}
+	// now we need to check that each path from the StartSampling component leads to exactly one sampler or dropper
+	if startSamplingCount == 1 {
+		// Find all connections from StartSampling
+		startSamplingConnections := make([]*hpsf.Connection, 0)
+		for _, conn := range h.Connections {
+			if conn.Source.GetSafeName() == startSamplingComp {
+				startSamplingConnections = append(startSamplingConnections, conn)
+			}
+		}
+
+		// For each connection from StartSampling, trace the path to find if it leads to exactly one sampler or dropper
+		for _, startConn := range startSamplingConnections {
+			pathComponents := t.findPathComponents(h, startConn.Destination.GetSafeName())
+			samplerOrDropperCount := 0
+			for _, comp := range pathComponents {
+				tmpl, ok := templateComps[comp]
+				if ok && (tmpl.Style == "sampler" || tmpl.Style == "dropper") {
+					samplerOrDropperCount++
+				}
+			}
+			if samplerOrDropperCount != 1 {
+				err := hpsf.NewError("Each path from StartSampling must lead to exactly one sampler or dropper").
+					WithComponent(startSamplingComp)
+				result.Add(err)
+			}
+		}
+
+		// Validate that every path except the one with the highest index connects to a condition
+		// Find the highest index among all StartSampling connections
+		highestIndex := -1
+		startSamplingTemplate := templateComps[startSamplingComp]
+		for _, startConn := range startSamplingConnections {
+			// Get the port index from the connection's source port
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex > highestIndex {
+				highestIndex = portIndex
+			}
+		}
+
+		// Check each path except the one with the highest index
+		for _, startConn := range startSamplingConnections {
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex != highestIndex {
+				// This path must connect to a condition
+				pathComponents := t.findPathComponents(h, startConn.Destination.GetSafeName())
+				hasCondition := false
+				for _, comp := range pathComponents {
+					tmpl, ok := templateComps[comp]
+					if ok && tmpl.Style == "condition" {
+						hasCondition = true
+						break
+					}
+				}
+				if !hasCondition {
+					err := hpsf.NewError("Every path on a startsampler except the one with the highest index must connect to a condition").
+						WithComponent(startSamplingComp)
+					result.Add(err)
+				}
+			}
+		}
+	}
 
 	return result
 }

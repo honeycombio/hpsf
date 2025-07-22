@@ -1,0 +1,64 @@
+components:
+  - name: start
+    kind: SamplingSequencer
+  - name: honeycomb_out
+    kind: HoneycombExporter
+  - name: sampler1
+    kind: DeterministicSampler
+  - name: sampler2
+    kind: DeterministicSampler
+  - name: condition1
+    kind: ErrorExistsCondition
+  - name: condition2
+    kind: ErrorExistsCondition
+connections:
+  # Rule 1 (index 0) - has a condition, which is correct
+  - source:
+      component: start
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: condition1
+      port: Match
+      type: SampleData
+  - source:
+      component: condition1
+      port: And
+      type: SampleData
+    destination:
+      component: sampler1
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb_out
+      port: Events
+      type: HoneycombEvents
+  # Rule 2 (index 1) - has a condition, which is correct
+  - source:
+      component: start
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: condition2
+      port: Match
+      type: SampleData
+  - source:
+      component: condition2
+      port: And
+      type: SampleData
+    destination:
+      component: sampler2
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler2
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb_out
+      port: Events
+      type: HoneycombEvents
