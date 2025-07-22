@@ -262,6 +262,7 @@ func (t *Translator) findPathComponents(h *hpsf.HPSF, startComp string) []string
 // - If there are any sampling components, there must be at least one component with style "startsampling".
 // - Each path connected to a "startsampling" component's output must lead to exactly one "sampler" or "dropper".
 // - There may be multiple "condition" components between startsampling and the sampler or dropper.
+// - Every path on a startsampler except the one with the highest index must connect to a condition.
 // - Droppers can terminate a path (since they do not have an output port).
 // - The output of samplers must be connected to an "exporter" component.
 func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
@@ -342,6 +343,40 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 				err := hpsf.NewError("Each path from StartSampling must lead to exactly one sampler or dropper").
 					WithComponent(startSamplingComp)
 				result.Add(err)
+			}
+		}
+
+		// Validate that every path except the one with the highest index connects to a condition
+		// Find the highest index among all StartSampling connections
+		highestIndex := -1
+		startSamplingTemplate := templateComps[startSamplingComp]
+		for _, startConn := range startSamplingConnections {
+			// Get the port index from the connection's source port
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex > highestIndex {
+				highestIndex = portIndex
+			}
+		}
+
+		// Check each path except the one with the highest index
+		for _, startConn := range startSamplingConnections {
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex != highestIndex {
+				// This path must connect to a condition
+				pathComponents := t.findPathComponents(h, startConn.Destination.GetSafeName())
+				hasCondition := false
+				for _, comp := range pathComponents {
+					tmpl, ok := templateComps[comp]
+					if ok && tmpl.Style == "condition" {
+						hasCondition = true
+						break
+					}
+				}
+				if !hasCondition {
+					err := hpsf.NewError("Every path on a startsampler except the one with the highest index must connect to a condition").
+						WithComponent(startSamplingComp)
+					result.Add(err)
+				}
 			}
 		}
 	}

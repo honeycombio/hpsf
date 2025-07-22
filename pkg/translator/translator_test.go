@@ -397,6 +397,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 		{"missing StartSampling", "testdata/bad_hpsf/missing_startsampling.yaml", "no samplers are allowed,exactly one input connection"},
 		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
 		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "source component does not have a port,destination component does not have a port"},
+		{"missing condition on lower index", "testdata/bad_hpsf/missing_condition_on_lower_index.yaml", "Every path on a startsampler except the one with the highest index must connect to a condition"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -436,6 +437,37 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 					t.Errorf("Translator.ValidateConfig() error %d did not contain expected text: %q, got: %s",
 						i, strings.TrimSpace(contents[i]), detail.Error())
 				}
+			}
+		})
+	}
+}
+
+func TestTranslator_ValidateValidConfigs(t *testing.T) {
+	tests := []struct {
+		name string
+		file string
+	}{
+		{"valid condition on lower index", "testdata/bad_hpsf/valid_condition_on_lower_index.yaml"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := os.ReadFile(tt.file)
+			require.NoError(t, err)
+			var inputData = string(b)
+
+			var h *hpsf.HPSF
+			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
+			err = dec.Decode(&h)
+			require.NoError(t, err)
+
+			trans := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			trans.InstallComponents(comps)
+
+			err = trans.ValidateConfig(h)
+			if err != nil {
+				t.Errorf("Translator.ValidateConfig() should not error for valid config, got: %v", err)
 			}
 		})
 	}
