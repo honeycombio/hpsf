@@ -33,12 +33,12 @@ connections:
       type: OTelTraces
   - source:
       component: Start Sampling 1
-      port: Events
-      type: HoneycombEvents
+      port: Rule 1
+      type: SampleData
     destination:
       component: EMA Throughput 1
-      port: Events
-      type: HoneycombEvents
+      port: Sample
+      type: SampleData
   - source:
       component: EMA Throughput 1
       port: Events

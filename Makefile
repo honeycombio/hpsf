@@ -94,6 +94,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-refinery'; \
 		docker rm 'smoke-refinery'; \
+		echo "+++ refinery failed to started up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -132,19 +133,19 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		'del(.processors.usage) | \
 		 del(.extensions.honeycomb) | \
 		 del(.service.extensions[] | select(. == "honeycomb")) | \
-		 del(.service.pipelines.traces.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.metrics.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.logs.processors[] | select(. == "usage"))' \
+		 del(.service.pipelines.traces*.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.metrics*.processors[] | select(. == "usage")) | \
+		 del(.service.pipelines.logs*.processors[] | select(. == "usage"))' \
 		tmp/collector-config.yaml || exit 1
 
 	# run collector with the generated config
 	docker run -d --name smoke-collector \
-		--entrypoint /otelcol-contrib \
-		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
+		--entrypoint /honeycomb-otelcol \
+		-v ./tmp/collector-config.yaml:/config.yaml \
 		-e HTP_COLLECTOR_POD_IP=localhost \
 		-e HTP_REFINERY_POD_IP=localhost \
 		honeycombio/supervised-collector:latest \
-		--config /etc/otelcol-contrib/config.yaml || exit 1
+		--config /config.yaml || exit 1
 	sleep 1
 
 	# check if the container is running
@@ -152,6 +153,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-collector'; \
 		docker rm 'smoke-collector'; \
+		echo "+++ collector failed to start up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -160,13 +162,25 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ collector successfully started up for $(FILE)"; \
 	fi
 
-.PHONY: smoke
+.PHONY: smoke_templates
 #: run smoke tests for HPSF templates
-smoke: pkg/data/templates/*.yaml
+smoke_templates: pkg/data/templates/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
+
+.PHONY: smoke_components
+#: run smoke tests for components
+smoke_components: tests/smoke/*.yaml
+	for file in $^ ; do \
+		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
+		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
+	done
+
+.PHONY: smoke
+#: run smoke tests for HPSF
+smoke: smoke_templates smoke_components
 
 .PHONY: unsmoke
 unsmoke:
