@@ -170,9 +170,17 @@ smoke_templates: pkg/data/templates/*.yaml
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
 
+.PHONY: smoke_components
+#: run smoke tests for components
+smoke_components: tests/smoke/*.yaml
+	for file in $^ ; do \
+		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
+		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
+	done
+
 .PHONY: smoke
-#: run smoke tests for HPSF templates
-smoke: smoke_templates
+#: run smoke tests for HPSF
+smoke: smoke_templates smoke_components
 
 .PHONY: unsmoke
 unsmoke:
