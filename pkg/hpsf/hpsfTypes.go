@@ -262,6 +262,7 @@ type Property struct {
 type Component struct {
 	Name       string     `yaml:"name"`
 	Kind       string     `yaml:"kind"`
+	Version    string     `yaml:"version"`
 	Ports      []Port     `yaml:"ports,omitempty"`
 	Properties []Property `yaml:"properties,omitempty"`
 	Style      string     `yaml:"style,omitempty"`

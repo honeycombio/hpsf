@@ -74,14 +74,14 @@ func (t *Translator) LoadEmbeddedComponents() error {
 func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok {
+	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) {
 		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
 	// nothing found so we're done
-	return nil, fmt.Errorf("unknown component kind: %s", component.Kind)
+	return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
 }
 
 // getMatchingTemplateComponents returns the template components that match the components in the HPSF document.
@@ -95,10 +95,10 @@ func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]con
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
 			continue
 		}
-		if comp, ok := t.components[c.Kind]; ok {
+		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
 			templateComps[c.GetSafeName()] = comp
 		} else {
-			result.Add(fmt.Errorf("failed to locate corresponding template component for %s: %w", c.Name, err))
+			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
 		}
 	}
 	return templateComps, result
