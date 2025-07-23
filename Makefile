@@ -119,12 +119,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
 
 	# check yq is installed and at least version 4.0.0
-	if ! command -v yq &> /dev/null; then \
-		echo "+++ yq could not be found, please install it"; \
-		exit 1; \
-	fi
 	if [ "$$(yq --version | cut -d' ' -f2 | cut -d'.' -f1)" -lt 4 ]; then \
-		echo "+++ yq version is less than 4.0.0, please update it"; \
+		echo "+++ yq could not be found or its version is less than 4.0.0, please update it"; \
 		exit 1; \
 	fi
 
