@@ -13,6 +13,12 @@ jobs:
             sudo tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz
             echo 'export PATH=/usr/local/go/bin:$PATH' >> $BASH_ENV
             go version
+      - run:
+          name: "Install yq"
+          command: |
+            sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            sudo chmod +x /usr/local/bin/yq
+            yq --version
       - restore_cache:
           keys:
             - v1-go-mod-{{ checksum "go.sum" }}
