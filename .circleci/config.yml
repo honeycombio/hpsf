@@ -2,8 +2,7 @@ version: 2.1
 
 jobs:
   test:
-    machine:
-      - image: ubuntu-2004:current
+    machine: true
     steps:
       - checkout
       - run:
