@@ -110,7 +110,7 @@ templates:
       signalTypes: [traces, metrics, logs]
       collectorComponentName: awss3
     data:
-      - key: "{{ .ComponentName }}.s3uploader.s3_bucket"
+      - key: "{{ .ComponentName }}.s3uploader.s3_bucketssssss"
         value: "{{ .Values.Bucket }}"
       - key: "{{ .ComponentName }}.s3uploader.region"
         value: "{{ .Values.Region }}"
