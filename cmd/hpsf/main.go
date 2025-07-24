@@ -87,10 +87,11 @@ func main() {
 
 	// Create the output file
 	var outf io.Writer
+	var f *os.File
 	if cmdopts.Output == "-" {
 		outf = os.Stdout
 	} else {
-		f, err := os.Create(cmdopts.Output)
+		f, err = os.Create(cmdopts.Output)
 		if err != nil {
 			log.Fatalf("error creating output file: %v", err)
 		}
@@ -104,6 +105,9 @@ func main() {
 	// a real app should load them from a database
 	components, err := data.LoadEmbeddedComponents()
 	if err != nil {
+		if f != nil {
+			f.Close()
+		}
 		log.Fatalf("error loading embedded components: %v", err)
 	}
 	// install the components
@@ -136,24 +140,24 @@ func main() {
 			log.Fatalf("input file is not hpsf: %v", err)
 		}
 
-		var hpsf hpsf.HPSF
-		err = y.Unmarshal(inputData, &hpsf)
+		var h hpsf.HPSF
+		err = y.Unmarshal(inputData, &h)
 		if err != nil {
 			log.Fatalf("error unmarshaling to HPSF: %v", err)
 		}
 
 		// validate the HPSF
-		if verrors := hpsf.Validate(); verrors != nil {
+		if verrors := h.Validate(); verrors != nil {
 			if hErr, ok := verrors.(validator.Result); ok {
 				log.Printf("error: %v", hErr.Msg)
 				for _, e := range hErr.Details {
 					log.Printf("  error: %v", e)
 				}
 				os.Exit(1)
-			} else {
-				log.Printf("unexpected validation error: %v", verrors)
-				os.Exit(1)
 			}
+
+			log.Printf("unexpected validation error: %v", verrors)
+			os.Exit(1)
 		}
 
 		log.Printf("HPSF is valid")
@@ -212,7 +216,7 @@ func readInput(filename string) ([]byte, error) {
 	} else {
 		f, err := os.Open(filename)
 		if err != nil {
-			return nil, fmt.Errorf("error opening file %s: %v", filename, err)
+			return nil, fmt.Errorf("error opening file %s: %w", filename, err)
 		}
 		fIn = f
 		defer f.Close()
@@ -221,17 +225,17 @@ func readInput(filename string) ([]byte, error) {
 	// read it into a buffer
 	data, err := io.ReadAll(fIn)
 	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %v", filename, err)
+		return nil, fmt.Errorf("error reading file %s: %w", filename, err)
 	}
 	return data, nil
 }
 
 func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var hpsf hpsf.HPSF
+	var h hpsf.HPSF
 	dec := y.NewDecoder(data)
-	err := dec.Decode(&hpsf)
+	err := dec.Decode(&h)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling to yaml: %v", err)
+		return nil, fmt.Errorf("error unmarshaling to yaml: %w", err)
 	}
-	return &hpsf, nil
+	return &h, nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	yaml "gopkg.in/yaml.v3"
 )
 
@@ -67,14 +68,14 @@ connections:
       type: OTelTraces`)
 
 	_, err := validator.EnsureYAML(inputData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	var hpsf HPSF
-	err = yaml.Unmarshal(inputData, &hpsf)
-	assert.NoError(t, err)
+	var h HPSF
+	err = yaml.Unmarshal(inputData, &h)
+	require.NoError(t, err)
 
-	errors := hpsf.Validate()
-	assert.Empty(t, errors)
+	errors := h.Validate()
+	require.NoError(t, errors)
 }
 
 func TestHPSF_ValidateFailures(t *testing.T) {
@@ -108,13 +109,13 @@ connections:
       type: OTelTraces`)
 
 	_, err := validator.EnsureYAML(inputData)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
-	var hpsf HPSF
-	err = yaml.Unmarshal(inputData, &hpsf)
-	assert.NoError(t, err)
+	var h HPSF
+	err = yaml.Unmarshal(inputData, &h)
+	require.NoError(t, err)
 
-	err = hpsf.Validate()
+	err = h.Validate()
 	result, ok := err.(validator.Result)
 	assert.True(t, ok)
 	assert.Equal(t, 2, result.Len())
@@ -384,14 +385,14 @@ func TestHPSF_VisitComponents(t *testing.T) {
 			})
 
 			if tt.errorOn != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "test error")
 			} else {
 				if tt.expectedError != "" {
-					assert.Error(t, err)
+					require.Error(t, err)
 					assert.Contains(t, err.Error(), tt.expectedError)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					assert.Equal(t, tt.expectedOrder, visited)
 				}
 			}

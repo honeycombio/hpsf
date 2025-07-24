@@ -407,7 +407,7 @@ func safeName(s string) string {
 	return re.ReplaceAllString(s, "_")
 }
 
-// Returns the safe name of the component (no spaces or special characters)
+// GetSafeName returns the safe name of the component (no spaces or special characters)
 // This has potential to cause a problem if the resulting name is not unique -- so uniqueness
 // should be tested with this name, not the original name.
 // we replace any runs of characters not in [a-zA-Z0-9] with an underscore
@@ -415,7 +415,7 @@ func (c *Component) GetSafeName() string {
 	return safeName(c.Name)
 }
 
-// returns the port with the given name, or nil if not found
+// GetPort returns the port with the given name, or nil if not found
 func (c *Component) GetPort(name string) *Port {
 	for _, p := range c.Ports {
 		if p.Name == name {
@@ -425,7 +425,7 @@ func (c *Component) GetPort(name string) *Port {
 	return nil
 }
 
-// returns the property with the given name, or nil if not found
+// GetProperty returns the property with the given name, or nil if not found
 func (c *Component) GetProperty(name string) *Property {
 	for _, p := range c.Properties {
 		if p.Name == name {
@@ -435,7 +435,7 @@ func (c *Component) GetProperty(name string) *Property {
 	return nil
 }
 
-// returns all specified property names as a slice of strings
+// GetPropertyNames returns all specified property names as a slice of strings
 func (c *Component) GetPropertyNames() []string {
 	props := make([]string, len(c.Properties))
 	for i, p := range c.Properties {
@@ -560,7 +560,7 @@ type HPSF struct {
 	Layout      Layout        `yaml:"layout,omitempty"`
 }
 
-// generate a list of components that are not named as the destination of a connection
+// GetStartComponents generates a list of components that are not named as the destination of a connection
 // This is used in visiting all the components in graph order, regardless of connection type.
 func (h *HPSF) GetStartComponents() []*Component {
 	startComps := make([]*Component, 0)
@@ -579,8 +579,8 @@ func (h *HPSF) GetStartComponents() []*Component {
 	return startComps
 }
 
-// for a given signal type, generate a list of components that are sources of connections but not destinations
-// of connections. This is used to find the start components of a pipeline.
+// GetSourceComponentsFor generates a list of components that are sources of connections but not destinations
+// of connections for a given signal type. This is used to find the start components of a pipeline.
 func (h *HPSF) GetSourceComponentsFor(connType ConnectionType) []*Component {
 	sourceComps := make([]*Component, 0)
 	// make a map of all components that are destinations of connections for the given signal type
@@ -663,7 +663,7 @@ func (p PathWithConnections) GetID() string {
 // returns a slice of slices of components, where each inner slice is a path
 // from a start component to an end component. If there are no start components,
 // it returns nil.
-func (h *HPSF) FindAllPaths(receivers map[string]bool) []PathWithConnections {
+func (h *HPSF) FindAllPaths(_ map[string]bool) []PathWithConnections {
 	var paths []PathWithConnections
 	var path []*Component
 	var connections []*Connection
@@ -711,7 +711,7 @@ func (h *HPSF) FindAllPaths(receivers map[string]bool) []PathWithConnections {
 	return paths
 }
 
-// visit all components in the HPSF in order of connections, starting from the components
+// VisitComponents visits all components in the HPSF in order of connections, starting from the components
 // that are not destinations of any connections. This is a depth-first search
 // that will visit all components that are reachable from the start components.
 func (h *HPSF) VisitComponents(fn func(*Component) error) error {
@@ -815,20 +815,20 @@ func EnsureHPSFYAML(input string) error {
 		return errors.New("HPSF yaml contains unexpected keys: " + strings.Join(badkeys, ", "))
 	}
 
-	var hpsf HPSF
+	var h HPSF
 	dec := y.NewDecoder(strings.NewReader(input))
-	err = dec.Decode(&hpsf)
+	err = dec.Decode(&h)
 	if err != nil {
 		return err
 	}
-	return hpsf.Validate()
+	return h.Validate()
 }
 
 func (h *HPSF) AsYAML() (string, error) {
 	// this is a mechanism to marshal the template to YAML
 	data, err := y.Marshal(h)
 	if err != nil {
-		return "", fmt.Errorf("error marshalling hpsf to YAML: %w", err)
+		return "", fmt.Errorf("error marshaling hpsf to YAML: %w", err)
 	}
 	return string(data), nil
 }

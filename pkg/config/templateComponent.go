@@ -229,7 +229,7 @@ func (t *TemplateComponent) ComponentName() string {
 	return t.Name
 }
 
-// Tests if this component has a connection with this signal type
+// ConnectsUsingAppropriateType tests if this component has a connection with this signal type
 func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.ConnectionType) bool {
 	for _, conn := range t.connections {
 		if conn.Source.Type == connType || conn.Destination.Type == connType {
@@ -239,8 +239,8 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.Connectio
 	return false
 }
 
+// GetPort returns the port with the given name, or nil if it doesn't exist
 func (t *TemplateComponent) GetPort(name string) *TemplatePort {
-	// returns the port with the given name, or nil if it doesn't exist
 	for _, port := range t.Ports {
 		if port.Name == name {
 			return &port
@@ -317,15 +317,13 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PathWithC
 					if conn != nil {
 						index = t.GetPortIndex(conn.Source.PortName)
 					}
-				} else {
+				} else if len(pipeline.Connections) > 0 {
 					// For downstream components, find the SamplingSequencer in
 					// the path (it's always the first component in the
 					// pipeline) and determine the index from its output port
-					if len(pipeline.Connections) > 0 {
-						firstConn := pipeline.Connections[0]
-						// Use GetPortIndex to determine the index from the port name
-						index = t.GetPortIndex(firstConn.Source.PortName)
-					}
+					firstConn := pipeline.Connections[0]
+					// Use GetPortIndex to determine the index from the port name
+					index = t.GetPortIndex(firstConn.Source.PortName)
 				}
 
 				rmt, err := tmpl.RMTFromStyle(t.Style)
@@ -390,25 +388,25 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 func undecorate(s string) any {
 	switch {
 	case strings.HasPrefix(s, IntPrefix):
-		s := strings.TrimPrefix(s, IntPrefix)
+		s = strings.TrimPrefix(s, IntPrefix)
 		i, err := strconv.Atoi(s)
 		if err == nil {
 			return i
 		}
 	case strings.HasPrefix(s, BoolPrefix):
-		s := strings.TrimPrefix(s, BoolPrefix)
+		s = strings.TrimPrefix(s, BoolPrefix)
 		b, err := strconv.ParseBool(s)
 		if err == nil {
 			return b
 		}
 	case strings.HasPrefix(s, FloatPrefix):
-		s := strings.TrimPrefix(s, FloatPrefix)
+		s = strings.TrimPrefix(s, FloatPrefix)
 		f, err := strconv.ParseFloat(s, 64)
 		if err == nil {
 			return f
 		}
 	case strings.HasPrefix(s, ArrPrefix):
-		s := strings.TrimPrefix(s, ArrPrefix)
+		s = strings.TrimPrefix(s, ArrPrefix)
 		items := strings.Split(s, FieldSeparator)
 		// we need to trim the spaces from the items and we don't want blanks
 		// in the array
@@ -421,11 +419,11 @@ func undecorate(s string) any {
 		}
 		return arr
 	case strings.HasPrefix(s, MapPrefix):
-		s := strings.TrimPrefix(s, MapPrefix)
+		s = strings.TrimPrefix(s, MapPrefix)
 		// s is encoded as a JSON map, so we need to decode it
 		var m map[string]any
 		// we ignore the error here because the input string
-		// was marshalled by us and we know it's valid JSON,
+		// was marshaled by us and we know it's valid JSON,
 		// and there's nothing we can do with it anyway.
 		json.Unmarshal([]byte(s), &m)
 		return m
@@ -492,9 +490,9 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 			}
 			svcKey := fmt.Sprintf("pipelines.%s/%s.%s", signalType.AsCollectorSignalType(), pipeline.GetID(), section)
 			for _, kv := range ct.kvs[section] {
-				if kv.suppress_if != "" {
+				if kv.suppressIf != "" {
 					// if the suppress_if condition is met, we skip this key
-					condition, err := t.applyTemplate(kv.suppress_if, userdata)
+					condition, err := t.applyTemplate(kv.suppressIf, userdata)
 					if err != nil {
 						return nil, err
 					}
@@ -522,7 +520,7 @@ func (t *TemplateComponent) AsYAML() (string, error) {
 	// this is a mechanism to marshal the template component to YAML
 	data, err := y.Marshal(t)
 	if err != nil {
-		return "", fmt.Errorf("error marshalling template component to YAML: %w", err)
+		return "", fmt.Errorf("error marshaling template component to YAML: %w", err)
 	}
 	return string(data), nil
 }

@@ -129,7 +129,7 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 }
 
 // always returns false
-func alwaysFail(val any) bool {
+func alwaysFail(_ any) bool {
 	return false
 }
 

@@ -227,34 +227,33 @@ func setMemberValue(key string, member any, value any) error {
 			nextMember = field.Addr().Interface()
 		}
 		return setMemberValue(parts[1], nextMember, value)
-	} else {
-		field := memberValue.FieldByName(parts[0])
-		if !field.IsValid() {
-			return fmt.Errorf("field %s not found in type %T", parts[0], memberValue.Interface())
-		}
-		if field.Kind() == reflect.Ptr {
-			if field.IsNil() {
-				field.Set(reflect.New(field.Type().Elem()))
-			}
-			field = field.Elem()
-		}
-		// At the end of the path, set the value with type conversion if needed
-		v := reflect.ValueOf(value)
-		if v.Type() != field.Type() {
-			// Special handling for Duration type
-			if field.Type() == reflect.TypeOf(Duration(0)) && v.Kind() == reflect.String {
-				dur, err := time.ParseDuration(v.String())
-				if err != nil {
-					return fmt.Errorf("invalid duration format: %s", v.String())
-				}
-				v = reflect.ValueOf(Duration(dur))
-			} else if v.Type().ConvertibleTo(field.Type()) {
-				v = v.Convert(field.Type())
-			} else {
-				return fmt.Errorf("cannot assign value of type %s to field of type %s", v.Type(), field.Type())
-			}
-		}
-		field.Set(v)
 	}
+	field := memberValue.FieldByName(parts[0])
+	if !field.IsValid() {
+		return fmt.Errorf("field %s not found in type %T", parts[0], memberValue.Interface())
+	}
+	if field.Kind() == reflect.Ptr {
+		if field.IsNil() {
+			field.Set(reflect.New(field.Type().Elem()))
+		}
+		field = field.Elem()
+	}
+	// At the end of the path, set the value with type conversion if needed
+	v := reflect.ValueOf(value)
+	if v.Type() != field.Type() {
+		// Special handling for Duration type
+		if field.Type() == reflect.TypeOf(Duration(0)) && v.Kind() == reflect.String {
+			dur, err := time.ParseDuration(v.String())
+			if err != nil {
+				return fmt.Errorf("invalid duration format: %s", v.String())
+			}
+			v = reflect.ValueOf(Duration(dur))
+		} else if v.Type().ConvertibleTo(field.Type()) {
+			v = v.Convert(field.Type())
+		} else {
+			return fmt.Errorf("cannot assign value of type %s to field of type %s", v.Type(), field.Type())
+		}
+	}
+	field.Set(v)
 	return nil
 }

@@ -37,39 +37,38 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 	// values can be strings, ints, bools, []string, map[string]string, []any, or map[string]any
 	if _, ok := m["value"]; !ok {
 		return kv, false
-	} else {
-		switch val := m["value"].(type) {
-		case string:
-			kv.value = val
-		case int:
-			kv.value = val
-		case bool:
-			kv.value = val
-		case []string:
-			kv.value = val
-		case map[string]string:
-			kv.value = val
-		case []any:
-			sl := make([]string, 0, len(val))
-			for _, v := range val {
-				if _, ok := v.(string); !ok {
-					return kv, false
-				}
-				sl = append(sl, v.(string))
+	}
+	switch val := m["value"].(type) {
+	case string:
+		kv.value = val
+	case int:
+		kv.value = val
+	case bool:
+		kv.value = val
+	case []string:
+		kv.value = val
+	case map[string]string:
+		kv.value = val
+	case []any:
+		sl := make([]string, 0, len(val))
+		for _, v := range val {
+			if _, ok := v.(string); !ok {
+				return kv, false
 			}
-			kv.value = sl
-		case map[string]any:
-			mp := make(map[string]string)
-			for k, v := range val {
-				if _, ok := v.(string); !ok {
-					return kv, false
-				}
-				mp[k] = v.(string)
-			}
-			kv.value = mp
-		default:
-			return kv, false
+			sl = append(sl, v.(string))
 		}
+		kv.value = sl
+	case map[string]any:
+		mp := make(map[string]string)
+		for k, v := range val {
+			if _, ok := v.(string); !ok {
+				return kv, false
+			}
+			mp[k] = v.(string)
+		}
+		kv.value = mp
+	default:
+		return kv, false
 	}
 
 	// suppress_if specifies a condition under which the key-value pair should be suppressed
@@ -78,7 +77,7 @@ func getKV(d any) (*dottedConfigTemplateKV, bool) {
 		if _, ok := m["suppress_if"].(string); !ok {
 			return kv, false
 		}
-		kv.suppress_if = m["suppress_if"].(string)
+		kv.suppressIf = m["suppress_if"].(string)
 	}
 	return kv, true
 }

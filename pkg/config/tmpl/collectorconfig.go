@@ -88,7 +88,6 @@ func dedup[T comparable](slice []T) []T {
 // it's not a slice.
 // It will create the section if it doesn't exist.
 func (cc *CollectorConfig) Set(section string, key string, value any) {
-
 	if _, ok := cc.Sections[section]; !ok {
 		cc.Sections[section] = make(DottedConfig)
 	}

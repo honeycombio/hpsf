@@ -62,13 +62,15 @@ func buildurl(args ...any) string {
 	var insecure bool
 	var port int
 	var host, path string
-	if len(args) == 4 {
+	switch len(args) {
+	case 4:
 		path = args[3].(string)
-	} else if len(args) == 3 {
+	case 3:
 		path = ""
-	} else {
+	default:
 		return ""
 	}
+
 	insecure = args[0].(bool)
 	host = args[1].(string)
 	port = _asInt(args[2])
@@ -138,7 +140,7 @@ func encodeAsFloat(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
-		value = fmt.Sprintf("%d", v)
+		value = strconv.Itoa(v)
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
@@ -157,7 +159,7 @@ func encodeAsInt(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
-		value = fmt.Sprintf("%d", v)
+		value = strconv.Itoa(v)
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
@@ -245,19 +247,11 @@ func yamlf(a any) string {
 }
 
 // The functions below are internal to this file hence the leading underscore.
-// Some of these are currently unused but will likely be used in the future.
-
-// internal function to compare two "any" values for equivalence
-func _equivalent(a, b any) bool {
-	va := fmt.Sprintf("%v", a)
-	vb := fmt.Sprintf("%v", b)
-	return va == vb
-}
 
 // this formats an integer with underscores for readability.
 // e.g. 1000000 becomes 1_000_000
 func _formatIntWithUnderscores(i int) string {
-	s := fmt.Sprintf("%d", i)
+	s := strconv.Itoa(i)
 	var output []string
 	for len(s) > 3 {
 		output = append([]string{s[len(s)-3:]}, output...)
@@ -298,27 +292,6 @@ func _isZeroValue(value any) bool {
 	default:
 		return false
 	}
-}
-
-// Takes a key that may or may not be in the incoming data,
-// and returns the value found, possibly doing a recursive call
-// separated by dots in the key.
-func _fetch(data map[string]any, key string) (any, bool) {
-	if value, ok := data[key]; ok {
-		return value, true
-	}
-	if strings.Contains(key, ".") {
-		parts := strings.SplitN(key, ".", 2)
-		groups := strings.Split(parts[0], "/")
-		for _, g := range groups {
-			if value, ok := data[g]; ok {
-				if submap, ok := value.(map[string]any); ok {
-					return _fetch(submap, parts[1])
-				}
-			}
-		}
-	}
-	return nil, false
 }
 
 // Takes a value that is a slice of strings or a slice of any and returns a
