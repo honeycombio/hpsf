@@ -40,6 +40,38 @@ ports:
     direction: output
     type: SampleData
     index: 3
+  - name: Rule 5
+    direction: output
+    type: SampleData
+    index: 4
+  - name: Rule 6
+    direction: output
+    type: SampleData
+    index: 5
+  - name: Rule 7
+    direction: output
+    type: SampleData
+    index: 6
+  - name: Rule 8
+    direction: output
+    type: SampleData
+    index: 7
+  - name: Rule 9
+    direction: output
+    type: SampleData
+    index: 8
+  - name: Rule 10
+    direction: output
+    type: SampleData
+    index: 9
+  - name: Rule 11
+    direction: output
+    type: SampleData
+    index: 10
+  - name: Rule 12
+    direction: output
+    type: SampleData
+    index: 11
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen.
