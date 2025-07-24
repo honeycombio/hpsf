@@ -83,7 +83,7 @@ components:
         value:
           - error
   - name: Drop All_1
-    kind: DropSampler
+    kind: Dropper
 connections:
   - source:
       component: Receive OTel_1
