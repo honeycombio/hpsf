@@ -1,0 +1,42 @@
+version: 0.14.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+    version: v0.1.0
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+    version: v0.1.0
+  - name: Deterministic Sampler_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 120
+    version: v0.1.0
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+    version: v999999.1.0
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Deterministic Sampler_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Deterministic Sampler_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents

@@ -398,6 +398,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 		{"missing property", "testdata/bad_hpsf/missing_property.yaml", "property not found"},
 		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "source component does not have a port,destination component does not have a port"},
 		{"missing condition on lower index", "testdata/bad_hpsf/missing_condition_on_lower_index.yaml", "Every path on a startsampler except the one with the highest index must connect to a condition"},
+		{"missing component for specified version", "testdata/bad_hpsf/invalid_component_version.yaml", "failed to locate corresponding template component for HoneycombExporter@v999999.1.0"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
