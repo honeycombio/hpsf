@@ -180,3 +180,7 @@ regenerate_translator_testdata:
 	@echo "+++ regenerating translator testdata"
 	@echo
 	OVERWRITE_TESTDATA=1 go test ./pkg/translator/
+
+.PHONY: lint
+lint:
+	go tool -modfile=.github/tools.mod golangci-lint run
