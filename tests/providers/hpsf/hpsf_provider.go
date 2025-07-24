@@ -89,11 +89,11 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 }
 
 func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var hpsf hpsf.HPSF
+	var h hpsf.HPSF
 	dec := y.NewDecoder(data)
-	err := dec.Decode(&hpsf)
+	err := dec.Decode(&h)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling to yaml: %v", err)
 	}
-	return &hpsf, nil
+	return &h, nil
 }

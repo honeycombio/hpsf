@@ -70,11 +70,11 @@ connections:
 	_, err := validator.EnsureYAML(inputData)
 	require.NoError(t, err)
 
-	var hpsf HPSF
-	err = yaml.Unmarshal(inputData, &hpsf)
+	var h HPSF
+	err = yaml.Unmarshal(inputData, &h)
 	require.NoError(t, err)
 
-	errors := hpsf.Validate()
+	errors := h.Validate()
 	require.NoError(t, errors)
 }
 
@@ -111,11 +111,11 @@ connections:
 	_, err := validator.EnsureYAML(inputData)
 	require.NoError(t, err)
 
-	var hpsf HPSF
-	err = yaml.Unmarshal(inputData, &hpsf)
+	var h HPSF
+	err = yaml.Unmarshal(inputData, &h)
 	require.NoError(t, err)
 
-	err = hpsf.Validate()
+	err = h.Validate()
 	result, ok := err.(validator.Result)
 	assert.True(t, ok)
 	assert.Equal(t, 2, result.Len())

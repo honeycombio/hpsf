@@ -90,11 +90,11 @@ func EnsureYAML(input []byte) (map[string]any, error) {
 	// validate the input is parseable YAML (parses into a map)
 
 	// try unmarshaling into map
-	var hpsfMap map[string]any
-	err := y.Unmarshal(input, &hpsfMap)
+	var h map[string]any
+	err := y.Unmarshal(input, &h)
 	if err != nil {
 		return nil, err
 	}
 
-	return hpsfMap, nil
+	return h, nil
 }

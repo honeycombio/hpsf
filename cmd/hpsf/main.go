@@ -140,14 +140,14 @@ func main() {
 			log.Fatalf("input file is not hpsf: %v", err)
 		}
 
-		var hpsf hpsf.HPSF
-		err = y.Unmarshal(inputData, &hpsf)
+		var h hpsf.HPSF
+		err = y.Unmarshal(inputData, &h)
 		if err != nil {
 			log.Fatalf("error unmarshaling to HPSF: %v", err)
 		}
 
 		// validate the HPSF
-		if verrors := hpsf.Validate(); verrors != nil {
+		if verrors := h.Validate(); verrors != nil {
 			if hErr, ok := verrors.(validator.Result); ok {
 				log.Printf("error: %v", hErr.Msg)
 				for _, e := range hErr.Details {
@@ -231,11 +231,11 @@ func readInput(filename string) ([]byte, error) {
 }
 
 func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var hpsf hpsf.HPSF
+	var h hpsf.HPSF
 	dec := y.NewDecoder(data)
-	err := dec.Decode(&hpsf)
+	err := dec.Decode(&h)
 	if err != nil {
 		return nil, fmt.Errorf("error unmarshaling to yaml: %w", err)
 	}
-	return &hpsf, nil
+	return &h, nil
 }

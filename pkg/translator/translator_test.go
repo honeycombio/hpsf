@@ -99,12 +99,12 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 				for _, template := range component.Templates {
 					configType := template.Kind
-					var hpsf *hpsf.HPSF
+					var h *hpsf.HPSF
 					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-					err = dec.Decode(&hpsf)
+					err = dec.Decode(&h)
 					require.NoError(t, err)
 
-					cfg, err := tlater.GenerateConfig(hpsf, configType, nil)
+					cfg, err := tlater.GenerateConfig(h, configType, nil)
 					require.NoError(t, err)
 					if cfg == nil {
 						continue // skip if no config is generated for this component
@@ -254,12 +254,12 @@ func TestTranslatorValidation(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			var hpsf *hpsf.HPSF
+			var h *hpsf.HPSF
 			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-			err = dec.Decode(&hpsf)
+			err = dec.Decode(&h)
 			require.NoError(t, err)
 
-			err = tlater.ValidateConfig(hpsf)
+			err = tlater.ValidateConfig(h)
 			require.NoError(t, errors.Unwrap(err))
 		})
 	}
