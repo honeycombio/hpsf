@@ -1,4 +1,3 @@
-# Technically it's everything alpha except `DropSampler` since there wasn't room on SamplingSequencer to add it
 components:
   - name: Receive OTel_1
     kind: OTelReceiver
@@ -77,6 +76,14 @@ components:
         value: span
   - name: Check HTTP Status_1
     kind: HTTPStatusCondition
+  - name: Check for Errors Rule 4_1
+    kind: ErrorExistsCondition
+    properties:
+      - name: ErrorFields
+        value:
+          - error
+  - name: Drop All_1
+    kind: Dropper
 connections:
   - source:
       component: Receive OTel_1
@@ -147,6 +154,14 @@ connections:
       port: Rule 4
       type: SampleData
     destination:
+      component: Check for Errors Rule 4_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check for Errors Rule 4_1
+      port: And
+      type: SampleData
+    destination:
       component: Sample Proportionally by Key_1
       port: Sample
       type: SampleData
@@ -158,6 +173,14 @@ connections:
       component: Send to Honeycomb_1
       port: Events
       type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 5
+      type: SampleData
+    destination:
+      component: Drop All_1
+      port: Sample
+      type: SampleData
   - source:
       component: Start Sampling_1
       port: Rule 3
@@ -308,3 +331,11 @@ layout:
       position:
         x: -60
         y: -160
+    - name: Check for Errors Rule 4_1
+      position:
+        x: -60
+        y: -40
+    - name: Drop All_1
+      position:
+        x: 180
+        y: 100
