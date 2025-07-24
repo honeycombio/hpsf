@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"io"
 	"log"
 	"maps"
@@ -26,7 +26,7 @@ type Options struct {
 
 func (o *Options) validate() error {
 	if o.VerifyCheckums && o.CalculateChecksums || !o.VerifyCheckums && !o.CalculateChecksums {
-		return fmt.Errorf("you must specify one of -v (--calculate-checksum) or -x (--verify-checksums). See --help for more information")
+		return errors.New("you must specify one of -v (--calculate-checksum) or -x (--verify-checksums). See --help for more information")
 	}
 	return nil
 }
@@ -134,9 +134,8 @@ func main() {
 			log.Println("no changes")
 			// we return 0 to indicate that the checksums match
 			os.Exit(0)
-		} else {
-			// we return 1 to indicate that the checksums do not match
-			os.Exit(1)
 		}
+		// we return 1 to indicate that the checksums do not match
+		os.Exit(1)
 	}
 }

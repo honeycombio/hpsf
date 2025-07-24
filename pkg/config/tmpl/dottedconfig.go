@@ -241,7 +241,6 @@ func (dc DottedConfig) Merge(other TemplateConfig) error {
 		default:
 			dc[k] = v
 		}
-
 	}
 	return nil
 }

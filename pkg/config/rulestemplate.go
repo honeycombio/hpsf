@@ -73,9 +73,9 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl
 		if err != nil {
 			return nil, err
 		}
-		if kv.suppress_if != "" {
+		if kv.suppressIf != "" {
 			// if the suppress_if condition is met, we skip this key
-			condition, err := t.applyTemplate(kv.suppress_if, userdata)
+			condition, err := t.applyTemplate(kv.suppressIf, userdata)
 			if err != nil {
 				return nil, err
 			}

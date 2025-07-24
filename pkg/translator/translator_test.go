@@ -69,7 +69,7 @@ func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	var overwrite bool = false
+	var overwrite bool
 
 	// this allows for the make target regenerate_translator_testdata to work instead of editing
 	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
@@ -98,7 +98,7 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 				var inputData = string(b)
 
 				for _, template := range component.Templates {
-					configType := config.Type(template.Kind)
+					configType := template.Kind
 					var hpsf *hpsf.HPSF
 					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
 					err = dec.Decode(&hpsf)
@@ -164,7 +164,7 @@ func TestDefaultHPSF(t *testing.T) {
 
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	var overwrite bool = false
+	var overwrite bool
 
 	// this allows for the make target regenerate_translator_testdata to work instead of editing
 	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
@@ -173,7 +173,6 @@ func TestDefaultHPSF(t *testing.T) {
 
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
-
 			b, err := os.ReadFile(tC.expectedConfigTestData)
 			require.NoError(t, err)
 			var expectedConfig = string(b)

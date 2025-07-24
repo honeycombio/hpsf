@@ -13,7 +13,7 @@ import (
 
 const DefaultConfigurationKind = "TemplateDefault"
 
-// Reads a set of components from the local embedded filesystem (in the source, this is the
+// LoadEmbeddedComponents reads a set of components from the local embedded filesystem (in the source, this is the
 // data/components directory) and loads them into a map of TemplateComponent by name.
 func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	// Read the components from the filesystem
@@ -50,7 +50,7 @@ func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	return components, nil
 }
 
-// Reads a set of templates from the local embedded filesystem (in the source, this is the
+// LoadEmbeddedTemplates reads a set of templates from the local embedded filesystem (in the source, this is the
 // data/templates directory) and loads them into a map of TemplateComponent by name.
 func LoadEmbeddedTemplates() (map[string]hpsf.HPSF, error) {
 	// Read the components from the filesystem

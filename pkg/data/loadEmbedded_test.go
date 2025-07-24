@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config"
@@ -48,7 +47,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 		mustHave := []string{"name", "kind", "type", "status", "style", "version"}
 		for _, mh := range mustHave {
 			v, ok := dc[mh]
-			require.True(t, ok, fmt.Sprintf("missing %s in %s", mh, k))
+			require.True(t, ok, "missing %s in %s", mh, k)
 			require.NotEmpty(t, v)
 		}
 	}
@@ -84,7 +83,7 @@ func TestLoadTemplates(t *testing.T) {
 			require.NotEmpty(t, tmpl.Version)
 			require.NotEmpty(t, tmpl.Summary)
 			require.NotEmpty(t, tmpl.Description)
-			require.Empty(t, tmpl.Validate())
+			require.NoError(t, tmpl.Validate())
 		})
 	}
 }

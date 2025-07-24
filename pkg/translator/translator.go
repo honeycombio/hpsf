@@ -1,11 +1,11 @@
 package translator
 
 import (
+	"errors"
 	"fmt"
 	"iter"
-	"sort"
-
 	"maps"
+	"sort"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -30,7 +30,7 @@ func NewTranslator() (*Translator, error) {
 	return tr, err
 }
 
-// Creates a translator with no components loaded.
+// NewEmptyTranslator creates a translator with no components loaded.
 func NewEmptyTranslator() *Translator {
 	tr := &Translator{
 		components: make(map[string]config.TemplateComponent),
@@ -59,7 +59,7 @@ func (t *Translator) GetTemplates() map[string]hpsf.HPSF {
 	return t.templates
 }
 
-// Loads the embedded components into the translator.
+// LoadEmbeddedComponents loads the embedded components into the translator.
 // Deprecated: use InstallComponents instead
 func (t *Translator) LoadEmbeddedComponents() error {
 	// load the embedded components
@@ -392,7 +392,7 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 // in their configuration.
 func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	if h == nil {
-		return fmt.Errorf("nil HPSF document provided for validation")
+		return errors.New("nil HPSF document provided for validation")
 	}
 
 	// if we don't pass basic validation, we can't continue

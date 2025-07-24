@@ -85,7 +85,7 @@ type Validator interface {
 	Validate() error
 }
 
-// this is a brain-dead validator that just tries to unmarshal the input into appropriate forms
+// EnsureYAML is a brain-dead validator that just tries to unmarshal the input into appropriate forms
 func EnsureYAML(input []byte) (map[string]any, error) {
 	// validate the input is parseable YAML (parses into a map)
 
