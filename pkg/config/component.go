@@ -72,18 +72,18 @@ func (c *GenericBaseComponent) AddConnection(conn *hpsf.Connection) {
 	c.Connections = append(c.Connections, conn)
 }
 
-// UnconfiguredRefineryComponent is used when the user has not added
-// any components to the refinery configuration yet. It provides just
-// the basic configuration needed to start a refinery.
-type UnconfiguredRefineryComponent struct {
+// UnconfiguredComponent is used when the user has not added
+// any components to the configuration yet. It provides just
+// the basic configuration needed to start artifacts.
+type UnconfiguredComponent struct {
 	Component   hpsf.Component
 	Connections []*hpsf.Connection
 }
 
 // ensure that UnconfiguredRefineryComponent implements Component
-var _ Component = (*UnconfiguredRefineryComponent)(nil)
+var _ Component = (*UnconfiguredComponent)(nil)
 
-func (c UnconfiguredRefineryComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c UnconfiguredComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
 		// DottedConfig is already a map, so we don't need a pointer
@@ -106,6 +106,6 @@ func (c UnconfiguredRefineryComponent) GenerateConfig(ct Type, pipeline hpsf.Pat
 	}
 }
 
-func (c *UnconfiguredRefineryComponent) AddConnection(conn *hpsf.Connection) {
+func (c *UnconfiguredComponent) AddConnection(conn *hpsf.Connection) {
 	c.Connections = append(c.Connections, conn)
 }

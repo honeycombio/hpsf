@@ -598,6 +598,6 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 	}
 
 	// Start with a base component so we always have a valid config
-	refineryBase := config.UnconfiguredRefineryComponent{Component: dummy}
-	return refineryBase.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	unconfigured := config.UnconfiguredComponent{Component: dummy}
+	return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 }
