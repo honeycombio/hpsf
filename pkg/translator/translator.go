@@ -11,6 +11,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/validator"
 )
 
@@ -467,7 +468,7 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 	}
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components

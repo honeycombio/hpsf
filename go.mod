@@ -1,11 +1,10 @@
 module github.com/honeycombio/hpsf
 
-go 1.24.0
-
-toolchain go1.24.2
+go 1.24.4
 
 require (
 	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33
+	github.com/honeycombio/hpsf/pkg/hpsftypes v0.0.0-00010101000000-000000000000
 	github.com/jessevdk/go-flags v1.6.1
 	github.com/stretchr/testify v1.10.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -18,3 +17,5 @@ require (
 	golang.org/x/sys v0.33.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 )
+
+replace github.com/honeycombio/hpsf/pkg/hpsftypes => ./pkg/hpsftypes
