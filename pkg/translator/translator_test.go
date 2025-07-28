@@ -12,6 +12,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -141,23 +142,23 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 func TestDefaultHPSF(t *testing.T) {
 	testCases := []struct {
 		desc                   string
-		ct                     config.Type
+		ct                     hpsftypes.Type
 		inputHPSFTestData      string
 		expectedConfigTestData string
 	}{
 		{
 			desc:                   "Refinery Config",
-			ct:                     config.RefineryConfigType,
+			ct:                     hpsftypes.RefineryConfig,
 			expectedConfigTestData: "testdata/refinery_config/default.yaml",
 		},
 		{
 			desc:                   "Refinery Rules",
-			ct:                     config.RefineryRulesType,
+			ct:                     hpsftypes.RefineryRules,
 			expectedConfigTestData: "testdata/refinery_rules/default.yaml",
 		},
 		{
 			desc:                   "Collector Config",
-			ct:                     config.CollectorConfigType,
+			ct:                     hpsftypes.CollectorConfig,
 			expectedConfigTestData: "testdata/collector_config/default.yaml",
 		},
 	}

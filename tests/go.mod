@@ -1,6 +1,6 @@
 module github.com/honeycombio/hpsf/tests
 
-go 1.24.1
+go 1.24.4
 
 require (
 	github.com/honeycombio/hpsf v0.6.1
@@ -56,6 +56,7 @@ require (
 	github.com/golang/snappy v1.0.0 // indirect
 	github.com/google/go-tpm v0.9.5 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
+	github.com/honeycombio/hpsf/pkg/hpsftypes v0.0.0-00010101000000-000000000000 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jessevdk/go-flags v1.6.1 // indirect
@@ -218,3 +219,5 @@ require (
 )
 
 replace github.com/honeycombio/hpsf => ../
+
+replace github.com/honeycombio/hpsf/pkg/hpsftypes => ../pkg/hpsftypes

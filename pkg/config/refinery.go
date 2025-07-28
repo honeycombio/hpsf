@@ -5,6 +5,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/yaml"
 )
 
@@ -16,7 +17,7 @@ type RefineryInputComponent struct {
 // ensure RefineryInputComponent implements Component
 var _ Component = (*RefineryInputComponent)(nil)
 
-func (c *RefineryInputComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c *RefineryInputComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	if ct != RefineryConfigType {
 		return nil, nil
 	}

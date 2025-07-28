@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/jessevdk/go-flags"
@@ -182,14 +182,14 @@ func main() {
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
-		var ct config.Type
+		var ct hpsftypes.Type
 		switch cmds[0] {
 		case "rConfig":
-			ct = config.RefineryConfigType
+			ct = hpsftypes.RefineryConfig
 		case "rRules":
-			ct = config.RefineryRulesType
+			ct = hpsftypes.RefineryRules
 		case "cConfig":
-			ct = config.CollectorConfigType
+			ct = hpsftypes.CollectorConfig
 		}
 		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
 		if err != nil {

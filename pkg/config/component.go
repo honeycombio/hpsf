@@ -3,14 +3,19 @@ package config
 import (
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 )
 
-type Type string
+// Deprecated: use hpsftypes.Type
+type Type hpsftypes.Type
 
 const (
-	RefineryConfigType  Type = "refinery_config"
-	RefineryRulesType   Type = "refinery_rules"
-	CollectorConfigType Type = "collector_config"
+	// Deprecated: use hpsftypes.RefineryConfig
+	RefineryConfigType = hpsftypes.RefineryConfig
+	// Deprecated: use hpsftypes.RefineryRules
+	RefineryRulesType = hpsftypes.RefineryRules
+	// Deprecated: use hpsftypes.CollectorConfig
+	CollectorConfigType = hpsftypes.CollectorConfig
 )
 
 // The Component interface is implemented by all components.
@@ -21,7 +26,7 @@ const (
 // We will need to convert the dotted paths into real ones later.
 // The pipeline identifies which pipeline is being generated.
 type Component interface {
-	GenerateConfig(cfgType Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error)
+	GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error)
 	AddConnection(*hpsf.Connection)
 }
 
@@ -34,7 +39,7 @@ func NewNullComponent() *NullComponent {
 // ensure that NullComponent implements Component
 var _ Component = (*NullComponent)(nil)
 
-func (c *NullComponent) GenerateConfig(Type, hpsf.PathWithConnections, map[string]any) (tmpl.TemplateConfig, error) {
+func (c *NullComponent) GenerateConfig(hpsftypes.Type, hpsf.PathWithConnections, map[string]any) (tmpl.TemplateConfig, error) {
 	return nil, nil
 }
 
@@ -51,7 +56,7 @@ type GenericBaseComponent struct {
 // ensure that GenericBaseComponent implements Component
 var _ Component = (*GenericBaseComponent)(nil)
 
-func (c GenericBaseComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c GenericBaseComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
 	case RefineryConfigType:
 		// DottedConfig is already a map, so we don't need a pointer
@@ -83,15 +88,15 @@ type UnconfiguredComponent struct {
 // ensure that UnconfiguredRefineryComponent implements Component
 var _ Component = (*UnconfiguredComponent)(nil)
 
-func (c UnconfiguredComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (c UnconfiguredComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
-	case RefineryConfigType:
+	case hpsftypes.RefineryConfig:
 		// DottedConfig is already a map, so we don't need a pointer
 		return tmpl.DottedConfig{
 			"General.ConfigurationVersion": 2,
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
-	case RefineryRulesType:
+	case hpsftypes.RefineryRules:
 		rules := tmpl.NewRulesConfig(tmpl.Output, nil, nil)
 		rules.Samplers["__default__"] = &tmpl.V2SamplerChoice{
 			DeterministicSampler: &tmpl.DeterministicSamplerConfig{
@@ -99,7 +104,7 @@ func (c UnconfiguredComponent) GenerateConfig(ct Type, pipeline hpsf.PathWithCon
 			},
 		}
 		return rules, nil
-	case CollectorConfigType:
+	case hpsftypes.CollectorConfig:
 		return tmpl.NewCollectorConfig(), nil
 	default:
 		return nil, nil

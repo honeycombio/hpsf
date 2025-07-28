@@ -10,6 +10,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	y "gopkg.in/yaml.v3"
 )
 
@@ -45,7 +46,7 @@ type TemplatePort struct {
 // template), a format (which is the format of the data), meta (a map of extra
 // component-level info) and the data itself.
 type TemplateData struct {
-	Kind   Type
+	Kind   hpsftypes.Type
 	Name   string
 	Format string
 	Meta   map[string]any
@@ -263,7 +264,7 @@ func (t *TemplateComponent) GetPortIndex(name string) int {
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 
