@@ -1,6 +1,6 @@
 module github.com/honeycombio/hpsf/tests
 
-go 1.24.4
+go 1.24.0
 
 require (
 	github.com/honeycombio/hpsf v0.6.1
