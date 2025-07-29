@@ -6,18 +6,6 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 )
 
-// Deprecated: use hpsftypes.Type
-type Type hpsftypes.Type
-
-const (
-	// Deprecated: use hpsftypes.RefineryConfig
-	RefineryConfigType = hpsftypes.RefineryConfig
-	// Deprecated: use hpsftypes.RefineryRules
-	RefineryRulesType = hpsftypes.RefineryRules
-	// Deprecated: use hpsftypes.CollectorConfig
-	CollectorConfigType = hpsftypes.CollectorConfig
-)
-
 // The Component interface is implemented by all components.
 // If one of these functions returns nil, nil, it means
 // that the component has no impact on that particular system.
@@ -58,15 +46,15 @@ var _ Component = (*GenericBaseComponent)(nil)
 
 func (c GenericBaseComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	switch ct {
-	case RefineryConfigType:
+	case hpsftypes.RefineryConfig:
 		// DottedConfig is already a map, so we don't need a pointer
 		return tmpl.DottedConfig{
 			"General.ConfigurationVersion": 2,
 			"General.MinRefineryVersion":   "v2.0",
 		}, nil
-	case RefineryRulesType:
+	case hpsftypes.RefineryRules:
 		return tmpl.NewRulesConfig(tmpl.Output, nil, nil), nil
-	case CollectorConfigType:
+	case hpsftypes.CollectorConfig:
 		return tmpl.NewCollectorConfig(), nil
 	default:
 		return nil, nil

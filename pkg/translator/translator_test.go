@@ -219,7 +219,7 @@ func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
 	require.NoError(t, err)
 	tlater.InstallComponents(comps)
 
-	cfg, err := tlater.GenerateConfig(&hpsf, config.RefineryRulesType, nil)
+	cfg, err := tlater.GenerateConfig(&hpsf, hpsftypes.RefineryRules, nil)
 	require.NoError(t, err)
 
 	got, err := cfg.RenderYAML()
@@ -568,7 +568,7 @@ layout:
 	require.NoError(t, err)
 	tlater.InstallComponents(comps)
 
-	x, err := tlater.GenerateConfig(h, config.RefineryRulesType, nil)
+	x, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
 	require.NoError(t, err)
 	require.NotNil(t, x)
 }
