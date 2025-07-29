@@ -1,6 +1,6 @@
 module github.com/honeycombio/hpsf/tools
 
-go 1.24.4
+go 1.24.0
 
 tool github.com/golangci/golangci-lint/v2/cmd/golangci-lint
 
