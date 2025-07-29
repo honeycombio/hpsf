@@ -18,7 +18,7 @@ type RefineryInputComponent struct {
 var _ Component = (*RefineryInputComponent)(nil)
 
 func (c *RefineryInputComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	if ct != RefineryConfigType {
+	if ct != hpsftypes.RefineryConfig {
 		return nil, nil
 	}
 	if c.Component.Properties == nil {
