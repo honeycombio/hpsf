@@ -178,8 +178,11 @@ func TestDefaultHPSF(t *testing.T) {
 			require.NoError(t, err)
 			var expectedConfig = string(b)
 
-			h, err := data.LoadEmbeddedDefaultTemplate()
+			templates, err := data.LoadEmbeddedTemplates()
 			require.NoError(t, err)
+
+			h, ok := templates[data.DefaultConfigurationKind]
+			require.True(t, ok)
 
 			tlater := NewEmptyTranslator()
 			comps, err := data.LoadEmbeddedComponents()
