@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"os"
@@ -8,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"text/template"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
@@ -574,4 +576,107 @@ layout:
 	x, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
 	require.NoError(t, err)
 	require.NotNil(t, x)
+}
+
+func TestConditions(t *testing.T) {
+	c := `
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+    version: v0.1.0
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+    version: v0.1.0
+  - name: {{ .ConditionName }}
+    kind: {{ .ConditionKind }}
+    version: v0.1.0
+  - name: Sample at a Fixed Rate_1
+    kind: DeterministicSampler
+    version: v0.1.0
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+    version: v0.1.0
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Sample at a Fixed Rate_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: {{ .ConditionName }}
+      port: Match
+      type: SampleData
+  - source:
+      component: {{ .ConditionName }}
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at a Fixed Rate_1
+      port: Sample
+      type: SampleData
+`
+	tests := []struct {
+		conditionName string
+		conditionKind string
+	}{
+		{
+			conditionName: "ErrorExistsCondition_1",
+			conditionKind: "ErrorExistsCondition",
+		},
+		{
+			conditionName: "FieldStartsWithCondition_1",
+			conditionKind: "FieldStartsWithCondition",
+		},
+		{
+			conditionName: "LongDurationCondition_1",
+			conditionKind: "LongDurationCondition",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.conditionName, func(t *testing.T) {
+			tmpl, err := template.New("test").Parse(c)
+			require.NoError(t, err)
+
+			testdata := map[string]string{
+				"ConditionName": tt.conditionName,
+				"ConditionKind": tt.conditionKind,
+			}
+
+			// Execute template into a buffer
+			var buf bytes.Buffer
+			err = tmpl.Execute(&buf, testdata)
+			require.NoError(t, err)
+
+			// Decode YAML from buffer
+			dec := yamlv3.NewDecoder(&buf)
+			h := &hpsf.HPSF{}
+			err = dec.Decode(&h)
+			require.NoError(t, err)
+
+			// Generate config
+			tlater := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			tlater.InstallComponents(comps)
+
+			cfg, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+		})
+	}
 }
