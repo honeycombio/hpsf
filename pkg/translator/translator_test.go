@@ -667,6 +667,10 @@ connections:
 			conditionName: "ForceSpanScope_1",
 			conditionKind: "ForceSpanScope",
 		},
+		{
+			conditionName: "ForceSpanScope_1",
+			conditionKind: "ForceSpanScope",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
