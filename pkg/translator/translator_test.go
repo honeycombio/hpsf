@@ -16,7 +16,6 @@ import (
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	yamlv3 "gopkg.in/yaml.v3"
 )
 
 func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
@@ -100,12 +99,10 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 				for _, template := range component.Templates {
 					configType := template.Kind
-					var h *hpsf.HPSF
-					dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-					err = dec.Decode(&h)
+					h, err := hpsf.FromYAML(strings.NewReader(inputData))
 					require.NoError(t, err)
 
-					cfg, err := tlater.GenerateConfig(h, configType, nil)
+					cfg, err := tlater.GenerateConfig(&h, configType, nil)
 					require.NoError(t, err)
 					if cfg == nil {
 						continue // skip if no config is generated for this component
@@ -258,12 +255,10 @@ func TestTranslatorValidation(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-			err = dec.Decode(&h)
+			h, err := hpsf.FromYAML(strings.NewReader(inputData))
 			require.NoError(t, err)
 
-			err = tlater.ValidateConfig(h)
+			err = tlater.ValidateConfig(&h)
 			require.NoError(t, errors.Unwrap(err))
 		})
 	}
@@ -409,9 +404,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-			err = dec.Decode(&h)
+			h, err := hpsf.FromYAML(strings.NewReader(inputData))
 			require.NoError(t, err)
 
 			trans := NewEmptyTranslator()
@@ -419,7 +412,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 			require.NoError(t, err)
 			trans.InstallComponents(comps)
 
-			err = trans.ValidateConfig(h)
+			err = trans.ValidateConfig(&h)
 			if err == nil {
 				t.Errorf("Translator.ValidateConfig() did not error when it should have")
 			}
@@ -459,9 +452,7 @@ func TestTranslator_ValidateValidConfigs(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(inputData))
-			err = dec.Decode(&h)
+			h, err := hpsf.FromYAML(strings.NewReader(inputData))
 			require.NoError(t, err)
 
 			trans := NewEmptyTranslator()
@@ -469,7 +460,7 @@ func TestTranslator_ValidateValidConfigs(t *testing.T) {
 			require.NoError(t, err)
 			trans.InstallComponents(comps)
 
-			err = trans.ValidateConfig(h)
+			err = trans.ValidateConfig(&h)
 			if err != nil {
 				t.Errorf("Translator.ValidateConfig() should not error for valid config, got: %v", err)
 			}
@@ -561,9 +552,7 @@ layout:
         y: 160
 `
 
-	var h *hpsf.HPSF
-	dec := yamlv3.NewDecoder(strings.NewReader(c))
-	err := dec.Decode(&h)
+	h, err := hpsf.FromYAML(strings.NewReader(c))
 	require.NoError(t, err)
 
 	tlater := NewEmptyTranslator()
@@ -571,7 +560,7 @@ layout:
 	require.NoError(t, err)
 	tlater.InstallComponents(comps)
 
-	x, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
+	x, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 	require.NoError(t, err)
 	require.NotNil(t, x)
 }

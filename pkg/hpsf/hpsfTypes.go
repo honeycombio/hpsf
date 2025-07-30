@@ -549,15 +549,16 @@ func (c *Container) Validate() error {
 type Layout map[string]any
 
 type HPSF struct {
-	Kind        string        `yaml:"kind"`
-	Version     string        `yaml:"version"`
-	Name        string        `yaml:"name"`
-	Summary     string        `yaml:"summary"`
-	Description string        `yaml:"description"`
-	Components  []*Component  `yaml:"components,omitempty"`
-	Connections []*Connection `yaml:"connections,omitempty"`
-	Containers  []Container   `yaml:"containers,omitempty"`
-	Layout      Layout        `yaml:"layout,omitempty"`
+	Kind           string        `yaml:"kind"`
+	Version        string        `yaml:"version"`
+	Name           string        `yaml:"name"`
+	Summary        string        `yaml:"summary"`
+	Description    string        `yaml:"description"`
+	LibraryVersion string        `yaml:"library_version"`
+	Components     []*Component  `yaml:"components,omitempty"`
+	Connections    []*Connection `yaml:"connections,omitempty"`
+	Containers     []Container   `yaml:"containers,omitempty"`
+	Layout         Layout        `yaml:"layout,omitempty"`
 }
 
 // GetStartComponents generates a list of components that are not named as the destination of a connection
@@ -815,9 +816,7 @@ func EnsureHPSFYAML(input string) error {
 		return errors.New("HPSF yaml contains unexpected keys: " + strings.Join(badkeys, ", "))
 	}
 
-	var h HPSF
-	dec := y.NewDecoder(strings.NewReader(input))
-	err = dec.Decode(&h)
+	h, err := FromYAML(strings.NewReader(input))
 	if err != nil {
 		return err
 	}
@@ -831,4 +830,11 @@ func (h *HPSF) AsYAML() (string, error) {
 		return "", fmt.Errorf("error marshaling hpsf to YAML: %w", err)
 	}
 	return string(data), nil
+}
+
+func FromYAML(in *strings.Reader) (HPSF, error) {
+	var h HPSF
+	dec := y.NewDecoder(in)
+	err := dec.Decode(&h)
+	return h, err
 }

@@ -115,12 +115,12 @@ func main() {
 
 	switch cmds[0] {
 	case "format":
-		hpsf, err := unmarshalHPSF(inputRdr)
+		h, err := hpsf.FromYAML(inputRdr)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
 		// write it to the output file as yaml
-		data, err := y.Marshal(hpsf)
+		data, err := y.Marshal(&h)
 		if err != nil {
 			log.Fatalf("error marshaling output file: %v", err)
 		}
@@ -178,7 +178,7 @@ func main() {
 		os.Exit(0)
 
 	case "rConfig", "rRules", "cConfig":
-		hpsf, err := unmarshalHPSF(inputRdr)
+		hpsf, err := hpsf.FromYAML(inputRdr)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
@@ -191,7 +191,7 @@ func main() {
 		case "cConfig":
 			ct = hpsftypes.CollectorConfig
 		}
-		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
+		cfg, err := tr.GenerateConfig(&hpsf, ct, userdata)
 		if err != nil {
 			log.Fatalf("error translating config: %v", err)
 		}
@@ -228,14 +228,4 @@ func readInput(filename string) ([]byte, error) {
 		return nil, fmt.Errorf("error reading file %s: %w", filename, err)
 	}
 	return data, nil
-}
-
-func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var h hpsf.HPSF
-	dec := y.NewDecoder(data)
-	err := dec.Decode(&h)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling to yaml: %w", err)
-	}
-	return &h, nil
 }
