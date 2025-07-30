@@ -1,11 +1,8 @@
 package hpsf
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -18,7 +15,6 @@ import (
 	refineryConfig "github.com/honeycombio/refinery/config"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
-	y "gopkg.in/yaml.v3"
 )
 
 type ErrorDetails struct {
@@ -48,7 +44,7 @@ func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *ref
 }
 
 func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
-	hpsf, err := unmarshalHPSF(strings.NewReader(hpsfConfig))
+	h, err := hpsf.FromYAML(hpsfConfig)
 	if err != nil {
 		log.Fatalf("error unmarshaling HPSF: %v", err)
 	}
@@ -62,14 +58,14 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 
 	errors := make(map[hpsftypes.Type]ErrorDetails)
 
-	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(hpsf, hpsftypes.RefineryRules, nil)
+	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 	if err != nil {
 		errors[hpsftypes.RefineryConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
 		refineryRules = refineryConfigProvider.GetParsedRulesConfig(t, refineryRulesTmpl.(*tmpl.RulesConfig))
 	}
 
-	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(hpsf, hpsftypes.CollectorConfig, nil)
+	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.CollectorConfig, nil)
 	if err != nil {
 		errors[hpsftypes.CollectorConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
@@ -86,14 +82,4 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 	groupedErrors.FailIfError(t)
 	return
 
-}
-
-func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var h hpsf.HPSF
-	dec := y.NewDecoder(data)
-	err := dec.Decode(&h)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling to yaml: %v", err)
-	}
-	return &h, nil
 }
