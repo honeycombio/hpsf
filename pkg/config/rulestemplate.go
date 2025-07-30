@@ -10,6 +10,7 @@ import (
 type rulesTemplate struct {
 	env     string
 	sampler string
+	scope   string
 	kvs     []dottedConfigTemplateKV
 }
 
@@ -28,6 +29,11 @@ func buildRulesTemplate(t TemplateData) (*rulesTemplate, error) {
 			r.sampler, ok = mv.(string)
 			if !ok {
 				return r, fmt.Errorf("expected string for sampler, got %T", mv)
+			}
+		case "scope":
+			r.scope, ok = mv.(string)
+			if !ok {
+				return r, fmt.Errorf("expected string for scope, got %T", mv)
 			}
 		default:
 			// we're going to ignore any other meta keys for now; maybe we can be more strict later
@@ -66,6 +72,16 @@ func (t *TemplateComponent) generateRulesConfig(rt *rulesTemplate, compType tmpl
 
 	// Add the component name to metadata for use during merge
 	meta["component_name"] = t.hpsf.GetSafeName()
+
+	// Add scope to metadata if it's not empty
+	if rt.scope != "" {
+		// Expand the scope template
+		expandedScope, err := t.expandTemplateVariable(rt.scope, userdata)
+		if err != nil {
+			return nil, err
+		}
+		meta["scope"] = expandedScope
+	}
 
 	for _, kv := range rt.kvs {
 		// do the key

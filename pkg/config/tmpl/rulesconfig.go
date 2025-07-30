@@ -170,6 +170,15 @@ func shouldAddNameField(keyPrefix string) bool {
 		!strings.Contains(keyPrefix, ".Sampler.")
 }
 
+// mergeScopeValues implements the scope merging logic:
+// if either value is "span", the result is "span", otherwise "trace"
+func mergeScopeValues(scope1, scope2 string) string {
+	if scope1 == "span" || scope2 == "span" {
+		return "span"
+	}
+	return "trace"
+}
+
 func (rc *RulesConfig) Merge(other TemplateConfig) error {
 	otherRC, ok := other.(*RulesConfig)
 	if !ok {
@@ -198,6 +207,30 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			// condition always has a rule-based sampler attached to it
 			// so we can write it into the startsampling at the pipeline index
 			keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
+
+			for key, value := range otherRC.kvs {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
+			}
+
+			// Set the Scope field on the rule if the condition has a scope meta value
+			// This is ugly because the structure of the rules is ugly.
+			if scope, exists := otherRC.meta["scope"]; exists && scope != "" {
+				// Merge scope values: if either is "span", result is "span", otherwise "trace"
+				currentScope := "trace" // default scope
+				ruleIndex, _ := strconv.Atoi(rc.meta[MetaPipelineIndex])
+				if sampler.RulesBasedSampler != nil && ruleIndex < len(sampler.RulesBasedSampler.Rules) {
+					if existingScope := sampler.RulesBasedSampler.Rules[ruleIndex].Scope; existingScope != "" {
+						currentScope = existingScope
+					}
+				}
+
+				mergedScope := mergeScopeValues(currentScope, scope)
+				if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%s.Scope", rc.meta[MetaPipelineIndex]), sampler, mergedScope); err != nil {
+					return err
+				}
+			}
 		case Sampler:
 			// in this case, we are merging a sampler directly into a startsampling
 			// so we use the new sampler's type as the key prefix
@@ -275,6 +308,24 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 					return err
 				}
 			}
+
+			// Set the Scope field on the rule if the condition has a scope meta value
+			// This is ugly because the structure of the rules is ugly.
+			if scope, exists := otherRC.meta["scope"]; exists && scope != "" {
+				// Merge scope values: if either is "span", result is "span", otherwise "trace"
+				currentScope := "trace" // default scope
+				if ruleIndex < len(sampler.RulesBasedSampler.Rules) {
+					if existingScope := sampler.RulesBasedSampler.Rules[ruleIndex].Scope; existingScope != "" {
+						currentScope = existingScope
+					}
+				}
+
+				mergedScope := mergeScopeValues(currentScope, scope)
+				if err := setMemberValue(fmt.Sprintf("RulesBasedSampler.Rules.%d.Scope", ruleIndex), sampler, mergedScope); err != nil {
+					return err
+				}
+			}
+
 			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Sampler:
 			// we need to check if the sampler is connected to a condition or not. If not, we
