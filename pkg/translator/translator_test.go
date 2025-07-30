@@ -639,6 +639,14 @@ connections:
 			conditionName: "FieldContainsCondition_1",
 			conditionKind: "FieldContainsCondition",
 		},
+		{
+			conditionName: "TraceHasRootSpanCondition_1",
+			conditionKind: "TraceHasRootSpanCondition",
+		},
+		{
+			conditionName: "TraceDoesNotHaveRootSpanCondition_1",
+			conditionKind: "TraceDoesNotHaveRootSpanCondition",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
@@ -654,6 +662,7 @@ connections:
 			var buf bytes.Buffer
 			err = tmpl.Execute(&buf, testdata)
 			require.NoError(t, err)
+			fmt.Println(buf.String())
 
 			// Decode YAML from buffer
 			dec := yamlv3.NewDecoder(&buf)

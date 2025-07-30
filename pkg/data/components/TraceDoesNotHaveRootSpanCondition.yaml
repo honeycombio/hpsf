@@ -1,0 +1,36 @@
+kind: TraceDoesNotHaveRootSpanCondition
+name: Check That Trace Does Not Have Root Span
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks if a trace does not have a root span
+description: |
+  This checks if the trace does not have a root span. This occurs when the trace is sent for
+  decision processing before the root span is received; this is usually due to a timeout for
+  a long-duration trace.
+tags:
+  - category:refinery_rule_condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:root_span
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+templates:
+  - kind: refinery_rules
+    name: TraceDoesNotHaveRootSpanCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Operator
+        value: has-root-span
+      - key: Value
+        value: false
