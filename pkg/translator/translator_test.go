@@ -643,6 +643,10 @@ connections:
 			conditionName: "RootSpanCondition_1",
 			conditionKind: "RootSpanCondition",
 		},
+		{
+			conditionName: "CompareIntegerField_1",
+			conditionKind: "CompareIntegerField",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
