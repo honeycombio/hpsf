@@ -816,7 +816,7 @@ func EnsureHPSFYAML(input string) error {
 		return errors.New("HPSF yaml contains unexpected keys: " + strings.Join(badkeys, ", "))
 	}
 
-	h, err := FromYAML(strings.NewReader(input))
+	h, err := FromYAML(input)
 	if err != nil {
 		return err
 	}
@@ -832,9 +832,9 @@ func (h *HPSF) AsYAML() (string, error) {
 	return string(data), nil
 }
 
-func FromYAML(in *strings.Reader) (HPSF, error) {
+func FromYAML(in string) (HPSF, error) {
 	var h HPSF
-	dec := y.NewDecoder(in)
+	dec := y.NewDecoder(strings.NewReader(in))
 	err := dec.Decode(&h)
 	return h, err
 }

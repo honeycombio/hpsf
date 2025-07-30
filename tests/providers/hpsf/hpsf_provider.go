@@ -3,7 +3,6 @@ package hpsf
 import (
 	"log"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -45,7 +44,7 @@ func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *ref
 }
 
 func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
-	h, err := hpsf.FromYAML(strings.NewReader(hpsfConfig))
+	h, err := hpsf.FromYAML(hpsfConfig)
 	if err != nil {
 		log.Fatalf("error unmarshaling HPSF: %v", err)
 	}

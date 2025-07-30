@@ -99,7 +99,7 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 
 				for _, template := range component.Templates {
 					configType := template.Kind
-					h, err := hpsf.FromYAML(strings.NewReader(inputData))
+					h, err := hpsf.FromYAML(inputData)
 					require.NoError(t, err)
 
 					cfg, err := tlater.GenerateConfig(&h, configType, nil)
@@ -255,7 +255,7 @@ func TestTranslatorValidation(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			h, err := hpsf.FromYAML(strings.NewReader(inputData))
+			h, err := hpsf.FromYAML(inputData)
 			require.NoError(t, err)
 
 			err = tlater.ValidateConfig(&h)
@@ -404,7 +404,7 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			h, err := hpsf.FromYAML(strings.NewReader(inputData))
+			h, err := hpsf.FromYAML(inputData)
 			require.NoError(t, err)
 
 			trans := NewEmptyTranslator()
@@ -452,7 +452,7 @@ func TestTranslator_ValidateValidConfigs(t *testing.T) {
 			require.NoError(t, err)
 			var inputData = string(b)
 
-			h, err := hpsf.FromYAML(strings.NewReader(inputData))
+			h, err := hpsf.FromYAML(inputData)
 			require.NoError(t, err)
 
 			trans := NewEmptyTranslator()
@@ -552,7 +552,7 @@ layout:
         y: 160
 `
 
-	h, err := hpsf.FromYAML(strings.NewReader(c))
+	h, err := hpsf.FromYAML(c)
 	require.NoError(t, err)
 
 	tlater := NewEmptyTranslator()

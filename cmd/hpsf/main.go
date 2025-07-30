@@ -83,7 +83,6 @@ func main() {
 	subst.SetPriority("installation", 2)
 	subst.SetPriority("cluster", 1)
 	input := subst.DoSubstitutions(string(inputData))
-	inputRdr := strings.NewReader(input)
 
 	// Create the output file
 	var outf io.Writer
@@ -115,7 +114,7 @@ func main() {
 
 	switch cmds[0] {
 	case "format":
-		h, err := hpsf.FromYAML(inputRdr)
+		h, err := hpsf.FromYAML(input)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
@@ -178,7 +177,7 @@ func main() {
 		os.Exit(0)
 
 	case "rConfig", "rRules", "cConfig":
-		hpsf, err := hpsf.FromYAML(inputRdr)
+		hpsf, err := hpsf.FromYAML(input)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
