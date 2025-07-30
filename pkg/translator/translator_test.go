@@ -652,6 +652,10 @@ connections:
 			conditionName: "ForceSpanScope_1",
 			conditionKind: "ForceSpanScope",
 		},
+		{
+			conditionName: "CompareIntegerField_1",
+			conditionKind: "CompareIntegerField",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
