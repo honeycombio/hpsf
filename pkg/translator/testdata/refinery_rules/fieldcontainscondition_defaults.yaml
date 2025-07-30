@@ -1,0 +1,12 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Conditions:
+                    - Field: SomeField
+                      Operator: contains
+                      Value: SomeSubstring
+                      Datatype: string
