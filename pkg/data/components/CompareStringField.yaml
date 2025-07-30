@@ -1,12 +1,12 @@
-kind: CompareIntegerField
-name: Compare an integer field
+kind: CompareStringField
+name: Compare a string field
 style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Compares an integer field to a specified value
+summary: Compares a string field to a specified value
 description: |
-  This checks if any span in a trace has a specific integer field that compares appropriately to the specified value.
+  This checks if any span in a trace has a specific string field that compares appropriately to the specified value.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -25,30 +25,30 @@ properties:
   - name: Field
     summary:
       The name of the field to check. If this field exists in any span of a trace,
-      and its value matches the specified integer using the operator, the condition will match.
+      and its value matches the specified string using the operator, the condition will match.
     description: |
-      The field name to check for the integer value.
+      The field name to check for the string value.
     type: string
     validations:
       - noblanks
   - name: Operator
-    summary: The comparison operator to use when comparing the field value to the specified integer.
+    summary: The comparison operator to use when comparing the field value to the specified string.
     description: |
-      The comparison operator to use when comparing the field value to the specified integer.
+      The comparison operator to use when comparing the field value to the specified string.
     type: string
     subtype: oneof(==, !=, >, >=, <, <=)
     validations:
       - oneof(==, !=, >, >=, <, <=)
     default: ==
   - name: Value
-    summary: The integer value to compare against the field value.
+    summary: The string value to compare against the field value.
     description: |
-      The integer value that the field should be compared against using the specified operator.
-    type: int
-    default: 0
+      The string value that the field should be compared against using the specified operator.
+    type: string
+    default: ""
 templates:
   - kind: refinery_rules
-    name: CompareIntegerField
+    name: CompareStringField
     format: rules
     meta:
       condition: true
@@ -59,6 +59,6 @@ templates:
       - key: Operator
         value: "{{ .Values.Operator }}"
       - key: Value
-        value: "{{ .Values.Value | encodeAsInt }}"
+        value: "{{ .Values.Value }}"
       - key: Datatype
-        value: int
+        value: string
