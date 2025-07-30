@@ -5,6 +5,11 @@ components:
     kind: SamplingSequencer
   - name: Field Contains_1
     kind: FieldContainsCondition
+    properties:
+      - name: Field
+        value: "error.message"
+      - name: Substring
+        value: "timeout"
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1

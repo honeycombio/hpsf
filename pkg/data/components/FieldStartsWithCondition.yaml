@@ -30,8 +30,7 @@ properties:
       The field name to check for the prefix.
     type: string
     validations:
-      - nonempty
-    default: SomeField
+      - noblanks
   - name: Prefix
     summary:
       The prefix to check against the field value.
@@ -39,8 +38,7 @@ properties:
       The prefix that the field value should start with.
     type: string
     validations:
-      - nonempty
-    default: SomePrefix
+      - noblanks
 templates:
   - kind: refinery_rules
     name: FieldStartsWithCondition

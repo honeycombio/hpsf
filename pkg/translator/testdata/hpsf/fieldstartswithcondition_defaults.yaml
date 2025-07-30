@@ -5,6 +5,11 @@ components:
     kind: SamplingSequencer
   - name: Field Starts With_1
     kind: FieldStartsWithCondition
+    properties:
+      - name: Field
+        value: "http.url"
+      - name: Prefix
+        value: "https://"
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1

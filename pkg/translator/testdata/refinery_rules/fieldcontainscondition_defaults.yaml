@@ -6,7 +6,7 @@ Samplers:
                 - Name: Keep_All_1
                   SampleRate: 1
                   Conditions:
-                    - Field: SomeField
+                    - Field: error.message
                       Operator: contains
-                      Value: SomeSubstring
+                      Value: timeout
                       Datatype: string

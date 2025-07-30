@@ -30,8 +30,7 @@ properties:
       The field name to check for the substring.
     type: string
     validations:
-      - nonempty
-    default: SomeField
+      - noblanks
   - name: Substring
     summary:
       The substring to check against the field value.
@@ -39,8 +38,7 @@ properties:
       The substring that the field value should contain.
     type: string
     validations:
-      - nonempty
-    default: SomeSubstring
+      - noblanks
 templates:
   - kind: refinery_rules
     name: FieldContainsCondition

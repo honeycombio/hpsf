@@ -6,7 +6,7 @@ Samplers:
                 - Name: Keep_All_1
                   SampleRate: 1
                   Conditions:
-                    - Field: SomeField
+                    - Field: http.url
                       Operator: startsWith
-                      Value: SomePrefix
+                      Value: https://
                       Datatype: string
