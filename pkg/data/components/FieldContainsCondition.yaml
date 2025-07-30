@@ -1,0 +1,58 @@
+kind: FieldContainsCondition
+name: Check That Field Contains a Substring
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks if a field contains a specific substring
+description: |
+  This checks if any span in a trace has a specific field that contains a given substring.
+tags:
+  - category:refinery_rule_condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Field
+    summary:
+      The name of the field to check. If this field exists in any span of a trace,
+      and its value contains the specified substring, the condition will match.
+    description: |
+      The field name to check for the substring.
+    type: string
+    validations:
+      - nonempty
+    default: SomeField
+  - name: Substring
+    summary:
+      The substring to check against the field value.
+    description: |
+      The substring that the field value should contain.
+    type: string
+    validations:
+      - nonempty
+    default: SomeSubstring
+templates:
+  - kind: refinery_rules
+    name: FieldContainsCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Field
+        value: "{{ .Values.Field }}"
+      - key: Operator
+        value: contains
+      - key: Value
+        value: "{{ .Values.Substring }}"
+      - key: Datatype
+        value: string

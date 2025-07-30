@@ -646,6 +646,10 @@ connections:
 			conditionName: "LongDurationCondition_1",
 			conditionKind: "LongDurationCondition",
 		},
+		{
+			conditionName: "FieldContainsCondition_1",
+			conditionKind: "FieldContainsCondition",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
