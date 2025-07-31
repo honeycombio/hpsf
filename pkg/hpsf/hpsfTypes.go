@@ -256,13 +256,13 @@ type Port struct {
 type Property struct {
 	Name  string   `yaml:"name"`
 	Value any      `yaml:"value"`
-	Type  PropType `yaml:"type"`
+	Type  PropType `yaml:"type,omitempty"`
 }
 
 type Component struct {
 	Name       string     `yaml:"name"`
 	Kind       string     `yaml:"kind"`
-	Version    string     `yaml:"version"`
+	Version    string     `yaml:"version,omitempty"`
 	Ports      []Port     `yaml:"ports,omitempty"`
 	Properties []Property `yaml:"properties,omitempty"`
 	Style      string     `yaml:"style,omitempty"`
@@ -549,12 +549,12 @@ func (c *Container) Validate() error {
 type Layout map[string]any
 
 type HPSF struct {
-	Kind           string        `yaml:"kind"`
-	Version        string        `yaml:"version"`
-	Name           string        `yaml:"name"`
-	Summary        string        `yaml:"summary"`
-	Description    string        `yaml:"description"`
-	LibraryVersion string        `yaml:"library_version"`
+	Kind           string        `yaml:"kind,omitempty"`
+	Version        string        `yaml:"version,omitempty"`
+	Name           string        `yaml:"name,omitempty"`
+	Summary        string        `yaml:"summary,omitempty"`
+	Description    string        `yaml:"description,omitempty"`
+	LibraryVersion string        `yaml:"library_version,omitempty"`
 	Components     []*Component  `yaml:"components,omitempty"`
 	Connections    []*Connection `yaml:"connections,omitempty"`
 	Containers     []Container   `yaml:"containers,omitempty"`
