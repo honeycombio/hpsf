@@ -672,8 +672,20 @@ connections:
 			conditionKind: "ForceSpanScope",
 		},
 		{
-			conditionName: "CompareIntegerField_1",
+			conditionName: "CompareStringField_1",
+			conditionKind: "CompareStringField",
+		},
+		{
+			conditionName: "CompaareIntegerField_1",
 			conditionKind: "CompareIntegerField",
+		},
+		{
+			conditionName: "CompareDecimalField_1",
+			conditionKind: "CompareDecimalField",
+		},
+		{
+			conditionName: "MatchRegularExpression_1",
+			conditionKind: "MatchRegularExpression",
 		},
 	}
 	for _, tt := range tests {
