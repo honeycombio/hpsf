@@ -654,15 +654,15 @@ connections:
 		},
 		{
 			conditionName: "CompareStringField_1",
-			conditionKind: "CompareStringField",
+			conditionKind: "CompareStringFieldCondition",
 		},
 		{
-			conditionName: "CompaareIntegerField_1",
-			conditionKind: "CompareIntegerField",
+			conditionName: "CompareIntegerField_1",
+			conditionKind: "CompareIntegerFieldCondition",
 		},
 		{
 			conditionName: "CompareDecimalField_1",
-			conditionKind: "CompareDecimalField",
+			conditionKind: "CompareDecimalFieldCondition",
 		},
 		{
 			conditionName: "MatchRegularExpression_1",
