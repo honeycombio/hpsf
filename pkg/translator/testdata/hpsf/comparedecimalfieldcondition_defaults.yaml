@@ -4,7 +4,7 @@ components:
   - name: Start Sampling_1
     kind: SamplingSequencer
   - name: Compare Decimal Field_1
-    kind: CompareDecimalField
+    kind: CompareDecimalFieldCondition
     properties:
       - name: Field
         value: "response_time"

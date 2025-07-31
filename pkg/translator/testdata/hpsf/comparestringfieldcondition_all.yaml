@@ -4,12 +4,14 @@ components:
   - name: Start Sampling_1
     kind: SamplingSequencer
   - name: Compare String Field_1
-    kind: CompareStringField
+    kind: CompareStringFieldCondition
     properties:
       - name: Field
-        value: "status_message"
+        value: "field"
+      - name: Operator
+        value: "=="
       - name: Value
-        value: "error"
+        value: "test"
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1

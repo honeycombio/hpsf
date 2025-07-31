@@ -1,4 +1,4 @@
-kind: CompareStringField
+kind: CompareStringFieldCondition
 name: Compare a string field
 style: condition
 type: base
@@ -48,7 +48,7 @@ properties:
     default: ""
 templates:
   - kind: refinery_rules
-    name: CompareStringField
+    name: CompareStringFieldCondition
     format: rules
     meta:
       condition: true

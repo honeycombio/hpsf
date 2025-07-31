@@ -645,7 +645,7 @@ connections:
 		},
 		{
 			conditionName: "CompareIntegerField_1",
-			conditionKind: "CompareIntegerField",
+			conditionKind: "CompareIntegerFieldCondition",
 		},
 		{
 			conditionName: "ForceSpanScope_1",
@@ -695,7 +695,7 @@ components:
   - name: Start Sampling_1
     kind: SamplingSequencer
   - name: Compare Integer Field_1
-    kind: CompareIntegerField
+    kind: CompareIntegerFieldCondition
     properties:
       - name: Field
         value: "status_code"
@@ -1009,7 +1009,7 @@ components:
   - name: Start Sampling_1
     kind: SamplingSequencer
   - name: Compare Integer Field_1
-    kind: CompareIntegerField
+    kind: CompareIntegerFieldCondition
     properties:
       - name: Field
         value: "status_code"
