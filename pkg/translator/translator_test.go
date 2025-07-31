@@ -18,6 +18,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
@@ -769,11 +770,7 @@ connections:
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a simple HPSF configuration with CompareIntegerField
 			hpsfConfig := fmt.Sprintf(configFormat, tc.operator)
-
-			// Parse the HPSF configuration
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(hpsfConfig))
-			err := dec.Decode(&h)
+			h, err := hpsf.FromYAML(hpsfConfig)
 			require.NoError(t, err)
 
 			// Generate the refinery rules configuration
@@ -782,7 +779,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
@@ -1073,9 +1070,7 @@ connections:
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Parse the HPSF configuration
-			var h *hpsf.HPSF
-			dec := yamlv3.NewDecoder(strings.NewReader(tc.hpsfConfig))
-			err := dec.Decode(&h)
+			h, err := hpsf.FromYAML(tc.hpsfConfig)
 			require.NoError(t, err)
 
 			// Generate the refinery rules configuration
@@ -1084,7 +1079,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
