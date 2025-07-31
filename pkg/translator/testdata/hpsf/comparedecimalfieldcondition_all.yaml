@@ -3,15 +3,15 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: SamplingSequencer
-  - name: Compare String Field_1
-    kind: CompareStringField
+  - name: Compare Decimal Field_1
+    kind: CompareDecimalFieldCondition
     properties:
       - name: Field
         value: "field"
       - name: Operator
         value: "=="
       - name: Value
-        value: "test"
+        value: 0.5
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -30,11 +30,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Compare String Field_1
+      component: Compare Decimal Field_1
       port: Match
       type: SampleData
   - source:
-      component: Compare String Field_1
+      component: Compare Decimal Field_1
       port: And
       type: SampleData
     destination:

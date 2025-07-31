@@ -1,12 +1,12 @@
-kind: CompareDecimalField
-name: Compare a numeric field
+kind: CompareIntegerFieldCondition
+name: Compare an integer field
 style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Compares a numeric field to a specified value
+summary: Compares an integer field to a specified value
 description: |
-  This checks if any span in a trace has a specific numeric field that compares appropriately to the specified value.
+  This checks if any span in a trace has a specific integer field that compares appropriately to the specified value.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -25,30 +25,30 @@ properties:
   - name: Field
     summary:
       The name of the field to check. If this field exists in any span of a trace,
-      and its value matches the specified numeric value using the operator, the condition will match.
+      and its value matches the specified integer using the operator, the condition will match.
     description: |
-      The field name to check for the numeric value.
+      The field name to check for the integer value.
     type: string
     validations:
       - noblanks
   - name: Operator
-    summary: The comparison operator to use when comparing the field value to the specified numeric value.
+    summary: The comparison operator to use when comparing the field value to the specified integer.
     description: |
-      The comparison operator to use when comparing the field value to the specified numeric value.
+      The comparison operator to use when comparing the field value to the specified integer.
     type: string
     subtype: oneof(==, !=, >, >=, <, <=)
     validations:
       - oneof(==, !=, >, >=, <, <=)
     default: ==
   - name: Value
-    summary: The numeric value to compare against the field value.
+    summary: The integer value to compare against the field value.
     description: |
-      The numeric value that the field should be compared against using the specified operator.
-    type: float
-    default: 0.0
+      The integer value that the field should be compared against using the specified operator.
+    type: int
+    default: 0
 templates:
   - kind: refinery_rules
-    name: CompareDecimalField
+    name: CompareIntegerFieldCondition
     format: rules
     meta:
       condition: true
@@ -59,6 +59,6 @@ templates:
       - key: Operator
         value: "{{ .Values.Operator }}"
       - key: Value
-        value: "{{ .Values.Value | encodeAsFloat }}"
+        value: "{{ .Values.Value | encodeAsInt }}"
       - key: Datatype
-        value: float
+        value: int
