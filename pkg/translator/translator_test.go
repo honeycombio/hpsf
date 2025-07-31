@@ -640,12 +640,8 @@ connections:
 			conditionKind: "FieldContainsCondition",
 		},
 		{
-			conditionName: "TraceHasRootSpanCondition_1",
-			conditionKind: "TraceHasRootSpanCondition",
-		},
-		{
-			conditionName: "TraceDoesNotHaveRootSpanCondition_1",
-			conditionKind: "TraceDoesNotHaveRootSpanCondition",
+			conditionName: "RootSpanCondition_1",
+			conditionKind: "RootSpanCondition",
 		},
 	}
 	for _, tt := range tests {

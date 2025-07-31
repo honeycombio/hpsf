@@ -3,8 +3,8 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: SamplingSequencer
-  - name: Trace Has Root Span_1
-    kind: TraceHasRootSpanCondition
+  - name: Root Span Condition_1
+    kind: RootSpanCondition
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -23,11 +23,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Trace Has Root Span_1
+      component: Root Span Condition_1
       port: Match
       type: SampleData
   - source:
-      component: Trace Has Root Span_1
+      component: Root Span Condition_1
       port: And
       type: SampleData
     destination:
