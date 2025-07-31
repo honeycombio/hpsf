@@ -8,6 +8,6 @@ Samplers:
                   Scope: trace
                   Conditions:
                     - Field: status_message
-                      Operator: ==
+                      Operator: =
                       Value: error
                       Datatype: string

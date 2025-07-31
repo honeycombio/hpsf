@@ -8,6 +8,6 @@ Samplers:
                   Scope: trace
                   Conditions:
                     - Field: field
-                      Operator: ==
+                      Operator: =
                       Value: test
                       Datatype: string

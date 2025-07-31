@@ -9,7 +9,7 @@ components:
       - name: Field
         value: "field"
       - name: Operator
-        value: "=="
+        value: "="
       - name: Value
         value: 0
   - name: Keep All_1
