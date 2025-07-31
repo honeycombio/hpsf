@@ -101,7 +101,7 @@ components:
       - name: Field
         value: "status_code"
       - name: Operator
-        value: "=="
+        value: "="
       - name: Value
         value: 500
   - name: Compare String Field_1
@@ -110,7 +110,7 @@ components:
       - name: Field
         value: "status_message"
       - name: Operator
-        value: "=="
+        value: "="
       - name: Value
         value: "error"
   - name: Sample at 42_1
