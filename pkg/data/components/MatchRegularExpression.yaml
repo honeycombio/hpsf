@@ -1,0 +1,57 @@
+kind: MatchRegularExpression
+name: Match a regular expression
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks if a field matches a regular expression
+description: |
+  This checks if any span in a trace has a specific field that matches a given regular expression.
+tags:
+  - category:refinery_rule_condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:regex
+  - type:string
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Field
+    summary: The name of the field to check.
+    description: |
+      The field name to check for the regular expression match. If this field exists in any span of a trace,
+      and its value matches the specified regular expression, the condition will match.
+    type: string
+    validations:
+      - noblanks
+  - name: RegularExpression
+    summary: The regular expression to match against the field value.
+    description: |
+      The regular expression pattern that the field value should match. The regular expression must be a valid Go regular expression.
+      Example: `^[A-Z][A-Za-z0-9]+$` would match a capital letter followed by one or more letters or numbers.
+    type: string
+    validations:
+      - noblanks
+      - regex
+templates:
+  - kind: refinery_rules
+    name: MatchRegularExpression
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Field
+        value: "{{ .Values.Field }}"
+      - key: Operator
+        value: matches
+      - key: Value
+        value: "{{ .Values.RegularExpression }}"
+      - key: Datatype
+        value: string
