@@ -71,7 +71,7 @@ func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	var overwrite bool
+	overwrite := false
 
 	// this allows for the make target regenerate_translator_testdata to work instead of editing
 	if os.Getenv("OVERWRITE_TESTDATA") == "1" {

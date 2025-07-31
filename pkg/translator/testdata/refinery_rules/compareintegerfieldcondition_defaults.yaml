@@ -8,6 +8,6 @@ Samplers:
                   Scope: trace
                   Conditions:
                     - Field: status_code
-                      Operator: ==
+                      Operator: =
                       Value: 500
                       Datatype: int

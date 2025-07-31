@@ -36,10 +36,10 @@ properties:
     description: |
       The comparison operator to use when comparing the field value to the specified numeric value.
     type: string
-    subtype: oneof(==, !=, >, >=, <, <=)
+    subtype: oneof(=, !=, >, >=, <, <=)
     validations:
-      - oneof(==, !=, >, >=, <, <=)
-    default: ==
+      - oneof(=, !=, >, >=, <, <=)
+    default: =
   - name: Value
     summary: The numeric value to compare against the field value.
     description: |

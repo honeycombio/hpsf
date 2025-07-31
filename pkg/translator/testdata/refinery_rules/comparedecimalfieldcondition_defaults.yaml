@@ -8,6 +8,6 @@ Samplers:
                   Scope: trace
                   Conditions:
                     - Field: response_time
-                      Operator: ==
+                      Operator: =
                       Value: 1.5
                       Datatype: float
