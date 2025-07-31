@@ -656,9 +656,7 @@ connections:
 			require.NoError(t, err)
 
 			// Decode YAML from buffer
-			dec := yamlv3.NewDecoder(&buf)
-			h := &hpsf.HPSF{}
-			err = dec.Decode(&h)
+			h, err := hpsf.FromYAML(buf.String())
 			require.NoError(t, err)
 
 			// Generate config
@@ -667,7 +665,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(h, hpsftypes.RefineryRules, nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 		})
