@@ -46,6 +46,7 @@ templates:
     format: rules
     meta:
       condition: true
+      scope: '{{ if eq .Values.Operator "does-not-exist" }}span{{ else }}trace{{ end }}'
     data:
       - key: Field
         value: "{{ .Values.Field }}"

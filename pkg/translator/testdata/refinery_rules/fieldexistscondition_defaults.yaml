@@ -5,6 +5,7 @@ Samplers:
             Rules:
                 - Name: Keep_All_1
                   SampleRate: 1
+                  Scope: trace
                   Conditions:
                     - Field: error.message
                       Operator: exists
