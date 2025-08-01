@@ -639,6 +639,10 @@ connections:
 			conditionName: "FieldContainsCondition_1",
 			conditionKind: "FieldContainsCondition",
 		},
+		{
+			conditionName: "RootSpanCondition_1",
+			conditionKind: "RootSpanCondition",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
@@ -654,6 +658,7 @@ connections:
 			var buf bytes.Buffer
 			err = tmpl.Execute(&buf, testdata)
 			require.NoError(t, err)
+			fmt.Println(buf.String())
 
 			// Decode YAML from buffer
 			h, err := hpsf.FromYAML(buf.String())

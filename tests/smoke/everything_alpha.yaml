@@ -76,6 +76,8 @@ components:
         value: span
   - name: Check HTTP Status_1
     kind: HTTPStatusCondition
+  - name: Check Root Span_1
+    kind: RootSpanCondition
   - name: Check for Errors Rule 4_1
     kind: ErrorExistsCondition
     properties:
@@ -191,6 +193,14 @@ connections:
       type: SampleData
   - source:
       component: Check HTTP Status_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Root Span_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Root Span_1
       port: And
       type: SampleData
     destination:
@@ -331,6 +341,10 @@ layout:
       position:
         x: -60
         y: -160
+    - name: Check Root Span_1
+      position:
+        x: -60
+        y: -120
     - name: Check for Errors Rule 4_1
       position:
         x: -60
