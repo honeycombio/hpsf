@@ -6,8 +6,8 @@ components:
   - name: Compare Decimal Field_1
     kind: CompareDecimalFieldCondition
     properties:
-      - name: Field
-        value: "response_time"
+      - name: Fields
+        value: ["response_time"]
       - name: Value
         value: 1.5
   - name: Keep All_1

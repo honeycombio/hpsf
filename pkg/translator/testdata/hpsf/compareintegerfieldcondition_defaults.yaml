@@ -6,8 +6,8 @@ components:
   - name: Compare Integer Field_1
     kind: CompareIntegerFieldCondition
     properties:
-      - name: Field
-        value: "status_code"
+      - name: Fields
+        value: ["status_code"]
       - name: Value
         value: 500
   - name: Keep All_1

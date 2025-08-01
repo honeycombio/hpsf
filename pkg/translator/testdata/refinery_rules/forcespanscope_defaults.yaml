@@ -1,5 +1,12 @@
 RulesVersion: 2
 Samplers:
     __default__:
-        DeterministicSampler:
-            SampleRate: 1
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Scope: span
+                  Conditions:
+                    - Fields:
+                        - error
+                      Operator: exists

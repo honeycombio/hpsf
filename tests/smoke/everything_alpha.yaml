@@ -89,8 +89,8 @@ components:
   - name: Compare Decimal Field_1
     kind: CompareDecimalFieldCondition
     properties:
-      - name: Field
-        value: "response_time"
+      - name: Fields
+        value: ["response_time"]
       - name: Operator
         value: ">"
       - name: Value
@@ -98,8 +98,8 @@ components:
   - name: Compare Integer Field_1
     kind: CompareIntegerFieldCondition
     properties:
-      - name: Field
-        value: "status_code"
+      - name: Fields
+        value: ["status_code"]
       - name: Operator
         value: "="
       - name: Value
@@ -107,24 +107,29 @@ components:
   - name: Compare String Field_1
     kind: CompareStringFieldCondition
     properties:
-      - name: Field
-        value: "status_message"
+      - name: Fields
+        value: ["status_message"]
       - name: Operator
         value: "="
       - name: Value
         value: "error"
-  - name: Check if field exists_1
-    kind: FieldExistsCondition
-    properties:
-      - name: Field
-        value: "error.message"
-      - name: Operator
-        value: "exists"
   - name: Sample at 42_1
     kind: DeterministicSampler
     properties:
       - name: SampleRate
         value: 42
+  - name: Match Regular Expression_1
+    kind: MatchRegularExpression
+    properties:
+      - name: Field
+        value: "status_message"
+      - name: RegularExpression
+        value: "^[A-Z][a-z]+$"
+  - name: Sample at 123_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 123
 connections:
   - source:
       component: Receive OTel_1
@@ -243,14 +248,6 @@ connections:
       port: And
       type: SampleData
     destination:
-      component: Check if field exists_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check if field exists_1
-      port: And
-      type: SampleData
-    destination:
       component: Sample at 42_1
       port: Sample
       type: SampleData
@@ -265,6 +262,30 @@ connections:
   - source:
       component: Start Sampling_1
       port: Rule 6
+      type: SampleData
+    destination:
+      component: Match Regular Expression_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Match Regular Expression_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 123_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 123_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 7
       type: SampleData
     destination:
       component: Drop All_1
@@ -456,3 +477,11 @@ layout:
       position:
         x: 300
         y: 60
+    - name: Match Regular Expression_1
+      position:
+        x: -60
+        y: 120
+    - name: Sample at 123_1
+      position:
+        x: 120
+        y: 120

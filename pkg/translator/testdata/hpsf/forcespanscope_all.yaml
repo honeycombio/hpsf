@@ -5,6 +5,8 @@ components:
     kind: SamplingSequencer
   - name: Force Span Scope_1
     kind: ForceSpanScope
+  - name: ErrorExistsCondition_1
+    kind: ErrorExistsCondition
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -28,6 +30,14 @@ connections:
       type: SampleData
   - source:
       component: Force Span Scope_1
+      port: And
+      type: SampleData
+    destination:
+      component: ErrorExistsCondition_1
+      port: Match
+      type: SampleData
+  - source:
+      component: ErrorExistsCondition_1
       port: And
       type: SampleData
     destination:

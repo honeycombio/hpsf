@@ -7,7 +7,8 @@ Samplers:
                   SampleRate: 1
                   Scope: trace
                   Conditions:
-                    - Field: status_message
+                    - Fields:
+                        - status_message
                       Operator: =
                       Value: error
                       Datatype: string

@@ -579,7 +579,10 @@ components:
     version: v0.1.0
   - name: {{ .ConditionName }}
     kind: {{ .ConditionKind }}
-    version: v0.1.0
+    version: v0.1.0{{ if .Properties }}
+    properties:{{ range .Properties }}
+      - name: {{ .Name }}
+        value: {{ .Value }}{{ end }}{{ end }}
   - name: Sample at a Fixed Rate_1
     kind: DeterministicSampler
     version: v0.1.0
@@ -623,6 +626,10 @@ connections:
 	tests := []struct {
 		conditionName string
 		conditionKind string
+		properties    []struct {
+			Name  string
+			Value string
+		}
 	}{
 		{
 			conditionName: "ErrorExistsCondition_1",
@@ -647,6 +654,18 @@ connections:
 		{
 			conditionName: "CompareIntegerField_1",
 			conditionKind: "CompareIntegerFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
+		},
+		{
+			conditionName: "ForceSpanScope_1",
+			conditionKind: "ForceSpanScope",
 		},
 		{
 			conditionName: "ForceSpanScope_1",
@@ -655,22 +674,42 @@ connections:
 		{
 			conditionName: "CompareStringField_1",
 			conditionKind: "CompareStringFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "error"},
+			},
 		},
 		{
 			conditionName: "CompareIntegerField_1",
 			conditionKind: "CompareIntegerFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
 		},
 		{
 			conditionName: "CompareDecimalField_1",
 			conditionKind: "CompareDecimalFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["duration_ms"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
 		},
 		{
 			conditionName: "MatchRegularExpression_1",
 			conditionKind: "MatchRegularExpression",
-		},
-		{
-			conditionName: "FieldExistsCondition_1",
-			conditionKind: "FieldExistsCondition",
 		},
 	}
 	for _, tt := range tests {
@@ -678,9 +717,10 @@ connections:
 			tmpl, err := template.New("test").Parse(c)
 			require.NoError(t, err)
 
-			testdata := map[string]string{
+			testdata := map[string]interface{}{
 				"ConditionName": tt.conditionName,
 				"ConditionKind": tt.conditionKind,
+				"Properties":    tt.properties,
 			}
 
 			// Execute template into a buffer
@@ -718,8 +758,8 @@ components:
   - name: Compare Integer Field_1
     kind: CompareIntegerFieldCondition
     properties:
-      - name: Field
-        value: "status_code"
+      - name: Fields
+        value: ["status_code"]
       - name: Operator
         value: "%s"
       - name: Value
@@ -1028,8 +1068,8 @@ components:
   - name: Compare Integer Field_1
     kind: CompareIntegerFieldCondition
     properties:
-      - name: Field
-        value: "status_code"
+      - name: Fields
+        value: ["status_code"]
       - name: Operator
         value: "=="
       - name: Value
