@@ -125,6 +125,11 @@ components:
         value: "status_message"
       - name: RegularExpression
         value: "^[A-Z][a-z]+$"
+  - name: Check Field Exists_1
+    kind: FieldExistsCondition
+    properties:
+      - name: Fields
+        value: ["status_message"]
   - name: Sample at 123_1
     kind: DeterministicSampler
     properties:
@@ -269,6 +274,14 @@ connections:
       type: SampleData
   - source:
       component: Match Regular Expression_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Field Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Field Exists_1
       port: And
       type: SampleData
     destination:
@@ -480,6 +493,10 @@ layout:
     - name: Match Regular Expression_1
       position:
         x: -60
+        y: 120
+    - name: Check Field Exists_1
+      position:
+        x: 0
         y: 120
     - name: Sample at 123_1
       position:
