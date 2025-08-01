@@ -727,7 +727,6 @@ connections:
 			var buf bytes.Buffer
 			err = tmpl.Execute(&buf, testdata)
 			require.NoError(t, err)
-			fmt.Println(buf.String())
 
 			// Decode YAML from buffer
 			h, err := hpsf.FromYAML(buf.String())
@@ -1146,9 +1145,6 @@ connections:
 			// Render the configuration to YAML
 			got, err := cfg.RenderYAML()
 			require.NoError(t, err)
-
-			// Debug: print the generated YAML
-			t.Logf("Generated YAML:\n%s", string(got))
 
 			// Parse the generated YAML to check the scope
 			var rulesConfig map[string]interface{}
