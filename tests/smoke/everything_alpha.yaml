@@ -89,8 +89,8 @@ components:
   - name: Compare Decimal Field_1
     kind: CompareDecimalFieldCondition
     properties:
-      - name: Field
-        value: "response_time"
+      - name: Fields
+        value: ["response_time"]
       - name: Operator
         value: ">"
       - name: Value
@@ -98,8 +98,8 @@ components:
   - name: Compare Integer Field_1
     kind: CompareIntegerFieldCondition
     properties:
-      - name: Field
-        value: "status_code"
+      - name: Fields
+        value: ["status_code"]
       - name: Operator
         value: "="
       - name: Value
@@ -107,8 +107,8 @@ components:
   - name: Compare String Field_1
     kind: CompareStringFieldCondition
     properties:
-      - name: Field
-        value: "status_message"
+      - name: Fields
+        value: ["status_message"]
       - name: Operator
         value: "="
       - name: Value

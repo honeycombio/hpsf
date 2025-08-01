@@ -6,8 +6,8 @@ components:
   - name: Compare String Field_1
     kind: CompareStringFieldCondition
     properties:
-      - name: Field
-        value: "status_message"
+      - name: Fields
+        value: ["status_message"]
       - name: Value
         value: "error"
   - name: Keep All_1

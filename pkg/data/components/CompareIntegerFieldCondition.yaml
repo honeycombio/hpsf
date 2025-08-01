@@ -22,14 +22,15 @@ ports:
     direction: output
     type: SampleData
 properties:
-  - name: Field
+  - name: Fields
     summary:
-      The name of the field to check. If this field exists in any span of a trace,
+      The name(s) of the field(s) to check. If any of these fields exist in any span of a trace,
       and its value matches the specified integer using the operator, the condition will match.
     description: |
-      The field name to check for the integer value.
-    type: string
+      The field names to check for the integer value.
+    type: stringarray
     validations:
+      - nonempty
       - noblanks
   - name: Operator
     summary: The comparison operator to use when comparing the field value to the specified integer.
@@ -54,8 +55,8 @@ templates:
       condition: true
       scope: '{{ if eq .Values.Operator "!=" }}span{{ else }}trace{{ end }}'
     data:
-      - key: Field
-        value: "{{ .Values.Field }}"
+      - key: Fields
+        value: "{{ .Values.Fields | encodeAsArray }}"
       - key: Operator
         value: "{{ .Values.Operator }}"
       - key: Value

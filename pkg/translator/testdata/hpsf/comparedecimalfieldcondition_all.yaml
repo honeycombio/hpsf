@@ -6,8 +6,8 @@ components:
   - name: Compare Decimal Field_1
     kind: CompareDecimalFieldCondition
     properties:
-      - name: Field
-        value: "field"
+      - name: Fields
+        value: ["field"]
       - name: Operator
         value: "="
       - name: Value

@@ -6,8 +6,8 @@ components:
   - name: Compare String Field_1
     kind: CompareStringFieldCondition
     properties:
-      - name: Field
-        value: "field"
+      - name: Fields
+        value: ["field"]
       - name: Operator
         value: "="
       - name: Value

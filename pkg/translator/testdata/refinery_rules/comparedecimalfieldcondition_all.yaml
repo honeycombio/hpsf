@@ -7,7 +7,8 @@ Samplers:
                   SampleRate: 1
                   Scope: trace
                   Conditions:
-                    - Field: field
+                    - Fields:
+                        - field
                       Operator: =
                       Value: 0.5
                       Datatype: float
