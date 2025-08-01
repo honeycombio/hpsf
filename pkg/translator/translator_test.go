@@ -668,6 +668,10 @@ connections:
 			conditionName: "MatchRegularExpression_1",
 			conditionKind: "MatchRegularExpression",
 		},
+		{
+			conditionName: "FieldExistsCondition_1",
+			conditionKind: "FieldExistsCondition",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {

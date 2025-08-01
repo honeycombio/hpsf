@@ -113,6 +113,13 @@ components:
         value: "="
       - name: Value
         value: "error"
+  - name: Check if field exists_1
+    kind: FieldExistsCondition
+    properties:
+      - name: Field
+        value: "error.message"
+      - name: Operator
+        value: "exists"
   - name: Sample at 42_1
     kind: DeterministicSampler
     properties:
@@ -233,6 +240,14 @@ connections:
       type: SampleData
   - source:
       component: Compare String Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check if field exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check if field exists_1
       port: And
       type: SampleData
     destination:
