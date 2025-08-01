@@ -90,6 +90,9 @@ func getValidationRule(validation string) func(val any) bool {
 	case "inrange":
 		// inRange will check if the value is within a specified range
 		return inRange(args...)
+	case "regex":
+		// regex will check if the value is a valid regular expression
+		return isValidRegex
 	default:
 		// If no match, always return false
 		return alwaysFail
@@ -347,4 +350,16 @@ func inRange(options ...string) func(val any) bool {
 			return false // for other types, return false
 		}
 	}
+}
+
+// isValidRegex checks if the value is a valid regular expression
+func isValidRegex(val any) bool {
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	_, err := regexp.Compile(s)
+	return err == nil
 }
