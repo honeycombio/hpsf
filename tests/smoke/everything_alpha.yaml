@@ -86,6 +86,38 @@ components:
           - error
   - name: Drop All_1
     kind: Dropper
+  - name: Compare Decimal Field_1
+    kind: CompareDecimalFieldCondition
+    properties:
+      - name: Fields
+        value: ["response_time"]
+      - name: Operator
+        value: ">"
+      - name: Value
+        value: 1.5
+  - name: Compare Integer Field_1
+    kind: CompareIntegerFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_code"]
+      - name: Operator
+        value: "="
+      - name: Value
+        value: 500
+  - name: Compare String Field_1
+    kind: CompareStringFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_message"]
+      - name: Operator
+        value: "="
+      - name: Value
+        value: "error"
+  - name: Sample at 42_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 42
 connections:
   - source:
       component: Receive OTel_1
@@ -178,6 +210,46 @@ connections:
   - source:
       component: Start Sampling_1
       port: Rule 5
+      type: SampleData
+    destination:
+      component: Compare Decimal Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Decimal Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Compare Integer Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Integer Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Compare String Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare String Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 42_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 42_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 6
       type: SampleData
     destination:
       component: Drop All_1
@@ -353,3 +425,19 @@ layout:
       position:
         x: 180
         y: 100
+    - name: Compare Decimal Field_1
+      position:
+        x: -60
+        y: 60
+    - name: Compare Integer Field_1
+      position:
+        x: 60
+        y: 60
+    - name: Compare String Field_1
+      position:
+        x: 180
+        y: 60
+    - name: Sample at 42_1
+      position:
+        x: 300
+        y: 60

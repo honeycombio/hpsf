@@ -18,6 +18,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
@@ -71,7 +72,7 @@ func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
 func TestGenerateConfigForAllComponents(t *testing.T) {
 	// set this to true to overwrite the testdata files with the generated
 	// config files if they are different
-	var overwrite bool
+	overwrite := false
 
 	// this allows for the make target regenerate_translator_testdata to work instead of editing
 	if os.Getenv("OVERWRITE_TESTDATA") == "1" {
@@ -578,7 +579,10 @@ components:
     version: v0.1.0
   - name: {{ .ConditionName }}
     kind: {{ .ConditionKind }}
-    version: v0.1.0
+    version: v0.1.0{{ if .Properties }}
+    properties:{{ range .Properties }}
+      - name: {{ .Name }}
+        value: {{ .Value }}{{ end }}{{ end }}
   - name: Sample at a Fixed Rate_1
     kind: DeterministicSampler
     version: v0.1.0
@@ -622,6 +626,10 @@ connections:
 	tests := []struct {
 		conditionName string
 		conditionKind string
+		properties    []struct {
+			Name  string
+			Value string
+		}
 	}{
 		{
 			conditionName: "ErrorExistsCondition_1",
@@ -643,15 +651,32 @@ connections:
 			conditionName: "RootSpanCondition_1",
 			conditionKind: "RootSpanCondition",
 		},
+		{
+			conditionName: "CompareIntegerField_1",
+			conditionKind: "CompareIntegerFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
+		},
+		{
+			conditionName: "ForceSpanScope_1",
+			conditionKind: "ForceSpanScope",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.conditionName, func(t *testing.T) {
 			tmpl, err := template.New("test").Parse(c)
 			require.NoError(t, err)
 
-			testdata := map[string]string{
+			testdata := map[string]interface{}{
 				"ConditionName": tt.conditionName,
 				"ConditionKind": tt.conditionKind,
+				"Properties":    tt.properties,
 			}
 
 			// Execute template into a buffer
@@ -673,6 +698,447 @@ connections:
 			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
+		})
+	}
+}
+
+func TestCompareIntegerFieldScope(t *testing.T) {
+	// we just have to replace the operator in the config template
+	// to test the scope logic, so we use a format string for sprintf
+	configFormat := `
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Compare Integer Field_1
+    kind: CompareIntegerFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_code"]
+      - name: Operator
+        value: "%s"
+      - name: Value
+        value: 500
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Compare Integer Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Integer Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+`
+
+	// Test that the scope field is set correctly based on the operator
+	testCases := []struct {
+		name          string
+		operator      string
+		expectedScope string
+	}{
+		{
+			name:          "not_equals_operator_should_set_span_scope",
+			operator:      "!=",
+			expectedScope: "span",
+		},
+		{
+			name:          "equals_operator_should_set_trace_scope",
+			operator:      "==",
+			expectedScope: "trace",
+		},
+		{
+			name:          "greater_than_operator_should_set_trace_scope",
+			operator:      ">",
+			expectedScope: "trace",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Create a simple HPSF configuration with CompareIntegerField
+			hpsfConfig := fmt.Sprintf(configFormat, tc.operator)
+			h, err := hpsf.FromYAML(hpsfConfig)
+			require.NoError(t, err)
+
+			// Generate the refinery rules configuration
+			tlater := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			tlater.InstallComponents(comps)
+
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+
+			// Render the configuration to YAML
+			got, err := cfg.RenderYAML()
+			require.NoError(t, err)
+
+			// Parse the generated YAML to check the scope
+			var rulesConfig map[string]interface{}
+			err = yamlv3.Unmarshal(got, &rulesConfig)
+			require.NoError(t, err)
+
+			// Navigate to the rule and check the scope
+			samplers := rulesConfig["Samplers"].(map[string]interface{})
+			defaultSampler := samplers["__default__"].(map[string]interface{})
+			rulesBasedSampler := defaultSampler["RulesBasedSampler"].(map[string]interface{})
+			rules := rulesBasedSampler["Rules"].([]interface{})
+			rule := rules[0].(map[string]interface{})
+
+			// Check that the scope is set correctly
+			scope, exists := rule["Scope"]
+			require.True(t, exists, "Scope field should be present")
+			require.Equal(t, tc.expectedScope, scope, "Scope should be %s for operator %s", tc.expectedScope, tc.operator)
+		})
+	}
+}
+
+func TestScopeMergingLogic(t *testing.T) {
+	testCases := []struct {
+		name          string
+		hpsfConfig    string
+		expectedScope string
+		description   string
+	}{
+		{
+			name: "single_force_span_scope_should_promote_without_scope",
+			hpsfConfig: `
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Force Span Scope_1
+    kind: ForceSpanScope
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Force Span Scope_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Force Span Scope_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+`,
+			expectedScope: "span",
+			description:   "Single ForceSpanScope should promote to deterministic sampler without scope",
+		},
+		{
+			name: "multiple_conditions_without_force_span_scope_should_not_set_scope",
+			hpsfConfig: `
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Error Exists_1
+    kind: ErrorExistsCondition
+  - name: Long Duration_1
+    kind: LongDurationCondition
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Error Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Error Exists_1
+      port: And
+      type: SampleData
+    destination:
+      component: Long Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Long Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+`,
+			expectedScope: "trace",
+			description:   "Multiple conditions without ForceSpanScope should not set scope (defaults to trace)",
+		},
+		{
+			name: "force_span_scope_with_other_conditions_should_set_span",
+			hpsfConfig: `
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Error Exists_1
+    kind: ErrorExistsCondition
+  - name: Force Span Scope_1
+    kind: ForceSpanScope
+  - name: Long Duration_1
+    kind: LongDurationCondition
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Error Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Error Exists_1
+      port: And
+      type: SampleData
+    destination:
+      component: Force Span Scope_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Force Span Scope_1
+      port: And
+      type: SampleData
+    destination:
+      component: Long Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Long Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+`,
+			expectedScope: "span",
+			description:   "ForceSpanScope with other conditions should set scope to span",
+		},
+		{
+			name: "compare_integer_field_with_force_span_scope_should_set_span",
+			hpsfConfig: `
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Compare Integer Field_1
+    kind: CompareIntegerFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_code"]
+      - name: Operator
+        value: "=="
+      - name: Value
+        value: 500
+  - name: Force Span Scope_1
+    kind: ForceSpanScope
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Compare Integer Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Integer Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Force Span Scope_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Force Span Scope_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+`,
+			expectedScope: "span",
+			description:   "CompareIntegerField with ForceSpanScope should set scope to span",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Parse the HPSF configuration
+			h, err := hpsf.FromYAML(tc.hpsfConfig)
+			require.NoError(t, err)
+
+			// Generate the refinery rules configuration
+			tlater := NewEmptyTranslator()
+			comps, err := data.LoadEmbeddedComponents()
+			require.NoError(t, err)
+			tlater.InstallComponents(comps)
+
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, nil)
+			require.NoError(t, err)
+			require.NotNil(t, cfg)
+
+			// Render the configuration to YAML
+			got, err := cfg.RenderYAML()
+			require.NoError(t, err)
+
+			// Debug: print the generated YAML
+			t.Logf("Generated YAML:\n%s", string(got))
+
+			// Parse the generated YAML to check the scope
+			var rulesConfig map[string]interface{}
+			err = yamlv3.Unmarshal(got, &rulesConfig)
+			require.NoError(t, err)
+
+			// Navigate to the rule and check the scope
+			samplers := rulesConfig["Samplers"].(map[string]interface{})
+			defaultSampler := samplers["__default__"].(map[string]interface{})
+
+			// Check if we have a RulesBasedSampler or a promoted sampler
+			var scope interface{}
+			var exists bool
+
+			if rulesBasedSampler, ok := defaultSampler["RulesBasedSampler"]; ok {
+				// We have a RulesBasedSampler, check the first rule
+				rbs := rulesBasedSampler.(map[string]interface{})
+				rules := rbs["Rules"].([]interface{})
+				rule := rules[0].(map[string]interface{})
+				scope, exists = rule["Scope"]
+
+				if tc.expectedScope == "trace" && !exists {
+					// For trace scope, it's acceptable to not have the scope field set (defaults to trace)
+					// This is the case for multiple conditions without ForceSpanScope
+				} else {
+					// For span scope or when we expect scope to be explicitly set
+					require.True(t, exists, "Scope field should be present in rules-based sampler")
+					require.Equal(t, tc.expectedScope, scope, "Scope should be %s: %s", tc.expectedScope, tc.description)
+				}
+			} else {
+				// We have a promoted sampler (like DeterministicSampler), scope should not be present
+				_, exists = defaultSampler["Scope"]
+				require.False(t, exists, "Scope field should not be present in promoted sampler")
+			}
 		})
 	}
 }
