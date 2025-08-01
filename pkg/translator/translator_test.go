@@ -674,14 +674,38 @@ connections:
 		{
 			conditionName: "CompareStringField_1",
 			conditionKind: "CompareStringFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "error"},
+			},
 		},
 		{
 			conditionName: "CompareIntegerField_1",
 			conditionKind: "CompareIntegerFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["status_code"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
 		},
 		{
 			conditionName: "CompareDecimalField_1",
 			conditionKind: "CompareDecimalFieldCondition",
+			properties: []struct {
+				Name  string
+				Value string
+			}{
+				{Name: "Fields", Value: `["duration_ms"]`},
+				{Name: "Operator", Value: "="},
+				{Name: "Value", Value: "500"},
+			},
 		},
 		{
 			conditionName: "MatchRegularExpression_1",
