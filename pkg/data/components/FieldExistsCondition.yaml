@@ -40,6 +40,7 @@ properties:
     subtype: oneof(exists, does-not-exist)
     validations:
       - oneof(exists, does-not-exist)
+    default: exists
 templates:
   - kind: refinery_rules
     name: FieldExistsCondition
