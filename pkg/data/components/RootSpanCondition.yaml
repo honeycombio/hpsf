@@ -1,5 +1,5 @@
 kind: RootSpanCondition
-name: Check Root Span Condition
+name: Check for Root Span
 style: condition
 type: base
 status: alpha
