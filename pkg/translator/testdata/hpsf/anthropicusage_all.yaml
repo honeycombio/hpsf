@@ -1,0 +1,50 @@
+components:
+  - name: anthropic_in
+    kind: anthropicusage
+    properties:
+      - name: admin_api_key
+        value: sk-ant-admin-test-key
+      - name: collection_interval
+        value: 5m
+      - name: usage_enabled
+        value: false
+      - name: usage_bucket_width
+        value: 5m
+      - name: usage_lookback_window
+        value: 1h
+      - name: usage_group_by
+        value:
+          - model
+          - api_key_id
+      - name: cost_enabled
+        value: false
+      - name: cost_bucket_width
+        value: 7d
+      - name: cost_lookback_window
+        value: 30d
+      - name: cost_collection_interval
+        value: 1h
+      - name: cost_group_by
+        value:
+          - workspace_id
+  - name: metrics_out
+    kind: OTelHTTPExporter
+  - name: logs_out
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: anthropic_in
+      port: metrics
+      type: OTelMetrics
+    destination:
+      component: metrics_out
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: anthropic_in
+      port: logs
+      type: OTelLogs
+    destination:
+      component: logs_out
+      port: Logs
+      type: OTelLogs
