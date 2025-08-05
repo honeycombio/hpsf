@@ -1,5 +1,5 @@
 kind: RootSpanCondition
-name: Check Root Span Condition
+name: Check for Root Span
 style: condition
 type: base
 status: alpha
@@ -25,7 +25,7 @@ ports:
     type: SampleData
 properties:
   - name: HasRootSpan
-    type: boolean
+    type: bool
     default: false
     description: |
       When true, checks that the trace has a root span.
