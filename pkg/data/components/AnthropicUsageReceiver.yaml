@@ -3,26 +3,49 @@ name: Receive Anthropic Usage
 style: receiver
 logo: anthropic
 type: base
-status: alpha
+status: development
 version: v1
-summary: Collects usage and cost metrics from Anthropic API
+summary: Collects usage metrics (via metrics) and cost data (via logs) from Anthropic API
 description: |
-  Collects usage and cost metrics from the Anthropic Admin API.
-  This receiver periodically queries the Anthropic API to gather
-  usage statistics and cost information, converting them into
-  OpenTelemetry metrics.
+  The Anthropic Usage receiver collects detailed usage metrics and cost data from
+  the Anthropic Admin API, providing observability into your Claude API consumption.
+  
+  This receiver periodically queries the Anthropic API and outputs data through
+  two different channels:
+  
+  **Metrics channel**:
+  - Usage metrics: Token counts (input/output), API calls, grouped by model,
+    service tier, workspace, and API key
+  
+  **Logs channel**:
+  - Cost data: Detailed spending information sent as structured usage logs,
+    aggregated by workspace and description
+  
+  This dual-channel approach allows you to:
+  - Monitor API usage patterns and trends via metrics
+  - Track and analyze costs through usage logs
+  - Set up alerts for usage thresholds
+  - Implement chargeback or cost optimization workflows
+  
+  Note: Requires an Anthropic Admin API key with appropriate permissions to
+  access usage and billing data.
 tags:
   - category:receiver
   - service:collector
   - signal:OTelMetrics
+  - signal:OTelLogs
   - provider:anthropic
   - telemetry:metrics
+  - telemetry:logs
   - auth:admin_api_key
 ports:
   # outputs
   - name: metrics
     direction: output
     type: OTelMetrics
+  - name: logs
+    direction: output
+    type: OTelLogs
 properties:
   - name: admin_api_key
     summary: Anthropic admin API key for authentication
@@ -71,14 +94,14 @@ properties:
     type: duration
     validations:
       - noblanks
-    default: 30m
+    default: 0s
     advanced: true
   - name: usage_group_by
     summary: Fields to group usage metrics by
     description: |
-      Comma-separated list of fields to use for grouping usage metrics.
+      List of fields to use for grouping usage metrics.
       Available fields: model, service_tier, workspace_id, api_key_id
-    type: list
+    type: stringarray
     default:
       - model
       - service_tier
@@ -109,7 +132,7 @@ properties:
     type: duration
     validations:
       - noblanks
-    default: 168h
+    default: 0s
     advanced: true
   - name: cost_collection_interval
     summary: How often to check for new cost data
@@ -124,9 +147,9 @@ properties:
   - name: cost_group_by
     summary: Fields to group cost metrics by
     description: |
-      Comma-separated list of fields to use for grouping cost metrics.
+      List of fields to use for grouping cost metrics.
       Available fields: workspace_id, description
-    type: list
+    type: stringarray
     default:
       - workspace_id
       - description
@@ -137,7 +160,7 @@ templates:
     format: collector
     meta:
       componentSection: receivers
-      signalTypes: [metrics]
+      signalTypes: [metrics, logs]
       collectorComponentName: anthropicusage
     data:
       - key: "{{ .ComponentName }}.admin_api_key"
@@ -145,15 +168,15 @@ templates:
       - key: "{{ .ComponentName }}.collection_interval"
         value: "{{ .Values.collection_interval }}"
       - key: "{{ .ComponentName }}.usage.enabled"
-        value: "{{ .Values.usage_enabled }}"
+        value: "{{ .Values.usage_enabled | encodeAsBool }}"
       - key: "{{ .ComponentName }}.usage.bucket_width"
         value: "{{ .Values.usage_bucket_width }}"
       - key: "{{ .ComponentName }}.usage.lookback_window"
         value: "{{ .Values.usage_lookback_window }}"
       - key: "{{ .ComponentName }}.usage.group_by"
-        value: "{{ StringsJoin .Values.usage_group_by \",\" }}"
+        value: "{{ .Values.usage_group_by | encodeAsArray }}"
       - key: "{{ .ComponentName }}.cost.enabled"
-        value: "{{ .Values.cost_enabled }}"
+        value: "{{ .Values.cost_enabled | encodeAsBool }}"
       - key: "{{ .ComponentName }}.cost.bucket_width"
         value: "{{ .Values.cost_bucket_width }}"
       - key: "{{ .ComponentName }}.cost.lookback_window"
@@ -161,4 +184,4 @@ templates:
       - key: "{{ .ComponentName }}.cost.collection_interval"
         value: "{{ .Values.cost_collection_interval }}"
       - key: "{{ .ComponentName }}.cost.group_by"
-        value: "{{ StringsJoin .Values.cost_group_by \",\" }}"
+        value: "{{ .Values.cost_group_by | encodeAsArray }}"
