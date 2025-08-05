@@ -1,0 +1,164 @@
+kind: anthropicusage
+name: Receive Anthropic Usage
+style: receiver
+logo: anthropic
+type: base
+status: alpha
+version: v1
+summary: Collects usage and cost metrics from Anthropic API
+description: |
+  Collects usage and cost metrics from the Anthropic Admin API.
+  This receiver periodically queries the Anthropic API to gather
+  usage statistics and cost information, converting them into
+  OpenTelemetry metrics.
+tags:
+  - category:receiver
+  - service:collector
+  - signal:OTelMetrics
+  - provider:anthropic
+  - telemetry:metrics
+  - auth:admin_api_key
+ports:
+  # outputs
+  - name: metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: admin_api_key
+    summary: Anthropic admin API key for authentication
+    description: |
+      The admin API key from your Anthropic account.
+      This key is required to access usage and cost data.
+    type: string
+    validations:
+      - noblanks
+    default: ${env:ANTHROPIC_ADMIN_API_KEY}
+    required: true
+  - name: collection_interval
+    summary: How often to collect usage metrics
+    description: |
+      The interval at which the receiver will query the Anthropic API
+      for usage and cost data. Shorter intervals provide more real-time
+      data but may increase API usage.
+    type: duration
+    validations:
+      - noblanks
+    default: 1m
+    advanced: true
+  - name: usage_enabled
+    summary: Enable usage metrics collection
+    description: |
+      When enabled, collects detailed usage metrics including
+      token counts and API calls grouped by model and service tier.
+    type: bool
+    default: true
+    advanced: true
+  - name: usage_bucket_width
+    summary: Granularity for real-time usage metrics
+    description: |
+      The time bucket width for aggregating usage metrics.
+      Smaller values provide more granular data.
+    type: duration
+    validations:
+      - noblanks
+    default: 1m
+    advanced: true
+  - name: usage_lookback_window
+    summary: How far back to look for usage data on first run
+    description: |
+      On the first run, the receiver will look back this far
+      to collect historical usage data.
+    type: duration
+    validations:
+      - noblanks
+    default: 30m
+    advanced: true
+  - name: usage_group_by
+    summary: Fields to group usage metrics by
+    description: |
+      Comma-separated list of fields to use for grouping usage metrics.
+      Available fields: model, service_tier, workspace_id, api_key_id
+    type: list
+    default:
+      - model
+      - service_tier
+      - workspace_id
+      - api_key_id
+    advanced: true
+  - name: cost_enabled
+    summary: Enable cost metrics collection
+    description: |
+      When enabled, collects cost data from Anthropic billing API.
+    type: bool
+    default: true
+    advanced: true
+  - name: cost_bucket_width
+    summary: Time bucket width for cost aggregation
+    description: |
+      The granularity for cost data aggregation.
+      Daily aggregation is recommended for cost data.
+    type: duration
+    validations:
+      - noblanks
+    default: 1d
+    advanced: true
+  - name: cost_lookback_window
+    summary: How far back to look for cost data
+    description: |
+      The receiver will look back this far to collect historical cost data.
+    type: duration
+    validations:
+      - noblanks
+    default: 168h
+    advanced: true
+  - name: cost_collection_interval
+    summary: How often to check for new cost data
+    description: |
+      Cost data is typically updated less frequently than usage data,
+      so a longer interval is recommended.
+    type: duration
+    validations:
+      - noblanks
+    default: 24h
+    advanced: true
+  - name: cost_group_by
+    summary: Fields to group cost metrics by
+    description: |
+      Comma-separated list of fields to use for grouping cost metrics.
+      Available fields: workspace_id, description
+    type: list
+    default:
+      - workspace_id
+      - description
+    advanced: true
+templates:
+  - kind: collector_config
+    name: anthropicusage_receiver_collector
+    format: collector
+    meta:
+      componentSection: receivers
+      signalTypes: [metrics]
+      collectorComponentName: anthropicusage
+    data:
+      - key: "{{ .ComponentName }}.admin_api_key"
+        value: "{{ .Values.admin_api_key }}"
+      - key: "{{ .ComponentName }}.collection_interval"
+        value: "{{ .Values.collection_interval }}"
+      - key: "{{ .ComponentName }}.usage.enabled"
+        value: "{{ .Values.usage_enabled }}"
+      - key: "{{ .ComponentName }}.usage.bucket_width"
+        value: "{{ .Values.usage_bucket_width }}"
+      - key: "{{ .ComponentName }}.usage.lookback_window"
+        value: "{{ .Values.usage_lookback_window }}"
+      - key: "{{ .ComponentName }}.usage.group_by"
+        value: "{{ StringsJoin .Values.usage_group_by \",\" }}"
+      - key: "{{ .ComponentName }}.cost.enabled"
+        value: "{{ .Values.cost_enabled }}"
+      - key: "{{ .ComponentName }}.cost.bucket_width"
+        value: "{{ .Values.cost_bucket_width }}"
+      - key: "{{ .ComponentName }}.cost.lookback_window"
+        value: "{{ .Values.cost_lookback_window }}"
+      - key: "{{ .ComponentName }}.cost.collection_interval"
+        value: "{{ .Values.cost_collection_interval }}"
+      - key: "{{ .ComponentName }}.cost.group_by"
+        value: "{{ StringsJoin .Values.cost_group_by \",\" }}"
