@@ -8,11 +8,11 @@ summary: Deterministically samples a fixed fraction of traces based on trace ID.
 description: |
   A sampler that deterministically samples a fixed fraction of traces based on trace ID.
 tags:
-  - category:sampling
   - service:refinery
   - signal:HoneycombEvents
   - sampler:deterministic
   - sampler:rate
+  - category:sampler
 ports:
   # inputs
   - name: Sample

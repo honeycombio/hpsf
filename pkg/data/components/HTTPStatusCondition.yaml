@@ -12,10 +12,10 @@ description: |
   it will be sampled at the user error rate.
   All other traces will be sampled at the default rate.
 tags:
-  - category:refinery_rule
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - category:condition
 ports:
   # inputs
   - name: Match

@@ -10,11 +10,11 @@ description: |
   Imports OTLP signals from OpenTelemetry via gRPC or HTTP.
   This receiver can be configured to listen on both gRPC and HTTP, or just one.
 tags:
-  - category:receiver
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - category:input
 ports:
   # outputs
   - name: Traces

@@ -8,10 +8,10 @@ summary: Drops all traces
 description: |
   This sampler drops all traces.
 tags:
-  - category:refinery_sampler
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - category:sampler
 ports:
   # inputs
   - name: Sample

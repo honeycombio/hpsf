@@ -8,10 +8,9 @@ summary: Filter Logs by their severity level.
 description: |
   Filters logs using the `severity_number` attribute supplied on the logs.
 tags:
-  - category:processor
   - service:collector
-  - category:filter
   - signal:OTelLogs
+  - category:processor
 ports:
   # inputs
   - name: Logs

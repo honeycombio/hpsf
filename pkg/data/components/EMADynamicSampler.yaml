@@ -11,11 +11,11 @@ description: |
   quantities of the specified sampling keys. The keys should be chosen from fields
   with relatively low cardinality, such as HTTP method, status code, etc.
 tags:
-  - category:sampling
   - service:refinery
   - signal:HoneycombEvents
   - sampler:ema
   - sampler:dynamic
+  - category:sampler
 ports:
   # inputs
   - name: Sample

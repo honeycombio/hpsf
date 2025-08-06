@@ -8,10 +8,10 @@ summary: Checks if an error exists in any span of a trace
 description: |
   This checks if any span in a trace has an error.
 tags:
-  - category:refinery_rule_condition
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - category:condition
 ports:
   # inputs
   - name: Match

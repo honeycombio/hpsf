@@ -8,10 +8,10 @@ summary: Checks if a field starts with a specific prefix
 description: |
   This checks if any span in a trace has a specific field that starts with a given prefix.
 tags:
-  - category:refinery_rule_condition
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - category:condition
 ports:
   # inputs
   - name: Match

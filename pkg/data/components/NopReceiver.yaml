@@ -10,13 +10,11 @@ description: |
   A simple no-op receiver.
   This receiver does nothing. It is required for the minimal configuration.
 tags:
-  - category:receiver
-  - category:nop
-  - category:debug
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - category:input
 ports:
   # inputs
   - name: Traces

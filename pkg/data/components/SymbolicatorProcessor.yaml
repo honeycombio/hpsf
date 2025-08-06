@@ -8,9 +8,9 @@ summary: A processor that will symbolicate JavaScript stack traces using source 
 description: |
   This processor is used to symbolicate JavaScript stack traces using source maps.
 tags:
-  - category:processor
   - service:collector
   - signal:OtelTraces
+  - category:processor
 ports:
   # inputs
   - name: Traces

@@ -9,12 +9,12 @@ description: |
   Converts traces and logs to a format for advanced tail-based sampling with Refinery. Also contains some advanced
   configuration options for sending data to Refinery; most installations will not need to change these.
 tags:
-  - category:converter
   - service:refinery
   - signal:OTelTraces
   - signal:OTelLogs
   - signal:HoneycombEvents
   - vendor:Honeycomb
+  - category:startsampling
 ports:
   # inputs
   - name: Traces

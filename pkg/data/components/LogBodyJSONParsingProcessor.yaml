@@ -10,10 +10,9 @@ description: |
   the parsed JSON into individual log attributes. This processor has no
   configuration parameters and only works with logs.
 tags:
-  - category:processor
   - service:collector
-  - category:filter
   - signal:OTelLogs
+  - category:processor
 ports:
   # inputs
   - name: Logs

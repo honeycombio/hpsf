@@ -8,10 +8,10 @@ summary: Compares an integer field to a specified value
 description: |
   This checks if any span in a trace has a specific integer field that compares appropriately to the specified value.
 tags:
-  - category:refinery_rule_condition
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - category:condition
 ports:
   # inputs
   - name: Match
