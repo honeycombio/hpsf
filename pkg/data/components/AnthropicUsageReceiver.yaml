@@ -80,7 +80,7 @@ properties:
     summary: Granularity for real-time usage metrics
     description: |
       The time bucket width for aggregating usage metrics.
-      Smaller values provide more granular data.
+      Valid values are 1m, 1h, or 1d.
     type: duration
     validations:
       - noblanks
@@ -108,6 +108,35 @@ properties:
       - workspace_id
       - api_key_id
     advanced: true
+  - name: models
+    summary: Filter metrics by specific models
+    description: |
+      List of model names to filter usage metrics.
+      Leave empty to collect metrics for all models.
+    type: stringarray
+    advanced: true
+  - name: service_tiers
+    summary: Filter metrics by service tiers
+    description: |
+      List of service tiers to filter usage metrics.
+      Valid values: standard, batch, priority.
+      Leave empty to collect metrics for all tiers.
+    type: stringarray
+    advanced: true
+  - name: workspace_ids
+    summary: Filter metrics by workspace IDs
+    description: |
+      List of workspace IDs to filter usage metrics.
+      Leave empty to collect metrics for all workspaces.
+    type: stringarray
+    advanced: true
+  - name: api_key_ids
+    summary: Filter metrics by API key IDs
+    description: |
+      List of API key IDs to filter usage metrics.
+      Leave empty to collect metrics for all API keys.
+    type: stringarray
+    advanced: true
   - name: cost_enabled
     summary: Enable cost metrics collection
     description: |
@@ -132,7 +161,7 @@ properties:
     type: duration
     validations:
       - noblanks
-    default: 0s
+    default: 7d
     advanced: true
   - name: cost_collection_interval
     summary: How often to check for new cost data
@@ -175,6 +204,18 @@ templates:
         value: "{{ .Values.usage_lookback_window }}"
       - key: "{{ .ComponentName }}.usage.group_by"
         value: "{{ .Values.usage_group_by | encodeAsArray }}"
+      - key: "{{ .ComponentName }}.usage.models"
+        value: "{{ .Values.models | encodeAsArray }}"
+        condition: "{{ if .Values.models }}true{{ end }}"
+      - key: "{{ .ComponentName }}.usage.service_tiers"
+        value: "{{ .Values.service_tiers | encodeAsArray }}"
+        condition: "{{ if .Values.service_tiers }}true{{ end }}"
+      - key: "{{ .ComponentName }}.usage.workspace_ids"
+        value: "{{ .Values.workspace_ids | encodeAsArray }}"
+        condition: "{{ if .Values.workspace_ids }}true{{ end }}"
+      - key: "{{ .ComponentName }}.usage.api_key_ids"
+        value: "{{ .Values.api_key_ids | encodeAsArray }}"
+        condition: "{{ if .Values.api_key_ids }}true{{ end }}"
       - key: "{{ .ComponentName }}.cost.enabled"
         value: "{{ .Values.cost_enabled | encodeAsBool }}"
       - key: "{{ .ComponentName }}.cost.bucket_width"
