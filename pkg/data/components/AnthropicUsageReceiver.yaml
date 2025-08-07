@@ -57,11 +57,11 @@ properties:
       - noblanks
     default: ${env:ANTHROPIC_ADMIN_API_KEY}
     required: true
-  - name: collection_interval
+  - name: usage_collection_interval
     summary: How often to collect usage metrics
     description: |
       The interval at which the receiver will query the Anthropic API
-      for usage and cost data. Shorter intervals provide more real-time
+      for usage metrics. Shorter intervals provide more real-time
       data but may increase API usage.
     type: duration
     validations:
@@ -195,7 +195,7 @@ templates:
       - key: "{{ .ComponentName }}.admin_api_key"
         value: "{{ .Values.admin_api_key }}"
       - key: "{{ .ComponentName }}.collection_interval"
-        value: "{{ .Values.collection_interval }}"
+        value: "{{ .Values.usage_collection_interval }}"
       - key: "{{ .ComponentName }}.usage.enabled"
         value: "{{ .Values.usage_enabled | encodeAsBool }}"
       - key: "{{ .ComponentName }}.usage.bucket_width"

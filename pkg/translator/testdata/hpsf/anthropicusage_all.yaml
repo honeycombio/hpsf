@@ -4,7 +4,7 @@ components:
     properties:
       - name: admin_api_key
         value: sk-ant-admin-test-key
-      - name: collection_interval
+      - name: usage_collection_interval
         value: 5m
       - name: usage_enabled
         value: false
