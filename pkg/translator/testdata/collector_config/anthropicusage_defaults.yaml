@@ -9,7 +9,7 @@ receivers:
             group_by:
                 - workspace_id
                 - description
-            lookback_window: 0s
+            lookback_window: 7d
         usage:
             bucket_width: 1m
             enabled: true
