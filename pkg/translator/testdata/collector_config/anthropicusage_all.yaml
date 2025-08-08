@@ -1,7 +1,6 @@
 receivers:
     anthropicusage/anthropic_in:
         admin_api_key: sk-ant-admin-test-key
-        collection_interval: 5m
         cost:
             bucket_width: 7d
             collection_interval: 1h
@@ -11,6 +10,7 @@ receivers:
             lookback_window: 30d
         usage:
             bucket_width: 5m
+            collection_interval: 5m
             enabled: true
             group_by:
                 - model

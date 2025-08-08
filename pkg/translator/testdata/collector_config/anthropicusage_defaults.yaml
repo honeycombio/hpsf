@@ -1,7 +1,6 @@
 receivers:
     anthropicusage/anthropic_in:
         admin_api_key: ${env:ANTHROPIC_ADMIN_API_KEY}
-        collection_interval: 1m
         cost:
             bucket_width: 1d
             collection_interval: 24h
@@ -12,6 +11,7 @@ receivers:
             lookback_window: 7d
         usage:
             bucket_width: 1m
+            collection_interval: 1m
             enabled: true
             group_by:
                 - model

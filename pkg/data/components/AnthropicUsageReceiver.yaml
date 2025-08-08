@@ -194,10 +194,10 @@ templates:
     data:
       - key: "{{ .ComponentName }}.admin_api_key"
         value: "{{ .Values.admin_api_key }}"
-      - key: "{{ .ComponentName }}.collection_interval"
-        value: "{{ .Values.usage_collection_interval }}"
       - key: "{{ .ComponentName }}.usage.enabled"
         value: "{{ .Values.usage_enabled | encodeAsBool }}"
+      - key: "{{ .ComponentName }}.usage.collection_interval"
+        value: "{{ .Values.usage_collection_interval }}"
       - key: "{{ .ComponentName }}.usage.bucket_width"
         value: "{{ .Values.usage_bucket_width }}"
       - key: "{{ .ComponentName }}.usage.lookback_window"
