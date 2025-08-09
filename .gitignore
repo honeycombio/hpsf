@@ -11,3 +11,7 @@ tmp/
 # AI
 CLAUDE.md
 .claude/
+
+# executables
+/cmd/propdump/propdump
+/cmd/hpsf/hpsf
