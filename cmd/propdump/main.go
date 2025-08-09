@@ -73,7 +73,7 @@ func processOutput(opts *Options, args []string) {
 	// Set default fields if none specified
 	fields := opts.Fields
 	if len(fields) == 0 {
-		fields = []string{"name", "style", "status", "version", "summary", "description"}
+		fields = []string{"name", "style", "status", "version", "tags", "summary", "description"}
 	}
 
 	// Set default files if none specified
