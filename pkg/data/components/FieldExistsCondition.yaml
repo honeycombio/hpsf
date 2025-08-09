@@ -23,7 +23,7 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    summary:
+    summary: |
       The name of the field to check. If this field exists in any span of a trace,
       and the operator is set to "exists", the condition will match. If the field does not exist
       and the operator is set to "does-not-exist", the condition will match.

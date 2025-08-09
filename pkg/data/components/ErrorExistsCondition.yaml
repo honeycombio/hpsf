@@ -1,46 +1,46 @@
 kind: ErrorExistsCondition
-name: Check for Errors
+name: Check for Error Conditions
 style: condition
-type: base
-status: alpha
-version: v0.1.0
-summary: Checks if an error exists in any span of a trace
-description: |
-  This checks if any span in a trace has an error.
-tags:
-  - service:refinery
-  - vendor:Honeycomb
-  - type:error
-  - category:condition
+status: beta
+version: v0.2.0
+summary: Enhanced check for errors in traces
+description: |-
+    This is an improved version that checks if any span in a trace has an error and
+    provides better diagnostics.
 ports:
-  # inputs
-  - name: Match
-    direction: input
-    type: SampleData
-  # outputs
-  - name: And
-    direction: output
-    type: SampleData
+    - direction: input
+      name: Match
+      type: SampleData
+    - direction: output
+      name: And
+      type: SampleData
 properties:
-  - name: ErrorFields
-    summary:
-      The name of the field(s) to check for errors. If any of these fields exist in any span of a trace,
-      the test will pass.
-    description: |
-      The field names to check for errors.
-    type: stringarray
-    validations:
-      - nonempty
-      - noblanks
-    default: ["error"]
+    - default:
+        - error
+      description: |
+        The field names to check for errors.
+      name: ErrorFields
+      summary: |
+        The name of the field(s) to check for errors. If any of these fields exist in any span of a trace,
+        the test will pass.
+      type: stringarray
+      validations:
+        - nonempty
+        - noblanks
+tags:
+    - service:refinery
+    - vendor:Honeycomb
+    - type:error
+    - category:condition
 templates:
-  - kind: refinery_rules
-    name: ErrorExistsCondition
-    format: rules
-    meta:
-      condition: true
-    data:
-      - key: Fields
-        value: "{{ .Values.ErrorFields | encodeAsArray}}"
-      - key: Operator
-        value: exists
+    - data:
+        - key: Fields
+          value: '{{ .Values.ErrorFields | encodeAsArray}}'
+        - key: Operator
+          value: exists
+      format: rules
+      kind: refinery_rules
+      meta:
+        condition: true
+      name: ErrorExistsCondition
+type: base

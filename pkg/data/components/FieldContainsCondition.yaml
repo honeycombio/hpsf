@@ -23,7 +23,7 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    summary:
+    summary: |
       The name of the field to check. If this field exists in any span of a trace,
       and its value contains the specified substring, the condition will match.
     description: |
@@ -32,8 +32,7 @@ properties:
     validations:
       - noblanks
   - name: Substring
-    summary:
-      The substring to check against the field value.
+    summary: The substring to check against the field value.
     description: |
       The substring that the field value should contain.
     type: string

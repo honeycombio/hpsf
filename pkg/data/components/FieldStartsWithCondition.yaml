@@ -23,7 +23,7 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    summary:
+    summary: |
       The name of the field to check. If this field exists in any span of a trace,
       and its value starts with the specified prefix, the condition will match.
     description: |
@@ -32,8 +32,7 @@ properties:
     validations:
       - noblanks
   - name: Prefix
-    summary:
-      The prefix to check against the field value.
+    summary: The prefix to check against the field value.
     description: |
       The prefix that the field value should start with.
     type: string
