@@ -9,12 +9,11 @@ description: |
   This processor allows you to redact attribute values from traces, metrics, and logs based on
   specified rules.
 tags:
-  - category:processor
   - service:collector
-  - category:filter
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - category:processor
 ports:
   # inputs
   - name: Traces

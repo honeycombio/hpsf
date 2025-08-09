@@ -9,11 +9,11 @@ summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
 description: |
   Exports OpenTelemetry signals using OTLP via HTTP.
 tags:
-  - category:exporter
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - category:output
 ports:
   # inputs
   - name: Traces

@@ -9,11 +9,11 @@ summary: Sends the telemetry to AWS S3
 description: |
   Sends the telemetry S3 for long-term storage to the location you choose.
 tags:
-  - category:exporter
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - category:output
 ports:
   # inputs
   - name: Traces
