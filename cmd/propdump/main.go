@@ -38,7 +38,12 @@ The tool performs two main operations:
 • Import: Read CSV and modify components based on values
 
 Multi-line fields are unwrapped (newlines replaced with spaces) when exported to CSV.
-On import, text longer than 80 characters is word-wrapped before being written to YAML.
+On import, text longer than 100 characters is word-wrapped before being written to YAML.
+The tags array is unwrapped to a single string that looks like '[]key1:value,key2:value',
+and rewrapped on output.
+
+The 'style' field can be used to filter components by their style (e.g., 'sampler', 'processor').
+When importing, only components that match the kind specified in the CSV will be modified.
 
 The 'kind' field is always included as the first column for matching components.
 If no fields are specified, defaults to: name, style, status, version, summary, description.
