@@ -10,9 +10,9 @@ description: Exports OpenTelemetry signals using OTLP via gRPC.
 tags:
   - category:exporter
   - service:collector
-  - signal:OTelTraces
-  - signal:OTelMetrics
-  - signal:OTelLogs
+  - input:OTelLogs
+  - input:OTelMetrics
+  - input:OTelTraces
 ports:
   # inputs
   - name: Traces

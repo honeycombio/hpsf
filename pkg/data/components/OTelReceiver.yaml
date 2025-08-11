@@ -12,9 +12,9 @@ description: |-
 tags:
   - category:receiver
   - service:collector
-  - signal:OTelTraces
-  - signal:OTelMetrics
-  - signal:OTelLogs
+  - output:OTelLogs
+  - output:OTelMetrics
+  - output:OTelTraces
 ports:
   # outputs
   - name: Traces

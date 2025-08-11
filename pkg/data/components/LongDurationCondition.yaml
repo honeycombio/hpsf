@@ -9,10 +9,12 @@ description: |-
   This checks the duration of the root span in a trace. If the root span exceeds the specified
   duration, the trace will be sampled at the specified rate (default 1).
 tags:
-  - category:refinery_rule_condition
+  - category:condition
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - input:SampleData
+  - output:SampleData
 ports:
   # inputs
   - name: Match

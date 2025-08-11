@@ -10,8 +10,10 @@ tags:
   - category:processor
   - service:collector
   - category:filter
-  - signal:OTelTraces
-  - signal:OTelLogs
+  - input:OTelLogs
+  - input:OTelTraces
+  - output:OTelLogs
+  - output:OTelTraces
 ports:
   # inputs
   - name: Traces

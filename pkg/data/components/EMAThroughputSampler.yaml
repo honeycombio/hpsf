@@ -15,9 +15,10 @@ description: |-
 tags:
   - category:sampling
   - service:refinery
-  - signal:HoneycombEvents
   - sampler:ema
   - sampler:throughput
+  - input:SampleData
+  - output:HoneycombEvents
 ports:
   # inputs
   - name: Sample

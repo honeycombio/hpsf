@@ -11,6 +11,8 @@ tags:
   - service:refinery
   - vendor:Honeycomb
   - type:error
+  - input:SampleData
+  - output:HoneycombEvents
 ports:
   # inputs
   - name: Sample

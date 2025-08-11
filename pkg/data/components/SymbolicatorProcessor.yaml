@@ -9,7 +9,8 @@ description: This processor is used to symbolicate JavaScript stack traces using
 tags:
   - category:processor
   - service:collector
-  - signal:OtelTraces
+  - input:OTelTraces
+  - output:OTelTraces
 ports:
   # inputs
   - name: Traces

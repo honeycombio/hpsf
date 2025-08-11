@@ -7,11 +7,13 @@ version: v0.1.0
 summary: Checks if a field matches a regular expression
 description: This checks if any span in a trace has a specific field that matches a given regular expression.
 tags:
-  - category:refinery_rule_condition
+  - category:condition
   - service:refinery
   - vendor:Honeycomb
   - type:regex
   - type:string
+  - input:SampleData
+  - output:SampleData
 ports:
   # inputs
   - name: Match

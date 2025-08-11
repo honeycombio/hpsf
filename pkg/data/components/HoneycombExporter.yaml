@@ -12,8 +12,11 @@ description: |-
 tags:
   - category:exporter
   - service:refinery
-  - signal:HoneycombEvents
   - vendor:Honeycomb
+  - input:OTelLogs
+  - input:OTelMetrics
+  - input:HoneycombEvents
+  - input:OTelTraces
 ports:
   # inputs
   - name: Events

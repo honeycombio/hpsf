@@ -12,10 +12,10 @@ description: |-
 tags:
   - category:converter
   - service:refinery
-  - signal:OTelTraces
-  - signal:OTelLogs
-  - signal:HoneycombEvents
   - vendor:Honeycomb
+  - input:OTelLogs
+  - input:OTelTraces
+  - output:SampleData
 ports:
   # inputs
   - name: Traces

@@ -10,7 +10,8 @@ tags:
   - category:processor
   - service:collector
   - category:filter
-  - signal:OTelLogs
+  - input:OTelLogs
+  - output:OTelLogs
 ports:
   # inputs
   - name: Logs

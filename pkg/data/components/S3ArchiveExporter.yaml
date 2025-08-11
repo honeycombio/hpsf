@@ -10,9 +10,9 @@ description: Sends the telemetry S3 for long-term storage to the location you ch
 tags:
   - category:exporter
   - service:collector
-  - signal:OTelTraces
-  - signal:OTelMetrics
-  - signal:OTelLogs
+  - input:OTelLogs
+  - input:OTelMetrics
+  - input:OTelTraces
 ports:
   # inputs
   - name: Traces

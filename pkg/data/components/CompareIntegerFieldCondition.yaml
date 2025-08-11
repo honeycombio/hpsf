@@ -9,10 +9,11 @@ description: |-
   This checks if any span in a trace has a specific integer field that compares appropriately to the
   specified value.
 tags:
-  - category:refinery_rule_condition
+  - category:condition
   - service:refinery
   - vendor:Honeycomb
-  - type:error
+  - input:SampleData
+  - output:SampleData
 ports:
   # inputs
   - name: Match

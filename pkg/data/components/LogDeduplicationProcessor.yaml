@@ -11,7 +11,8 @@ description: |-
 tags:
   - category:processor
   - service:collector
-  - signal:OTelLogs
+  - input:OTelLogs
+  - output:OTelLogs
 ports:
   # inputs
   - name: Logs

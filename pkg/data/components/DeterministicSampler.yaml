@@ -9,9 +9,10 @@ description: A sampler that deterministically samples a fixed fraction of traces
 tags:
   - category:sampling
   - service:refinery
-  - signal:HoneycombEvents
   - sampler:deterministic
   - sampler:rate
+  - input:SampleData
+  - output:HoneycombEvents
 ports:
   # inputs
   - name: Sample

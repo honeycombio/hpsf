@@ -10,10 +10,12 @@ description: |-
   typically used to ensure that the trace has been fully received before being sent for a sampling
   decision.
 tags:
-  - category:refinery_rule_condition
+  - category:condition
   - service:refinery
   - vendor:Honeycomb
   - type:root_span
+  - input:SampleData
+  - output:SampleData
 ports:
   # inputs
   - name: Match
