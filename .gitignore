@@ -13,5 +13,5 @@ CLAUDE.md
 .claude/
 
 # executables
-/cmd/propdump/propdump
+/cmd/component2csv/component2csv
 /cmd/hpsf/hpsf
