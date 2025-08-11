@@ -5,8 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Deterministically samples a fixed fraction of traces based on trace ID.
-description: |
-  A sampler that deterministically samples a fixed fraction of traces based on trace ID.
+description: A sampler that deterministically samples a fixed fraction of traces based on trace ID.
 tags:
   - category:sampling
   - service:refinery

@@ -4,12 +4,14 @@ version: v0.1.0
 style: sampler
 type: base
 status: alpha
-summary: An Exponential Moving Average (EMA) sampler designed to achieve a target throughput (in events per second).
-description: |
-  This is an Exponential Moving Average (EMA) sampler designed to achieve a
-  target throughput (in events per second) based on trying to achieve representative
-  quantities of the specified sampling keys. The keys should be chosen from fields
-  with relatively low cardinality, such as HTTP method, status code, etc.
+summary: |-
+  An Exponential Moving Average (EMA) sampler designed to achieve a target throughput (in events per
+  second).
+description: |-
+  This is an Exponential Moving Average (EMA) sampler designed to achieve a target throughput (in
+  events per second) based on trying to achieve representative quantities of the specified sampling
+  keys. The keys should be chosen from fields with relatively low cardinality, such as HTTP method,
+  status code, etc.
 tags:
   - category:sampling
   - service:refinery

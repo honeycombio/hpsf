@@ -6,9 +6,7 @@ logo: opentelemetry
 type: base
 status: development
 summary: A no-op "receiver" that does nothing, but might be useful for testing.
-description: |
-  A simple no-op receiver.
-  This receiver does nothing. It is required for the minimal configuration.
+description: A simple no-op receiver. This receiver does nothing. It is required for the minimal configuration.
 tags:
   - category:receiver
   - category:nop

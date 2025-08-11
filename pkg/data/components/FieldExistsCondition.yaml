@@ -5,8 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field exists or does not exist in a trace
-description: |
-  This checks if any span in a trace has a specific field that exists or does not exist.
+description: This checks if any span in a trace has a specific field that exists or does not exist.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -23,10 +22,7 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    summary:
-      The name of the field to check. If this field exists in any span of a trace,
-      and the operator is set to "exists", the condition will match. If the field does not exist
-      and the operator is set to "does-not-exist", the condition will match.
+    summary: The name of the field to check. If this field exists in any span of a trace, and the operator is set to "exists", the condition will match. If the field does not exist and the operator is set to "does-not-exist", the condition will match.
     description: |
       The field name to check for existence.
     type: string

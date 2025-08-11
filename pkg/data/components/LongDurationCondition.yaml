@@ -5,10 +5,9 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Makes a decision based on root span duration
-description: |
-  This checks the duration of the root span in a trace.
-  If the root span exceeds the specified duration, the trace will be sampled
-  at the specified rate (default 1).
+description: |-
+  This checks the duration of the root span in a trace. If the root span exceeds the specified
+  duration, the trace will be sampled at the specified rate (default 1).
 tags:
   - category:refinery_rule_condition
   - service:refinery
