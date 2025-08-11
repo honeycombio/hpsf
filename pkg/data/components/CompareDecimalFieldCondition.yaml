@@ -5,8 +5,9 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Compares a numeric field to a specified value
-description: |
-  This checks if any span in a trace has a specific numeric field that compares appropriately to the specified value.
+description: |-
+  This checks if any span in a trace has a specific numeric field that compares appropriately to the
+  specified value.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -23,9 +24,7 @@ ports:
     type: SampleData
 properties:
   - name: Fields
-    summary:
-      The name(s) of the field(s) to check. If any of these fields exist in any span of a trace,
-      and its value matches the specified numeric value using the operator, the condition will match.
+    summary: The name(s) of the field(s) to check. If any of these fields exist in any span of a trace, and its value matches the specified numeric value using the operator, the condition will match.
     description: |
       The field names to check for the numeric value.
     type: stringarray

@@ -5,8 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if an error exists in any span of a trace
-description: |
-  This checks if any span in a trace has an error.
+description: This checks if any span in a trace has an error.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -23,9 +22,7 @@ ports:
     type: SampleData
 properties:
   - name: ErrorFields
-    summary:
-      The name of the field(s) to check for errors. If any of these fields exist in any span of a trace,
-      the test will pass.
+    summary: The name of the field(s) to check for errors. If any of these fields exist in any span of a trace, the test will pass.
     description: |
       The field names to check for errors.
     type: stringarray

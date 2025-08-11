@@ -6,9 +6,9 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both.
-description: |
-  Imports OTLP signals from OpenTelemetry via gRPC or HTTP.
-  This receiver can be configured to listen on both gRPC and HTTP, or just one.
+description: |-
+  Imports OTLP signals from OpenTelemetry via gRPC or HTTP. This receiver can be configured to listen
+  on both gRPC and HTTP, or just one.
 tags:
   - category:receiver
   - service:collector
@@ -74,4 +74,4 @@ templates:
       - key: "{{ .ComponentName }}.protocols.http.endpoint"
         value: "{{ .Values.Host }}:{{ .Values.HTTPPort }}"
         suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
-      # service is not part of the template, it's generated automatically by the collectorConfig
+    # service is not part of the template, it's generated automatically by the collectorConfig

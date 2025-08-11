@@ -5,8 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field starts with a specific prefix
-description: |
-  This checks if any span in a trace has a specific field that starts with a given prefix.
+description: This checks if any span in a trace has a specific field that starts with a given prefix.
 tags:
   - category:refinery_rule_condition
   - service:refinery
@@ -23,17 +22,14 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    summary:
-      The name of the field to check. If this field exists in any span of a trace,
-      and its value starts with the specified prefix, the condition will match.
+    summary: The name of the field to check. If this field exists in any span of a trace, and its value starts with the specified prefix, the condition will match.
     description: |
       The field name to check for the prefix.
     type: string
     validations:
       - noblanks
   - name: Prefix
-    summary:
-      The prefix to check against the field value.
+    summary: The prefix to check against the field value.
     description: |
       The prefix that the field value should start with.
     type: string

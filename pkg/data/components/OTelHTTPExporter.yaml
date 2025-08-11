@@ -6,8 +6,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
-description: |
-  Exports OpenTelemetry signals using OTLP via HTTP.
+description: Exports OpenTelemetry signals using OTLP via HTTP.
 tags:
   - category:exporter
   - service:collector
@@ -121,4 +120,4 @@ templates:
         value: "{{ .Values.BatchSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
         value: "{{ .Values.BatchSize | encodeAsInt }}"
-      # service is not part of the template, it's generated automatically by the collectorConfig
+    # service is not part of the template, it's generated automatically by the collectorConfig
