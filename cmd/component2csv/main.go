@@ -50,9 +50,9 @@ If no fields are specified, defaults to: name, style, status, version, summary, 
 If no files are specified, processes all *.yaml files in the current directory.
 
 Examples:
-  propdump --export components.csv --style condition
-  propdump --import components.csv
-  propdump --export - --field name --field status | head -10`
+  component2csv --export components.csv --style condition
+  component2csv --import components.csv
+  component2csv --export - --field name --field status | head -10`
 
 	args, err := parser.Parse()
 	if err != nil {
