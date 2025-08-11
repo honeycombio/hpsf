@@ -128,12 +128,6 @@ func main() {
 			log.Fatalf("error writing output file: %v", err)
 		}
 	case "validate":
-		// validate the input file
-		_, err := validator.EnsureYAML(inputData)
-		if err != nil {
-			log.Fatalf("error validating input file: %v", err)
-		}
-
 		err = hpsf.EnsureHPSFYAML(string(inputData))
 		if err != nil {
 			log.Fatalf("input file is not hpsf: %v", err)
