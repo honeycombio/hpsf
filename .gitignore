@@ -11,3 +11,7 @@ tmp/
 # AI
 CLAUDE.md
 .claude/
+
+# executables
+/cmd/component2csv/component2csv
+/cmd/hpsf/hpsf

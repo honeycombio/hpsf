@@ -184,3 +184,27 @@ regenerate_translator_testdata:
 .PHONY: lint
 lint:
 	go tool -modfile=.github/tools.mod golangci-lint run
+
+.PHONY: bulk_export_components
+bulk_export_components:
+	@echo
+	@echo "+++ exporting components"
+	@echo
+	go run ./cmd/component2csv --export=export.csv pkg/data/components/*.yaml
+
+.PHONY: bulk_import_components
+bulk_import_components:
+	@echo
+	@echo "+++ importing components"
+	@echo
+	go run ./cmd/component2csv --import=export.csv pkg/data/components/*.yaml
+
+.PHONY: rewrite_components
+rewrite_components:
+	@echo
+	@echo "+++ rewriting components"
+	@echo
+	go run ./cmd/component2csv --export=rewrite.csv pkg/data/components/*.yaml
+	go run ./cmd/component2csv --import=rewrite.csv pkg/data/components/*.yaml
+	rm -f rewrite.csv
+
