@@ -397,8 +397,7 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	}
 
 	// if we don't pass basic validation, we can't continue
-	err := h.Validate()
-	if err != nil {
+	if err := h.Validate(); err != nil {
 		return err
 	}
 
