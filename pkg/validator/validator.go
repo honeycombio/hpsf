@@ -2,8 +2,6 @@ package validator
 
 import (
 	"errors"
-
-	y "gopkg.in/yaml.v3"
 )
 
 // Result is the value returned by the Validate method; it conforms to the error interface
@@ -83,18 +81,4 @@ func (e Result) ErrOrNil() error {
 // errors.
 type Validator interface {
 	Validate() error
-}
-
-// EnsureYAML is a brain-dead validator that just tries to unmarshal the input into appropriate forms
-func EnsureYAML(input []byte) (map[string]any, error) {
-	// validate the input is parseable YAML (parses into a map)
-
-	// try unmarshaling into map
-	var h map[string]any
-	err := y.Unmarshal(input, &h)
-	if err != nil {
-		return nil, err
-	}
-
-	return h, nil
 }

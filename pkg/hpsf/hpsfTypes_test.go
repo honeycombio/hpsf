@@ -67,7 +67,7 @@ connections:
       port: Traces
       type: OTelTraces`)
 
-	_, err := validator.EnsureYAML(inputData)
+	_, err := unmarshalYAML(inputData)
 	require.NoError(t, err)
 
 	var h HPSF
@@ -108,7 +108,7 @@ connections:
       port: Traces
       type: OTelTraces`)
 
-	_, err := validator.EnsureYAML(inputData)
+	_, err := unmarshalYAML(inputData)
 	require.NoError(t, err)
 
 	var h HPSF

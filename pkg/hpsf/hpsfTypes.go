@@ -792,9 +792,22 @@ func getValidKeys(p any) []string {
 	return keys
 }
 
+// unmarshalYAML is a brain-dead validator that just tries to unmarshal the input into a map
+// to validate the input is parseable YAML
+func unmarshalYAML(input []byte) (map[string]any, error) {
+	// try unmarshaling into map
+	var h map[string]any
+	err := y.Unmarshal(input, &h)
+	if err != nil {
+		return nil, err
+	}
+
+	return h, nil
+}
+
 // EnsureHPSFYAML returns an error if the input is not HPSF yaml or invalid HPSF
 func EnsureHPSFYAML(input string) error {
-	m, err := validator.EnsureYAML([]byte(input))
+	m, err := unmarshalYAML([]byte(input))
 	if err != nil {
 		return err
 	}
