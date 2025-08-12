@@ -1,0 +1,216 @@
+kind: anthropicusage
+name: Receive Anthropic Usage
+style: receiver
+logo: anthropic
+type: base
+status: development
+version: v1
+summary: Collects usage metrics (via metrics) and cost data (via logs) from Anthropic API
+description: |
+  The Anthropic Usage receiver collects detailed usage metrics and cost data from
+  the Anthropic Admin API, providing observability into your Claude API consumption.
+  
+  This receiver periodically queries the Anthropic API and outputs data through
+  two different channels:
+  
+  **Metrics channel**:
+  - Usage metrics: Token counts (input/output), API calls, grouped by model,
+    service tier, workspace, and API key
+  
+  **Logs channel**:
+  - Cost data: Detailed spending information sent as structured usage logs,
+    aggregated by workspace and description
+  
+  This dual-channel approach allows you to:
+  - Monitor API usage patterns and trends via metrics
+  - Track and analyze costs through usage logs
+  - Set up alerts for usage thresholds
+  - Implement chargeback or cost optimization workflows
+  
+  Note: Requires an Anthropic Admin API key with appropriate permissions to
+  access usage and billing data.
+tags:
+  - category:receiver
+  - service:collector
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - provider:anthropic
+  - telemetry:metrics
+  - telemetry:logs
+  - auth:admin_api_key
+ports:
+  # outputs
+  - name: metrics
+    direction: output
+    type: OTelMetrics
+  - name: logs
+    direction: output
+    type: OTelLogs
+properties:
+  - name: admin_api_key
+    summary: Anthropic admin API key for authentication
+    description: |
+      The admin API key from your Anthropic account.
+      This key is required to access usage and cost data.
+    type: string
+    validations:
+      - noblanks
+    default: ${env:ANTHROPIC_ADMIN_API_KEY}
+    required: true
+  - name: usage_collection_interval
+    summary: How often to collect usage metrics
+    description: |
+      The interval at which the receiver will query the Anthropic API
+      for usage metrics. Shorter intervals provide more real-time
+      data but may increase API usage.
+    type: duration
+    validations:
+      - noblanks
+    default: 1m
+    advanced: true
+  - name: usage_enabled
+    summary: Enable usage metrics collection
+    description: |
+      When enabled, collects detailed usage metrics including
+      token counts and API calls grouped by model and service tier.
+    type: bool
+    default: true
+    advanced: true
+  - name: usage_bucket_width
+    summary: Granularity for real-time usage metrics
+    description: |
+      The time bucket width for aggregating usage metrics.
+      Valid values are 1m, 1h, or 1d.
+    type: duration
+    validations:
+      - noblanks
+    default: 1m
+    advanced: true
+  - name: usage_lookback_window
+    summary: How far back to look for usage data on first run
+    description: |
+      On the first run, the receiver will look back this far
+      to collect historical usage data.
+    type: duration
+    validations:
+      - noblanks
+    default: 0s
+    advanced: true
+  - name: usage_group_by
+    summary: Fields to group usage metrics by
+    description: |
+      List of fields to use for grouping usage metrics.
+      Available fields: model, service_tier, workspace_id, api_key_id
+    type: stringarray
+    default:
+      - model
+      - service_tier
+      - workspace_id
+      - api_key_id
+    advanced: true
+  - name: models
+    summary: Filter metrics by specific models
+    description: |
+      List of model names to filter usage metrics.
+      Leave empty to collect metrics for all models.
+    type: stringarray
+    advanced: true
+  - name: service_tiers
+    summary: Filter metrics by service tiers
+    description: |
+      List of service tiers to filter usage metrics.
+      Valid values: standard, batch, priority.
+      Leave empty to collect metrics for all tiers.
+    type: stringarray
+    advanced: true
+  - name: workspace_ids
+    summary: Filter metrics by workspace IDs
+    description: |
+      List of workspace IDs to filter usage metrics.
+      Leave empty to collect metrics for all workspaces.
+    type: stringarray
+    advanced: true
+  - name: api_key_ids
+    summary: Filter metrics by API key IDs
+    description: |
+      List of API key IDs to filter usage metrics.
+      Leave empty to collect metrics for all API keys.
+    type: stringarray
+    advanced: true
+  - name: cost_enabled
+    summary: Enable cost metrics collection
+    description: |
+      When enabled, collects cost data from Anthropic billing API.
+    type: bool
+    default: true
+    advanced: true
+  - name: cost_bucket_width
+    summary: Time bucket width for cost aggregation
+    description: |
+      The granularity for cost data aggregation.
+      Daily aggregation is recommended for cost data.
+    type: duration
+    validations:
+      - noblanks
+    default: 1d
+    advanced: true
+  - name: cost_lookback_window
+    summary: How far back to look for cost data
+    description: |
+      The receiver will look back this far to collect historical cost data.
+    type: duration
+    validations:
+      - noblanks
+    default: 7d
+    advanced: true
+  - name: cost_collection_interval
+    summary: How often to check for new cost data
+    description: |
+      Cost data is typically updated less frequently than usage data,
+      so a longer interval is recommended.
+    type: duration
+    validations:
+      - noblanks
+    default: 24h
+    advanced: true
+  - name: cost_group_by
+    summary: Fields to group cost metrics by
+    description: |
+      List of fields to use for grouping cost metrics.
+      Available fields: workspace_id, description
+    type: stringarray
+    default:
+      - workspace_id
+      - description
+    advanced: true
+templates:
+  - kind: collector_config
+    name: anthropicusage_receiver_collector
+    format: collector
+    meta:
+      componentSection: receivers
+      signalTypes: [metrics, logs]
+      collectorComponentName: anthropicusage
+    data:
+      - key: "{{ .ComponentName }}.admin_api_key"
+        value: "{{ .Values.admin_api_key }}"
+      - key: "{{ .ComponentName }}.usage.enabled"
+        value: "{{ .Values.usage_enabled | encodeAsBool }}"
+      - key: "{{ .ComponentName }}.usage.collection_interval"
+        value: "{{ .Values.usage_collection_interval }}"
+      - key: "{{ .ComponentName }}.usage.bucket_width"
+        value: "{{ .Values.usage_bucket_width }}"
+      - key: "{{ .ComponentName }}.usage.lookback_window"
+        value: "{{ .Values.usage_lookback_window }}"
+      - key: "{{ .ComponentName }}.usage.group_by"
+        value: "{{ .Values.usage_group_by | encodeAsArray }}"
+      - key: "{{ .ComponentName }}.cost.enabled"
+        value: "{{ .Values.cost_enabled | encodeAsBool }}"
+      - key: "{{ .ComponentName }}.cost.bucket_width"
+        value: "{{ .Values.cost_bucket_width }}"
+      - key: "{{ .ComponentName }}.cost.lookback_window"
+        value: "{{ .Values.cost_lookback_window }}"
+      - key: "{{ .ComponentName }}.cost.collection_interval"
+        value: "{{ .Values.cost_collection_interval }}"
+      - key: "{{ .ComponentName }}.cost.group_by"
+        value: "{{ .Values.cost_group_by | encodeAsArray }}"
