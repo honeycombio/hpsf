@@ -1,8 +1,8 @@
 kind: ErrorExistsCondition
 name: Check for Error Conditions
 style: condition
-status: beta
-version: v0.2.0
+status: alpha
+version: v0.1.0
 summary: Enhanced check for errors in traces
 description: |-
     This is an improved version that checks if any span in a trace has an error and
