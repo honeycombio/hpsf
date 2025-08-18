@@ -9,7 +9,6 @@ description: Filters logs using the `severity_number` attribute supplied on the 
 tags:
   - category:processor
   - service:collector
-  - category:filter
   - signal:OTelLogs
 ports:
   # inputs

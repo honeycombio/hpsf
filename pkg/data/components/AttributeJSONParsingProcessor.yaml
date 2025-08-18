@@ -9,7 +9,6 @@ description: Takes any attribute from a log or span and parses it as JSON into i
 tags:
   - category:processor
   - service:collector
-  - category:filter
   - signal:OTelTraces
   - signal:OTelLogs
 ports:

@@ -8,7 +8,7 @@ version: v0.1.0
 summary: Sends the telemetry to AWS S3
 description: Sends the telemetry S3 for long-term storage to the location you choose.
 tags:
-  - category:exporter
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

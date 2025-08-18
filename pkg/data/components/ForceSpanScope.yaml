@@ -12,7 +12,7 @@ description: |-
   "span" rather than "trace", so that the rule will only match when all conditions are true for the
   same span.
 tags:
-  - category:refinery_rule_condition
+  - category:condition
   - service:refinery
   - vendor:Honeycomb
   - type:error

@@ -10,7 +10,7 @@ description: |-
   This component sends traces, logs, metrics, and Honeycomb-formatted events to the Honeycomb's data
   store for real-time analysis.
 tags:
-  - category:exporter
+  - category:output
   - service:refinery
   - signal:HoneycombEvents
   - vendor:Honeycomb

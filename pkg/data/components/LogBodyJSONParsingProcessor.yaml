@@ -11,7 +11,6 @@ description: |-
 tags:
   - category:processor
   - service:collector
-  - category:filter
   - signal:OTelLogs
 ports:
   # inputs

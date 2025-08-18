@@ -9,7 +9,6 @@ description: Filters traces, metrics, and logs based on rules defined in the con
 tags:
   - category:processor
   - service:collector
-  - category:filter
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs

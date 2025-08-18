@@ -10,7 +10,7 @@ description: |-
   some advanced configuration options for sending data to Refinery; most installations will not need
   to change these.
 tags:
-  - category:converter
+  - category:startsampling
   - service:refinery
   - signal:OTelTraces
   - signal:OTelLogs

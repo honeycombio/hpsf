@@ -13,7 +13,7 @@ description: |-
   keys. The keys should be chosen from fields with relatively low cardinality, such as HTTP method,
   status code, etc.
 tags:
-  - category:sampling
+  - category:sampler
   - service:refinery
   - signal:HoneycombEvents
   - sampler:ema
