@@ -7,7 +7,7 @@ version: v0.1.0
 summary: Drops all traces
 description: This sampler drops all traces.
 tags:
-  - category:refinery_sampler
+  - category:sampler
   - service:refinery
   - vendor:Honeycomb
   - type:error

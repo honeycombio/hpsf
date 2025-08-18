@@ -8,7 +8,7 @@ version: v0.1.0
 summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
 description: Exports OpenTelemetry signals using OTLP via HTTP.
 tags:
-  - category:exporter
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

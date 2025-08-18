@@ -10,8 +10,7 @@ description: |-
   Exports signal data from a pipeline to stdout. This is useful for debugging, but only if you have
   access to the stdout stream in your environment. This component is not intended for production use.
 tags:
-  - category:exporter
-  - category:debug
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

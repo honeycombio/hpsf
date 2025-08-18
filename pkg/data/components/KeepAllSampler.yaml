@@ -7,7 +7,7 @@ version: v0.1.0
 summary: Keeps all traces that reach this sampler.
 description: This sampler keeps (samples) all traces, setting SampleRate to 1.
 tags:
-  - category:refinery_sampler
+  - category:sampler
   - service:refinery
   - vendor:Honeycomb
   - type:error
