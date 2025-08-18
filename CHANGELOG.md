@@ -1,5 +1,40 @@
 # hpsf library changelog
 
+## 0.15.0 2025-08-18
+
+New components, new organization, many improvements to validation, better processes.
+
+### Features
+- feat: Add FieldExistsCondition (#200) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: Add FieldStartsWith and FieldContains conditions (#194) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: add library_version field, add FromYAML func (#195) | [Alex Boten](https://github.com/Alex Boten)
+- feat: add tool to help with bulk-editing components (#204) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: add type-specific comparison and scope to conditions (#197) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: add validation for component version (#184) | [Alex Boten](https://github.com/Alex Boten)
+- feat: Implement condition for checking existence of root span (#196) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: Regexp Component (#198) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: Reorganize category tags for updated UI. (#208) | [Kent Quirk](https://github.com/Kent Quirk)
+- feat: split up hpsftypes into separate package (#190) | [Alex Boten](https://github.com/Alex Boten)
+- feat: Update SamplingSequencer to support 12 rules (#186) | [Kent Quirk](https://github.com/Kent Quirk)
+
+### Fixes
+- fix: Better sampler validation (conforms to new sampler design). (#182) | [Kent Quirk](https://github.com/Kent Quirk)
+- fix: RootSpanCondition property type (#201) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: add smoke tests to CI (#185) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- maint: run all the files through the reformatter (#205) | [Kent Quirk](https://github.com/Kent Quirk)
+- maint: update smoke tests to test components (#183) | [Tyler Helmuth](https://github.com/Tyler Helmuth)
+- refactor: remove EnsureYAML public func (#207) | [Alex Boten](https://github.com/Alex Boten)
+
+### maintenance
+- chore: accidentally bumped up go version in previous commit (#191) | [Alex Boten](https://github.com/Alex Boten)
+- chore: add make lint target (#188) | [Alex Boten](https://github.com/Alex Boten)
+- chore: add omitempty to certain fields (#199) | [Alex Boten](https://github.com/Alex Boten)
+- chore: clean up following linter suggestions (#187) | [Alex Boten](https://github.com/Alex Boten)
+- chore: minor refactor (#189) | [Alex Boten](https://github.com/Alex Boten)
+- chore: remove deprecated consts (#192) | [Alex Boten](https://github.com/Alex Boten)
+- chore: remove unnecessary call to func (#206) | [Alex Boten](https://github.com/Alex Boten)
+- chore: remove unused function LoadEmbeddedDefaultTemplate (#193) | [Alex Boten](https://github.com/Alex Boten)
+
 ## 0.14.0 2025-07-21
 
 ### Fixes
