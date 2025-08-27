@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseAttributeAsJSONDefaults(t *testing.T) {
+func TestAttributeJSONParsingProcessorDefaults(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -40,7 +40,7 @@ func TestParseAttributeAsJSONDefaults(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestParseAttributeAsJSONCustom(t *testing.T) {
+func TestAttributeJSONParsingProcessorCustom(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_custom.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -56,7 +56,7 @@ func TestParseAttributeAsJSONCustom(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestParseAttributeAsJSONSpanSignal(t *testing.T) {
+func TestAttributeJSONParsingProcessorSpanSignal(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_span.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)

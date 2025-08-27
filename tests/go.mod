@@ -1,9 +1,10 @@
 module github.com/honeycombio/hpsf/tests
 
-go 1.24.1
+go 1.24.0
 
 require (
 	github.com/honeycombio/hpsf v0.6.1
+	github.com/honeycombio/hpsf/pkg/hpsftypes v0.0.0-20250729165849-4881e28cb2c5
 	github.com/honeycombio/opentelemetry-collector-configs/honeycombextension v0.0.0-20250529172854-29e92f8bd7cb
 	github.com/honeycombio/opentelemetry-collector-configs/usageprocessor v0.1.0
 	github.com/honeycombio/refinery v1.21.1-0.20250604165426-312ddc7c2c94
@@ -218,3 +219,5 @@ require (
 )
 
 replace github.com/honeycombio/hpsf => ../
+
+replace github.com/honeycombio/hpsf/pkg/hpsftypes => ../pkg/hpsftypes

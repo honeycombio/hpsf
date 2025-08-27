@@ -1,0 +1,50 @@
+kind: LongDurationCondition
+name: Check Duration
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Makes a decision based on root span duration
+description: |-
+  This checks the duration of the root span in a trace. If the root span exceeds the specified
+  duration, the trace will be sampled at the specified rate (default 1).
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Duration
+    summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
+    description: |
+      The duration (in milliseconds) that the root span must exceed for the trace
+      to be sampled. If the root span's duration is greater than this value, the
+      trace will be sampled at the specified rate.
+    type: int
+    default: 1000
+    validations:
+      - positive
+templates:
+  - kind: refinery_rules
+    name: LongDurationCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Field
+        value: duration_ms
+      - key: Operator
+        value: ">="
+      - key: Value
+        value: "{{ .Values.Duration | encodeAsInt }}"
+      - key: Datatype
+        value: int

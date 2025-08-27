@@ -1,0 +1,42 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    transform/json_parser_1:
+        error_mode: ignore
+        trace_statements:
+            - conditions:
+                - span.attributes["json_data"] != nil and HasPrefix(span.attributes["json_data"], "{")
+              statements:
+                - set(span.cache, ParseJSON(span.attributes["json_data"]))
+                - flatten(span.cache, "")
+                - merge_maps(span.attributes, span.cache, "upsert")
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/88b-e5a:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/json_parser_1]
+            exporters: [otlphttp/otlp_out]
+        traces/4ed-e32:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/json_parser_1]
+            exporters: [otlphttp/otlp_out]

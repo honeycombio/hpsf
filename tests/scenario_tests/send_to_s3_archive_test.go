@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSendToS3Archive(t *testing.T) {
+func TestS3ArchiveExporter(t *testing.T) {
 	// Test the HPSF parsing and template generation using typed configuration
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/send_to_s3_archive.yaml")
 

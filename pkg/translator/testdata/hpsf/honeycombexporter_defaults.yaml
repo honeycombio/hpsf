@@ -2,7 +2,9 @@ components:
   - name: otlp
     kind: OTelReceiver
   - name: refinery
-    kind: StartSampling
+    kind: SamplingSequencer
+  - name: sampler
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
 connections:
@@ -17,8 +19,16 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler
       port: Events
-      type: HoneycombEvents
+      type: Honeycomb
     destination:
       component: honeycomb
       port: Events

@@ -148,6 +148,8 @@ github.com/hexops/gotextdiff v1.0.3 h1:gitA9+qJrrTCsiCl7+kh75nPqQt1cx4ZkudSTLoUq
 github.com/hexops/gotextdiff v1.0.3/go.mod h1:pSWU5MAI3yDq+fZBTazCSJysOMbxWL1BSow5/V2vxeg=
 github.com/honeycombio/dynsampler-go v0.6.0 h1:fs4mrfeFGU5V+ClwpblFzbWqn4Apb+lKlE7Ja5zL22I=
 github.com/honeycombio/dynsampler-go v0.6.0/go.mod h1:pJqWFeoMN3syX74PEvlusieyGBbtIBjmTVjLc3thmK4=
+github.com/honeycombio/hpsf/pkg/hpsftypes v0.0.0-20250729165849-4881e28cb2c5 h1:i9F4nOrImOz7wWtGzkcERygpoGXXPLHl3P44R1Yl3xE=
+github.com/honeycombio/hpsf/pkg/hpsftypes v0.0.0-20250729165849-4881e28cb2c5/go.mod h1:AyIo3V8Ci5sO1UUdwuPhpawZh956nSkKVRFjnVVUpNo=
 github.com/honeycombio/husky v0.36.0 h1:IxVSFE4p+AHm/ip3qPNbTV1ZGf/0VQxUab8ah+nWVlw=
 github.com/honeycombio/husky v0.36.0/go.mod h1:glSzr4Mq5tMkcUZRRg9s+YUshPy8kRO+2F17cKazI98=
 github.com/honeycombio/libhoney-go v1.25.0 h1:r33tlX90HtafK0bgRcjfNnsrJ9ZMTKuI/1DYaOFCc1o=

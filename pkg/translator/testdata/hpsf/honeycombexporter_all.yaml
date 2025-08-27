@@ -2,22 +2,20 @@ components:
   - name: otlp
     kind: OTelReceiver
   - name: refinery
-    kind: StartSampling
+    kind: SamplingSequencer
+  - name: sampler
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
     properties:
       - name: APIEndpoint
-        value: https://alternative.honeycomb.io
+        value: alternative.honeycomb.io
       - name: APIPort
         value: 8080
       - name: APIKey
         value: abcdef1234567890abcdef1 # a validly-formatted key
       - name: Mode
         value: none
-      - name: Host
-        value: myhost.com
-      - name: Port
-        value: 1234
       - name: MetricsDataset
         value: custom
       - name: Insecure
@@ -40,8 +38,16 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
-      port: Events
+      port: Rule 1
       type: Honeycomb
+    destination:
+      component: sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler
+      port: Events
+      type: HoneycombEvents
     destination:
       component: honeycomb
       port: Events

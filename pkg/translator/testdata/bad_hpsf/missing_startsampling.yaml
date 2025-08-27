@@ -1,0 +1,14 @@
+components:
+  - name: sampler
+    kind: DeterministicSampler
+  - name: honeycomb_out
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: sampler
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb_out
+      port: Events
+      type: HoneycombEvents
