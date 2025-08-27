@@ -18,6 +18,8 @@ tags:
   - signal:HoneycombEvents
   - sampler:ema
   - sampler:throughput
+  - input:SampleData
+  - output:Events
 ports:
   # inputs
   - name: Sample
