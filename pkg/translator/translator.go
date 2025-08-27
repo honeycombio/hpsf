@@ -316,7 +316,7 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 		}
 		if !hasSamplerOrDropper {
 			err := hpsf.NewError("if there is a StartSampling component, at least one sampler or dropper is required").
-				WithComponent("StartSampling")
+				WithComponent(startSamplingComp)
 			result.Add(err)
 		}
 	}
