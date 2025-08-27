@@ -33,9 +33,9 @@ description: |
   have access to the stdout stream in your environment. This component is not intended for production use.
 # tags are to help the user find and organize the component
 # in the sidebar. follow the key:value format.
+# There should be only one category tag (at least for now).
 tags:
-  - category:exporter
-  - category:debug
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics

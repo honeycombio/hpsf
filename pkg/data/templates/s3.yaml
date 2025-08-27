@@ -10,7 +10,7 @@ components:
   - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
-    kind: StartSampling
+    kind: SamplingSequencer
   - name: OTel HTTP Exporter_1
     kind: OTelHTTPExporter
     properties:
@@ -21,16 +21,16 @@ components:
     kind: HoneycombExporter
     properties:
       - name: APIKey
-        value: ${HONEYCOMB_EXPORTER_APIKEY}
+        value: ${HTP_EXPORTER_APIKEY}
   - name: EMA Throughput Sampler_1
-    kind: EMAThroughput
+    kind: EMAThroughputSampler
     properties:
       - name: FieldList
         value:
           - http.request.method
           - http.response.status_code
   - name: S3 Exporter_1
-    kind: SendToS3Archive
+    kind: S3ArchiveExporter
 connections:
   - source:
       component: OTel Receiver_1

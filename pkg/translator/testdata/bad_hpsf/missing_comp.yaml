@@ -1,0 +1,23 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  # missing transformer in the middle
+  - name: otlp_out
+    kind: OTelGRPCExporter
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: transformer
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: transformer
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

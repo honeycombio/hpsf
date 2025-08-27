@@ -2,14 +2,14 @@ receivers:
     otlp/otlp:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
 exporters:
     otlphttp/honeycomb:
-        endpoint: https://alternative.honeycomb.io:8080
+        endpoint: http://alternative.honeycomb.io:8080
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: abcdef1234567890abcdef1
@@ -24,7 +24,7 @@ exporters:
         tls:
             insecure: true
     otlphttp/refinery:
-        endpoint: http://${STRAWS_REFINERY_SERVICE}:80
+        endpoint: http://${HTP_REFINERY_SERVICE}:80
         sending_queue:
             batch:
                 flush_timeout: 200ms

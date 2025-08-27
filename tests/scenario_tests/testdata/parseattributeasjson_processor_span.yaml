@@ -10,7 +10,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: json_parser_1
-    kind: ParseAttributeAsJSON
+    kind: AttributeJSONParsingProcessor
     properties:
       - name: Attribute
         value: "json_data"

@@ -1,15 +1,16 @@
 kind: HoneycombExporter
-name: Honeycomb Exporter
+name: Send to Honeycomb
 style: exporter
 logo: honeycomb
 type: base
 status: alpha
 version: v0.1.0
-summary: Sends traces to Honeycomb in Honeycomb's event format.
-description: |
-  This component exports traces to Honeycomb in Honeycomb's event format.
+summary: Sends telemetry to Honeycomb's data store for real-time analysis.
+description: |-
+  This component sends traces, logs, metrics, and Honeycomb-formatted events to the Honeycomb's data
+  store for real-time analysis.
 tags:
-  - category:exporter
+  - category:output
   - service:refinery
   - signal:HoneycombEvents
   - vendor:Honeycomb
@@ -35,7 +36,7 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${HONEYCOMB_EXPORTER_APIKEY}
+    default: ${HTP_EXPORTER_APIKEY}
     advanced: true
   - name: MetricsDataset
     summary: The Honeycomb dataset metrics will be sent to.
@@ -48,15 +49,15 @@ properties:
     default: metrics
     advanced: true
   - name: APIEndpoint
-    summary: The Endpoint URL of the Honeycomb API
+    summary: The hostname or IP of the Honeycomb API endpoint.
     description: |
-      The Endpoint URL of the Honeycomb API.
-      This is normally https://api.honeycomb.io, but can be overridden.
+      The hostname or IP of the Honeycomb API endpoint
+      This is normally api.honeycomb.io, but can be overridden.
     type: string
     validations:
       - noblanks
-      - url
-    default: https://api.honeycomb.io
+      - hostorip
+    default: api.honeycomb.io
     advanced: true
   - name: APIPort
     summary: The port on which to send traffic.
@@ -126,7 +127,7 @@ templates:
     format: dotted
     data:
       - key: Network.HoneycombAPI
-        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
+        value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
       - key: AccessKeys.SendKey
         value: "{{ .Values.APIKey }}"
         suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
@@ -141,7 +142,7 @@ templates:
       collectorComponentName: otlphttp
     data:
       - key: "{{ .ComponentName }}.endpoint"
-        value: "{{ .Values.APIEndpoint }}:{{ .Values.APIPort }}"
+        value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"

@@ -8,10 +8,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/jessevdk/go-flags"
@@ -83,14 +83,14 @@ func main() {
 	subst.SetPriority("installation", 2)
 	subst.SetPriority("cluster", 1)
 	input := subst.DoSubstitutions(string(inputData))
-	inputRdr := strings.NewReader(input)
 
 	// Create the output file
 	var outf io.Writer
+	var f *os.File
 	if cmdopts.Output == "-" {
 		outf = os.Stdout
 	} else {
-		f, err := os.Create(cmdopts.Output)
+		f, err = os.Create(cmdopts.Output)
 		if err != nil {
 			log.Fatalf("error creating output file: %v", err)
 		}
@@ -104,6 +104,9 @@ func main() {
 	// a real app should load them from a database
 	components, err := data.LoadEmbeddedComponents()
 	if err != nil {
+		if f != nil {
+			f.Close()
+		}
 		log.Fatalf("error loading embedded components: %v", err)
 	}
 	// install the components
@@ -111,12 +114,12 @@ func main() {
 
 	switch cmds[0] {
 	case "format":
-		hpsf, err := unmarshalHPSF(inputRdr)
+		h, err := hpsf.FromYAML(input)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
 		// write it to the output file as yaml
-		data, err := y.Marshal(hpsf)
+		data, err := y.Marshal(&h)
 		if err != nil {
 			log.Fatalf("error marshaling output file: %v", err)
 		}
@@ -125,35 +128,29 @@ func main() {
 			log.Fatalf("error writing output file: %v", err)
 		}
 	case "validate":
-		// validate the input file
-		_, err := validator.EnsureYAML(inputData)
-		if err != nil {
-			log.Fatalf("error validating input file: %v", err)
-		}
-
 		err = hpsf.EnsureHPSFYAML(string(inputData))
 		if err != nil {
 			log.Fatalf("input file is not hpsf: %v", err)
 		}
 
-		var hpsf hpsf.HPSF
-		err = y.Unmarshal(inputData, &hpsf)
+		var h hpsf.HPSF
+		err = y.Unmarshal(inputData, &h)
 		if err != nil {
 			log.Fatalf("error unmarshaling to HPSF: %v", err)
 		}
 
 		// validate the HPSF
-		if verrors := hpsf.Validate(); verrors != nil {
+		if verrors := h.Validate(); verrors != nil {
 			if hErr, ok := verrors.(validator.Result); ok {
 				log.Printf("error: %v", hErr.Msg)
 				for _, e := range hErr.Details {
 					log.Printf("  error: %v", e)
 				}
 				os.Exit(1)
-			} else {
-				log.Printf("unexpected validation error: %v", verrors)
-				os.Exit(1)
 			}
+
+			log.Printf("unexpected validation error: %v", verrors)
+			os.Exit(1)
 		}
 
 		log.Printf("HPSF is valid")
@@ -174,20 +171,20 @@ func main() {
 		os.Exit(0)
 
 	case "rConfig", "rRules", "cConfig":
-		hpsf, err := unmarshalHPSF(inputRdr)
+		hpsf, err := hpsf.FromYAML(input)
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
-		var ct config.Type
+		var ct hpsftypes.Type
 		switch cmds[0] {
 		case "rConfig":
-			ct = config.RefineryConfigType
+			ct = hpsftypes.RefineryConfig
 		case "rRules":
-			ct = config.RefineryRulesType
+			ct = hpsftypes.RefineryRules
 		case "cConfig":
-			ct = config.CollectorConfigType
+			ct = hpsftypes.CollectorConfig
 		}
-		cfg, err := tr.GenerateConfig(hpsf, ct, userdata)
+		cfg, err := tr.GenerateConfig(&hpsf, ct, userdata)
 		if err != nil {
 			log.Fatalf("error translating config: %v", err)
 		}
@@ -212,7 +209,7 @@ func readInput(filename string) ([]byte, error) {
 	} else {
 		f, err := os.Open(filename)
 		if err != nil {
-			return nil, fmt.Errorf("error opening file %s: %v", filename, err)
+			return nil, fmt.Errorf("error opening file %s: %w", filename, err)
 		}
 		fIn = f
 		defer f.Close()
@@ -221,17 +218,7 @@ func readInput(filename string) ([]byte, error) {
 	// read it into a buffer
 	data, err := io.ReadAll(fIn)
 	if err != nil {
-		return nil, fmt.Errorf("error reading file %s: %v", filename, err)
+		return nil, fmt.Errorf("error reading file %s: %w", filename, err)
 	}
 	return data, nil
-}
-
-func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var hpsf hpsf.HPSF
-	dec := y.NewDecoder(data)
-	err := dec.Decode(&hpsf)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling to yaml: %v", err)
-	}
-	return &hpsf, nil
 }

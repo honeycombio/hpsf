@@ -14,10 +14,10 @@ func (h *HPSF) validateNames() error {
 	// check that all components have unique names
 	nameSet := make(map[string]struct{})
 	for _, c := range h.Components {
-		if _, exists := nameSet[c.Name]; exists {
+		if _, exists := nameSet[c.GetSafeName()]; exists {
 			result.Add(NewError("duplicate component name").WithComponent(c.Name))
 		} else {
-			nameSet[c.Name] = struct{}{}
+			nameSet[c.GetSafeName()] = struct{}{}
 		}
 	}
 

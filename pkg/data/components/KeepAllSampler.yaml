@@ -1,0 +1,31 @@
+kind: KeepAllSampler
+name: Keep All
+style: sampler
+type: base
+status: alpha
+version: v0.1.0
+summary: Keeps all traces that reach this sampler.
+description: This sampler keeps (samples) all traces, setting SampleRate to 1.
+tags:
+  - category:sampler
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+ports:
+  # inputs
+  - name: Sample
+    direction: input
+    type: SampleData
+  # outputs
+  - name: Events
+    direction: output
+    type: HoneycombEvents
+templates:
+  - kind: refinery_rules
+    name: KeepAll_RefineryRules
+    format: rules
+    meta:
+      sampler: DeterministicSampler
+    data:
+      - key: SampleRate
+        value: 1

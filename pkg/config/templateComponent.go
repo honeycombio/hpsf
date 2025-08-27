@@ -10,6 +10,7 @@ import (
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	y "gopkg.in/yaml.v3"
 )
 
@@ -26,10 +27,16 @@ import (
 // data to flow in or out of the component. A port can be either an input
 // or an output, and has a datatype; at least for now, ports of different
 // types cannot be connected to each other.
+
+// Index is an optional field that can be used to indicate that this port
+// should be treated as an indexed port (e.g. for use in a pipeline). The
+// index values for ports should be sequential within a given component, and
+// should start at 1. If the index is not specified, it is assumed to be 0.
 type TemplatePort struct {
 	Name      string              `yaml:"name"`
 	Direction string              `yaml:"direction"`
 	Type      hpsf.ConnectionType `yaml:"type"`
+	Index     int                 `yaml:"index,omitempty"`
 	Note      string              `yaml:"note,omitempty"`
 }
 
@@ -39,7 +46,7 @@ type TemplatePort struct {
 // template), a format (which is the format of the data), meta (a map of extra
 // component-level info) and the data itself.
 type TemplateData struct {
-	Kind   Type
+	Kind   hpsftypes.Type
 	Name   string
 	Format string
 	Meta   map[string]any
@@ -175,7 +182,8 @@ func (t *TemplateComponent) HProps() map[string]any {
 	return props
 }
 
-// helper for templates
+// Props is a helper for templates that gets all properties in a template
+// component as a map. It's mainly used to look up property defaults.
 func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	props := make(map[string]TemplateProperty)
 	for _, prop := range t.Properties {
@@ -184,11 +192,11 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 	return props
 }
 
+// Values is a helper for templates to get the data values that are available in
+// the component including those specified as defaults and the environment. This
+// composes HProps, User, and Properties into a single map that can be used in
+// templates. You can still use them individually for special cases.
 func (t *TemplateComponent) Values() map[string]any {
-	// this is a helper for templates to get the data values that are available
-	// in the component including those specified as defaults and the
-	// environment. This composes HProps, User, and Properties into a single map
-	// that can be used in templates.
 	result := make(map[string]any)
 	for k, v := range t.HProps() {
 		if !_isZeroValue(v) {
@@ -222,7 +230,7 @@ func (t *TemplateComponent) ComponentName() string {
 	return t.Name
 }
 
-// Tests if this component has a connection with this signal type
+// ConnectsUsingAppropriateType tests if this component has a connection with this signal type
 func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.ConnectionType) bool {
 	for _, conn := range t.connections {
 		if conn.Source.Type == connType || conn.Destination.Type == connType {
@@ -232,10 +240,31 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.Connectio
 	return false
 }
 
+// GetPort returns the port with the given name, or nil if it doesn't exist
+func (t *TemplateComponent) GetPort(name string) *TemplatePort {
+	for _, port := range t.Ports {
+		if port.Name == name {
+			return &port
+		}
+	}
+	return nil
+}
+
+func (t *TemplateComponent) GetPortIndex(name string) int {
+	// Returns the index for a given port name, or 0 if it's unspecified.
+	// This implies that indices start at 1.
+	for _, port := range t.Ports {
+		if port.Name == name {
+			return port.Index
+		}
+	}
+	return 0
+}
+
 // // ensure that TemplateComponent implements Component
 var _ Component = (*TemplateComponent)(nil)
 
-func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// we have to find a template with the kind of the config; if it
 	// doesn't exist, we return an error
 
@@ -271,15 +300,39 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 			case "rules":
 				// a rules template expects the metadata to include environment
 				// information.
-				if pipeline.ConnType != hpsf.CTYPE_HONEY {
-					continue // rules templates are only for Honeycomb events
+				if pipeline.ConnType != hpsf.CTYPE_SAMPLE {
+					continue // rules templates are only for sampling pipelines
 				}
 				rt, err := buildRulesTemplate(template)
 				if err != nil {
 					return nil, fmt.Errorf("error %w building rules template for %s",
 						err, t.Kind)
 				}
-				tmpl, err := t.generateRulesConfig(rt, userdata)
+
+				// Determine the pipeline index based on the SamplingSequencer's port
+				// This index will be propagated through the merge chain
+				index := 0
+				if t.Style == "startsampling" {
+					// For SamplingSequencer, determine index from the connection leading to it
+					conn := pipeline.GetConnectionLeadingTo(t.hpsf.GetSafeName())
+					if conn != nil {
+						index = t.GetPortIndex(conn.Source.PortName)
+					}
+				} else if len(pipeline.Connections) > 0 {
+					// For downstream components, find the SamplingSequencer in
+					// the path (it's always the first component in the
+					// pipeline) and determine the index from its output port
+					firstConn := pipeline.Connections[0]
+					// Use GetPortIndex to determine the index from the port name
+					index = t.GetPortIndex(firstConn.Source.PortName)
+				}
+
+				rmt, err := tmpl.RMTFromStyle(t.Style)
+				if err != nil {
+					return nil, fmt.Errorf("error %w getting RulesComponentType from style %s for %s",
+						err, t.Style, t.Kind)
+				}
+				tmpl, err := t.generateRulesConfig(rt, rmt, index, userdata)
 				if err != nil {
 					return nil, err
 				}
@@ -296,7 +349,9 @@ func (t *TemplateComponent) GenerateConfig(cfgType Type, pipeline hpsf.PipelineW
 
 	ret := generatedTemplates[0]
 	for _, tmpl := range generatedTemplates[1:] {
-		ret = ret.Merge(tmpl)
+		if err := ret.Merge(tmpl); err != nil {
+			return nil, fmt.Errorf("failed to merge template: %w", err)
+		}
 	}
 
 	return ret, nil
@@ -325,6 +380,7 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 }
 
 // undecorate removes type decorations from strings and returns the desired type.
+// These decorations were placed there by the functions in helpers.go.
 // Since everything that comes out of a Go template is a string, for things that
 // needed to not be strings, we flagged them with a decoration indicating the
 // desired type. Now we need to do some extra work to make sure that we return
@@ -333,25 +389,25 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 func undecorate(s string) any {
 	switch {
 	case strings.HasPrefix(s, IntPrefix):
-		s := strings.TrimPrefix(s, IntPrefix)
+		s = strings.TrimPrefix(s, IntPrefix)
 		i, err := strconv.Atoi(s)
 		if err == nil {
 			return i
 		}
 	case strings.HasPrefix(s, BoolPrefix):
-		s := strings.TrimPrefix(s, BoolPrefix)
+		s = strings.TrimPrefix(s, BoolPrefix)
 		b, err := strconv.ParseBool(s)
 		if err == nil {
 			return b
 		}
 	case strings.HasPrefix(s, FloatPrefix):
-		s := strings.TrimPrefix(s, FloatPrefix)
+		s = strings.TrimPrefix(s, FloatPrefix)
 		f, err := strconv.ParseFloat(s, 64)
 		if err == nil {
 			return f
 		}
 	case strings.HasPrefix(s, ArrPrefix):
-		s := strings.TrimPrefix(s, ArrPrefix)
+		s = strings.TrimPrefix(s, ArrPrefix)
 		items := strings.Split(s, FieldSeparator)
 		// we need to trim the spaces from the items and we don't want blanks
 		// in the array
@@ -364,11 +420,11 @@ func undecorate(s string) any {
 		}
 		return arr
 	case strings.HasPrefix(s, MapPrefix):
-		s := strings.TrimPrefix(s, MapPrefix)
+		s = strings.TrimPrefix(s, MapPrefix)
 		// s is encoded as a JSON map, so we need to decode it
 		var m map[string]any
 		// we ignore the error here because the input string
-		// was marshalled by us and we know it's valid JSON,
+		// was marshaled by us and we know it's valid JSON,
 		// and there's nothing we can do with it anyway.
 		json.Unmarshal([]byte(s), &m)
 		return m
@@ -418,7 +474,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 
 // this is where we do the actual work of generating the config; this thing knows about
 // the structure of the collector config and how to fill it in
-func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PipelineWithConnectionType, userdata map[string]any) (*tmpl.CollectorConfig, error) {
+func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeline hpsf.PathWithConnections, userdata map[string]any) (*tmpl.CollectorConfig, error) {
 	// we have to fill in the template with the default values
 	// and the values from the properties
 	t.collName = ct.collectorComponentName
@@ -435,9 +491,9 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 			}
 			svcKey := fmt.Sprintf("pipelines.%s/%s.%s", signalType.AsCollectorSignalType(), pipeline.GetID(), section)
 			for _, kv := range ct.kvs[section] {
-				if kv.suppress_if != "" {
+				if kv.suppressIf != "" {
 					// if the suppress_if condition is met, we skip this key
-					condition, err := t.applyTemplate(kv.suppress_if, userdata)
+					condition, err := t.applyTemplate(kv.suppressIf, userdata)
 					if err != nil {
 						return nil, err
 					}
@@ -465,7 +521,7 @@ func (t *TemplateComponent) AsYAML() (string, error) {
 	// this is a mechanism to marshal the template component to YAML
 	data, err := y.Marshal(t)
 	if err != nil {
-		return "", fmt.Errorf("error marshalling template component to YAML: %w", err)
+		return "", fmt.Errorf("error marshaling template component to YAML: %w", err)
 	}
 	return string(data), nil
 }

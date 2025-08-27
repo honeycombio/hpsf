@@ -10,12 +10,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseLogBodyAsJSONProcessor(t *testing.T) {
+func TestLogBodyJSONParsingProcessorProcessor(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parselogbodyasjson_processor_log_body.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	// Should only have logs pipeline since ParseLogBodyAsJSON only works with logs
+	// Should only have logs pipeline since LogBodyJSONParsingProcessor only works with logs
 	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
 	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
 
@@ -36,12 +36,12 @@ func TestParseLogBodyAsJSONProcessor(t *testing.T) {
 	assert.Contains(t, logStatement.Statements[0], "log.body")
 }
 
-func TestParseLogBodyAsJSONProcessorStandalone(t *testing.T) {
+func TestLogBodyJSONParsingProcessorProcessorStandalone(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parselogbodyasjson_processor_test.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	// Should only have logs pipeline since ParseLogBodyAsJSON only works with logs
+	// Should only have logs pipeline since LogBodyJSONParsingProcessor only works with logs
 	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
 	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
 

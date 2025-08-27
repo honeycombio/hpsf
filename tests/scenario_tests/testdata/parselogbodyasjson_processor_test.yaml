@@ -9,7 +9,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: parse_log_body_1
-    kind: ParseLogBodyAsJSON
+    kind: LogBodyJSONParsingProcessor
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
 
