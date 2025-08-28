@@ -4,9 +4,9 @@ style: processor
 type: base
 status: development
 version: v0.0.1
-summary: Extracts the OpenTelemetry log severity from the log.body field
+summary: Extracts the OpenTelemetry log severity from the log's body field
 description: |-
-  This processor extracts the log severity from the log.body field, which is expected to be in JSON format.
+  This processor extracts the log severity from the log's body field, which is expected to be in JSON format.
   It sets the severity_text, severity_number and severity_text attributes according to the detected severity type.
 tags:
   - category:processor
