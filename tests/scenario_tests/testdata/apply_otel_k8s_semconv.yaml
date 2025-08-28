@@ -1,0 +1,29 @@
+name: apply_otel_k8s_semconv_test
+version: v0.1.0
+summary: Test for ApplyOTelK8sSemconvProcessor
+description: |
+  Test configuration with an OTel receiver, ApplyOTelK8sSemconvProcessor.
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: apply_k8s_semconv
+    kind: ApplyOTelK8sSemconvProcessor
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: apply_k8s_semconv
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: apply_k8s_semconv
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

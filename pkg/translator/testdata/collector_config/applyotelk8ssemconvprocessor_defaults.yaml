@@ -1,0 +1,38 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    transform/apply_k8s_semconv:
+        error_mode: ignore
+        log_statements:
+            - merge_maps(attributes, attributes["metadata"], "upsert") where IsMap(attributes["metadata"])
+            - set(attributes["k8s.pod.name"], attributes["regarding"]["name"]) where attributes["regarding"]["kind"] == "Pod"
+            - set(attributes["k8s.node.name"], attributes["regarding"]["name"]) where attributes["regarding"]["kind"] == "Node"
+            - set(attributes["k8s.job.name"], attributes["regarding"]["name"]) where attributes["regarding"]["kind"] == "Job"
+            - set(attributes["k8s.cronjob.name"], attributes["regarding"]["name"]) where attributes["regarding"]["kind"] == "CronJob"
+            - set(attributes["k8s.namespace.name"], attributes["regarding"]["namespace"]) where attributes["regarding"]["kind"] == "Pod" or attributes["regarding"]["kind"] == "Job" or attributes["regarding"]["kind"] == "CronJob"
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/96b-767:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/apply_k8s_semconv]
+            exporters: [otlphttp/otlp_out]
