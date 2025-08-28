@@ -23,7 +23,7 @@ ports:
     type: OTelLogs
 templates:
   - kind: collector_config
-    name: otel_filter
+    name: otel_extract_log_severity
     format: collector
     meta:
       componentSection: processors
