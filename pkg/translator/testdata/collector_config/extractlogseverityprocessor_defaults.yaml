@@ -9,11 +9,9 @@ processors:
     transform/extract_log_severity:
         error_mode: ignore
         log_statements:
-            - context: log
-              statements:
-                - set(severity_text, attributes["type"]) where attributes["type"] == "Normal" or attributes["type"] == "Warning"
-                - set(severity_number, SEVERITY_NUMBER_INFO) where attributes["type"] == "Normal"
-                - set(severity_number, SEVERITY_NUMBER_WARN) where attributes["type"] == "Warning"
+            - set(severity_text, attributes["type"]) where attributes["type"] == "Normal" or attributes["type"] == "Warning"
+            - set(severity_number, SEVERITY_NUMBER_INFO) where attributes["type"] == "Normal"
+            - set(severity_number, SEVERITY_NUMBER_WARN) where attributes["type"] == "Warning"
     usage: {}
 exporters:
     otlphttp/otlp_out:
