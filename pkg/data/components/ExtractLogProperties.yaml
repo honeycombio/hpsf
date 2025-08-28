@@ -1,0 +1,46 @@
+kind: ExtractLogPropertiesProcessor
+name: Extract Log Properties
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: Extracts the OpenTelemetry log properties from the log's body field
+description: |-
+  This processor extracts the log properties from the log's body field, which is expected to be in JSON format.
+  It sets the severity_text, severity_number and severity_text attributes according to the detected severity type.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelLogs
+ports:
+  # inputs
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  # outputs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+templates:
+  - kind: collector_config
+    name: otel_extract_log_properties
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.log_statements[0]"
+        value: "set(attributes[\"watch-type\"], body[\"type\"]) where IsMap(body) and body[\"type\"] != nil"
+      - key: "{{ .ComponentName }}.log_statements[1]"
+        value: "merge_maps(attributes, body, \"upsert\") where IsMap(body) and body[\"object\"] == nil"
+      - key: "{{ .ComponentName }}.log_statements[2]"
+        value: "merge_maps(attributes, body[\"object\"], \"upsert\") where IsMap(body) and body[\"object\"] != nil"
+      - key: "{{ .ComponentName }}.log_statements[3]"
+        value: "set(severity_text, attributes[\"type\"]) where attributes[\"type\"] == \"Normal\" or attributes[\"type\"] == \"Warning\""
+      - key: "{{ .ComponentName }}.log_statements[4]"
+        value: "set(severity_number, SEVERITY_NUMBER_INFO) where attributes[\"type\"] == \"Normal\""
+      - key: "{{ .ComponentName }}.log_statements[5]"
+        value: "set(severity_number, SEVERITY_NUMBER_WARN) where attributes[\"type\"] == \"Warning\""

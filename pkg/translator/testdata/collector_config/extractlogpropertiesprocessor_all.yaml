@@ -6,9 +6,12 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
-    transform/extract_log_severity:
+    transform/extract_log_properties:
         error_mode: ignore
         log_statements:
+            - set(attributes["watch-type"], body["type"]) where IsMap(body) and body["type"] != nil
+            - merge_maps(attributes, body, "upsert") where IsMap(body) and body["object"] == nil
+            - merge_maps(attributes, body["object"], "upsert") where IsMap(body) and body["object"] != nil
             - set(severity_text, attributes["type"]) where attributes["type"] == "Normal" or attributes["type"] == "Warning"
             - set(severity_number, SEVERITY_NUMBER_INFO) where attributes["type"] == "Normal"
             - set(severity_number, SEVERITY_NUMBER_WARN) where attributes["type"] == "Warning"
@@ -29,7 +32,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/c8e-6f2:
+        logs/501-aab:
             receivers: [otlp/otlp_in]
-            processors: [usage, transform/extract_log_severity]
+            processors: [usage, transform/extract_log_properties]
             exporters: [otlphttp/otlp_out]

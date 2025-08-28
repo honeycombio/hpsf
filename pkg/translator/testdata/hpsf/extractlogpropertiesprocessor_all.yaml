@@ -3,19 +3,19 @@ components:
     kind: OTelReceiver
   - name: otlp_out
     kind: OTelHTTPExporter
-  - name: extract_log_severity
-    kind: ExtractLogSeverityProcessor
+  - name: extract_log_properties
+    kind: ExtractLogPropertiesProcessor
 connections:
   - source:
       component: otlp_in
       port: Logs
       type: OTelLogs
     destination:
-      component: extract_log_severity
+      component: extract_log_properties
       port: Logs
       type: OTelLogs
   - source:
-      component: extract_log_severity
+      component: extract_log_properties
       port: Logs
       type: OTelLogs
     destination:
