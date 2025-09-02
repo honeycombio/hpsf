@@ -13,6 +13,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/validator"
+	"golang.org/x/mod/semver"
 )
 
 // A Translator is responsible for translating an HPSF document into a
@@ -72,10 +73,27 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
-func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
+// artifactVersionSupported checks if the component supports the artifact version requested
+func artifactVersionSupported(component config.TemplateComponent, v string) bool {
+	if v == "" || v == "latest" {
+		return true
+	}
+
+	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {
+		return false
+	}
+
+	if component.Maximum != "" && semver.Compare(v, component.Maximum) > 0 {
+		return false
+	}
+
+	return true
+}
+
+func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) {
+	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
 		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
@@ -467,13 +485,12 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 	}
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
-	// for _, c := range h.Components {
 	visitFunc := func(c *hpsf.Component) error {
-		comp, err := t.MakeConfigComponent(c)
+		comp, err := t.MakeConfigComponent(c, artifactVersion)
 		if err != nil {
 			return err
 		}
