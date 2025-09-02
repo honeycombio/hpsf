@@ -467,11 +467,15 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 	}
 }
 
+// Deprecated: use GenerateConfigWithVersion instead.
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	return t.GenerateConfigWithVersion(h, ct, nil, userdata)
+}
+
+func (t *Translator) GenerateConfigWithVersion(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion *string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
-	// for _, c := range h.Components {
 	visitFunc := func(c *hpsf.Component) error {
 		comp, err := t.MakeConfigComponent(c)
 		if err != nil {
