@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -42,6 +44,7 @@ func helpers() template.FuncMap {
 		"comment":             comment,
 		"encodeAsArray":       encodeAsArray,
 		"encodeAsStringArray": encodeAsStringArray,
+		"encodeAsStringMap":   encodeAsStringMap,
 		"encodeAsBool":        encodeAsBool,
 		"encodeAsInt":         encodeAsInt,
 		"encodeAsFloat":       encodeAsFloat,
@@ -127,6 +130,24 @@ func encodeAsStringArray(format string, arr any) string {
 		newArr[i] = fmt.Sprintf(format, v)
 	}
 	return encodeAsArray(newArr)
+}
+
+// encodeAsStringArray takes a slice and a format string, and returns a string
+// intended to be expanded later into an array when it's rendered to YAML.
+func encodeAsStringMap(format string, val any) string {
+	if strings.Count(format, "%s") != 2 {
+		return ""
+	}
+	if val.(map[string]any) == nil {
+		return ""
+	}
+
+	m := val.(map[string]any)
+	arr := make([]string, 0, len(m))
+	for _, k := range slices.Sorted(maps.Keys(m)) {
+		arr = append(arr, fmt.Sprintf(format, k, m[k]))
+	}
+	return encodeAsArray(arr)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker
