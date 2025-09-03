@@ -109,7 +109,6 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 	if err := prop.Type.ValueCoerce(prop.Value, &value); err != nil {
 		// if the type of the property does not match the type of the template property, return an error
 		return hpsf.NewError("value cannot be converted to expected type " + tp.Type.String()).
-			WithComponent(prop.Name). // include the component name for context
 			WithProperty(tp.Name).
 			WithCause(err)
 	}
@@ -124,7 +123,6 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 		if !validationFunc(value) {
 			// if the validation fails, return an error
 			return hpsf.NewError("validation failed for property: " + validation).
-				WithComponent(prop.Name).
 				WithProperty(tp.Name)
 		}
 	}

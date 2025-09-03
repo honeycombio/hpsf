@@ -14,6 +14,10 @@ tags:
   - service:refinery
   - signal:HoneycombEvents
   - vendor:Honeycomb
+  - input:Events
+  - input:Traces
+  - input:Logs
+  - input:Metrics
 ports:
   # inputs
   - name: Events

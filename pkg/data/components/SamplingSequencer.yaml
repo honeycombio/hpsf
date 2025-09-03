@@ -16,6 +16,9 @@ tags:
   - signal:OTelLogs
   - signal:HoneycombEvents
   - vendor:Honeycomb
+  - input:Traces
+  - input:Logs
+  - output:SampleData
 ports:
   # inputs
   - name: Traces

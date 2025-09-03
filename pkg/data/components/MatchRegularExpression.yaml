@@ -12,6 +12,8 @@ tags:
   - vendor:Honeycomb
   - type:regex
   - type:string
+  - input:SampleData
+  - output:SampleData
 ports:
   # inputs
   - name: Match
