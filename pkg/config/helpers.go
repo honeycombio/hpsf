@@ -122,11 +122,11 @@ func encodeAsStringMap(format string, val any) string {
 	}
 
 	m := val.(map[string]any)
-	arr := make([]string, 0, len(m))
+	newArr := make([]string, 0, len(m))
 	for _, k := range slices.Sorted(maps.Keys(m)) {
-		arr = append(arr, fmt.Sprintf(format, k, m[k]))
+		newArr = append(newArr, fmt.Sprintf(format, k, m[k]))
 	}
-	return encodeAsArray(arr)
+	return encodeAsArray(newArr)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker
