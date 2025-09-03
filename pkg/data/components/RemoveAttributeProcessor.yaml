@@ -60,16 +60,16 @@ templates:
         value: "ignore"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(span.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(span.attributes, \\\"%s\\\")\" }}"
       # Metric statements
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(metric.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(metric.attributes, \\\"%s\\\")\" }}"
       # Log statements
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"delete_key(log.attributes, \\\"%s\\\")\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"delete_key(log.attributes, \\\"%s\\\")\" }}"
