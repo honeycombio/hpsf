@@ -61,16 +61,16 @@ templates:
         value: "ignore"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(span.attributes[\\\"%s\\\"], span.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(span.attributes[\\\"%s\\\"], span.attributes[\\\"%s\\\"])\" }}"
       # metric statements (resource attributes)
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(metric.attributes[\\\"%s\\\"], metric.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(metric.attributes[\\\"%s\\\"], metric.attributes[\\\"%s\\\"])\" }}"
       # log statements (resource attributes)
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsArrayWithFormat \"set(log.attributes[\\\"%s\\\"], log.attributes[\\\"%s\\\"])\" }}"
+        value: "{{ .Values.Attributes | encodeAsStringArray \"set(log.attributes[\\\"%s\\\"], log.attributes[\\\"%s\\\"])\" }}"
