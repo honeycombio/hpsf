@@ -130,6 +130,8 @@ func (c ComponentStatus) MarshalYAML() (any, error) {
 //   - Kind is the kind of component, e.g. "TraceGRPC", "LogHTTP", etc. The combination of
 //     Kind and Version is used to uniquely identify a component.
 //   - Version is the version of the component as a semver string.
+//   - Minimum is the minimum version of the artifact that the component supports as a semver string.
+//   - Maximum is the maximum version of the artifact that the component supports as a semver string.
 //   - Name is the name of the component. In a templateComponent, it is used to suggest a name that the
 //     end user might want to call the component. It is not used to identify the component in a template,
 //     but is used to identify the component in the UI.
@@ -145,6 +147,8 @@ func (c ComponentStatus) MarshalYAML() (any, error) {
 type TemplateComponent struct {
 	Kind        string             `yaml:"kind"`
 	Version     string             `yaml:"version"`
+	Minimum     string             `yaml:"minimum"`
+	Maximum     string             `yaml:"maximum"`
 	Name        string             `yaml:"name"`
 	Logo        string             `yaml:"logo,omitempty"`
 	Summary     string             `yaml:"summary,omitempty"`

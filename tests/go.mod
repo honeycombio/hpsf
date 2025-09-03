@@ -16,7 +16,6 @@ require (
 	go.opentelemetry.io/collector/exporter v0.127.0
 	go.opentelemetry.io/collector/extension v1.33.0
 	go.opentelemetry.io/collector/receiver v1.33.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 replace github.com/honeycombio/opentelemetry-collector-configs/usageprocessor => github.com/honeycombio/opentelemetry-collector-configs/usageprocessor v0.0.0-20250529172854-29e92f8bd7cb
@@ -144,8 +143,10 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.35.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.5.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
+	golang.org/x/mod v0.27.0 // indirect
 	gonum.org/v1/gonum v0.16.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250603155806-513f23925822 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
