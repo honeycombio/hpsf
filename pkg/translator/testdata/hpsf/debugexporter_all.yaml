@@ -1,0 +1,17 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: DebugExporter
+    properties:
+      - name: Verbosity
+        value: detailed
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

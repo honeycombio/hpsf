@@ -11,9 +11,7 @@ import (
 )
 
 func TestPropertyValidation(t *testing.T) {
-
 	t.Run("Validate should error if a noblanks string is not supplied and there is no default", func(t *testing.T) {
-
 		testComponent := config.TemplateComponent{
 			Kind: "NoBlanksComponent",
 			Properties: []config.TemplateProperty{
@@ -75,7 +73,6 @@ func TestPropertyValidation(t *testing.T) {
 	})
 
 	t.Run("Validate should fail when one property passes and another does not", func(t *testing.T) {
-
 		translator := NewEmptyTranslator()
 
 		testComponent := config.TemplateComponent{
@@ -107,6 +104,5 @@ func TestPropertyValidation(t *testing.T) {
 		require.IsType(t, validator.Result{}, err)
 		validationError := err.(validator.Result)
 		assert.Equal(t, 1, validationError.Len())
-
 	})
 }

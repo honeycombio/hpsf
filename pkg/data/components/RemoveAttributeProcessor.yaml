@@ -1,5 +1,5 @@
-kind: RemoveAttributeProcessor
-name: Remove Attribute Processor
+kind: RemoveAttributesProcessor
+name: Remove Attributes
 style: processor
 type: base
 status: development
@@ -9,8 +9,8 @@ description: |
   This processor allows you to remove attributes from traces, metrics, and logs by
   specifying a list of attribute names. It can be used to filter out sensitive or
   unnecessary information from your telemetry data.
-  The processor supports the removal of attributes from both resource and span levels
-  for traces, and from metrics and logs as well.
+  It can optionally remove resource attributes by setting the `RemoveResourceAttributes`
+  property to `true` (default is `false`).
 tags:
   - category:processor
   - service:collector
@@ -40,38 +40,20 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: ResourceAttributeNames
-    summary: A list of resource attribute names to be removed from the telemetry data.
+  - name: Attributes
+    summary: A list of attribute names to remove.
     description: |
-      A list of resource attribute names to be removed.
+      A list of attribute names that will be removed from the telemetry data.
     type: stringarray
     validations:
       - noblanks
-    default: []
-  - name: SpanAttributeNames
-    summary: A list of span attribute names to be removed from the telemetry data.
+      - nonempty
+  - name: RemoveResourceAttributes
+    summary: A flag that indicates whether to remove resource attributes.
     description: |
-      A list of span attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
-  - name: MetricAttributeNames
-    summary: A list of metric attribute names to be removed from the telemetry data.
-    description: |
-      A list of metric attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
-  - name: LogAttributeNames
-    summary: A list of log attribute names to be removed from the telemetry data.
-    description: |
-      A list of log attribute names to be removed.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
+      A flag that indicates whether to remove resource attributes from the telemetry data.
+    type: boolean
+    default: false
 templates:
   - kind: collector_config
     name: otel_remove_attributes_processor
@@ -85,22 +67,19 @@ templates:
         value: "ignore"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
+        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.SpanAttributeNames | encodeAsArrayWithFormat \"delete_key(span.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.SpanAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(span.attributes, \"%s\")" }}'
       # Metric statements
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
+        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.MetricAttributeNames | encodeAsArrayWithFormat \"delete_key(metric.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.MetricAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(metric.attributes, \"%s\")" }}'
       # Log statements
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.ResourceAttributeNames | encodeAsArrayWithFormat \"delete_key(resource.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.ResourceAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
+        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.LogAttributeNames | encodeAsArrayWithFormat \"delete_key(log.attributes, \\\"%s\\\")\" }}"
-        suppress_if: "{{ not .Values.LogAttributeNames }}"
+        value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(log.attributes, \"%s\")" }}'

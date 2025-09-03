@@ -4,9 +4,9 @@ components:
   - name: Honeycomb Exporter_1
     kind: HoneycombExporter
   - name: Send to S3 Archive_1
-    kind: SendToS3Archive
+    kind: S3ArchiveExporter
   - name: Filter Logs by Severity_1
-    kind: FilterLogBySeverity
+    kind: LogSeverityFilterProcessor
   - name: Send to OTLP
     kind: OTelHTTPExporter
 connections:

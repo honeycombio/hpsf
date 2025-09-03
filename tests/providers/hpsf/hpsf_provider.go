@@ -1,24 +1,20 @@
 package hpsf
 
 import (
-	"fmt"
-	"io"
 	"log"
 	"os"
-	"strings"
 	"testing"
 
-	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	collectorConfigProvider "github.com/honeycombio/hpsf/tests/providers/collector"
 	refineryConfigProvider "github.com/honeycombio/hpsf/tests/providers/refinery"
 	refineryConfig "github.com/honeycombio/refinery/config"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/collector/otelcol"
-	y "gopkg.in/yaml.v3"
 )
 
 type ErrorDetails struct {
@@ -27,7 +23,7 @@ type ErrorDetails struct {
 }
 
 type ParserError struct {
-	GenerateErrors map[config.Type]ErrorDetails
+	GenerateErrors map[hpsftypes.Type]ErrorDetails
 
 	error
 }
@@ -48,7 +44,7 @@ func GetParsedConfigsFromFile(t *testing.T, filename string) (refineryRules *ref
 }
 
 func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryConfig.V2SamplerConfig, collectorConfig *otelcol.Config, groupedErrors ParserError) {
-	hpsf, err := unmarshalHPSF(strings.NewReader(hpsfConfig))
+	h, err := hpsf.FromYAML(hpsfConfig)
 	if err != nil {
 		log.Fatalf("error unmarshaling HPSF: %v", err)
 	}
@@ -60,23 +56,23 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 	}
 	hpsfTranslator.InstallComponents(allHpsfComponents)
 
-	errors := make(map[config.Type]ErrorDetails)
+	errors := make(map[hpsftypes.Type]ErrorDetails)
 
-	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(hpsf, config.RefineryRulesType, nil)
+	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
 	if err != nil {
-		errors[config.RefineryConfigType] = ErrorDetails{Config: hpsfConfig, Error: err}
+		errors[hpsftypes.RefineryConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
 		refineryRules = refineryConfigProvider.GetParsedRulesConfig(t, refineryRulesTmpl.(*tmpl.RulesConfig))
 	}
 
-	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(hpsf, config.CollectorConfigType, nil)
+	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.CollectorConfig, "latest", nil)
 	if err != nil {
-		errors[config.CollectorConfigType] = ErrorDetails{Config: hpsfConfig, Error: err}
+		errors[hpsftypes.CollectorConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
 		var parsingErrors collectorConfigProvider.CollectorConfigParseError
 		collectorConfig, parsingErrors = collectorConfigProvider.GetParsedConfig(t, collectorConfigTmpl.(*tmpl.CollectorConfig))
 		if parsingErrors.HasError {
-			errors[config.CollectorConfigType] = ErrorDetails{Config: parsingErrors.Config, Error: parsingErrors.Error}
+			errors[hpsftypes.CollectorConfig] = ErrorDetails{Config: parsingErrors.Config, Error: parsingErrors.Error}
 		}
 	}
 
@@ -86,14 +82,4 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 	groupedErrors.FailIfError(t)
 	return
 
-}
-
-func unmarshalHPSF(data io.Reader) (*hpsf.HPSF, error) {
-	var hpsf hpsf.HPSF
-	dec := y.NewDecoder(data)
-	err := dec.Decode(&hpsf)
-	if err != nil {
-		return nil, fmt.Errorf("error unmarshaling to yaml: %v", err)
-	}
-	return &hpsf, nil
 }

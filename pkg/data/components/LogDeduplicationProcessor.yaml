@@ -1,17 +1,19 @@
 kind: LogDeduplicationProcessor
-name: Log Deduplication Processor
+name: Deduplicate Logs
 style: processor
 type: base
 status: development
 version: v0.1.0
 summary: A processor that removes duplicate log entries.
-description: |
+description: |-
   This processor is used to deduplicate logs by detecting identical logs over a range of time and
   emitting a single log with the count of logs that were deduplicated.
 tags:
   - category:processor
   - service:collector
   - signal:OTelLogs
+  - input:Logs
+  - output:Logs
 ports:
   # inputs
   - name: Logs

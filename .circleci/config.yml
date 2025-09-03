@@ -2,15 +2,31 @@ version: 2.1
 
 jobs:
   test:
-    docker:
-      - image: cimg/go:1.24
+    machine: true
     steps:
       - checkout
+      - run:
+          name: "Install Go"
+          environment:
+            GO_VERSION: "1.24.4"
+          command: |
+            wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz
+            echo 'export PATH=/usr/local/go/bin:$PATH' >> $BASH_ENV
+            go version
+      - run:
+          name: "Install yq"
+          command: |
+            sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+            sudo chmod +x /usr/local/bin/yq
+            yq --version
       - restore_cache:
           keys:
             - v1-go-mod-{{ checksum "go.sum" }}
       - run: make test
       - run: make validate_all
+      - run: make smoke
       - store_test_results:
           path: test_results/
       - save_cache:

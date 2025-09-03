@@ -1,0 +1,184 @@
+kind: SamplingSequencer
+name: Start Sampling
+style: startsampling
+type: base
+status: alpha
+version: v0.1.0
+summary: Converts traces and logs to a format for sampling
+description: |-
+  Converts traces and logs to a format for advanced tail-based sampling with Refinery. Also contains
+  some advanced configuration options for sending data to Refinery; most installations will not need
+  to change these.
+tags:
+  - category:startsampling
+  - service:refinery
+  - signal:OTelTraces
+  - signal:OTelLogs
+  - signal:HoneycombEvents
+  - vendor:Honeycomb
+  - input:Traces
+  - input:Logs
+  - output:SampleData
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  # outputs
+  - name: Rule 1
+    direction: output
+    type: SampleData
+    index: 0
+  - name: Rule 2
+    direction: output
+    type: SampleData
+    index: 1
+  - name: Rule 3
+    direction: output
+    type: SampleData
+    index: 2
+  - name: Rule 4
+    direction: output
+    type: SampleData
+    index: 3
+  - name: Rule 5
+    direction: output
+    type: SampleData
+    index: 4
+  - name: Rule 6
+    direction: output
+    type: SampleData
+    index: 5
+  - name: Rule 7
+    direction: output
+    type: SampleData
+    index: 6
+  - name: Rule 8
+    direction: output
+    type: SampleData
+    index: 7
+  - name: Rule 9
+    direction: output
+    type: SampleData
+    index: 8
+  - name: Rule 10
+    direction: output
+    type: SampleData
+    index: 9
+  - name: Rule 11
+    direction: output
+    type: SampleData
+    index: 10
+  - name: Rule 12
+    direction: output
+    type: SampleData
+    index: 11
+properties:
+  - name: Host
+    summary: The hostname or IP address on which to listen.
+    description: |
+      Hostname or IP address on which to listen for incoming traffic.
+      It is recommended not to change the default unless
+      you know what you're doing.
+    type: string
+    validations:
+      - noblanks
+    default: ${HTP_REFINERY_SERVICE}
+    advanced: true
+  - name: Port
+    summary: The port on which Refinery is listening for HTTP traffic.
+    description: |
+      The port on which Refinery listens for incoming HTTP traffic.
+      The default is 80. It is recommended not to change the default unless
+      you know what you're doing.
+    type: int
+    validations:
+      - inrange(1, 65535)
+    default: 80
+    advanced: true
+  - name: Headers
+    summary: Headers to emit when sending HTTP traffic.
+    description: |
+      Sending data to a backend may require additional headers to be
+      configured. This properties supports sending a map of header keys and
+      values.
+    type: map
+    advanced: true
+  - name: UseTLS
+    summary: Provide a way to enable TLS export.
+    description: |
+      Can be used to send data with TLS.
+      Since Refinery does not use TLS, this is off by default.
+    type: bool
+    subtype: label("Enable TLS export")
+    default: false
+    advanced: true
+  - name: BatchTimeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout.
+    type: duration
+    default: 200ms
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
+    type: int
+    default: 8192
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    summary: The size of a exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/datapoint/log record count.
+      Items will be kept in the queue while the batch is being created.
+    type: int
+    default: 100_000
+    validations:
+      - nonempty
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_http_exporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlphttp
+    data:
+      - key: "{{ .ComponentName }}.endpoint"
+        value: "http{{ if .Values.UseTLS }}s{{ end }}://{{ .Values.Host }}:{{ .Values.Port }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: "{{ not .Values.UseTLS | encodeAsBool }}"
+        suppress_if: "{{ .Values.UseTLS }}"
+      - key: "{{ .ComponentName }}.headers"
+        value: "{{ .HProps.Headers | encodeAsMap }}"
+        suppress_if: "{{ not .HProps.Headers }}"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+        # service is not part of the template, it's generated automatically by the collectorConfig
+  - kind: refinery_rules
+    name: StartSampling_RefineryRules
+    format: rules
+    meta:
+      env: __default__
+      sampler: unknown

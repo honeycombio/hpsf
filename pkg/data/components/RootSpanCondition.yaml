@@ -1,0 +1,45 @@
+kind: RootSpanCondition
+name: Check for Root Span
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks if a trace has or does not have a root span
+description: |-
+  This checks if the trace has or does not have a root span based on the HasRootSpan property. This is
+  typically used to ensure that the trace has been fully received before being sent for a sampling
+  decision.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:root_span
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: HasRootSpan
+    type: bool
+    default: false
+    description: |
+      When true, checks that the trace has a root span.
+      When false, checks that the trace does not have a root span.
+templates:
+  - kind: refinery_rules
+    name: RootSpanCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Operator
+        value: has-root-span
+      - key: Value
+        value: "{{ .Values.HasRootSpan | encodeAsBool }}"

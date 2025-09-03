@@ -3,7 +3,6 @@ package translator
 import "testing"
 
 func TestSubstitutor_DoSubstitutions(t *testing.T) {
-
 	// use the default priorities
 	tr := NewSubstitutor()
 	tr.AddSubstitution("team", "apikey", "abc123")
@@ -39,7 +38,6 @@ func TestSubstitutor_DoSubstitutions(t *testing.T) {
 }
 
 func TestSubstitutor_SubsWithPriorities(t *testing.T) {
-
 	// set up priorities in reverse
 	tr := NewSubstitutor()
 	tr.AddSubstitution("cluster", "apikey", "ghi789")

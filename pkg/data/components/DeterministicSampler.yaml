@@ -1,37 +1,30 @@
 kind: DeterministicSampler
-name: Deterministic Sampler
+name: Sample at a Fixed Rate
 style: sampler
 type: base
 status: alpha
 version: v0.1.0
 summary: Deterministically samples a fixed fraction of traces based on trace ID.
-description: |
-  A sampler that deterministically samples a fixed fraction of traces based on trace ID.
+description: A sampler that deterministically samples a fixed fraction of traces based on trace ID.
 tags:
-  - category:sampling
+  - category:sampler
   - service:refinery
   - signal:HoneycombEvents
   - sampler:deterministic
   - sampler:rate
+  - input:SampleData
+  - output:Events
 ports:
   # inputs
-  - name: Events
+  - name: Sample
     direction: input
-    type: HoneycombEvents
+    type: SampleData
   # outputs
   - name: Events
     direction: output
     type: HoneycombEvents
     note: "The traces that are sampled"
 properties:
-  - name: Environment
-    summary: The environment in which to enable the sampler.
-    description: |
-      The environment in which to enable the sampler. If this field is
-      not specified, the sampler will be enabled in the __default__ environment,
-      which is what is used if the environment specified in the trace is not found.
-    type: string
-    default: "__default__"
   - name: SampleRate
     summary: The target SampleRate.
     description: |
@@ -48,7 +41,7 @@ templates:
     name: DeterministicSampler_RefineryRules
     format: rules
     meta:
-      env: "{{ .Values.Environment }}"
+      env: "__default__"
       sampler: DeterministicSampler
     data:
       - key: SampleRate

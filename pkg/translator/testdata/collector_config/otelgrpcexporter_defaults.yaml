@@ -2,14 +2,14 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
 exporters:
     otlp/otlp_out:
-        endpoint: https://api.honeycomb.io:443
+        endpoint: api.honeycomb.io:443
         sending_queue:
             batch:
                 flush_timeout: 200ms

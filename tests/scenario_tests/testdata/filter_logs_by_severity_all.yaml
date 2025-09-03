@@ -8,7 +8,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: Error Log Filter
-    kind: FilterLogBySeverity
+    kind: LogSeverityFilterProcessor
     properties:
       - name: Severity
         value: Error

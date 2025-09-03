@@ -1,5 +1,111 @@
 # hpsf library changelog
 
+## 0.16.0 2025-08-27
+
+### Features
+- feat: add input/output tags (#212) | [Kent Quirk](https://github.com/kentquirk)
+
+### Fixes
+- fix: don't use property names where component names belong (#211) | [Kent Quirk](https://github.com/kentquirk)
+
+## 0.15.0 2025-08-18
+
+New components, new organization, many improvements to validation, better processes.
+
+### Features
+- feat: Add FieldExistsCondition (#200) | [Kent Quirk](https://github.com/kentquirk)
+- feat: Add FieldStartsWith and FieldContains conditions (#194) | [Kent Quirk](https://github.com/kentquirk)
+- feat: add library_version field, add FromYAML func (#195) | [Alex Boten](https://github.com/codeboten)
+- feat: add tool to help with bulk-editing components (#204) | [Kent Quirk](https://github.com/kentquirk)
+- feat: add type-specific comparison and scope to conditions (#197) | [Kent Quirk](https://github.com/kentquirk)
+- feat: add validation for component version (#184) | [Alex Boten](https://github.com/codeboten)
+- feat: Implement condition for checking existence of root span (#196) | [Kent Quirk](https://github.com/kentquirk)
+- feat: Regexp Component (#198) | [Kent Quirk](https://github.com/kentquirk)
+- feat: Reorganize category tags for updated UI. (#208) | [Kent Quirk](https://github.com/kentquirk)
+- feat: split up hpsftypes into separate package (#190) | [Alex Boten](https://github.com/codeboten)
+- feat: Update SamplingSequencer to support 12 rules (#186) | [Kent Quirk](https://github.com/kentquirk)
+
+### Fixes
+- fix: Better sampler validation (conforms to new sampler design). (#182) | [Kent Quirk](https://github.com/kentquirk)
+- fix: RootSpanCondition property type (#201) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: add smoke tests to CI (#185) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: run all the files through the reformatter (#205) | [Kent Quirk](https://github.com/kentquirk)
+- maint: update smoke tests to test components (#183) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- refactor: remove EnsureYAML public func (#207) | [Alex Boten](https://github.com/codeboten)
+
+### maintenance
+- chore: accidentally bumped up go version in previous commit (#191) | [Alex Boten](https://github.com/codeboten)
+- chore: add make lint target (#188) | [Alex Boten](https://github.com/codeboten)
+- chore: add omitempty to certain fields (#199) | [Alex Boten](https://github.com/codeboten)
+- chore: clean up following linter suggestions (#187) | [Alex Boten](https://github.com/codeboten)
+- chore: minor refactor (#189) | [Alex Boten](https://github.com/codeboten)
+- chore: remove deprecated consts (#192) | [Alex Boten](https://github.com/codeboten)
+- chore: remove unnecessary call to func (#206) | [Alex Boten](https://github.com/codeboten)
+- chore: remove unused function LoadEmbeddedDefaultTemplate (#193) | [Alex Boten](https://github.com/codeboten)
+
+## 0.14.0 2025-07-21
+
+### Fixes
+
+- fix: add default signal to AttributeJSONParsingProcessor (#180) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: refinery rules bugs (#176) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: handle paths with just a complex sampler (#175) | [Kent Quirk](https://github.com/KentQuirk)
+- fix: nil pointer failure for sampler indexing (#174) | [Kent Quirk](https://github.com/KentQuirk)
+- fix: Set the name field properly with downstream samplers (#172) | [Kent Quirk](https://github.com/KentQuirk)
+
+### Maintenance
+
+- maint: rename component files (#173) | [Kent Quirk](https://github.com/KentQuirk)
+
+## 0.11.1 2025-07-18 (hotfix)
+
+### Fixes
+
+- maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+    - Plus test data fixes and Go version consistency
+
+## 0.13.0 2025-07-16
+
+### Feature
+
+- feat: Use the sampler name as the rule name when generating refinery configs (#170) | [Kent Quirk](https://github.com/KentQuirk)
+
+## 0.12.0 2025-07-16
+
+### Feature
+
+- feat: rewrite the way refinery samplers work (#159) | [Kent Quirk](https://github.com/KentQuirk)
+
+### Maintenance
+
+- maint: bump sampling components to alpha (#168) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: Add a couple of Refinery scenario tests (#167) | [Kent Quirk](https://github.com/KentQuirk)
+- maint: rename processors components to match naming guidelines (#166) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename receivers components to match naming guidelines (#165) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename exporters components to match naming guidelines (#164) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename startsamplers/droppers components to match naming guidelines (#163) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename condition components to match naming guidelines (#162) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: rename sampler components to match naming guidelines (#161) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: update the default template to use honeycomb exporter (#160) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- maint: update env vars to use HTP_ prefix (#158) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+
+## 0.11.0 2025-06-25
+
+### Fixes
+
+- fix: automatically set otlp http exporter scheme based on insecure (#153) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- fix: Fix rule rendering bug related to indexing (#154) | [Kent Quirk](https://github.com/KentQuirk)
+
+## 0.10.0 2025-06-24
+
+### Features
+
+- feat: More sophisticated validations for hpsf (#148) | [Kent Quirk](https://github.com/kentquirk)
+
+### Fixes
+
+- fix: minor updates to component names & properties (#151) | [Jessica Parsons](https://github.com/verythorough)
+
 ## 0.9.0 2025-06-18
 
 ### Features

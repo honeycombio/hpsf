@@ -4,5 +4,5 @@ package tmpl
 type TemplateConfig interface {
 	RenderToMap(m map[string]any) map[string]any
 	RenderYAML() ([]byte, error)
-	Merge(other TemplateConfig) TemplateConfig
+	Merge(other TemplateConfig) error
 }

@@ -1,0 +1,504 @@
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Send OTel via gRPC_1
+    kind: OTelGRPCExporter
+    properties:
+      - name: Headers
+        value:
+          test: header
+      - name: Insecure
+        value: true
+  - name: Send OTel via HTTP_1
+    kind: OTelHTTPExporter
+    properties:
+      - name: Headers
+        value:
+          test: header
+      - name: Insecure
+        value: true
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+    properties:
+      - name: Insecure
+        value: true
+  - name: Send to S3 Archive_1
+    kind: S3ArchiveExporter
+    properties:
+      - name: Bucket
+        value: test
+      - name: Prefix
+        value: test
+  - name: Send to stdout_1
+    kind: DebugExporter
+  - name: Check Duration_1
+    kind: LongDurationCondition
+  - name: Check for Errors_1
+    kind: ErrorExistsCondition
+    properties:
+      - name: ErrorFields
+        value:
+          - error
+  - name: Filter Logs by Severity_1
+    kind: LogSeverityFilterProcessor
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Parse Log Body As JSON_1
+    kind: LogBodyJSONParsingProcessor
+  - name: Sample at a Fixed Rate_1
+    kind: DeterministicSampler
+  - name: Sample by Events per Second_1
+    kind: EMAThroughputSampler
+    properties:
+      - name: FieldList
+        value:
+          - test
+  - name: Sample Proportionally by Key_1
+    kind: EMADynamicSampler
+    properties:
+      - name: FieldList
+        value:
+          - test
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+    properties:
+      - name: Headers
+        value:
+          test: header
+      - name: UseTLS
+        value: true
+  - name: Parse Attribute As JSON_1
+    kind: AttributeJSONParsingProcessor
+    properties:
+      - name: Attribute
+        value: test
+      - name: Signal
+        value: span
+  - name: Check HTTP Status_1
+    kind: HTTPStatusCondition
+  - name: Check Root Span_1
+    kind: RootSpanCondition
+  - name: Check for Errors Rule 4_1
+    kind: ErrorExistsCondition
+    properties:
+      - name: ErrorFields
+        value:
+          - error
+  - name: Drop All_1
+    kind: Dropper
+  - name: Compare Decimal Field_1
+    kind: CompareDecimalFieldCondition
+    properties:
+      - name: Fields
+        value: ["response_time"]
+      - name: Operator
+        value: ">"
+      - name: Value
+        value: 1.5
+  - name: Compare Integer Field_1
+    kind: CompareIntegerFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_code"]
+      - name: Operator
+        value: "="
+      - name: Value
+        value: 500
+  - name: Compare String Field_1
+    kind: CompareStringFieldCondition
+    properties:
+      - name: Fields
+        value: ["status_message"]
+      - name: Operator
+        value: "="
+      - name: Value
+        value: "error"
+  - name: Sample at 42_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 42
+  - name: Match Regular Expression_1
+    kind: MatchRegularExpression
+    properties:
+      - name: Field
+        value: "status_message"
+      - name: RegularExpression
+        value: "^[A-Z][a-z]+$"
+  - name: Check Field Exists_1
+    kind: FieldExistsCondition
+    properties:
+      - name: Fields
+        value: ["status_message"]
+  - name: Sample at 123_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 123
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Parse Attribute As JSON_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Parse Attribute As JSON_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Check Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Check for Errors_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check for Errors_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at a Fixed Rate_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at a Fixed Rate_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 4
+      type: SampleData
+    destination:
+      component: Check for Errors Rule 4_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check for Errors Rule 4_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample Proportionally by Key_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample Proportionally by Key_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 5
+      type: SampleData
+    destination:
+      component: Compare Decimal Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Decimal Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Compare Integer Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare Integer Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Compare String Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare String Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 42_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 42_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 6
+      type: SampleData
+    destination:
+      component: Match Regular Expression_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Match Regular Expression_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Field Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Field Exists_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 123_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 123_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 7
+      type: SampleData
+    destination:
+      component: Drop All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 3
+      type: SampleData
+    destination:
+      component: Check HTTP Status_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check HTTP Status_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Root Span_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Root Span_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample by Events per Second_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample by Events per Second_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Receive OTel_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Send to stdout_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Parse Log Body As JSON_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Receive OTel_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Parse Log Body As JSON_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to Honeycomb_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send OTel via gRPC_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send OTel via HTTP_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to S3 Archive_1
+      port: Logs
+      type: OTelLogs
+layout:
+  components:
+    - name: Receive OTel_1
+      position:
+        x: -1360
+        y: -100
+    - name: Send OTel via gRPC_1
+      position:
+        x: 560
+        y: 500
+    - name: Send OTel via HTTP_1
+      position:
+        x: 560
+        y: 640
+    - name: Send to Honeycomb_1
+      position:
+        x: 580
+        y: 160
+    - name: Send to S3 Archive_1
+      position:
+        x: 560
+        y: 780
+    - name: Send to stdout_1
+      position:
+        x: -760
+        y: 500
+    - name: Check Duration_1
+      position:
+        x: -140
+        y: -420
+    - name: Check for Errors_1
+      position:
+        x: -140
+        y: -300
+    - name: Filter Logs by Severity_1
+      position:
+        x: -480
+        y: -60
+    - name: Keep All_1
+      position:
+        x: 280
+        y: -440
+    - name: Parse Log Body As JSON_1
+      position:
+        x: -780
+        y: -100
+    - name: Sample at a Fixed Rate_1
+      position:
+        x: 160
+        y: -280
+    - name: Sample by Events per Second_1
+      position:
+        x: 160
+        y: -160
+    - name: Sample Proportionally by Key_1
+      position:
+        x: 180
+        y: -20
+    - name: Start Sampling_1
+      position:
+        x: -600
+        y: -380
+    - name: Parse Attribute As JSON_1
+      position:
+        x: -1080
+        y: -180
+    - name: Check HTTP Status_1
+      position:
+        x: -60
+        y: -160
+    - name: Check Root Span_1
+      position:
+        x: -60
+        y: -120
+    - name: Check for Errors Rule 4_1
+      position:
+        x: -60
+        y: -40
+    - name: Drop All_1
+      position:
+        x: 180
+        y: 100
+    - name: Compare Decimal Field_1
+      position:
+        x: -60
+        y: 60
+    - name: Compare Integer Field_1
+      position:
+        x: 60
+        y: 60
+    - name: Compare String Field_1
+      position:
+        x: 180
+        y: 60
+    - name: Sample at 42_1
+      position:
+        x: 300
+        y: 60
+    - name: Match Regular Expression_1
+      position:
+        x: -60
+        y: 120
+    - name: Check Field Exists_1
+      position:
+        x: 0
+        y: 120
+    - name: Sample at 123_1
+      position:
+        x: 120
+        y: 120

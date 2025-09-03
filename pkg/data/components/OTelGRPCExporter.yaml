@@ -1,19 +1,21 @@
 kind: OTelGRPCExporter
-name: OTel gRPC Exporter
+name: Send OTel via gRPC
 type: base
 style: exporter
 logo: opentelemetry
 status: alpha
 version: v0.1.0
-summary: Sends telemetry in OTLP (OpenTelemetry) format via gRPC.
-description: |
-  Exports OpenTelemetry signals using OTLP via gRPC.
+summary: Sends telemetry in OpenTelemetry (OTLP) format via gRPC.
+description: Exports OpenTelemetry signals using OTLP via gRPC.
 tags:
-  - category:exporter
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
 ports:
   # inputs
   - name: Traces
@@ -41,7 +43,8 @@ properties:
     type: string
     validations:
       - noblanks
-    default: https://api.honeycomb.io
+      - hostorip
+    default: api.honeycomb.io
     advanced: true
   - name: Port
     summary: The port on which to send gRPC traffic.
@@ -120,4 +123,4 @@ templates:
         value: "{{ .Values.BatchSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
         value: "{{ .Values.BatchSize | encodeAsInt }}"
-      # service is not part of the template, it's generated automatically by the collectorConfig
+    # service is not part of the template, it's generated automatically by the collectorConfig

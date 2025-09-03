@@ -1,17 +1,19 @@
 package translator
 
 import (
+	"errors"
 	"fmt"
 	"iter"
-	"slices"
-
 	"maps"
+	"sort"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
 	"github.com/honeycombio/hpsf/pkg/validator"
+	"golang.org/x/mod/semver"
 )
 
 // A Translator is responsible for translating an HPSF document into a
@@ -30,7 +32,7 @@ func NewTranslator() (*Translator, error) {
 	return tr, err
 }
 
-// Creates a translator with no components loaded.
+// NewEmptyTranslator creates a translator with no components loaded.
 func NewEmptyTranslator() *Translator {
 	tr := &Translator{
 		components: make(map[string]config.TemplateComponent),
@@ -59,7 +61,7 @@ func (t *Translator) GetTemplates() map[string]hpsf.HPSF {
 	return t.templates
 }
 
-// Loads the embedded components into the translator.
+// LoadEmbeddedComponents loads the embedded components into the translator.
 // Deprecated: use InstallComponents instead
 func (t *Translator) LoadEmbeddedComponents() error {
 	// load the embedded components
@@ -71,61 +73,58 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
-func (t *Translator) MakeConfigComponent(component *hpsf.Component) (config.Component, error) {
+// artifactVersionSupported checks if the component supports the artifact version requested
+func artifactVersionSupported(component config.TemplateComponent, v string) bool {
+	if v == "" || v == "latest" {
+		return true
+	}
+
+	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {
+		return false
+	}
+
+	if component.Maximum != "" && semver.Compare(v, component.Maximum) > 0 {
+		return false
+	}
+
+	return true
+}
+
+func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok {
+	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
 		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
 	// nothing found so we're done
-	return nil, fmt.Errorf("unknown component kind: %s", component.Kind)
+	return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
 }
 
-// ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
-// components and templates installed in the translator.
-// Note that it returns a validation.Result so that the errors can be collected and reported in a
-// structured way. This allows for multiple validation errors to be returned at once, rather than
-// stopping at the first error. This is useful for providing feedback to users on multiple issues
-// in their configuration.
-func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
-	if h == nil {
-		return fmt.Errorf("nil HPSF document provided for validation")
-	}
-
-	// We assume that the HPSF document has already been validated for syntax and structure since
-	// it's already in hpsf format. Our goal here is to make sure that the components and templates
-	// can be used to generate a valid configuration. This means checking that all components referenced
-	// in the HPSF document are available in the translator's component map and that they can be instantiated
-	// correctly, and that all the properties are of the correct type.
-	result := validator.NewResult("HPSF document validation failed")
+// getMatchingTemplateComponents returns the template components that match the components in the HPSF document.
+// It validates components before matching them and returns an error if any components are invalid.
+func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]config.TemplateComponent, validator.Result) {
+	result := validator.NewResult("HPSF component fetch failed")
 	templateComps := make(map[string]config.TemplateComponent)
-	// make all the components
 	for _, c := range h.Components {
 		err := c.Validate()
 		if err != nil {
-			// if the component itself is invalid, add the error to the result
-			// this means the component itself has some issues
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
-			// continue to process other components, since we want to validate all of them
-			// before returning an error. This allows us to collect all the errors in one pass.
+			continue
 		}
-
-		if comp, ok := t.components[c.Kind]; ok {
+		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
 			templateComps[c.GetSafeName()] = comp
 		} else {
-			result.Add(fmt.Errorf("failed to locate corresponding template component for %s: %w", c.Name, err))
+			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
 		}
 	}
-	if !result.IsEmpty() {
-		// if we have errors at this point, return early
-		// this means we couldn't even instantiate the components
-		// so there's no point in continuing to validate the connections
-		return result
-	}
+	return templateComps, result
+}
 
+func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
+	result := validator.NewResult("HPSF property validation errors")
 	// now we have a map of all the components that were successfully instantiated
 	// so we can iterate the properties and validate them according to the validations specified in the template components
 	for _, c := range h.Components {
@@ -139,27 +138,27 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 
 		// Get the template properties from the template component.
 		templateProperties := tmpl.Props()
-		var mappedSuppliedProperties map[string]hpsf.Property
-
-		mappedSuppliedProperties = make(map[string]hpsf.Property)
+		componentProps := make(map[string]hpsf.Property)
 		for _, prop := range c.Properties {
-			mappedSuppliedProperties[prop.Name] = prop
-			_, propertyFound := templateProperties[prop.Name]
-			if !propertyFound {
+			componentProps[prop.Name] = prop
+			_, found := templateProperties[prop.Name]
+			if !found {
 				// If the property is not found in the template component's
 				// properties, something's messed up. This means the property is
 				// not defined in the template component.
-				return hpsf.NewError("property not found in template component").
+				err := hpsf.NewError("property not found in template component").
 					WithComponent(c.Name).
 					WithProperty(prop.Name)
+				result.Add(err)
 			}
 		}
+
 		for _, prop := range templateProperties {
 			// validate each property against the template component's basic validation rules
-			suppliedProperty, propertyFound := mappedSuppliedProperties[prop.Name]
+			suppliedProperty, propertyFound := componentProps[prop.Name]
 			if !propertyFound {
 				// If the property is not supplied, use the default value from the template component.
-				suppliedProperty = hpsf.Property{Name: prop.Name, Value: prop.Default}
+				suppliedProperty.Value = prop.Default
 			}
 
 			// Now validate the property against the template property's validation rules.
@@ -175,6 +174,268 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 			}
 		}
 	}
+	return result
+}
+
+// this checks that there is exactly one connection on the input and output of each sampler
+// and condition component.
+func (t *Translator) validateSamplerConnections(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
+	result := validator.NewResult("HPSF sampler connection validation errors")
+	// iterate over the components and check for samplers
+	for _, c := range h.Components {
+		tmpl, ok := templateComps[c.GetSafeName()]
+		if !ok {
+			// If we don't have a template component for this component, it
+			// means we couldn't instantiate it. We caught this earlier, so we
+			// should never get here. Just continue.
+			continue
+		}
+
+		if tmpl.Style == "sampler" || tmpl.Style == "dropper" || tmpl.Style == "condition" {
+			// check the connections for the component
+			inputs := 0
+			outputs := 0
+			for _, conn := range h.Connections {
+				if conn.Destination.GetSafeName() == c.GetSafeName() {
+					inputs++
+				}
+				if conn.Source.GetSafeName() == c.GetSafeName() {
+					outputs++
+				}
+			}
+			if inputs != 1 {
+				err := hpsf.NewError("sampler, dropper, and condition components must have exactly one input connection").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+			if outputs != 1 && tmpl.Style != "dropper" {
+				err := hpsf.NewError("sampler and condition components must have exactly one output connection").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+		}
+	}
+	return result
+}
+
+// validateConnectionPorts checks that all connections have valid ports. The name on the connection
+// in hpsf must match the port name on the template component.
+func (t *Translator) validateConnectionPorts(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
+	result := validator.NewResult("HPSF connection port validation errors")
+	// iterate over the connections and check that the source and destination components have the
+	// specified ports. This is a sanity check to ensure that the connections are valid.
+	for _, conn := range h.Connections {
+		srcComp, ok := templateComps[conn.Source.GetSafeName()]
+		if !ok {
+			continue
+		}
+
+		if srcComp.GetPort(conn.Source.PortName) == nil {
+			err := hpsf.NewErrorf("source component does not have a port called %s", conn.Source.PortName).
+				WithComponent(conn.Source.Component)
+			result.Add(err)
+		}
+
+		dstComp, ok := templateComps[conn.Destination.GetSafeName()]
+		if !ok {
+			continue
+		}
+
+		if dstComp.GetPort(conn.Destination.PortName) == nil {
+			err := hpsf.NewErrorf("destination component does not have a port called %s", conn.Destination.PortName).
+				WithComponent(conn.Destination.Component)
+			result.Add(err)
+		}
+	}
+	return result
+}
+
+// findPathComponents finds all the components in paths starting from the given component.
+// It returns a slice of component names that represent all components in paths
+// that start from the given component.
+func (t *Translator) findPathComponents(h *hpsf.HPSF, startComp string) []string {
+	visited := make(map[string]bool)
+	components := make([]string, 0)
+
+	var dfs func(comp string)
+	dfs = func(comp string) {
+		if visited[comp] {
+			return
+		}
+		visited[comp] = true
+		components = append(components, comp)
+
+		// Continue traversing to find all connected components
+		for _, conn := range h.Connections {
+			if conn.Source.GetSafeName() == comp {
+				dfs(conn.Destination.GetSafeName())
+			}
+		}
+	}
+
+	dfs(startComp)
+	return components
+}
+
+// The rules for sampling in HPSF are as follows:
+// - If there are any sampling components, there must be at least one component with style "startsampling".
+// - Each path connected to a "startsampling" component's output must lead to exactly one "sampler" or "dropper".
+// - There may be multiple "condition" components between startsampling and the sampler or dropper.
+// - Every path on a startsampler except the one with the highest index must connect to a condition.
+// - Droppers can terminate a path (since they do not have an output port).
+// - The output of samplers must be connected to an "exporter" component.
+func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
+	result := validator.NewResult("HPSF start sampling validation errors")
+	startSamplingCount := 0
+	var startSamplingComp string
+	for _, c := range h.Components {
+		tmpl, ok := templateComps[c.GetSafeName()]
+		if !ok {
+			continue
+		}
+
+		if tmpl.Style == "startsampling" {
+			startSamplingCount++
+			startSamplingComp = c.GetSafeName()
+			if startSamplingCount > 1 {
+				err := hpsf.NewError("only one StartSampling component is allowed").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+		}
+	}
+	if startSamplingCount == 0 {
+		// if there is no StartSampling component, we cannot have any samplers in the configuration
+		for _, c := range h.Components {
+			tmpl, ok := templateComps[c.GetSafeName()]
+			if !ok {
+				continue
+			}
+
+			if tmpl.Style == "sampler" {
+				err := hpsf.NewError("if there is no StartSampling component, no samplers are allowed").
+					WithComponent(c.Name)
+				result.Add(err)
+			}
+		}
+	} else {
+		// if there is a StartSampling component, we must have at least one sampler or dropper in the configuration
+		hasSamplerOrDropper := false
+		for _, c := range h.Components {
+			tmpl, ok := templateComps[c.GetSafeName()]
+			if !ok {
+				continue
+			}
+
+			if tmpl.Style == "sampler" || tmpl.Style == "dropper" {
+				hasSamplerOrDropper = true
+				break
+			}
+		}
+		if !hasSamplerOrDropper {
+			err := hpsf.NewError("if there is a StartSampling component, at least one sampler or dropper is required").
+				WithComponent(startSamplingComp)
+			result.Add(err)
+		}
+	}
+	// now we need to check that each path from the StartSampling component leads to exactly one sampler or dropper
+	if startSamplingCount == 1 {
+		// Find all connections from StartSampling
+		startSamplingConnections := make([]*hpsf.Connection, 0)
+		for _, conn := range h.Connections {
+			if conn.Source.GetSafeName() == startSamplingComp {
+				startSamplingConnections = append(startSamplingConnections, conn)
+			}
+		}
+
+		// For each connection from StartSampling, trace the path to find if it leads to exactly one sampler or dropper
+		for _, startConn := range startSamplingConnections {
+			pathComponents := t.findPathComponents(h, startConn.Destination.GetSafeName())
+			samplerOrDropperCount := 0
+			for _, comp := range pathComponents {
+				tmpl, ok := templateComps[comp]
+				if ok && (tmpl.Style == "sampler" || tmpl.Style == "dropper") {
+					samplerOrDropperCount++
+				}
+			}
+			if samplerOrDropperCount != 1 {
+				err := hpsf.NewError("Each path from StartSampling must lead to exactly one sampler or dropper").
+					WithComponent(startSamplingComp)
+				result.Add(err)
+			}
+		}
+
+		// Validate that every path except the one with the highest index connects to a condition
+		// Find the highest index among all StartSampling connections
+		highestIndex := -1
+		startSamplingTemplate := templateComps[startSamplingComp]
+		for _, startConn := range startSamplingConnections {
+			// Get the port index from the connection's source port
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex > highestIndex {
+				highestIndex = portIndex
+			}
+		}
+
+		// Check each path except the one with the highest index
+		for _, startConn := range startSamplingConnections {
+			portIndex := startSamplingTemplate.GetPortIndex(startConn.Source.PortName)
+			if portIndex != highestIndex {
+				// This path must connect to a condition
+				pathComponents := t.findPathComponents(h, startConn.Destination.GetSafeName())
+				hasCondition := false
+				for _, comp := range pathComponents {
+					tmpl, ok := templateComps[comp]
+					if ok && tmpl.Style == "condition" {
+						hasCondition = true
+						break
+					}
+				}
+				if !hasCondition {
+					err := hpsf.NewError("Every path on a startsampler except the one with the highest index must connect to a condition").
+						WithComponent(startSamplingComp)
+					result.Add(err)
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+// ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
+// components and templates installed in the translator.
+// Note that it returns a validation.Result so that the errors can be collected and reported in a
+// structured way. This allows for multiple validation errors to be returned at once, rather than
+// stopping at the first error. This is useful for providing feedback to users on multiple issues
+// in their configuration.
+func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
+	if h == nil {
+		return errors.New("nil HPSF document provided for validation")
+	}
+
+	// if we don't pass basic validation, we can't continue
+	if err := h.Validate(); err != nil {
+		return err
+	}
+
+	// We assume that the HPSF document has already been validated for syntax and structure since
+	// it's already in hpsf format. Our goal here is to make sure that the components and templates
+	// can be used to generate a valid configuration. This means checking that all components referenced
+	// in the HPSF document are available in the translator's component map and that they can be instantiated
+	// correctly, and that all the properties are of the correct type.
+	templateComps, result := t.getMatchingTemplateComponents(h)
+	if !result.IsEmpty() {
+		// if we have errors at this point, return early
+		// this means we couldn't even instantiate the components
+		// so there's no point in continuing to validate the connections
+		return result
+	}
+
+	result.Add(t.validateProperties(h, templateComps))
+	result.Add(t.validateConnectionPorts(h, templateComps))
+	result.Add(t.validateStartSampling(h, templateComps))
+	result.Add(t.validateSamplerConnections(h, templateComps))
 
 	return result.ErrOrNil()
 }
@@ -224,16 +485,12 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 	}
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
-	// we need to make sure that there is a sampler in the config to produce a valid refinery rules config
-	t.maybeAddDefaultSampler(h)
-
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
-	// for _, c := range h.Components {
 	visitFunc := func(c *hpsf.Component) error {
-		comp, err := t.MakeConfigComponent(c)
+		comp, err := t.MakeConfigComponent(c, artifactVersion)
 		if err != nil {
 			return err
 		}
@@ -265,94 +522,99 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct config.Type, userdata map[s
 		comp.AddConnection(conn)
 	}
 
-	// We need to generate our collection of unique pipelines. A pipeline in
+	// We need to generate our collection of unique paths. A pipeline in
 	// this context is the shortest path from a source component to a
 	// destination component. We iterate over all starting components (those
 	// with no incoming connections) and all ending components (those with no
 	// outgoing connections).
-	pipelines := h.FindAllPipelines(receiverNames)
-	if len(pipelines) == 0 {
-		// there were no complete pipelines found, so we construct dummy pipelines with all the components
-		// so that all the non-piped components can play
-		pipelines = []hpsf.PipelineWithConnectionType{
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_LOGS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_METRICS},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_TRACES},
-			{Pipeline: h.Components, ConnType: hpsf.CTYPE_HONEY},
+	paths := h.FindAllPaths(receiverNames)
+	if len(paths) == 0 {
+		// there were no complete paths found, so we construct dummy paths with all the components
+		// so that all the unconnected components can play
+		paths = []hpsf.PathWithConnections{
+			{Path: h.Components, ConnType: hpsf.CTYPE_LOGS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_METRICS},
+			{Path: h.Components, ConnType: hpsf.CTYPE_TRACES},
+			{Path: h.Components, ConnType: hpsf.CTYPE_HONEY},
+			{Path: h.Components, ConnType: hpsf.CTYPE_SAMPLE},
 		}
 	}
 
-	composites := make([]tmpl.TemplateConfig, 0, len(pipelines))
+	// sort paths by connection type and the component name and port name of the
+	// first connection in the path
+	sort.Slice(paths, func(i, j int) bool {
+		if paths[i].ConnType != paths[j].ConnType {
+			return paths[i].ConnType < paths[j].ConnType
+		}
 
-	// now we can iterate over the pipelines and generate a configuration for each
-	for _, pipeline := range pipelines {
+		// if either path has no connections, we can determine the order by the presence of connections
+		if len(paths[i].Connections) == 0 || len(paths[j].Connections) == 0 {
+			return len(paths[i].Connections) == 0
+		}
+
+		// If both paths have connections, we can compare the first connection in each path.
+		// We compare by the source component name first
+		if paths[i].Connections[0].Source.Component != paths[j].Connections[0].Source.Component {
+			return paths[i].Connections[0].Source.Component < paths[j].Connections[0].Source.Component
+		}
+		// now compare the port names (this is what orders multiple paths from startsampling)
+		// This assumes that the port names are sorted in the same order as the port indexes,
+		// since port indexes are not available here.
+		return paths[i].Connections[0].Source.PortName < paths[j].Connections[0].Source.PortName
+	})
+
+	// we need a dummy component to start with so that we can always have a valid config
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+	composites := make([]tmpl.TemplateConfig, 0, len(paths))
+
+	// now we can iterate over the paths and generate a configuration for each
+	for _, path := range paths {
 		// Start with a base component so we always have a valid config
-		dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, pipeline, userdata)
+		composite, err := base.GenerateConfig(ct, path, userdata)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, comp := range pipeline.Pipeline {
+		mergedSomething := false
+		for _, comp := range path.Path {
 			// look up the component in the ordered map
 			c, ok := comps.Get(comp.GetSafeName())
 			if !ok {
-				return nil, fmt.Errorf("unknown component %s in pipeline", comp.GetSafeName())
+				return nil, fmt.Errorf("unknown component %s in path", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, pipeline, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, userdata)
 			if err != nil {
 				return nil, err
 			}
 			if compConfig != nil {
-				composite.Merge(compConfig)
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
 			}
 		}
-		composites = append(composites, composite)
+		if mergedSomething {
+			composites = append(composites, composite)
+		}
 	}
 	// If we have multiple pipelines, we need to merge them into a single config.
 	if len(composites) > 1 {
 		// We can use the Merge method to combine all the configurations into one.
 		finalConfig := composites[0]
 		for _, comp := range composites[1:] {
-			finalConfig.Merge(comp)
+			if err := finalConfig.Merge(comp); err != nil {
+				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
+			}
 		}
 		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
 		return composites[0], nil
 	}
-	// If we have no pipelines, we return nil.
-	return nil, nil
-}
 
-func (t *Translator) maybeAddDefaultSampler(h *hpsf.HPSF) {
-	foundDefaultSampler := slices.ContainsFunc(h.Components, func(c *hpsf.Component) bool {
-		if component, ok := t.components[c.Kind]; ok {
-			if component.Style != "sampler" {
-				return false
-			}
-			p := c.GetProperty("Environment")
-			if p != nil {
-				return p.Value == "__default__"
-			}
-			return slices.ContainsFunc(component.Properties, func(p config.TemplateProperty) bool {
-				return p.Name == "Environment" && p.Default == "__default__"
-			})
-		}
-		return false
-	})
-	if !foundDefaultSampler {
-		h.Components = append(h.Components, &hpsf.Component{
-			Name: "defaultSampler",
-			Kind: "DeterministicSampler",
-			Properties: []hpsf.Property{
-				{
-					Name:  "SampleRate",
-					Value: 1,
-				},
-			},
-		})
-	}
+	// Start with a base component so we always have a valid config
+	unconfigured := config.UnconfiguredComponent{Component: dummy}
+	return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 }
