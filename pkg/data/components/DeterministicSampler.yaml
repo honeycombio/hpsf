@@ -12,6 +12,8 @@ tags:
   - signal:HoneycombEvents
   - sampler:deterministic
   - sampler:rate
+  - input:SampleData
+  - output:Events
 ports:
   # inputs
   - name: Sample

@@ -11,6 +11,10 @@ tags:
   - service:collector
   - signal:OTelTraces
   - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - output:Traces
+  - output:Logs
 ports:
   # inputs
   - name: Traces

@@ -10,6 +10,8 @@ tags:
   - category:processor
   - service:collector
   - signal:OtelTraces
+  - input:Traces
+  - output:Traces
 ports:
   # inputs
   - name: Traces

@@ -15,6 +15,9 @@ tags:
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
 ports:
   # inputs
   - name: Traces
