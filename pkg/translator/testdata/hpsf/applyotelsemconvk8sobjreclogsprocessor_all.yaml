@@ -4,7 +4,7 @@ components:
   - name: otlp_out
     kind: OTelHTTPExporter
   - name: apply_k8s_semconv
-    kind: ApplyOTelK8sSemconvProcessor
+    kind: ApplyOTelSemconvK8sObjRecLogsProcessor
 connections:
   - source:
       component: otlp_in

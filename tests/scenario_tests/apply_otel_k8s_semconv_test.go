@@ -11,7 +11,7 @@ import (
 )
 
 func TestApplyOTelK8sSemconvProcessor(t *testing.T) {
-	_, collectorConfig, err := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/apply_otel_k8s_semconv.yaml")
+	_, collectorConfig, err := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/apply_otel_semconv_k8sobjrec.yaml")
 	require.False(t, err.HasErrors())
 
 	logsPipelines := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
@@ -26,5 +26,5 @@ func TestApplyOTelK8sSemconvProcessor(t *testing.T) {
 	require.Equal(t, ottl.IgnoreError, transformConfig.ErrorMode, "Expected ErrorMode to be \"ignore\"")
 	// require.Equal(t, "log", transformConfig.LogStatements[0].Context) // not currently possible as the context type is internal
 	require.Len(t, transformConfig.LogStatements, 1, "Expected 1 log statement, got %v", len(transformConfig.LogStatements))
-	require.Len(t, transformConfig.LogStatements[0].Statements, 6, "Expected 6 statements, got %v", len(transformConfig.LogStatements[0].Statements))
+	require.Len(t, transformConfig.LogStatements[0].Statements, 5, "Expected 5 statements, got %v", len(transformConfig.LogStatements[0].Statements))
 }

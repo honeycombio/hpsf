@@ -1,13 +1,12 @@
-kind: ApplyOTelK8sSemconvProcessor
-name: Apply OpenTelemetry K8s Semantic Conventions
+kind: ApplyOTelSemconvK8sObjRecLogsProcessor
+name: Apply OpenTelemetry Kubernetes semantic conventions to K8s Object Receiver log attributes
 style: processor
 type: base
 status: development
 version: v0.0.1
-summary: Applies OpenTelemetry Kubernetes semantic conventions 
+summary: Applies OpenTelemetry Kubernetes semantic conventions to logs received by the K8s Object Receiver.
 description: |-
-  This processor applies OpenTelemetry Kubernetes semantic conventions.
-  For log records, it includes setting the appropriate attributes for log severity, source, and other relevant metadata.
+  This processor applies OpenTelemetry Kubernetes semantic conventions to logs received by the K8s Object Receiver.
 tags:
   - category:processor
   - service:collector
@@ -33,14 +32,12 @@ templates:
       - key: "{{ .ComponentName }}.error_mode"
         value: "ignore"
       - key: "{{ .ComponentName }}.log_statements[0]"
-        value: "merge_maps(attributes, attributes[\"metadata\"], \"upsert\") where IsMap(attributes[\"metadata\"])"
-      - key: "{{ .ComponentName }}.log_statements[1]"
         value: "set(attributes[\"k8s.pod.name\"], attributes[\"regarding\"][\"name\"]) where attributes[\"regarding\"][\"kind\"] == \"Pod\""
-      - key: "{{ .ComponentName }}.log_statements[2]"
+      - key: "{{ .ComponentName }}.log_statements[1]"
         value: "set(attributes[\"k8s.node.name\"], attributes[\"regarding\"][\"name\"]) where attributes[\"regarding\"][\"kind\"] == \"Node\""
-      - key: "{{ .ComponentName }}.log_statements[3]"
+      - key: "{{ .ComponentName }}.log_statements[2]"
         value: "set(attributes[\"k8s.job.name\"], attributes[\"regarding\"][\"name\"]) where attributes[\"regarding\"][\"kind\"] == \"Job\""
-      - key: "{{ .ComponentName }}.log_statements[4]"
+      - key: "{{ .ComponentName }}.log_statements[3]"
         value: "set(attributes[\"k8s.cronjob.name\"], attributes[\"regarding\"][\"name\"]) where attributes[\"regarding\"][\"kind\"] == \"CronJob\""
-      - key: "{{ .ComponentName }}.log_statements[5]"
+      - key: "{{ .ComponentName }}.log_statements[4]"
         value: "set(attributes[\"k8s.namespace.name\"], attributes[\"regarding\"][\"namespace\"]) where attributes[\"regarding\"][\"kind\"] == \"Pod\" or attributes[\"regarding\"][\"kind\"] == \"Job\" or attributes[\"regarding\"][\"kind\"] == \"CronJob\""
