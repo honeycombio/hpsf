@@ -61,17 +61,17 @@ templates:
         value: "ignore"
       # resource attributes
       - key: "{{ .ComponentName }}.trace_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
       - key: "{{ .ComponentName }}.metric_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
       - key: "{{ .ComponentName }}.log_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"%s\"], span.attributes[\"%s\"])" }} where span.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"%s\"], span.attributes[\"%s\"])" }}'
       # metric statements (resource attributes)
       - key: "{{ .ComponentName }}.metric_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"%s\"], metric.attributes[\"%s\"])" }} where metric.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"%s\"], metric.attributes[\"%s\"])" }}'
       # log statements (resource attributes)
       - key: "{{ .ComponentName }}.log_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"%s\"], log.attributes[\"%s\"])" }} where log.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"%s\"], log.attributes[\"%s\"])" }}'

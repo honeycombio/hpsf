@@ -124,7 +124,7 @@ func encodeAsStringMap(format string, val any) string {
 	m := val.(map[string]any)
 	newArr := make([]string, 0, len(m))
 	for _, k := range slices.Sorted(maps.Keys(m)) {
-		newArr = append(newArr, fmt.Sprintf(format, k, m[k]))
+		newArr = append(newArr, fmt.Sprintf(format, m[k], k))
 	}
 	return encodeAsArray(newArr)
 }
