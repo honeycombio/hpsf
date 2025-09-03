@@ -1,5 +1,5 @@
-kind: RemoveAttributeProcessor
-name: Remove Attribute Processor
+kind: RemoveAttributesProcessor
+name: Remove Attributes
 style: processor
 type: base
 status: development
