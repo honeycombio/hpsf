@@ -40,24 +40,23 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"buildurl":            buildurl,
-		"comment":             comment,
-		"encodeAsArray":       encodeAsArray,
-		"encodeAsStringArray": encodeAsStringArray,
-		"encodeAsStringMap":   encodeAsStringMap,
-		"encodeAsBool":        encodeAsBool,
-		"encodeAsInt":         encodeAsInt,
-		"encodeAsFloat":       encodeAsFloat,
-		"encodeAsMap":         encodeAsMap,
-		"indent":              indent,
-		"join":                join,
-		"makeSlice":           makeSlice,
-		"meta":                meta,
-		"nonempty":            nonempty,
-		"now":                 now,
-		"split":               split,
-		"upper":               strings.ToUpper,
-		"yamlf":               yamlf,
+		"buildurl":          buildurl,
+		"comment":           comment,
+		"encodeAsArray":     encodeAsArray,
+		"encodeAsStringMap": encodeAsStringMap,
+		"encodeAsBool":      encodeAsBool,
+		"encodeAsInt":       encodeAsInt,
+		"encodeAsFloat":     encodeAsFloat,
+		"encodeAsMap":       encodeAsMap,
+		"indent":            indent,
+		"join":              join,
+		"makeSlice":         makeSlice,
+		"meta":              meta,
+		"nonempty":          nonempty,
+		"now":               now,
+		"split":             split,
+		"upper":             strings.ToUpper,
+		"yamlf":             yamlf,
 	}
 }
 
@@ -110,26 +109,6 @@ func encodeAsArray(arr any) string {
 	default:
 		return ""
 	}
-}
-
-// encodeAsStringArray takes a slice and a format string, and returns a string
-// intended to be expanded later into an array when it's rendered to YAML.
-func encodeAsStringArray(format string, arr any) string {
-	var newArr []string
-	switch a := arr.(type) {
-	case []string:
-		newArr = a
-	case []any:
-		newArr = _getStringsFrom(a)
-	default:
-		return ""
-	}
-
-	// loop through the array and apply the format string to each element
-	for i, v := range newArr {
-		newArr[i] = fmt.Sprintf(format, v)
-	}
-	return encodeAsArray(newArr)
 }
 
 // encodeAsStringArray takes a slice and a format string, and returns a string
