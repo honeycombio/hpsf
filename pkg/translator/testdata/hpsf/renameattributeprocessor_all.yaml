@@ -10,6 +10,8 @@ components:
         value:
           old_attr: "new_attr"
           another_old_attr: "another_new_attr"
+      - name: RenameResourceAttributes
+        value: true
 connections:
   - source:
       component: otlp_in

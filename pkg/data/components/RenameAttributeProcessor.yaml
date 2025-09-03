@@ -48,6 +48,12 @@ properties:
     validations:
      - noblanks
      - nonempty
+  - name: RenameResourceAttributes
+    summary: A flag that indicates whether to rename resource attributes.
+    description: |
+      A flag that indicates whether to rename resource attributes from the telemetry data.
+    type: boolean
+    default: false
 templates:
   - kind: collector_config
     name: otel_remove_attributes_processor
@@ -62,10 +68,13 @@ templates:
       # resource attributes
       - key: "{{ .ComponentName }}.trace_statements"
         value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       - key: "{{ .ComponentName }}.metric_statements"
         value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       - key: "{{ .ComponentName }}.log_statements"
         value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
         value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"%s\"], span.attributes[\"%s\"])" }}'
