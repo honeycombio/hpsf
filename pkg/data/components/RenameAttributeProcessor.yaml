@@ -61,17 +61,17 @@ templates:
         value: "ignore"
       # resource attributes
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(resource.attributes[\\\"%s\\\"], resource.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }} where resource.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(span.attributes[\\\"%s\\\"], span.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"%s\"], span.attributes[\"%s\"])" }} where span.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
       # metric statements (resource attributes)
       - key: "{{ .ComponentName }}.metric_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(metric.attributes[\\\"%s\\\"], metric.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"%s\"], metric.attributes[\"%s\"])" }} where metric.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'
       # log statements (resource attributes)
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.Attributes | encodeAsStringMap \"set(log.attributes[\\\"%s\\\"], log.attributes[\\\"%s\\\"])\" }}"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"%s\"], log.attributes[\"%s\"])" }} where log.attributes[{{ .Values.Attributes | encodeAsStringMap "%%s" }}] != nil'

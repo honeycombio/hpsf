@@ -9,20 +9,20 @@ processors:
     transform/rename_attributes_1:
         error_mode: ignore
         log_statements:
-            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"])
-            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
-            - set(log.attributes["another_old_attr"], log.attributes["another_new_attr"])
-            - set(log.attributes["old_attr"], log.attributes["new_attr"])
+            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"]) where resource.attributes["old_attr"] != nil
+            - set(log.attributes["another_old_attr"], log.attributes["another_new_attr"]) where log.attributes["another_old_attr"] != nil
+            - set(log.attributes["old_attr"], log.attributes["new_attr"]) where log.attributes["old_attr"] != nil
         metric_statements:
-            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"])
-            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
-            - set(metric.attributes["another_old_attr"], metric.attributes["another_new_attr"])
-            - set(metric.attributes["old_attr"], metric.attributes["new_attr"])
+            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"]) where resource.attributes["old_attr"] != nil
+            - set(metric.attributes["another_old_attr"], metric.attributes["another_new_attr"]) where metric.attributes["another_old_attr"] != nil
+            - set(metric.attributes["old_attr"], metric.attributes["new_attr"]) where metric.attributes["old_attr"] != nil
         trace_statements:
-            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"])
-            - set(resource.attributes["old_attr"], resource.attributes["new_attr"])
-            - set(span.attributes["another_old_attr"], span.attributes["another_new_attr"])
-            - set(span.attributes["old_attr"], span.attributes["new_attr"])
+            - set(resource.attributes["another_old_attr"], resource.attributes["another_new_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["old_attr"], resource.attributes["new_attr"]) where resource.attributes["old_attr"] != nil
+            - set(span.attributes["another_old_attr"], span.attributes["another_new_attr"]) where span.attributes["another_old_attr"] != nil
+            - set(span.attributes["old_attr"], span.attributes["new_attr"]) where span.attributes["old_attr"] != nil
     usage: {}
 exporters:
     otlphttp/otlp_out:
