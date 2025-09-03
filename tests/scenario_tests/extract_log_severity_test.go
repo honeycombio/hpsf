@@ -11,7 +11,7 @@ import (
 )
 
 func TestExtractLogPropertiesProcessor(t *testing.T) {
-	_, collectorConfig, err := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/extract_log_properties.yaml")
+	_, collectorConfig, err := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/extract_log_severity.yaml")
 	require.False(t, err.HasErrors())
 
 	logsPipelines := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
@@ -19,12 +19,12 @@ func TestExtractLogPropertiesProcessor(t *testing.T) {
 
 	_, processors, _, result := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelines[0].String())
 	require.True(t, result.Found)
-	require.Contains(t, processors, "transform/extract_log_properties")
+	require.Contains(t, processors, "transform/extract_log_severity")
 
-	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/extract_log_properties")
+	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/extract_log_severity")
 	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
 	require.Equal(t, ottl.IgnoreError, transformConfig.ErrorMode, "Expected ErrorMode to be \"ignore\"")
 	// require.Equal(t, "log", transformConfig.LogStatements[0].Context) // not currently possible as the context type is internal
 	require.Len(t, transformConfig.LogStatements, 1, "Expected 1 log statement, got %v", len(transformConfig.LogStatements))
-	require.Len(t, transformConfig.LogStatements[0].Statements, 6, "Expected 3 statements, got %v", len(transformConfig.LogStatements[0].Statements))
+	require.Len(t, transformConfig.LogStatements[0].Statements, 4, "Expected 4 statements, got %v", len(transformConfig.LogStatements[0].Statements))
 }

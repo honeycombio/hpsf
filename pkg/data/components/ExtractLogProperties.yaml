@@ -1,12 +1,12 @@
-kind: ExtractLogPropertiesProcessor
-name: Extract Log Properties
+kind: ExtractLogSeverityProcessor
+name: Extract Log Severity
 style: processor
 type: base
 status: development
 version: v0.0.1
-summary: Extracts the OpenTelemetry log properties from the log's body field
+summary: Extracts the OpenTelemetry log severity from the log's body field
 description: |-
-  This processor extracts the log properties from the log's body field, which is expected to be in JSON format.
+  This processor extracts the log severity from the log's body field, which is expected to be in JSON format.
   It sets the severity_text, severity_number and severity_text attributes according to the detected severity type.
 tags:
   - category:processor
@@ -21,9 +21,30 @@ ports:
   - name: Logs
     direction: output
     type: OTelLogs
+properties:
+  - name: Field
+    type: string
+    validations:
+      - noblanks
+    default: type
+  - name: InfoText
+    type: string
+    validations:
+      - noblanks
+    default: Info
+  - name: WarningText
+    type: string
+    validations:
+      - noblanks
+    default: Warn
+  - name: ErrorText
+    type: string
+    validations:
+      - noblanks
+    default: Error
 templates:
   - kind: collector_config
-    name: otel_extract_log_properties
+    name: otel_extract_log_severity
     format: collector
     meta:
       componentSection: processors
@@ -33,14 +54,10 @@ templates:
       - key: "{{ .ComponentName }}.error_mode"
         value: "ignore"
       - key: "{{ .ComponentName }}.log_statements[0]"
-        value: "set(attributes[\"watch-type\"], body[\"type\"]) where IsMap(body) and body[\"type\"] != nil"
+        value: "set(severity_text, attributes[\"{{ .Values.Field }}\"]) where attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.InfoText }}\" or attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.WarningText }}\" or attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.ErrorText }}\""
       - key: "{{ .ComponentName }}.log_statements[1]"
-        value: "merge_maps(attributes, body, \"upsert\") where IsMap(body) and body[\"object\"] == nil"
+        value: "set(severity_number, SEVERITY_NUMBER_INFO) where attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.InfoText }}\""
       - key: "{{ .ComponentName }}.log_statements[2]"
-        value: "merge_maps(attributes, body[\"object\"], \"upsert\") where IsMap(body) and body[\"object\"] != nil"
+        value: "set(severity_number, SEVERITY_NUMBER_WARN) where attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.WarningText }}\""
       - key: "{{ .ComponentName }}.log_statements[3]"
-        value: "set(severity_text, attributes[\"type\"]) where attributes[\"type\"] == \"Normal\" or attributes[\"type\"] == \"Warning\""
-      - key: "{{ .ComponentName }}.log_statements[4]"
-        value: "set(severity_number, SEVERITY_NUMBER_INFO) where attributes[\"type\"] == \"Normal\""
-      - key: "{{ .ComponentName }}.log_statements[5]"
-        value: "set(severity_number, SEVERITY_NUMBER_WARN) where attributes[\"type\"] == \"Warning\""
+        value: "set(severity_number, SEVERITY_NUMBER_ERROR) where attributes[\"{{ .Values.Field }}\"] == \"{{ .Values.ErrorText }}\""

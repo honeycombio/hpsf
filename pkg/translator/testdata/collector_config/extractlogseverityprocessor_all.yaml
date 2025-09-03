@@ -1,0 +1,36 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    transform/extract_log_severity:
+        error_mode: ignore
+        log_statements:
+            - set(severity_text, attributes["level"]) where attributes["level"] == "Info" or attributes["level"] == "Warn" or attributes["level"] == "Error"
+            - set(severity_number, SEVERITY_NUMBER_INFO) where attributes["level"] == "Info"
+            - set(severity_number, SEVERITY_NUMBER_WARN) where attributes["level"] == "Warn"
+            - set(severity_number, SEVERITY_NUMBER_ERROR) where attributes["level"] == "Error"
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/c8e-6f2:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/extract_log_severity]
+            exporters: [otlphttp/otlp_out]
