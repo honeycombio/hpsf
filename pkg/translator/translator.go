@@ -16,6 +16,8 @@ import (
 	"golang.org/x/mod/semver"
 )
 
+const LatestVersion = "latest"
+
 // A Translator is responsible for translating an HPSF document into a
 // collection of components, and then further rendering those into configuration
 // files.
@@ -75,8 +77,14 @@ func (t *Translator) LoadEmbeddedComponents() error {
 
 // artifactVersionSupported checks if the component supports the artifact version requested
 func artifactVersionSupported(component config.TemplateComponent, v string) bool {
-	if v == "" || v == "latest" {
+	if v == "" || v == LatestVersion {
 		return true
+	}
+
+	// ensure the version string is prefixed with v otherwise semver.Compare fails
+	// to parse the version
+	if v[0] != 'v' {
+		v = "v" + v
 	}
 
 	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {

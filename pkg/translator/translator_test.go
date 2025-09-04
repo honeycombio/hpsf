@@ -105,7 +105,7 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 					h, err := hpsf.FromYAML(inputData)
 					require.NoError(t, err)
 
-					cfg, err := tlater.GenerateConfig(&h, configType, "latest", nil)
+					cfg, err := tlater.GenerateConfig(&h, configType, LatestVersion, nil)
 					require.NoError(t, err)
 					if cfg == nil {
 						continue // skip if no config is generated for this component
@@ -189,7 +189,7 @@ func TestDefaultHPSF(t *testing.T) {
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(&h, tC.ct, "latest", nil)
+			cfg, err := tlater.GenerateConfig(&h, tC.ct, LatestVersion, nil)
 			require.NoError(t, err)
 
 			got, err := cfg.RenderYAML()
@@ -222,7 +222,7 @@ func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
 	require.NoError(t, err)
 	tlater.InstallComponents(comps)
 
-	cfg, err := tlater.GenerateConfig(&hpsf, hpsftypes.RefineryRules, "latest", nil)
+	cfg, err := tlater.GenerateConfig(&hpsf, hpsftypes.RefineryRules, LatestVersion, nil)
 	require.NoError(t, err)
 
 	got, err := cfg.RenderYAML()
@@ -563,7 +563,7 @@ layout:
 	require.NoError(t, err)
 	tlater.InstallComponents(comps)
 
-	x, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
+	x, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, LatestVersion, nil)
 	require.NoError(t, err)
 	require.NotNil(t, x)
 }
@@ -738,7 +738,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, LatestVersion, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 		})
@@ -838,7 +838,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, LatestVersion, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
@@ -1138,7 +1138,7 @@ connections:
 			require.NoError(t, err)
 			tlater.InstallComponents(comps)
 
-			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
+			cfg, err := tlater.GenerateConfig(&h, hpsftypes.RefineryRules, LatestVersion, nil)
 			require.NoError(t, err)
 			require.NotNil(t, cfg)
 
@@ -1197,7 +1197,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		{
 			name:            "latest artifact version",
 			wantSupported:   true,
-			artifactVersion: "latest",
+			artifactVersion: LatestVersion,
 			component: config.TemplateComponent{
 				Minimum: "v0.100.0",
 				Maximum: "v0.200.0",
