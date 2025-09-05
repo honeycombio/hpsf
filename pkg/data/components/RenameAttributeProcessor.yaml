@@ -1,0 +1,93 @@
+kind: RenameAttributeProcessor
+name: Rename Attribute Processor
+style: processor
+type: base
+status: development
+version: v0.0.1
+summary: A processor that can be used to rename attributes in telemetry.
+description: |
+  This processor allows you to rename attributes from traces, metrics, and logs by
+  specifying a map of attribute names. It can be used to modify or standardize
+  attribute names in your telemetry data.
+  The processor supports the renaming of attributes in resources, spans, metrics, and logs.
+tags:
+  - category:processor
+  - service:collector
+  - category:filter
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: Attributes
+    summary: A map of attributes to rename.
+    description: |
+      A map where the key is the old attribute name and the value is the new attribute name.
+      This can be used to rename attributes in traces, metrics, and logs.
+    type: map
+    validations:
+     - noblanks
+     - nonempty
+  - name: AttributeLocation
+    summary: A flag that indicates whether to rename resource or record attributes from the telemetry data
+    description: |
+      A flag that indicates whether to rename resource or record attributes from the telemetry data.
+      Record is one of "span", "log" or "metric".
+      Valid values are "resource" and "record". The default is "record".
+    type: string
+    subtype: oneof(record, resource)
+    validations:
+      - oneof(record, resource)
+    default: record
+templates:
+  - kind: collector_config
+    name: otel_rename_attributes_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      # Trace statements
+      - key: "{{ .ComponentName }}.trace_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
+      - key: "{{ .ComponentName }}.trace_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"{{.Value}}\"], span.attributes[\"{{.Key}}\"]) where span.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'
+      # metric statements
+      - key: "{{ .ComponentName }}.metric_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
+      - key: "{{ .ComponentName }}.metric_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"{{.Value}}\"], metric.attributes[\"{{.Key}}\"]) where metric.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'
+      # log statements
+      - key: "{{ .ComponentName }}.log_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"{{.Value}}\"], log.attributes[\"{{.Key}}\"]) where log.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'
+      - key: "{{ .ComponentName }}.log_statements"
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
