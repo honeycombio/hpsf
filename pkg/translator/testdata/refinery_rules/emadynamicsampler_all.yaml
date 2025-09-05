@@ -4,5 +4,10 @@ Samplers:
         EMADynamicSampler:
             GoalSampleRate: 120
             AdjustmentInterval: 1m39s
+            Weight: 0.1
+            AgeOutValue: 0.2
+            BurstMultiple: 2.5
+            BurstDetectionDelay: 5
             FieldList:
                 - http.status_code
+            MaxKeys: 1000
