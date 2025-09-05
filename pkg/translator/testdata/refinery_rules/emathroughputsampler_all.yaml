@@ -3,6 +3,8 @@ Samplers:
     __default__:
         EMAThroughputSampler:
             GoalThroughputPerSec: 1337
+            InitialSampleRate: 50
             AdjustmentInterval: 1m6s
             FieldList:
                 - http.status_code
+            MaxKeys: 1000
