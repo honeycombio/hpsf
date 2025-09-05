@@ -140,18 +140,24 @@ templates:
     data:
       - key: GoalSampleRate
         value: "{{ .Values.GoalSampleRate | encodeAsInt }}"
-      - key: AdjustmentInterval
-        value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"
+      # properties are suppressed if defaults are used
+      - key: AdjustmentInterval
+        value: "{{ .Values.AdjustmentInterval }}s"
+        suppress_if: "{{ eq .Values.AdjustmentInterval 60 }}"
       - key: MaxKeys
         value: "{{ .Values.MaxKeys | encodeAsInt }}"
+        suppress_if: "{{ eq .Values.MaxKeys 500 }}"
       - key: Weight
         value: "{{ .Values.Weight | encodeAsFloat }}"
+        suppress_if: "{{ eq .Values.Weight 0.5 }}"
       - key: AgeOutValue
         value: "{{ .Values.AgeOutValue | encodeAsFloat }}"
+        suppress_if: "{{ eq .Values.AgeOutValue 0.5 }}"
       - key: BurstMultiple
         value: "{{ .Values.BurstMultiple | encodeAsFloat }}"
-        suppress_if: "{{ eq .Values.BurstMultiple 0.0 }}"
+        suppress_if: "{{ or (eq .Values.BurstMultiple 0.0) (eq .Values.BurstMultiple 2.0) }}"
       - key: BurstDetectionDelay
         value: "{{ .Values.BurstDetectionDelay | encodeAsInt }}"
+        suppress_if: "{{ eq .Values.BurstDetectionDelay 3 }}"
