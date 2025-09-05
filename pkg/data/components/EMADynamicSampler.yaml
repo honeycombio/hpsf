@@ -67,6 +67,69 @@ properties:
       - noblanks
       - nonempty
     default: []
+  - name: MaxKeys
+    summary: The maximum number of distinct keys the sampler tracks
+    description: |
+      The maximum number of distinct keys the sampler tracks. This is used to limit
+      the number of keys that are retained in the sampler's state that is used to
+      compute the sampling rate.
+      The default value is 500.
+    type: int
+    validations:
+      - positive
+    default: 500
+    advanced: true
+  - name: Weight
+    summary: The weight to apply to the sampling rate adjustment
+    description: |
+      The weight to apply to the sampling rate adjustment. This controls how
+      aggressively the sampler adjusts the sampling rate in response to
+      changes in traffic patterns. A higher weight will result in more
+      aggressive adjustments, while a lower weight will result in more
+      conservative adjustments.
+      The default value is 0.5.
+    type: float
+    validations:
+      - inrange(0.0, 1.0)
+    default: 0.5
+    advanced: true
+  - name: AgeOutValue
+    summary: The value to use for aging out old keys
+    description: |
+      The value to use for aging out old keys. This controls how aggressively
+      the sampler will remove old keys from its state. A higher value will
+      result in more aggressive aging out, while a lower value will result in
+      more conservative aging out.
+      The default value is 0.5.
+    type: float
+    validations:
+      - inrange(0.0, 1.0)
+    default: 0.5
+    advanced: true
+  - name: BurstMultiple
+    summary: The burst multiple to use for sampling
+    description: |
+      The burst multiple to use for sampling. This controls how much the
+      sampler is allowed to "burst" above the target sample rate in order
+      to capture short-lived spikes in traffic. A higher burst multiple
+      will allow for more aggressive bursting, while a lower burst multiple
+      will result in more conservative bursting.
+      The default value is 1.0.
+    type: float
+    validations:
+      - positive
+    default: 2.0
+    advanced: true
+  - name: BurstDetectionDelay
+    summary: the number of `AdjustmentIntervals` to wait before detecting bursts.
+    description: |
+      Indicates the number of intervals to run before burst detection kicks in.
+      Defaults value is `3`.
+    type: int
+    validations:
+      - positive
+    default: 3
+    advanced: true
 templates:
   - kind: refinery_rules
     name: EMA_Dynamic_Rules
@@ -81,3 +144,14 @@ templates:
         value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"
+      - key: MaxKeys
+        value: "{{ .Values.MaxKeys | encodeAsInt }}"
+      - key: Weight
+        value: "{{ .Values.Weight | encodeAsFloat }}"
+      - key: AgeOutValue
+        value: "{{ .Values.AgeOutValue | encodeAsFloat }}"
+      - key: BurstMultiple
+        value: "{{ .Values.BurstMultiple | encodeAsFloat }}"
+        suppress_if: "{{ eq .Values.BurstMultiple 0.0 }}"
+      - key: BurstDetectionDelay
+        value: "{{ .Values.BurstDetectionDelay | encodeAsInt }}"

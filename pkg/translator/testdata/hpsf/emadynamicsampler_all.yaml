@@ -12,6 +12,16 @@ components:
         value: 99
       - name: FieldList
         value: [http.status_code]
+      - name: MaxKeys
+        value: 1000
+      - name: Weight
+        value: 0.1
+      - name: AgeOutValue
+        value: 0.2
+      - name: BurstMultiple
+        value: 2.5
+      - name: BurstDetectionDelay
+        value: 5
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
