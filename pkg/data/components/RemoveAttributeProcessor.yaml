@@ -48,12 +48,15 @@ properties:
     validations:
       - noblanks
       - nonempty
-  - name: RemoveResourceAttributes
-    summary: A flag that indicates whether to remove resource attributes.
+  - name: AttributeLocation
+    summary: A flag that indicates whether to remove resource or record attributes.
     description: |
-      A flag that indicates whether to remove resource attributes from the telemetry data.
-    type: boolean
-    default: false
+      A flag that indicates whether to remove resource or record attributes from the telemetry data.
+    type: string
+    sub_type: oneof(record, resource)
+    validations:
+      - oneof(record, resource)
+    default: record
 templates:
   - kind: collector_config
     name: otel_remove_attributes_processor
@@ -68,18 +71,21 @@ templates:
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
-        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
       - key: "{{ .ComponentName }}.trace_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(span.attributes, \"%s\")" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'
       # Metric statements
       - key: "{{ .ComponentName }}.metric_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
-        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
       - key: "{{ .ComponentName }}.metric_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(metric.attributes, \"%s\")" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'
       # Log statements
       - key: "{{ .ComponentName }}.log_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(resource.attributes, \"%s\")" }}'
-        suppress_if: "{{ not .Values.RemoveResourceAttributes }}"
+        suppress_if: '{{ eq .Values.AttributeLocation "record" }}'
       - key: "{{ .ComponentName }}.log_statements"
         value: '{{ .Values.Attributes | encodeAsStringArray "delete_key(log.attributes, \"%s\")" }}'
+        suppress_if: '{{ eq .Values.AttributeLocation "resource" }}'

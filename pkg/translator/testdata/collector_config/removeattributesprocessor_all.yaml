@@ -11,18 +11,12 @@ processors:
         log_statements:
             - delete_key(resource.attributes, "attribute_name")
             - delete_key(resource.attributes, "another_attribute_name")
-            - delete_key(log.attributes, "attribute_name")
-            - delete_key(log.attributes, "another_attribute_name")
         metric_statements:
             - delete_key(resource.attributes, "attribute_name")
             - delete_key(resource.attributes, "another_attribute_name")
-            - delete_key(metric.attributes, "attribute_name")
-            - delete_key(metric.attributes, "another_attribute_name")
         trace_statements:
             - delete_key(resource.attributes, "attribute_name")
             - delete_key(resource.attributes, "another_attribute_name")
-            - delete_key(span.attributes, "attribute_name")
-            - delete_key(span.attributes, "another_attribute_name")
     usage: {}
 exporters:
     otlphttp/otlp_out:

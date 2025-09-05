@@ -10,8 +10,8 @@ components:
         value:
           - "attribute_name"
           - "another_attribute_name"
-      - name: RemoveResourceAttributes
-        value: true
+      - name: AttributeLocation
+        value: resource
 connections:
   - source:
       component: otlp_in
