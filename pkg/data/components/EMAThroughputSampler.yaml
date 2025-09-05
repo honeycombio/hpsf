@@ -104,11 +104,15 @@ templates:
     data:
       - key: GoalThroughputPerSec
         value: "{{ .Values.GoalThroughputPerSec | encodeAsInt }}"
-      - key: AdjustmentInterval
-        value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"
+      # properties are suppressed if defaults are used
+      - key: AdjustmentInterval
+        value: "{{ .Values.AdjustmentInterval }}s"
+        suppress_if: "{{ eq .Values.AdjustmentInterval 60 }}"
       - key: InitialSampleRate
         value: "{{ .Values.InitialSampleRate | encodeAsInt }}"
+        suppress_if: "{{ eq .Values.InitialSampleRate 10 }}"
       - key: MaxKeys
         value: "{{ .Values.MaxKeys | encodeAsInt }}"
+        suppress_if: "{{ eq .Values.MaxKeys 500 }}"
