@@ -12,8 +12,6 @@ components:
     properties:
       - name: GoalThroughputPerSec
         value: 200
-      - name: AdjustmentInterval
-        value: 60
       - name: FieldList
         value: ["http.method", "http.status_code"]
   - name: Send to Honeycomb_1

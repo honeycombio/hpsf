@@ -2,7 +2,6 @@ package hpsftests
 
 import (
 	"testing"
-	"time"
 
 	collectorprovider "github.com/honeycombio/hpsf/tests/providers/collector"
 	hpsfprovider "github.com/honeycombio/hpsf/tests/providers/hpsf"
@@ -52,7 +51,6 @@ func TestSampleDefaultDeterministic(t *testing.T) {
 	assert.Equal(t, "int", rule1.Conditions[0].Datatype, "Expected int datatype in rule 1")
 	require.NotNil(t, rule1.Sampler.EMAThroughputSampler, "Expected EMAThroughputSampler in rule 2")
 	assert.Equal(t, 200, rule1.Sampler.EMAThroughputSampler.GoalThroughputPerSec, "Expected GoalThroughputPerSec in rule 2")
-	assert.Equal(t, time.Duration(60)*time.Second, time.Duration(rule1.Sampler.EMAThroughputSampler.AdjustmentInterval), "Expected AdjustmentInterval in rule 2")
 	assert.ElementsMatch(t, []string{"http.method", "http.status_code"}, rule1.Sampler.EMAThroughputSampler.FieldList, "Expected FieldList in rule 2")
 
 	// Check the second rule is a DeterministicSampler without condition

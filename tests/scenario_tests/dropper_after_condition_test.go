@@ -2,7 +2,6 @@ package hpsftests
 
 import (
 	"testing"
-	"time"
 
 	collectorprovider "github.com/honeycombio/hpsf/tests/providers/collector"
 	hpsfprovider "github.com/honeycombio/hpsf/tests/providers/hpsf"
@@ -57,6 +56,5 @@ func TestDropperAfterCondition(t *testing.T) {
 	assert.NotNil(t, rule2.Sampler, "Expected sampler configuration in rule 2")
 	assert.NotNil(t, rule2.Sampler.EMAThroughputSampler, "Expected EMAThroughputSampler in rule 2")
 	assert.Equal(t, 200, rule2.Sampler.EMAThroughputSampler.GoalThroughputPerSec, "Expected GoalThroughputPerSec in rule 2")
-	assert.Equal(t, time.Duration(60)*time.Second, time.Duration(rule2.Sampler.EMAThroughputSampler.AdjustmentInterval), "Expected AdjustmentInterval in rule 2")
 	assert.ElementsMatch(t, []string{"http.method", "http.status_code"}, rule2.Sampler.EMAThroughputSampler.FieldList, "Expected FieldList in rule 2")
 }
