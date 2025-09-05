@@ -47,6 +47,7 @@ properties:
     description: |
       The bool value that the field should be compared against using the specified operator.
     type: bool
+    subtype: label("Value is 'true'")
 templates:
   - kind: refinery_rules
     name: CompareBoolFieldCondition
