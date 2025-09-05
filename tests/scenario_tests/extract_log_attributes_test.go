@@ -24,7 +24,6 @@ func TestExtractLogPropertiesProcessor(t *testing.T) {
 	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/extract_log_attributes")
 	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
 	require.Equal(t, ottl.IgnoreError, transformConfig.ErrorMode, "Expected ErrorMode to be \"ignore\"")
-	// require.Equal(t, "log", transformConfig.LogStatements[0].Context) // not currently possible as the context type is internal
 	require.Len(t, transformConfig.LogStatements, 1, "Expected 1 log statement, got %v", len(transformConfig.LogStatements))
 	require.Len(t, transformConfig.LogStatements[0].Statements, 1, "Expected 1 statement, got %v", len(transformConfig.LogStatements[0].Statements))
 }
