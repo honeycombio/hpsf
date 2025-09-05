@@ -7,7 +7,7 @@ version: v0.0.1
 summary: A processor that can be used to rename attributes in telemetry.
 description: |
   This processor allows you to rename attributes from traces, metrics, and logs by
-  specifying a list of attribute names. It can be used to modify or standardize
+  specifying a map of attribute names. It can be used to modify or standardize
   attribute names in your telemetry data.
   The processor supports the renaming of attributes in resources, spans, metrics, and logs.
 tags:
@@ -56,7 +56,7 @@ properties:
     default: false
 templates:
   - kind: collector_config
-    name: otel_remove_attributes_processor
+    name: otel_rename_attributes_processor
     format: collector
     meta:
       componentSection: processors
@@ -67,20 +67,20 @@ templates:
         value: "ignore"
       # resource attributes
       - key: "{{ .ComponentName }}.trace_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
         suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       - key: "{{ .ComponentName }}.metric_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
         suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"%s\"], resource.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(resource.attributes[\"{{.Value}}\"], resource.attributes[\"{{.Key}}\"]) where resource.attributes[\"{{.Key}}\"] != nil" }}'
         suppress_if: "{{ not .Values.RenameResourceAttributes }}"
       # Trace statements
       - key: "{{ .ComponentName }}.trace_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"%s\"], span.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(span.attributes[\"{{.Value}}\"], span.attributes[\"{{.Key}}\"]) where span.attributes[\"{{.Key}}\"] != nil" }}'
       # metric statements (resource attributes)
       - key: "{{ .ComponentName }}.metric_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"%s\"], metric.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(metric.attributes[\"{{.Value}}\"], metric.attributes[\"{{.Key}}\"]) where metric.attributes[\"{{.Key}}\"] != nil" }}'
       # log statements (resource attributes)
       - key: "{{ .ComponentName }}.log_statements"
-        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"%s\"], log.attributes[\"%s\"])" }}'
+        value: '{{ .Values.Attributes | encodeAsStringMap "set(log.attributes[\"{{.Value}}\"], log.attributes[\"{{.Key}}\"]) where log.attributes[\"{{.Key}}\"] != nil" }}'
