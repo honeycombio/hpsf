@@ -81,6 +81,7 @@ properties:
     validations:
       - positive
     default: 10
+    advanced: true
   - name: MaxKeys
     summary: The maximum number of distinct keys the sampler tracks
     description: |
@@ -92,6 +93,7 @@ properties:
     validations:
       - positive
     default: 500
+    advanced: true
 templates:
   - kind: refinery_rules
     name: EMA_Throughput_Rules
