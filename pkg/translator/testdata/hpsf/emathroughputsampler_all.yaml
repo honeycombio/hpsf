@@ -12,6 +12,10 @@ components:
         value: 66
       - name: FieldList
         value: [http.status_code]
+      - name: InitialSampleRate
+        value: 50
+      - name: MaxKeys
+        value: 1000
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:

@@ -70,6 +70,30 @@ properties:
       - noblanks
       - nonempty
     default: []
+  - name: InitialSampleRate
+    summary: The initial sample rate to use when starting the sampler
+    description: |
+      The initial sample rate to use when starting the sampler. This is the
+      sample rate that will be used before any adjustments are made based on
+      the observed throughput.
+      The default value is 10.
+    type: int
+    validations:
+      - positive
+    default: 10
+    advanced: true
+  - name: MaxKeys
+    summary: The maximum number of distinct keys the sampler tracks
+    description: |
+      The maximum number of distinct keys the sampler tracks. This is used to limit
+      the number of keys that are retained in the sampler's state that is used to
+      compute the sampling rate.
+      The default value is 500.
+    type: int
+    validations:
+      - positive
+    default: 500
+    advanced: true
 templates:
   - kind: refinery_rules
     name: EMA_Throughput_Rules
@@ -84,3 +108,7 @@ templates:
         value: "{{ .Values.AdjustmentInterval }}s"
       - key: FieldList
         value: "{{ .Values.FieldList | encodeAsArray }}"
+      - key: InitialSampleRate
+        value: "{{ .Values.InitialSampleRate | encodeAsInt }}"
+      - key: MaxKeys
+        value: "{{ .Values.MaxKeys | encodeAsInt }}"
