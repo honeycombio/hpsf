@@ -59,10 +59,8 @@ properties:
       The prefix to use for the source map store. This is optional and can be used to specify a subdirectory within the bucket.
       If not specified, the root of the bucket will be used.
       Examples: `source-maps/`, `my-project/source-maps/`.
-    validations:
-      - noblanks
-      - nonempty
     type: string
+    default: ""
 templates:
   - kind: collector_config
     name: hny_symbolicator_processor
@@ -84,7 +82,7 @@ templates:
         suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ not (eq "AWSS3" .Values.SourceMapStore) }}'
+        suppress_if: '{{ or (not (eq "AWSS3" .Values.SourceMapStore)) (eq .Values.Prefix "") }}'
       # GoogleCloudStorage
       - key: "{{ .ComponentName }}.source_map_store"
         value: "gcs_store"
@@ -94,4 +92,4 @@ templates:
         suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SourceMapStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SourceMapStore) }}'
+        suppress_if: '{{ or (not (eq "GoogleCloudStorage" .Values.SourceMapStore)) (eq .Values.Prefix "") }}'
