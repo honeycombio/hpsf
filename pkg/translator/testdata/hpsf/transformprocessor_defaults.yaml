@@ -1,0 +1,56 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: TransformProcessor
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: otlp_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: transform_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: transform_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: otlp_out
+      port: Metrics
+      type: OTelMetrics
