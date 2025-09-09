@@ -135,6 +135,21 @@ components:
     properties:
       - name: SampleRate
         value: 123
+  - name: Transform some attributes
+    kind: TransformProcessor
+    properties:
+      - name: TraceStatements
+        value:
+          - set(span.attributes["custom.field"], "value")
+          - delete_key(span.attributes, "unwanted_field")
+      - name: LogStatements
+        value:
+          - set(log.attributes["processed"], "true")
+          - delete_key(log.attributes, "sensitive_field")
+      - name: MetricStatements
+        value:
+          - set(resource.attributes["custom.field"], "value")
+          - delete_key(resource.attributes, "unwanted_field")
 connections:
   - source:
       component: Receive OTel_1
@@ -146,6 +161,14 @@ connections:
       type: OTelTraces
   - source:
       component: Parse Attribute As JSON_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Transform some attributes
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Transform some attributes
       port: Traces
       type: OTelTraces
     destination:
@@ -341,6 +364,14 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
+      component: Transform some attributes
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Transform some attributes
+      port: Metrics
+      type: OTelMetrics
+    destination:
       component: Send to stdout_1
       port: Metrics
       type: OTelMetrics
@@ -355,6 +386,14 @@ connections:
   - source:
       component: Receive OTel_1
       port: Logs
+      type: OTelLogs
+    destination:
+      component: Transform some attributes
+      port: Metrics
+      type: OTelLogs
+  - source:
+      component: Transform some attributes
+      port: Metrics
       type: OTelLogs
     destination:
       component: Parse Log Body As JSON_1
