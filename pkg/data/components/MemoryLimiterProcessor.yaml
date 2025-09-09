@@ -1,5 +1,5 @@
 kind: MemoryLimiterProcessor
-name: Memory Limiter
+name: Enforce Memory Limits
 style: processor
 type: base
 status: development
