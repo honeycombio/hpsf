@@ -129,7 +129,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		-v ./tmp/collector-config.yaml:/config.yaml \
 		-e HTP_COLLECTOR_POD_IP=localhost \
 		-e HTP_REFINERY_POD_IP=localhost \
-		honeycombio/supervised-collector:v0.0.9 \
+		honeycombio/supervised-collector:v0.1.0 \
 		--config /config.yaml || exit 1
 	sleep 1
 
