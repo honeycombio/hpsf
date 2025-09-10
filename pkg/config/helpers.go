@@ -38,22 +38,23 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"buildurl":      buildurl,
-		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
-		"indent":        indent,
-		"join":          join,
-		"makeSlice":     makeSlice,
-		"meta":          meta,
-		"nonempty":      nonempty,
-		"now":           now,
-		"split":         split,
-		"upper":         strings.ToUpper,
-		"yamlf":         yamlf,
+		"buildurl":            buildurl,
+		"comment":             comment,
+		"encodeAsArray":       encodeAsArray,
+		"encodeAsStringArray": encodeAsStringArray,
+		"encodeAsBool":        encodeAsBool,
+		"encodeAsInt":         encodeAsInt,
+		"encodeAsFloat":       encodeAsFloat,
+		"encodeAsMap":         encodeAsMap,
+		"indent":              indent,
+		"join":                join,
+		"makeSlice":           makeSlice,
+		"meta":                meta,
+		"nonempty":            nonempty,
+		"now":                 now,
+		"split":               split,
+		"upper":               strings.ToUpper,
+		"yamlf":               yamlf,
 	}
 }
 
@@ -106,6 +107,24 @@ func encodeAsArray(arr any) string {
 	default:
 		return ""
 	}
+}
+
+// encodeAsStringArray takes a slice and a format string, and returns a string
+// intended to be expanded later into an array when it's rendered to YAML.
+func encodeAsStringArray(format string, val any) string {
+	if strings.Count(format, "%s") != 1 {
+		return ""
+	}
+	if val.([]any) == nil {
+		return ""
+	}
+
+	arr := val.([]any)
+	newArr := make([]string, 0, len(arr))
+	for _, k := range arr {
+		newArr = append(newArr, fmt.Sprintf(format, k))
+	}
+	return encodeAsArray(newArr)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker
