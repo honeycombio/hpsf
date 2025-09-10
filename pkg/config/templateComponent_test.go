@@ -19,7 +19,6 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 			{
 				Type:       "at_least_one_of",
 				Properties: []string{"PropA", "PropB", "PropC"},
-				Message:    "At least one of PropA, PropB, or PropC must be set",
 			},
 		},
 	}
@@ -34,7 +33,7 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 				{Name: "PropC", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when all properties are empty")
 		}
@@ -50,7 +49,7 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 				{Name: "PropC", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when one property is set, got: %v", err)
 		}
@@ -66,7 +65,7 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 				{Name: "PropC", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when multiple properties are set, got: %v", err)
 		}
@@ -85,7 +84,6 @@ func TestValidateExactlyOneOf(t *testing.T) {
 			{
 				Type:       "exactly_one_of",
 				Properties: []string{"APIKey", "BearerToken", "BasicAuth"},
-				Message:    "Exactly one authentication method must be specified",
 			},
 		},
 	}
@@ -100,7 +98,7 @@ func TestValidateExactlyOneOf(t *testing.T) {
 				{Name: "BasicAuth", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when no properties are set")
 		}
@@ -116,7 +114,7 @@ func TestValidateExactlyOneOf(t *testing.T) {
 				{Name: "BasicAuth", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when exactly one property is set, got: %v", err)
 		}
@@ -132,7 +130,7 @@ func TestValidateExactlyOneOf(t *testing.T) {
 				{Name: "BasicAuth", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when multiple properties are set")
 		}
@@ -150,7 +148,6 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 			{
 				Type:       "mutually_exclusive",
 				Properties: []string{"GzipCompression", "LZ4Compression"},
-				Message:    "GzipCompression and LZ4Compression cannot both be enabled",
 			},
 		},
 	}
@@ -164,7 +161,7 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 				{Name: "LZ4Compression", Value: false},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when both properties are false, got: %v", err)
 		}
@@ -179,7 +176,7 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 				{Name: "LZ4Compression", Value: false},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when only one property is true, got: %v", err)
 		}
@@ -194,7 +191,7 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 				{Name: "LZ4Compression", Value: true},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when both properties are true")
 		}
@@ -212,7 +209,6 @@ func TestValidateRequireTogether(t *testing.T) {
 			{
 				Type:       "require_together",
 				Properties: []string{"Username", "Password"},
-				Message:    "Username and Password must both be provided when using authentication",
 			},
 		},
 	}
@@ -226,7 +222,7 @@ func TestValidateRequireTogether(t *testing.T) {
 				{Name: "Password", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when both properties are empty, got: %v", err)
 		}
@@ -241,7 +237,7 @@ func TestValidateRequireTogether(t *testing.T) {
 				{Name: "Password", Value: "pass456"},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when both properties are set, got: %v", err)
 		}
@@ -256,7 +252,7 @@ func TestValidateRequireTogether(t *testing.T) {
 				{Name: "Password", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when only one property is set")
 		}
@@ -277,7 +273,6 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 				ConditionProperty: "EnableTLS",
 				ConditionValue:    true,
 				Properties:        []string{"TLSCertPath", "TLSKeyPath"},
-				Message:           "When EnableTLS is true, both TLSCertPath and TLSKeyPath must be provided",
 			},
 		},
 	}
@@ -292,7 +287,7 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 				{Name: "TLSKeyPath", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when condition is false, got: %v", err)
 		}
@@ -308,7 +303,7 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 				{Name: "TLSKeyPath", Value: "/path/to/key"},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err != nil {
 			t.Errorf("Expected validation to pass when condition is true and all properties are set, got: %v", err)
 		}
@@ -324,7 +319,7 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 				{Name: "TLSKeyPath", Value: ""},
 			},
 		}
-		err := tc.ValidateComponent(component)
+		err := tc.Validate(component)
 		if err == nil {
 			t.Error("Expected validation to fail when condition is true but required properties are missing")
 		}
@@ -341,7 +336,6 @@ func TestUnknownValidationType(t *testing.T) {
 			{
 				Type:       "unknown_validation_type",
 				Properties: []string{"PropA"},
-				Message:    "Test message",
 			},
 		},
 	}
@@ -353,7 +347,7 @@ func TestUnknownValidationType(t *testing.T) {
 		},
 	}
 
-	err := tc.ValidateComponent(component)
+	err := tc.Validate(component)
 	if err == nil {
 		t.Error("Expected validation to fail for unknown validation type")
 	}
@@ -369,7 +363,6 @@ func TestNonExistentProperty(t *testing.T) {
 			{
 				Type:       "at_least_one_of",
 				Properties: []string{"PropA", "NonExistentProp"},
-				Message:    "Test message",
 			},
 		},
 	}
@@ -381,7 +374,7 @@ func TestNonExistentProperty(t *testing.T) {
 		},
 	}
 
-	err := tc.ValidateComponent(component)
+	err := tc.Validate(component)
 	if err == nil {
 		t.Error("Expected validation to fail when referencing non-existent property")
 	}
