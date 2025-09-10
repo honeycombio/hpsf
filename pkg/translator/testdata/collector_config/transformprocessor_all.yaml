@@ -12,7 +12,7 @@ processors:
             - set(log.attributes["processed"], "true")
             - set(log.severity_text, "INFO")
         metric_statements:
-            - set(metric.attributes["processed"], "true")
+            - set(datapoint.attributes["processed"], "true")
             - set(metric.description, Concat([metric.description, " (processed)"], ""))
         trace_statements:
             - set(span.attributes["processed"], "true")

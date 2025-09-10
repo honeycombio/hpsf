@@ -78,7 +78,7 @@ func TestTransformProcessorWithStatements(t *testing.T) {
 	require.Len(t, transformConfig.MetricStatements, 1)
 	metricStatement := transformConfig.MetricStatements[0]
 	require.Len(t, metricStatement.Statements, 2)
-	assert.Equal(t, `set(metric.attributes["processed"], "true")`, metricStatement.Statements[0])
+	assert.Equal(t, `set(datapoint.attributes["processed"], "true")`, metricStatement.Statements[0])
 	assert.Equal(t, `set(metric.description, Concat([metric.description, " (processed)"], ""))`, metricStatement.Statements[1])
 
 	// Check error mode
@@ -122,7 +122,7 @@ func TestTransformProcessorSingleSignal(t *testing.T) {
 func TestTransformProcessorErrorModeValidation(t *testing.T) {
 	// Test that all error modes are supported
 	errorModes := []string{"ignore", "silent", "propagate"}
-	
+
 	for _, errorMode := range errorModes {
 		t.Run("ErrorMode_"+errorMode, func(t *testing.T) {
 			// Create a temporary test config

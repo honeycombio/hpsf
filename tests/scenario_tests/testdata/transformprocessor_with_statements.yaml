@@ -24,7 +24,7 @@ components:
           - 'set(log.severity_text, "INFO")'
       - name: MetricStatements
         value:
-          - 'set(metric.attributes["processed"], "true")'
+          - 'set(datapoint.attributes["processed"], "true")'
           - 'set(metric.description, Concat([metric.description, " (processed)"], ""))'
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
