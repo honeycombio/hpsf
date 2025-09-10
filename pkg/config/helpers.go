@@ -38,22 +38,23 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"buildurl":      buildurl,
-		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
-		"indent":        indent,
-		"join":          join,
-		"makeSlice":     makeSlice,
-		"meta":          meta,
-		"nonempty":      nonempty,
-		"now":           now,
-		"split":         split,
-		"upper":         strings.ToUpper,
-		"yamlf":         yamlf,
+		"buildurl":           buildurl,
+		"comment":            comment,
+		"encodeAsArray":      encodeAsArray,
+		"encodeAsBool":       encodeAsBool,
+		"encodeAsInt":        encodeAsInt,
+		"encodeAsFloat":      encodeAsFloat,
+		"encodeAsMap":        encodeAsMap,
+		"encodeAsMapWithKey": encodeAsMapWithKey,
+		"indent":             indent,
+		"join":               join,
+		"makeSlice":          makeSlice,
+		"meta":               meta,
+		"nonempty":           nonempty,
+		"now":                now,
+		"split":              split,
+		"upper":              strings.ToUpper,
+		"yamlf":              yamlf,
 	}
 }
 
@@ -184,6 +185,22 @@ func encodeAsMap(a map[string]any) string {
 	// could encounter that would be meaningful.
 	_ = j.Encode(a)
 	return MapPrefix + buf.String()
+}
+
+// encodeAsMapWithKey takes a key and a value (which must be a map) and returns a string
+// intended to be expanded later into the same map when it's rendered to YAML.
+// The key is used as the key for the outer map.
+func encodeAsMapWithKey(customKey string, v any) string {
+	if v.(map[string]any) == nil {
+		return ""
+	}
+
+	m := v.(map[string]any)
+	for key, value := range m {
+		m[key] = map[string]any{customKey: value}
+	}
+
+	return encodeAsMap(m)
 }
 
 // indents a string by the specified number of spaces

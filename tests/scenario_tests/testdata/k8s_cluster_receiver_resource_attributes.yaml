@@ -1,0 +1,30 @@
+name: k8s_cluster_receiver_resource_attributes_test
+version: v0.1.0
+summary: Test for K8sClusterReceiver with custom resource attributes configuration
+description: |
+  Test configuration demonstrating K8sClusterReceiver with resource attributes.
+  Shows how to enable/disable specific resource attributes like container termination
+  reason and pod status phase.
+components:
+  - name: k8s_cluster_in
+    kind: K8sClusterReceiver
+    properties:
+      - name: ResourceAttributes
+        value:
+          k8s.container.status.last_terminated_reason:
+            enabled: true
+          k8s.pod.status.phase:
+            enabled: true
+          k8s.node.condition.Ready:
+            enabled: false
+  - name: debug_out
+    kind: DebugExporter
+connections:
+  - source:
+      component: k8s_cluster_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: debug_out
+      port: Metrics
+      type: OTelMetrics

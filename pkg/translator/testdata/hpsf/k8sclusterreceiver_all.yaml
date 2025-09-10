@@ -8,6 +8,10 @@ components:
         value: [Ready, MemoryPressure, DiskPressure]
       - name: CollectionInterval
         value: 30s
+      - name: ResourceAttributes
+        value:
+          k8s.container.status.last_terminated_reason: true
+          k8s.pod.status.phase: false
   - name: otlp_out
     kind: OTelGRPCExporter
 connections:
