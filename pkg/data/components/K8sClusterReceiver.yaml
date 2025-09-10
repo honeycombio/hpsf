@@ -29,6 +29,7 @@ properties:
       Options: serviceAccount, kubeConfig, none.
       When set to KubeConfig, settings from `~/.kube/config` will be used.
     type: string
+    subtype: oneof(serviceAccount, kubeConfig, none)
     validations:
       - oneof(serviceAccount, kubeConfig, none)
     default: serviceAccount
@@ -47,6 +48,14 @@ properties:
       Common conditions include Ready, MemoryPressure, DiskPressure, PIDPressure, NetworkUnavailable.
     type: stringarray
     default: [Ready]
+    advanced: true
+  - name: ResourceAttributes
+    summary: Resource attributes to enable or disable
+    description: |
+      Controls which resource attributes are collected by the K8s cluster receiver.
+      Each key is a resource attribute name and the value indicates whether it's enabled.
+    type: map
+    default: {}
     advanced: true
 templates:
   - kind: collector_config
@@ -67,6 +76,9 @@ templates:
         suppress_if: "{{ eq .Values.CollectionInterval \"10s\" }}"
       - key: "{{ .ComponentName }}.node_conditions_to_report"
         value: "{{ .Values.NodeConditionsToReport | encodeAsArray }}"
+      - key: "{{ .ComponentName }}.resource_attributes"
+        value: '{{ .Values.ResourceAttributes | encodeAsMapWithKey "enabled" }}'
+        suppress_if: "{{ eq (len .Values.ResourceAttributes) 0 }}"
   - kind: collector_config
     name: k8s_cluster_extension_collector
     format: collector
