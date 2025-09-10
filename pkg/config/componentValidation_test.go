@@ -15,7 +15,7 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 			{Name: "PropB", Type: hpsf.PTYPE_STRING},
 			{Name: "PropC", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "at_least_one_of",
 				Properties: []string{"PropA", "PropB", "PropC"},
@@ -81,7 +81,7 @@ func TestValidateExactlyOneOf(t *testing.T) {
 			{Name: "BearerToken", Type: hpsf.PTYPE_STRING},
 			{Name: "BasicAuth", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "exactly_one_of",
 				Properties: []string{"APIKey", "BearerToken", "BasicAuth"},
@@ -146,7 +146,7 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 			{Name: "GzipCompression", Type: hpsf.PTYPE_BOOL, Default: false},
 			{Name: "LZ4Compression", Type: hpsf.PTYPE_BOOL, Default: false},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "mutually_exclusive",
 				Properties: []string{"GzipCompression", "LZ4Compression"},
@@ -208,7 +208,7 @@ func TestValidateRequireTogether(t *testing.T) {
 			{Name: "Username", Type: hpsf.PTYPE_STRING},
 			{Name: "Password", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "require_together",
 				Properties: []string{"Username", "Password"},
@@ -271,7 +271,7 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 			{Name: "TLSCertPath", Type: hpsf.PTYPE_STRING},
 			{Name: "TLSKeyPath", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:              "conditional_require_together",
 				ConditionProperty: "EnableTLS",
@@ -337,7 +337,7 @@ func TestUnknownValidationType(t *testing.T) {
 		Properties: []TemplateProperty{
 			{Name: "PropA", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "unknown_validation_type",
 				Properties: []string{"PropA"},
@@ -365,7 +365,7 @@ func TestNonExistentProperty(t *testing.T) {
 		Properties: []TemplateProperty{
 			{Name: "PropA", Type: hpsf.PTYPE_STRING},
 		},
-		ComponentValidations: []ComponentValidation{
+		Validations: []ComponentValidation{
 			{
 				Type:       "at_least_one_of",
 				Properties: []string{"PropA", "NonExistentProp"},

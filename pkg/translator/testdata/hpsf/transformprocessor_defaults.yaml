@@ -5,6 +5,12 @@ components:
     kind: OTelHTTPExporter
   - name: transform_1
     kind: TransformProcessor
+    properties:
+      - name: TraceStatements
+        value:
+          - set(span.attributes["custom.field"], "value")
+          - delete_key(span.attributes, "unwanted_field")
+          - set(span.name, Concat([span.name, " - processed"], ""))
 connections:
   - source:
       component: otlp_in

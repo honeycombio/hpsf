@@ -24,7 +24,7 @@ func TestComponentValidationIntegration(t *testing.T) {
 				{Name: "TLSCertPath", Type: hpsf.PTYPE_STRING},
 				{Name: "TLSKeyPath", Type: hpsf.PTYPE_STRING},
 			},
-			ComponentValidations: []config.ComponentValidation{
+			Validations: []config.ComponentValidation{
 				{
 					Type:       "exactly_one_of",
 					Properties: []string{"APIKey", "BearerToken", "Username"},

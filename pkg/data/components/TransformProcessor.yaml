@@ -91,6 +91,13 @@ properties:
       - delete_key(datapoint.attributes, "unwanted_field")
     default: []
     advanced: false
+
+# Component validation to ensure at least one type of statement is provided
+validations:
+  - type: at_least_one_of
+    properties: ["TraceStatements", "LogStatements", "MetricStatements"]
+    message: "At least one of TraceStatements, LogStatements, or MetricStatements must be provided"
+
 templates:
   - kind: collector_config
     name: transform_processor

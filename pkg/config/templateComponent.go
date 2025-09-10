@@ -169,9 +169,9 @@ type TemplateComponent struct {
 	Status      ComponentStatus    `yaml:"status,omitempty"`
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
-	Properties           []TemplateProperty     `yaml:"properties,omitempty"`
-	ComponentValidations []ComponentValidation  `yaml:"component_validations,omitempty"`
-	Templates            []TemplateData         `yaml:"templates,omitempty"`
+	Properties  []TemplateProperty     `yaml:"properties,omitempty"`
+	Validations []ComponentValidation  `yaml:"validations,omitempty"`
+	Templates   []TemplateData         `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"-"`
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection

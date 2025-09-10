@@ -9,7 +9,7 @@ import (
 // ValidateComponent executes component validation rules for a TemplateComponent
 // using the provided hpsf.Component data. It returns an error if any validation fails.
 func (t *TemplateComponent) ValidateComponent(component *hpsf.Component) error {
-	if len(t.ComponentValidations) == 0 {
+	if len(t.Validations) == 0 {
 		return nil
 	}
 
@@ -27,7 +27,7 @@ func (t *TemplateComponent) ValidateComponent(component *hpsf.Component) error {
 	}
 
 	// Execute each validation rule
-	for _, validation := range t.ComponentValidations {
+	for _, validation := range t.Validations {
 		if err := t.executeComponentValidation(validation, propertyValues, component.Name); err != nil {
 			return err
 		}
