@@ -1,0 +1,40 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    transform/rename_attributes_1:
+        error_mode: ignore
+        log_statements:
+            - set(resource.attributes["another_new_attr"], resource.attributes["another_old_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["new_attr"], resource.attributes["old_attr"]) where resource.attributes["old_attr"] != nil
+        metric_statements:
+            - set(resource.attributes["another_new_attr"], resource.attributes["another_old_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["new_attr"], resource.attributes["old_attr"]) where resource.attributes["old_attr"] != nil
+        trace_statements:
+            - set(resource.attributes["another_new_attr"], resource.attributes["another_old_attr"]) where resource.attributes["another_old_attr"] != nil
+            - set(resource.attributes["new_attr"], resource.attributes["old_attr"]) where resource.attributes["old_attr"] != nil
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/1cb-36a:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/rename_attributes_1]
+            exporters: [otlphttp/otlp_out]

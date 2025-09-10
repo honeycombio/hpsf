@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -38,22 +40,23 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
-		"buildurl":      buildurl,
-		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
-		"indent":        indent,
-		"join":          join,
-		"makeSlice":     makeSlice,
-		"meta":          meta,
-		"nonempty":      nonempty,
-		"now":           now,
-		"split":         split,
-		"upper":         strings.ToUpper,
-		"yamlf":         yamlf,
+		"buildurl":          buildurl,
+		"comment":           comment,
+		"encodeAsArray":     encodeAsArray,
+		"encodeAsStringMap": encodeAsStringMap,
+		"encodeAsBool":      encodeAsBool,
+		"encodeAsInt":       encodeAsInt,
+		"encodeAsFloat":     encodeAsFloat,
+		"encodeAsMap":       encodeAsMap,
+		"indent":            indent,
+		"join":              join,
+		"makeSlice":         makeSlice,
+		"meta":              meta,
+		"nonempty":          nonempty,
+		"now":               now,
+		"split":             split,
+		"upper":             strings.ToUpper,
+		"yamlf":             yamlf,
 	}
 }
 
@@ -106,6 +109,37 @@ func encodeAsArray(arr any) string {
 	default:
 		return ""
 	}
+}
+
+// encodeAsStringArray takes a slice and a format string, and returns a string
+// intended to be expanded later into an array when it's rendered to YAML.
+// The format is expected to be a go template with named parameters for keys and values.
+func encodeAsStringMap(format string, val any) string {
+	if val.(map[string]any) == nil {
+		return ""
+	}
+
+	type keyValue struct {
+		Key   string
+		Value any
+	}
+
+	tmpl, err := template.New("test").Parse(format)
+	if err != nil {
+		return ""
+	}
+
+	var buf bytes.Buffer
+	m := val.(map[string]any)
+	newArr := make([]string, 0, len(m))
+	for _, key := range slices.Sorted(maps.Keys(m)) {
+		buf.Reset()
+		if err := tmpl.Execute(&buf, keyValue{Key: key, Value: m[key]}); err != nil {
+			return err.Error()
+		}
+		newArr = append(newArr, buf.String())
+	}
+	return encodeAsArray(newArr)
 }
 
 // encodeAsBool takes any value and returns a string with the appropriate marker
