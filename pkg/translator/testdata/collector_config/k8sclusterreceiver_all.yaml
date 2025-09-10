@@ -1,0 +1,32 @@
+receivers:
+    k8s_cluster/k8s_cluster_in:
+        auth_type: kubeConfig
+        collection_interval: 30s
+        k8s_leader_elector: k8s_leader_elector
+        node_conditions_to_report:
+            - Ready
+            - MemoryPressure
+            - DiskPressure
+processors:
+    usage: {}
+exporters:
+    otlp/otlp_out:
+        endpoint: api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+    k8s_leader_elector: {}
+service:
+    extensions: [honeycomb, k8s_leader_elector]
+    pipelines:
+        metrics/3bf-675:
+            receivers: [k8s_cluster/k8s_cluster_in]
+            processors: [usage]
+            exporters: [otlp/otlp_out]

@@ -1,0 +1,79 @@
+kind: K8sClusterReceiver
+name: Receive K8s Cluster Metrics
+style: receiver
+logo: kubernetes
+type: base
+status: alpha
+version: v0.1.0
+summary: Receives Kubernetes cluster metrics from the Kubernetes API server.
+description: |-
+  Collects cluster-level metrics from Kubernetes API server. This receiver pulls metrics
+  about nodes, pods, deployments, services, and other Kubernetes resources to provide
+  observability into cluster health and resource utilization.
+tags:
+  - category:input
+  - service:collector
+  - signal:OTelMetrics
+  - output:Metrics
+  - platform:kubernetes
+ports:
+  # outputs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: AuthType
+    summary: Authentication method for accessing Kubernetes API
+    description: |
+      Type of authentication to use for connecting to Kubernetes API server.
+      Options: serviceAccount, kubeConfig, none.
+      When set to KubeConfig, settings from `~/.kube/config` will be used.
+    type: string
+    validations:
+      - oneof(serviceAccount, kubeConfig, none)
+    default: serviceAccount
+  - name: CollectionInterval
+    summary: Interval between metric collection
+    description: |
+      How often to collect metrics from the Kubernetes API server.
+    type: duration
+    validations:
+      - duration
+    default: 10s
+  - name: NodeConditionsToReport
+    summary: Node conditions to report as metrics
+    description: |
+      List of node conditions to report. Each condition will be reported as a metric.
+      Common conditions include Ready, MemoryPressure, DiskPressure, PIDPressure, NetworkUnavailable.
+    type: stringarray
+    default: [Ready]
+    advanced: true
+templates:
+  - kind: collector_config
+    name: k8s_cluster_receiver_collector
+    format: collector
+    meta:
+      componentSection: receivers
+      signalTypes: [metrics]
+      collectorComponentName: k8s_cluster
+    data:
+      - key: "{{ .ComponentName }}.k8s_leader_elector"
+        value: "k8s_leader_elector"
+      - key: "{{ .ComponentName }}.auth_type"
+        value: "{{ .Values.AuthType }}"
+        suppress_if: "{{ eq .Values.AuthType \"serviceAccount\" }}"
+      - key: "{{ .ComponentName }}.collection_interval"
+        value: "{{ .Values.CollectionInterval }}"
+        suppress_if: "{{ eq .Values.CollectionInterval \"10s\" }}"
+      - key: "{{ .ComponentName }}.node_conditions_to_report"
+        value: "{{ .Values.NodeConditionsToReport | encodeAsArray }}"
+  - kind: collector_config
+    name: k8s_cluster_extension_collector
+    format: collector
+    meta:
+      componentSection: extensions
+      signalTypes: [metrics]
+      collectorComponentName: k8s_cluster
+    data:
+      - key: "k8s_leader_elector"
+        value: {}

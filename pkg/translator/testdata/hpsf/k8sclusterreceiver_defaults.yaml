@@ -1,0 +1,14 @@
+components:
+  - name: k8s_cluster_in
+    kind: K8sClusterReceiver
+  - name: otlp_out
+    kind: OTelGRPCExporter
+connections:
+  - source:
+      component: k8s_cluster_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: otlp_out
+      port: Metrics
+      type: OTelMetrics
