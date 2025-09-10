@@ -96,7 +96,6 @@ properties:
 validations:
   - type: at_least_one_of
     properties: ["TraceStatements", "LogStatements", "MetricStatements"]
-    message: "At least one of TraceStatements, LogStatements, or MetricStatements must be provided"
 
 templates:
   - kind: collector_config

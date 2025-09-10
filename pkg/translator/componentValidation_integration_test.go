@@ -28,19 +28,16 @@ func TestComponentValidationIntegration(t *testing.T) {
 				{
 					Type:       "exactly_one_of",
 					Properties: []string{"APIKey", "BearerToken", "Username"},
-					Message:    "Exactly one authentication method must be specified",
 				},
 				{
 					Type:       "require_together",
 					Properties: []string{"Username", "Password"},
-					Message:    "Username and Password must both be provided when using basic authentication",
 				},
 				{
 					Type:              "conditional_require_together",
 					ConditionProperty: "EnableTLS",
 					ConditionValue:    true,
 					Properties:        []string{"TLSCertPath", "TLSKeyPath"},
-					Message:           "When EnableTLS is true, both TLSCertPath and TLSKeyPath must be provided",
 				},
 			},
 		},

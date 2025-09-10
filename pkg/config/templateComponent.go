@@ -57,7 +57,6 @@ type TemplateData struct {
 type ComponentValidation struct {
 	Type              string   `yaml:"type"`
 	Properties        []string `yaml:"properties"`
-	Message           string   `yaml:"message"`
 	ConditionProperty string   `yaml:"condition_property,omitempty"`
 	ConditionValue    any      `yaml:"condition_value,omitempty"`
 }
@@ -154,26 +153,26 @@ func (c ComponentStatus) MarshalYAML() (any, error) {
 //     because it's used in the template rendering, but it's not part of the component itself (it's specified
 //     in the template metadata).
 type TemplateComponent struct {
-	Kind        string             `yaml:"kind"`
-	Version     string             `yaml:"version"`
-	Minimum     string             `yaml:"minimum"`
-	Maximum     string             `yaml:"maximum"`
-	Name        string             `yaml:"name"`
-	Logo        string             `yaml:"logo,omitempty"`
-	Summary     string             `yaml:"summary,omitempty"`
-	Description string             `yaml:"description,omitempty"`
-	Comment     string             `yaml:"comment,omitempty"`
-	Tags        []string           `yaml:"tags,omitempty"`
-	Type        ComponentType      `yaml:"type,omitempty"`
-	Style       string             `yaml:"style,omitempty"`
-	Status      ComponentStatus    `yaml:"status,omitempty"`
-	Metadata    map[string]string  `yaml:"metadata,omitempty"`
-	Ports       []TemplatePort     `yaml:"ports,omitempty"`
-	Properties  []TemplateProperty     `yaml:"properties,omitempty"`
-	Validations []ComponentValidation  `yaml:"validations,omitempty"`
-	Templates   []TemplateData         `yaml:"templates,omitempty"`
-	User        map[string]any     `yaml:"-"`
-	hpsf        *hpsf.Component    // the component from the hpsf document
+	Kind        string                `yaml:"kind"`
+	Version     string                `yaml:"version"`
+	Minimum     string                `yaml:"minimum"`
+	Maximum     string                `yaml:"maximum"`
+	Name        string                `yaml:"name"`
+	Logo        string                `yaml:"logo,omitempty"`
+	Summary     string                `yaml:"summary,omitempty"`
+	Description string                `yaml:"description,omitempty"`
+	Comment     string                `yaml:"comment,omitempty"`
+	Tags        []string              `yaml:"tags,omitempty"`
+	Type        ComponentType         `yaml:"type,omitempty"`
+	Style       string                `yaml:"style,omitempty"`
+	Status      ComponentStatus       `yaml:"status,omitempty"`
+	Metadata    map[string]string     `yaml:"metadata,omitempty"`
+	Ports       []TemplatePort        `yaml:"ports,omitempty"`
+	Properties  []TemplateProperty    `yaml:"properties,omitempty"`
+	Validations []ComponentValidation `yaml:"validations,omitempty"`
+	Templates   []TemplateData        `yaml:"templates,omitempty"`
+	User        map[string]any        `yaml:"-"`
+	hpsf        *hpsf.Component       // the component from the hpsf document
 	connections []*hpsf.Connection
 	collName    string
 }
