@@ -181,6 +181,11 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 				result.Add(hspfError)
 			}
 		}
+
+		// Execute component validations after individual property validations pass
+		if compValidationError := tmpl.ValidateComponent(c); compValidationError != nil {
+			result.Add(compValidationError)
+		}
 	}
 	return result
 }

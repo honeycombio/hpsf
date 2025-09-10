@@ -53,6 +53,15 @@ type TemplateData struct {
 	Data   []any
 }
 
+// ComponentValidation represents a validation rule that applies to multiple properties
+type ComponentValidation struct {
+	Type              string   `yaml:"type"`
+	Properties        []string `yaml:"properties"`
+	Message           string   `yaml:"message"`
+	ConditionProperty string   `yaml:"condition_property,omitempty"`
+	ConditionValue    any      `yaml:"condition_value,omitempty"`
+}
+
 type ComponentType string
 
 const (
@@ -160,8 +169,9 @@ type TemplateComponent struct {
 	Status      ComponentStatus    `yaml:"status,omitempty"`
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
-	Properties  []TemplateProperty `yaml:"properties,omitempty"`
-	Templates   []TemplateData     `yaml:"templates,omitempty"`
+	Properties           []TemplateProperty     `yaml:"properties,omitempty"`
+	ComponentValidations []ComponentValidation  `yaml:"component_validations,omitempty"`
+	Templates            []TemplateData         `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"-"`
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection
