@@ -92,10 +92,8 @@ properties:
     default: []
     advanced: false
 
-# Component validation to ensure at least one type of statement is provided
 validations:
-  - type: at_least_one_of
-    properties: ["TraceStatements", "LogStatements", "MetricStatements"]
+  - "at_least_one_of(TraceStatements, LogStatements, MetricStatements)"
 
 templates:
   - kind: collector_config

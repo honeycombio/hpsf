@@ -24,21 +24,10 @@ func TestComponentValidationIntegration(t *testing.T) {
 				{Name: "TLSCertPath", Type: hpsf.PTYPE_STRING},
 				{Name: "TLSKeyPath", Type: hpsf.PTYPE_STRING},
 			},
-			Validations: []config.ComponentValidation{
-				{
-					Type:       "exactly_one_of",
-					Properties: []string{"APIKey", "BearerToken", "Username"},
-				},
-				{
-					Type:       "require_together",
-					Properties: []string{"Username", "Password"},
-				},
-				{
-					Type:              "conditional_require_together",
-					ConditionProperty: "EnableTLS",
-					ConditionValue:    true,
-					Properties:        []string{"TLSCertPath", "TLSKeyPath"},
-				},
+			Validations: []string{
+				"exactly_one_of(APIKey, BearerToken, Username)",
+				"require_together(Username, Password)",
+				"conditional_require_together(TLSCertPath, TLSKeyPath | when EnableTLS=true)",
 			},
 		},
 	}

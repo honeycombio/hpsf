@@ -15,11 +15,8 @@ func TestValidateAtLeastOneOf(t *testing.T) {
 			{Name: "PropB", Type: hpsf.PTYPE_STRING},
 			{Name: "PropC", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "at_least_one_of",
-				Properties: []string{"PropA", "PropB", "PropC"},
-			},
+		Validations: []string{
+			"at_least_one_of(PropA, PropB, PropC)",
 		},
 	}
 
@@ -80,11 +77,8 @@ func TestValidateExactlyOneOf(t *testing.T) {
 			{Name: "BearerToken", Type: hpsf.PTYPE_STRING},
 			{Name: "BasicAuth", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "exactly_one_of",
-				Properties: []string{"APIKey", "BearerToken", "BasicAuth"},
-			},
+		Validations: []string{
+			"exactly_one_of(APIKey, BearerToken, BasicAuth)",
 		},
 	}
 
@@ -144,11 +138,8 @@ func TestValidateMutuallyExclusive(t *testing.T) {
 			{Name: "GzipCompression", Type: hpsf.PTYPE_BOOL, Default: false},
 			{Name: "LZ4Compression", Type: hpsf.PTYPE_BOOL, Default: false},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "mutually_exclusive",
-				Properties: []string{"GzipCompression", "LZ4Compression"},
-			},
+		Validations: []string{
+			"mutually_exclusive(GzipCompression, LZ4Compression)",
 		},
 	}
 
@@ -205,11 +196,8 @@ func TestValidateRequireTogether(t *testing.T) {
 			{Name: "Username", Type: hpsf.PTYPE_STRING},
 			{Name: "Password", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "require_together",
-				Properties: []string{"Username", "Password"},
-			},
+		Validations: []string{
+			"require_together(Username, Password)",
 		},
 	}
 
@@ -267,13 +255,8 @@ func TestValidateConditionalRequireTogether(t *testing.T) {
 			{Name: "TLSCertPath", Type: hpsf.PTYPE_STRING},
 			{Name: "TLSKeyPath", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:              "conditional_require_together",
-				ConditionProperty: "EnableTLS",
-				ConditionValue:    true,
-				Properties:        []string{"TLSCertPath", "TLSKeyPath"},
-			},
+		Validations: []string{
+			"conditional_require_together(TLSCertPath, TLSKeyPath | when EnableTLS=true)",
 		},
 	}
 
@@ -332,11 +315,8 @@ func TestUnknownValidationType(t *testing.T) {
 		Properties: []TemplateProperty{
 			{Name: "PropA", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "unknown_validation_type",
-				Properties: []string{"PropA"},
-			},
+		Validations: []string{
+			"unknown_validation_type(PropA)",
 		},
 	}
 
@@ -359,11 +339,8 @@ func TestNonExistentProperty(t *testing.T) {
 		Properties: []TemplateProperty{
 			{Name: "PropA", Type: hpsf.PTYPE_STRING},
 		},
-		Validations: []ComponentValidation{
-			{
-				Type:       "at_least_one_of",
-				Properties: []string{"PropA", "NonExistentProp"},
-			},
+		Validations: []string{
+			"at_least_one_of(PropA, NonExistentProp)",
 		},
 	}
 
@@ -377,5 +354,92 @@ func TestNonExistentProperty(t *testing.T) {
 	err := tc.Validate(component)
 	if err == nil {
 		t.Error("Expected validation to fail when referencing non-existent property")
+	}
+}
+
+// TestParseComponentValidation tests the validation string parsing
+func TestParseComponentValidation(t *testing.T) {
+	tests := []struct {
+		name            string
+		validationStr   string
+		expectType      string
+		expectProps     []string
+		expectCondProp  string
+		expectCondVal   any
+		expectError     bool
+	}{
+		{
+			name:          "simple at_least_one_of",
+			validationStr: "at_least_one_of(PropA, PropB, PropC)",
+			expectType:    "at_least_one_of",
+			expectProps:   []string{"PropA", "PropB", "PropC"},
+		},
+		{
+			name:          "exactly_one_of with spaces",
+			validationStr: "exactly_one_of( APIKey , BearerToken )",
+			expectType:    "exactly_one_of",
+			expectProps:   []string{"APIKey", "BearerToken"},
+		},
+		{
+			name:           "conditional with boolean",
+			validationStr:  "conditional_require_together(TLSCertPath, TLSKeyPath | when EnableTLS=true)",
+			expectType:     "conditional_require_together",
+			expectProps:    []string{"TLSCertPath", "TLSKeyPath"},
+			expectCondProp: "EnableTLS",
+			expectCondVal:  true,
+		},
+		{
+			name:           "conditional with string",
+			validationStr:  "conditional_require_together(PropA, PropB | when Mode=production)",
+			expectType:     "conditional_require_together",
+			expectProps:    []string{"PropA", "PropB"},
+			expectCondProp: "Mode",
+			expectCondVal:  "production",
+		},
+		{
+			name:          "invalid format",
+			validationStr: "invalid_format",
+			expectError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validationType, properties, conditionProperty, conditionValue, err := parseComponentValidation(tt.validationStr)
+			
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+			
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+			
+			if validationType != tt.expectType {
+				t.Errorf("Expected type %s, got %s", tt.expectType, validationType)
+			}
+			
+			if len(properties) != len(tt.expectProps) {
+				t.Errorf("Expected %d properties, got %d", len(tt.expectProps), len(properties))
+			} else {
+				for i, expected := range tt.expectProps {
+					if properties[i] != expected {
+						t.Errorf("Expected property[%d] to be %s, got %s", i, expected, properties[i])
+					}
+				}
+			}
+			
+			if conditionProperty != tt.expectCondProp {
+				t.Errorf("Expected condition property %s, got %s", tt.expectCondProp, conditionProperty)
+			}
+			
+			if conditionValue != tt.expectCondVal {
+				t.Errorf("Expected condition value %v, got %v", tt.expectCondVal, conditionValue)
+			}
+		})
 	}
 }
