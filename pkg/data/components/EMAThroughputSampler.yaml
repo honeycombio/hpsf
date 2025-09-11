@@ -94,14 +94,6 @@ properties:
       - positive
     default: 500
     advanced: true
-  - name: UseClusterSize
-    summary: Whether to use cluster size in throughput calculations
-    description: |
-      When enabled, then the goal throughput will be divided by the number of instances in the cluster.
-      When disabled (default), then the goal throughput will be the value specified in `GoalThroughputPerSec`.
-    type: bool
-    default: false
-    advanced: true
 templates:
   - kind: refinery_rules
     name: EMA_Throughput_Rules
@@ -124,6 +116,6 @@ templates:
       - key: MaxKeys
         value: "{{ .Values.MaxKeys | encodeAsInt }}"
         suppress_if: "{{ eq .Values.MaxKeys 500 }}"
+      # always enable use cluster size
       - key: UseClusterSize
-        value: "{{ .Values.UseClusterSize | encodeAsBool }}"
-        suppress_if: "{{ eq .Values.UseClusterSize false }}"
+        value: true
