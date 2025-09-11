@@ -16,6 +16,8 @@ components:
         value: 50
       - name: MaxKeys
         value: 1000
+      - name: UseClusterSize
+        value: true
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:

@@ -8,3 +8,4 @@ Samplers:
             FieldList:
                 - http.status_code
             MaxKeys: 1000
+            UseClusterSize: true
