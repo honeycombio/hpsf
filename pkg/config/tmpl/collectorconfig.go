@@ -2,6 +2,8 @@ package tmpl
 
 import (
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	y "gopkg.in/yaml.v3"
@@ -44,9 +46,9 @@ type collectorConfigFormat struct {
 	Service    *collectorConfigService `yaml:"service"`
 }
 
-// injectHoneycombUsageComponents ensures the collector configuration always has the necessary honeycomb
-// components for measuring usage.
-func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
+// setupServiceExtensions ensures the collector configuration always has the necessary honeycomb
+// components for measuring usage, and includes any additional extensions that were defined.
+func (f *collectorConfigFormat) setupServiceExtensions(additionalExtensions []string) {
 	if f.Service == nil {
 		f.Service = &collectorConfigService{}
 	}
@@ -57,9 +59,14 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 	}
 	f.Extensions["honeycomb"] = map[string]any{}
 	if f.Service.Extensions == nil {
-		f.Service.Extensions = make([]string, 0, 1)
+		f.Service.Extensions = make([]string, 0, 1+len(additionalExtensions))
 	}
+	// Add honeycomb extension first
 	f.Service.Extensions = append(f.Service.Extensions, "honeycomb")
+	// Add any additional extensions defined by components
+	f.Service.Extensions = append(f.Service.Extensions, additionalExtensions...)
+	// Deduplicate extensions to avoid duplicates
+	f.Service.Extensions = dedup(f.Service.Extensions)
 
 	// ensure the usageprocessor is configured for all pipelines
 	if f.Processors == nil {
@@ -161,7 +168,8 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 		return nil, err
 	}
 
-	f.injectHoneycombUsageComponents()
+	// setup extensions, always include Honeycomb and any additional extensions
+	f.setupServiceExtensions(slices.Collect(maps.Keys(f.Extensions)))
 
 	// now marshal from the struct to yaml
 	data, err = y.Marshal(f)

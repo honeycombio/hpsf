@@ -1,0 +1,25 @@
+name: k8s_cluster_receiver_defaults_test
+version: v0.1.0
+summary: Test for K8sClusterReceiver with default configuration
+description: |
+  Test configuration demonstrating K8sClusterReceiver with default settings.
+  Uses serviceAccount authentication, default collection interval of 10s,
+  and collects standard node conditions and metrics from Kubernetes cluster.
+components:
+  - name: k8s_cluster_in
+    kind: K8sClusterReceiver
+    properties:
+      - name: ResourceAttributes
+        value:
+          k8s.container.status.last_terminated_reason: true
+  - name: debug_out
+    kind: DebugExporter
+connections:
+  - source:
+      component: k8s_cluster_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: debug_out
+      port: Metrics
+      type: OTelMetrics
