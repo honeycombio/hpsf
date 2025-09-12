@@ -553,8 +553,8 @@ func (t *TemplateComponent) Validate(component *hpsf.Component) error {
 	}
 
 	// Execute each validation rule
-	for _, validationStr := range t.Validations {
-		if err := t.executeComponentValidation(validationStr, propertyValues, component.Name); err != nil {
+	for _, validation := range t.Validations {
+		if err := t.executeComponentValidation(validation, propertyValues, component.Name); err != nil {
 			return err
 		}
 	}
@@ -673,8 +673,8 @@ func (t *TemplateComponent) propertyExists(propName string) bool {
 	return false
 }
 
-// GenerateValidationErrorMessage creates an error message based on validation type and properties
-func GenerateValidationErrorMessage(validationType string, properties []string, conditionProperty string, conditionValue any) string {
+// generateValidationErrorMessage creates an error message based on validation type and properties
+func generateValidationErrorMessage(validationType string, properties []string, conditionProperty string, conditionValue any) string {
 	propsStr := strings.Join(properties, ", ")
 
 	switch validationType {
@@ -727,7 +727,7 @@ func (t *TemplateComponent) validateAtLeastOneOf(properties []string, propertyVa
 			return nil // At least one property has a non-empty value
 		}
 	}
-	return hpsf.NewError(GenerateValidationErrorMessage("at_least_one_of", properties, "", nil)).WithComponent(componentName)
+	return hpsf.NewError(generateValidationErrorMessage("at_least_one_of", properties, "", nil)).WithComponent(componentName)
 }
 
 // validateExactlyOneOf ensures exactly one of the specified properties is non-empty
@@ -739,7 +739,7 @@ func (t *TemplateComponent) validateExactlyOneOf(properties []string, propertyVa
 		}
 	}
 	if nonEmptyCount != 1 {
-		return hpsf.NewError(GenerateValidationErrorMessage("exactly_one_of", properties, "", nil)).WithComponent(componentName)
+		return hpsf.NewError(generateValidationErrorMessage("exactly_one_of", properties, "", nil)).WithComponent(componentName)
 	}
 	return nil
 }
@@ -751,7 +751,7 @@ func (t *TemplateComponent) validateMutuallyExclusive(properties []string, prope
 		if value, exists := propertyValues[propName]; exists && !isPropertyEmpty(value) {
 			nonEmptyCount++
 			if nonEmptyCount > 1 {
-				return hpsf.NewError(GenerateValidationErrorMessage("mutually_exclusive", properties, "", nil)).WithComponent(componentName)
+				return hpsf.NewError(generateValidationErrorMessage("mutually_exclusive", properties, "", nil)).WithComponent(componentName)
 			}
 		}
 	}
@@ -776,7 +776,7 @@ func (t *TemplateComponent) validateRequireTogether(properties []string, propert
 
 	// If we have both empty and non-empty properties, that's an error
 	if hasEmpty && hasNonEmpty {
-		return hpsf.NewError(GenerateValidationErrorMessage("require_together", properties, "", nil)).WithComponent(componentName)
+		return hpsf.NewError(generateValidationErrorMessage("require_together", properties, "", nil)).WithComponent(componentName)
 	}
 
 	return nil
@@ -822,7 +822,7 @@ func (t *TemplateComponent) validateConditionalRequireTogether(properties []stri
 	for _, propName := range properties {
 		value, exists := propertyValues[propName]
 		if !exists || isPropertyEmpty(value) {
-			return hpsf.NewError(GenerateValidationErrorMessage("conditional_require_together", properties, conditionProperty, conditionValue)).WithComponent(componentName)
+			return hpsf.NewError(generateValidationErrorMessage("conditional_require_together", properties, conditionProperty, conditionValue)).WithComponent(componentName)
 		}
 	}
 

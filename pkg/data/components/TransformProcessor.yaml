@@ -91,10 +91,8 @@ properties:
       - delete_key(datapoint.attributes, "unwanted_field")
     default: []
     advanced: false
-
 validations:
   - "at_least_one_of(TraceStatements, LogStatements, MetricStatements)"
-
 templates:
   - kind: collector_config
     name: transform_processor
