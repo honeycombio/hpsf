@@ -116,3 +116,6 @@ templates:
       - key: MaxKeys
         value: "{{ .Values.MaxKeys | encodeAsInt }}"
         suppress_if: "{{ eq .Values.MaxKeys 500 }}"
+      # always enable use cluster size
+      - key: UseClusterSize
+        value: true
