@@ -1,5 +1,22 @@
 # hpsf library changelog
 
+## 0.17.0 2025-09-12
+
+### Features
+
+- feat: Add component validation system with 5 validation types (#226) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Always set UseClusterSize in EMA throughput sampler definition (#227) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add TransformProcessor component (#222) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add MemoryLimiterProcessor component with percentage-based memory limits (#224) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Make SymbolicatorProcessor prefix property optional (#223) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Suppress default EMA throughput properties (#221) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add missing advanced properties to EMA dynamic sampler (#220) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add extract log attributes processor (#216) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add MaxKeys and InitialSampleRate to EMA throughput sampler (#219) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: Add refinery condition to compare boolean values (#218) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+- feat: support versions not prefixed with 'v' (#217) | [Alex Boten](https://github.com/codeboten)
+- feat: update GenerateConfig to support a version (#215) | [Alex Boten](https://github.com/codeboten)
+
 ## 0.16.0 2025-08-27
 
 ### Features
