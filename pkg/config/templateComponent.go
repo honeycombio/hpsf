@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
@@ -161,6 +162,7 @@ type TemplateComponent struct {
 	Metadata    map[string]string  `yaml:"metadata,omitempty"`
 	Ports       []TemplatePort     `yaml:"ports,omitempty"`
 	Properties  []TemplateProperty `yaml:"properties,omitempty"`
+	Validations []string           `yaml:"validations,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"-"`
 	hpsf        *hpsf.Component    // the component from the hpsf document
@@ -528,4 +530,301 @@ func (t *TemplateComponent) AsYAML() (string, error) {
 		return "", fmt.Errorf("error marshaling template component to YAML: %w", err)
 	}
 	return string(data), nil
+}
+
+// Validate executes component validation rules for a TemplateComponent
+// using the provided hpsf.Component data. It returns an error if any validation fails.
+func (t *TemplateComponent) Validate(component *hpsf.Component) error {
+	if len(t.Validations) == 0 {
+		return nil
+	}
+
+	// Build a map of property values for easy lookup
+	propertyValues := make(map[string]any)
+	for _, prop := range component.Properties {
+		propertyValues[prop.Name] = prop.Value
+	}
+
+	// Add defaults for properties not explicitly set
+	for _, templateProp := range t.Properties {
+		if _, exists := propertyValues[templateProp.Name]; !exists && templateProp.Default != nil {
+			propertyValues[templateProp.Name] = templateProp.Default
+		}
+	}
+
+	// Execute each validation rule
+	for _, validation := range t.Validations {
+		if err := t.executeComponentValidation(validation, propertyValues, component.Name); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// parseComponentValidation parses a component validation string like "at_least_one_of(PropA, PropB, PropC)"
+func parseComponentValidation(validationStr string) (validationType string, properties []string, conditionProperty string, conditionValue any, err error) {
+	// Parse validation strings in formats like:
+	// "at_least_one_of(PropA, PropB, PropC)"
+	// "conditional_require_together(PropA, PropB | when EnableTLS=true)"
+
+	valpat := regexp.MustCompile(`^(\w+)\(([^)]+)\)$`)
+	argpat := regexp.MustCompile(`[\t ]*,[\t ]*`)
+
+	matches := valpat.FindStringSubmatch(strings.TrimSpace(validationStr))
+	if len(matches) != 3 {
+		return "", nil, "", nil, fmt.Errorf("invalid component validation format: %s", validationStr)
+	}
+
+	validationType = matches[1]
+	argsStr := matches[2]
+
+	// Check for conditional validation format: "PropA, PropB | when ConditionProp=value"
+	if strings.Contains(argsStr, " | when ") {
+		parts := strings.Split(argsStr, " | when ")
+		if len(parts) != 2 {
+			return "", nil, "", nil, fmt.Errorf("invalid conditional validation format: %s", validationStr)
+		}
+
+		// Parse properties
+		propsPart := strings.TrimSpace(parts[0])
+		if propsPart != "" {
+			properties = argpat.Split(propsPart, -1)
+			for i, prop := range properties {
+				properties[i] = strings.TrimSpace(prop)
+			}
+		}
+
+		// Parse condition
+		conditionPart := strings.TrimSpace(parts[1])
+		conditionPat := regexp.MustCompile(`^(\w+)\s*=\s*(.+)$`)
+		condMatches := conditionPat.FindStringSubmatch(conditionPart)
+		if len(condMatches) != 3 {
+			return "", nil, "", nil, fmt.Errorf("invalid condition format: %s", conditionPart)
+		}
+
+		conditionProperty = strings.TrimSpace(condMatches[1])
+		conditionValueStr := strings.TrimSpace(condMatches[2])
+
+		// Parse condition value (try bool, then string)
+		if conditionValueStr == "true" {
+			conditionValue = true
+		} else if conditionValueStr == "false" {
+			conditionValue = false
+		} else {
+			conditionValue = conditionValueStr
+		}
+	} else {
+		// Simple validation - just parse properties
+		properties = argpat.Split(argsStr, -1)
+		for i, prop := range properties {
+			properties[i] = strings.TrimSpace(prop)
+		}
+	}
+
+	return validationType, properties, conditionProperty, conditionValue, nil
+}
+
+// executeComponentValidation runs a single component validation rule
+func (t *TemplateComponent) executeComponentValidation(validationStr string, propertyValues map[string]any, componentName string) error {
+	validationType, properties, conditionProperty, conditionValue, err := parseComponentValidation(validationStr)
+	if err != nil {
+		return hpsf.NewError("failed to parse component validation: " + err.Error()).WithComponent(componentName)
+	}
+
+	// Validate that all referenced properties exist
+	for _, propName := range properties {
+		if !t.propertyExists(propName) {
+			return hpsf.NewError("component validation references unknown property: " + propName).
+				WithComponent(componentName)
+		}
+	}
+
+	// Validate condition property if specified
+	if conditionProperty != "" && !t.propertyExists(conditionProperty) {
+		return hpsf.NewError("component validation references unknown condition property: " + conditionProperty).
+			WithComponent(componentName)
+	}
+
+	switch validationType {
+	case "at_least_one_of":
+		return t.validateAtLeastOneOf(properties, propertyValues, componentName)
+	case "exactly_one_of":
+		return t.validateExactlyOneOf(properties, propertyValues, componentName)
+	case "mutually_exclusive":
+		return t.validateMutuallyExclusive(properties, propertyValues, componentName)
+	case "require_together":
+		return t.validateRequireTogether(properties, propertyValues, componentName)
+	case "conditional_require_together":
+		return t.validateConditionalRequireTogether(properties, conditionProperty, conditionValue, propertyValues, componentName)
+	default:
+		return hpsf.NewError("unknown component validation type: " + validationType).
+			WithComponent(componentName)
+	}
+}
+
+// propertyExists checks if a property with the given name exists in the template component
+func (t *TemplateComponent) propertyExists(propName string) bool {
+	for _, prop := range t.Properties {
+		if prop.Name == propName {
+			return true
+		}
+	}
+	return false
+}
+
+// generateValidationErrorMessage creates an error message based on validation type and properties
+func generateValidationErrorMessage(validationType string, properties []string, conditionProperty string, conditionValue any) string {
+	propsStr := strings.Join(properties, ", ")
+
+	switch validationType {
+	case "at_least_one_of":
+		return fmt.Sprintf("At least one of [%s] must be provided", propsStr)
+	case "exactly_one_of":
+		return fmt.Sprintf("Exactly one of [%s] must be provided", propsStr)
+	case "mutually_exclusive":
+		return fmt.Sprintf("Only one of [%s] can be provided", propsStr)
+	case "require_together":
+		return fmt.Sprintf("Either all or none of [%s] must be provided", propsStr)
+	case "conditional_require_together":
+		return fmt.Sprintf("When %s is %v, all of [%s] must be provided", conditionProperty, conditionValue, propsStr)
+	default:
+		return fmt.Sprintf("Validation failed for properties [%s]", propsStr)
+	}
+}
+
+// isPropertyEmpty determines if a property value is considered "empty" according to the spec
+func isPropertyEmpty(value any) bool {
+	if value == nil {
+		return true
+	}
+
+	switch v := value.(type) {
+	case string:
+		return v == ""
+	case bool:
+		return !v
+	case int:
+		return v == 0
+	case float64:
+		return v == 0.0
+	case []string:
+		return len(v) == 0
+	case []any:
+		return len(v) == 0
+	case map[string]any:
+		return len(v) == 0
+	default:
+		// For other types, consider nil/zero values as empty
+		return value == nil
+	}
+}
+
+// validateAtLeastOneOf ensures at least one of the specified properties is non-empty
+func (t *TemplateComponent) validateAtLeastOneOf(properties []string, propertyValues map[string]any, componentName string) error {
+	for _, propName := range properties {
+		if value, exists := propertyValues[propName]; exists && !isPropertyEmpty(value) {
+			return nil // At least one property has a non-empty value
+		}
+	}
+	return hpsf.NewError(generateValidationErrorMessage("at_least_one_of", properties, "", nil)).WithComponent(componentName)
+}
+
+// validateExactlyOneOf ensures exactly one of the specified properties is non-empty
+func (t *TemplateComponent) validateExactlyOneOf(properties []string, propertyValues map[string]any, componentName string) error {
+	nonEmptyCount := 0
+	for _, propName := range properties {
+		if value, exists := propertyValues[propName]; exists && !isPropertyEmpty(value) {
+			nonEmptyCount++
+		}
+	}
+	if nonEmptyCount != 1 {
+		return hpsf.NewError(generateValidationErrorMessage("exactly_one_of", properties, "", nil)).WithComponent(componentName)
+	}
+	return nil
+}
+
+// validateMutuallyExclusive ensures at most one of the specified properties is non-empty
+func (t *TemplateComponent) validateMutuallyExclusive(properties []string, propertyValues map[string]any, componentName string) error {
+	nonEmptyCount := 0
+	for _, propName := range properties {
+		if value, exists := propertyValues[propName]; exists && !isPropertyEmpty(value) {
+			nonEmptyCount++
+			if nonEmptyCount > 1 {
+				return hpsf.NewError(generateValidationErrorMessage("mutually_exclusive", properties, "", nil)).WithComponent(componentName)
+			}
+		}
+	}
+	return nil
+}
+
+// validateRequireTogether ensures all properties are either all empty or all non-empty
+func (t *TemplateComponent) validateRequireTogether(properties []string, propertyValues map[string]any, componentName string) error {
+	hasNonEmpty := false
+	hasEmpty := false
+
+	for _, propName := range properties {
+		value, exists := propertyValues[propName]
+		isEmpty := !exists || isPropertyEmpty(value)
+
+		if isEmpty {
+			hasEmpty = true
+		} else {
+			hasNonEmpty = true
+		}
+	}
+
+	// If we have both empty and non-empty properties, that's an error
+	if hasEmpty && hasNonEmpty {
+		return hpsf.NewError(generateValidationErrorMessage("require_together", properties, "", nil)).WithComponent(componentName)
+	}
+
+	return nil
+}
+
+// validateConditionalRequireTogether ensures all properties are non-empty when condition is met
+func (t *TemplateComponent) validateConditionalRequireTogether(properties []string, conditionProperty string, conditionValue any, propertyValues map[string]any, componentName string) error {
+	// Check if condition is met
+	actualValue, exists := propertyValues[conditionProperty]
+	if !exists || isPropertyEmpty(actualValue) {
+		return nil // Condition not met, validation doesn't apply
+	}
+
+	// Compare condition value with expected value
+	conditionMet := false
+	switch expectedVal := conditionValue.(type) {
+	case bool:
+		if boolVal, ok := actualValue.(bool); ok && boolVal == expectedVal {
+			conditionMet = true
+		}
+	case string:
+		if strVal, ok := actualValue.(string); ok && strVal == expectedVal {
+			conditionMet = true
+		}
+	case int:
+		if intVal, ok := actualValue.(int); ok && intVal == expectedVal {
+			conditionMet = true
+		}
+	case float64:
+		if floatVal, ok := actualValue.(float64); ok && floatVal == expectedVal {
+			conditionMet = true
+		}
+	default:
+		// For other types, use string comparison
+		conditionMet = fmt.Sprint(actualValue) == fmt.Sprint(expectedVal)
+	}
+
+	if !conditionMet {
+		return nil // Condition not met, validation doesn't apply
+	}
+
+	// Condition is met, ensure all specified properties are non-empty
+	for _, propName := range properties {
+		value, exists := propertyValues[propName]
+		if !exists || isPropertyEmpty(value) {
+			return hpsf.NewError(generateValidationErrorMessage("conditional_require_together", properties, conditionProperty, conditionValue)).WithComponent(componentName)
+		}
+	}
+
+	return nil
 }

@@ -8,6 +8,10 @@ receivers:
 processors:
     transform/transform_1:
         error_mode: ignore
+        trace_statements:
+            - set(span.attributes["custom.field"], "value")
+            - delete_key(span.attributes, "unwanted_field")
+            - set(span.name, Concat([span.name, " - processed"], ""))
     usage: {}
 exporters:
     otlphttp/otlp_out:

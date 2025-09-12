@@ -1,0 +1,445 @@
+package config
+
+import (
+	"testing"
+
+	"github.com/honeycombio/hpsf/pkg/hpsf"
+)
+
+// TestValidateAtLeastOneOf tests the at_least_one_of validation type
+func TestValidateAtLeastOneOf(t *testing.T) {
+	// Create a test template component
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "PropA", Type: hpsf.PTYPE_STRING},
+			{Name: "PropB", Type: hpsf.PTYPE_STRING},
+			{Name: "PropC", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"at_least_one_of(PropA, PropB, PropC)",
+		},
+	}
+
+	// Test case 1: All properties empty - should fail
+	t.Run("AllEmpty", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "PropA", Value: ""},
+				{Name: "PropB", Value: ""},
+				{Name: "PropC", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when all properties are empty")
+		}
+	})
+
+	// Test case 2: One property set - should pass
+	t.Run("OneSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "PropA", Value: "value"},
+				{Name: "PropB", Value: ""},
+				{Name: "PropC", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when one property is set, got: %v", err)
+		}
+	})
+
+	// Test case 3: Multiple properties set - should pass
+	t.Run("MultipleSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "PropA", Value: "value1"},
+				{Name: "PropB", Value: "value2"},
+				{Name: "PropC", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when multiple properties are set, got: %v", err)
+		}
+	})
+}
+
+// TestValidateExactlyOneOf tests the exactly_one_of validation type
+func TestValidateExactlyOneOf(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "APIKey", Type: hpsf.PTYPE_STRING},
+			{Name: "BearerToken", Type: hpsf.PTYPE_STRING},
+			{Name: "BasicAuth", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"exactly_one_of(APIKey, BearerToken, BasicAuth)",
+		},
+	}
+
+	// Test case 1: No properties set - should fail
+	t.Run("NoneSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "APIKey", Value: ""},
+				{Name: "BearerToken", Value: ""},
+				{Name: "BasicAuth", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when no properties are set")
+		}
+	})
+
+	// Test case 2: Exactly one property set - should pass
+	t.Run("ExactlyOneSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "APIKey", Value: "key123"},
+				{Name: "BearerToken", Value: ""},
+				{Name: "BasicAuth", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when exactly one property is set, got: %v", err)
+		}
+	})
+
+	// Test case 3: Multiple properties set - should fail
+	t.Run("MultipleSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "APIKey", Value: "key123"},
+				{Name: "BearerToken", Value: "token456"},
+				{Name: "BasicAuth", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when multiple properties are set")
+		}
+	})
+}
+
+// TestValidateMutuallyExclusive tests the mutually_exclusive validation type
+func TestValidateMutuallyExclusive(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "GzipCompression", Type: hpsf.PTYPE_BOOL, Default: false},
+			{Name: "LZ4Compression", Type: hpsf.PTYPE_BOOL, Default: false},
+		},
+		Validations: []string{
+			"mutually_exclusive(GzipCompression, LZ4Compression)",
+		},
+	}
+
+	// Test case 1: Both properties false - should pass
+	t.Run("BothFalse", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "GzipCompression", Value: false},
+				{Name: "LZ4Compression", Value: false},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when both properties are false, got: %v", err)
+		}
+	})
+
+	// Test case 2: Only one property true - should pass
+	t.Run("OnlyOneTrue", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "GzipCompression", Value: true},
+				{Name: "LZ4Compression", Value: false},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when only one property is true, got: %v", err)
+		}
+	})
+
+	// Test case 3: Both properties true - should fail
+	t.Run("BothTrue", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "GzipCompression", Value: true},
+				{Name: "LZ4Compression", Value: true},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when both properties are true")
+		}
+	})
+}
+
+// TestValidateRequireTogether tests the require_together validation type
+func TestValidateRequireTogether(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "Username", Type: hpsf.PTYPE_STRING},
+			{Name: "Password", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"require_together(Username, Password)",
+		},
+	}
+
+	// Test case 1: Both properties empty - should pass
+	t.Run("BothEmpty", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Username", Value: ""},
+				{Name: "Password", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when both properties are empty, got: %v", err)
+		}
+	})
+
+	// Test case 2: Both properties set - should pass
+	t.Run("BothSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Username", Value: "user123"},
+				{Name: "Password", Value: "pass456"},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when both properties are set, got: %v", err)
+		}
+	})
+
+	// Test case 3: Only one property set - should fail
+	t.Run("OnlyOneSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Username", Value: "user123"},
+				{Name: "Password", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when only one property is set")
+		}
+	})
+}
+
+// TestValidateConditionalRequireTogether tests the conditional_require_together validation type
+func TestValidateConditionalRequireTogether(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "EnableTLS", Type: hpsf.PTYPE_BOOL, Default: false},
+			{Name: "TLSCertPath", Type: hpsf.PTYPE_STRING},
+			{Name: "TLSKeyPath", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"conditional_require_together(TLSCertPath, TLSKeyPath | when EnableTLS=true)",
+		},
+	}
+
+	// Test case 1: Condition false - should pass regardless of other properties
+	t.Run("ConditionFalse", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "EnableTLS", Value: false},
+				{Name: "TLSCertPath", Value: ""},
+				{Name: "TLSKeyPath", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when condition is false, got: %v", err)
+		}
+	})
+
+	// Test case 2: Condition true and all required properties set - should pass
+	t.Run("ConditionTrueAllSet", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "EnableTLS", Value: true},
+				{Name: "TLSCertPath", Value: "/path/to/cert"},
+				{Name: "TLSKeyPath", Value: "/path/to/key"},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when condition is true and all properties are set, got: %v", err)
+		}
+	})
+
+	// Test case 3: Condition true but required properties missing - should fail
+	t.Run("ConditionTrueMissingProperties", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "EnableTLS", Value: true},
+				{Name: "TLSCertPath", Value: "/path/to/cert"},
+				{Name: "TLSKeyPath", Value: ""},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when condition is true but required properties are missing")
+		}
+	})
+}
+
+// TestUnknownValidationType tests that unknown validation types are handled correctly
+func TestUnknownValidationType(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "PropA", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"unknown_validation_type(PropA)",
+		},
+	}
+
+	component := &hpsf.Component{
+		Name: "TestComponent",
+		Properties: []hpsf.Property{
+			{Name: "PropA", Value: "value"},
+		},
+	}
+
+	err := tc.Validate(component)
+	if err == nil {
+		t.Error("Expected validation to fail for unknown validation type")
+	}
+}
+
+// TestNonExistentProperty tests that referencing non-existent properties is handled correctly
+func TestNonExistentProperty(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "PropA", Type: hpsf.PTYPE_STRING},
+		},
+		Validations: []string{
+			"at_least_one_of(PropA, NonExistentProp)",
+		},
+	}
+
+	component := &hpsf.Component{
+		Name: "TestComponent",
+		Properties: []hpsf.Property{
+			{Name: "PropA", Value: "value"},
+		},
+	}
+
+	err := tc.Validate(component)
+	if err == nil {
+		t.Error("Expected validation to fail when referencing non-existent property")
+	}
+}
+
+// TestParseComponentValidation tests the validation string parsing
+func TestParseComponentValidation(t *testing.T) {
+	tests := []struct {
+		name            string
+		validationStr   string
+		expectType      string
+		expectProps     []string
+		expectCondProp  string
+		expectCondVal   any
+		expectError     bool
+	}{
+		{
+			name:          "simple at_least_one_of",
+			validationStr: "at_least_one_of(PropA, PropB, PropC)",
+			expectType:    "at_least_one_of",
+			expectProps:   []string{"PropA", "PropB", "PropC"},
+		},
+		{
+			name:          "exactly_one_of with spaces",
+			validationStr: "exactly_one_of( APIKey , BearerToken )",
+			expectType:    "exactly_one_of",
+			expectProps:   []string{"APIKey", "BearerToken"},
+		},
+		{
+			name:           "conditional with boolean",
+			validationStr:  "conditional_require_together(TLSCertPath, TLSKeyPath | when EnableTLS=true)",
+			expectType:     "conditional_require_together",
+			expectProps:    []string{"TLSCertPath", "TLSKeyPath"},
+			expectCondProp: "EnableTLS",
+			expectCondVal:  true,
+		},
+		{
+			name:           "conditional with string",
+			validationStr:  "conditional_require_together(PropA, PropB | when Mode=production)",
+			expectType:     "conditional_require_together",
+			expectProps:    []string{"PropA", "PropB"},
+			expectCondProp: "Mode",
+			expectCondVal:  "production",
+		},
+		{
+			name:          "invalid format",
+			validationStr: "invalid_format",
+			expectError:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			validationType, properties, conditionProperty, conditionValue, err := parseComponentValidation(tt.validationStr)
+			
+			if tt.expectError {
+				if err == nil {
+					t.Error("Expected error but got none")
+				}
+				return
+			}
+			
+			if err != nil {
+				t.Errorf("Unexpected error: %v", err)
+				return
+			}
+			
+			if validationType != tt.expectType {
+				t.Errorf("Expected type %s, got %s", tt.expectType, validationType)
+			}
+			
+			if len(properties) != len(tt.expectProps) {
+				t.Errorf("Expected %d properties, got %d", len(tt.expectProps), len(properties))
+			} else {
+				for i, expected := range tt.expectProps {
+					if properties[i] != expected {
+						t.Errorf("Expected property[%d] to be %s, got %s", i, expected, properties[i])
+					}
+				}
+			}
+			
+			if conditionProperty != tt.expectCondProp {
+				t.Errorf("Expected condition property %s, got %s", tt.expectCondProp, conditionProperty)
+			}
+			
+			if conditionValue != tt.expectCondVal {
+				t.Errorf("Expected condition value %v, got %v", tt.expectCondVal, conditionValue)
+			}
+		})
+	}
+}

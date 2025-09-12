@@ -135,8 +135,8 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 	result := validator.NewResult("HPSF property validation errors")
 	// now we have a map of all the components that were successfully instantiated
 	// so we can iterate the properties and validate them according to the validations specified in the template components
-	for _, c := range h.Components {
-		tmpl, ok := templateComps[c.GetSafeName()]
+	for _, comp := range h.Components {
+		tmpl, ok := templateComps[comp.GetSafeName()]
 		if !ok {
 			// If we don't have a template component for this component, it
 			// means we couldn't instantiate it. We caught this earlier, so we
@@ -147,7 +147,7 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 		// Get the template properties from the template component.
 		templateProperties := tmpl.Props()
 		componentProps := make(map[string]hpsf.Property)
-		for _, prop := range c.Properties {
+		for _, prop := range comp.Properties {
 			componentProps[prop.Name] = prop
 			_, found := templateProperties[prop.Name]
 			if !found {
@@ -155,7 +155,7 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 				// properties, something's messed up. This means the property is
 				// not defined in the template component.
 				err := hpsf.NewError("property not found in template component").
-					WithComponent(c.Name).
+					WithComponent(comp.Name).
 					WithProperty(prop.Name)
 				result.Add(err)
 			}
@@ -176,10 +176,15 @@ func (t *Translator) validateProperties(h *hpsf.HPSF, templateComps map[string]c
 				// we want to include the component name and property name in the error message for clarity
 				hspfError := hpsf.NewError("failed to validate property").
 					WithCause(validateError).
-					WithComponent(c.Name).
+					WithComponent(comp.Name).
 					WithProperty(prop.Name)
 				result.Add(hspfError)
 			}
+		}
+
+		// Execute component validations after individual property validations pass
+		if validateError := tmpl.Validate(comp); validateError != nil {
+			result.Add(validateError)
 		}
 	}
 	return result
