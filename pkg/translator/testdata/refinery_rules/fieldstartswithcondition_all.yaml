@@ -7,6 +7,6 @@ Samplers:
                   SampleRate: 1
                   Conditions:
                     - Field: http.url
-                      Operator: startsWith
+                      Operator: starts-with
                       Value: https://
                       Datatype: string

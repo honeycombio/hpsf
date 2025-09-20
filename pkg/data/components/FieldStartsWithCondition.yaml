@@ -47,7 +47,7 @@ templates:
       - key: Field
         value: "{{ .Values.Field }}"
       - key: Operator
-        value: startsWith
+        value: starts-with
       - key: Value
         value: "{{ .Values.Prefix }}"
       - key: Datatype
