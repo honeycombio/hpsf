@@ -303,7 +303,7 @@
           "minLength": 1
         },
         "value": {
-          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, or primitive values",
+          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, primitive values, or arrays",
           "oneOf": [
             {
               "type": "string"
@@ -316,6 +316,12 @@
             },
             {
               "type": "integer"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             }
           ]
         },
