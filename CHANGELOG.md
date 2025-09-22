@@ -1,5 +1,11 @@
 # hpsf library changelog
 
+## 0.17.1 2025-09-22
+
+### Fixes
+
+- fix: Update StartsWith component operator (#229) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
 ## 0.17.0 2025-09-12
 
 ### Features
