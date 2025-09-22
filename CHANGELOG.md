@@ -1,5 +1,15 @@
 # hpsf library changelog
 
+## 0.18.0 2025-09-22
+
+### Features
+
+- feat(components): Added JSON Schema file with vscode setting to enable it (#124) | [MartinDotNet](https://github.com/martinjt)
+
+### Fixes
+
+- fix: Update StartsWith component operator (#229) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
 ## 0.17.0 2025-09-12
 
 ### Features
