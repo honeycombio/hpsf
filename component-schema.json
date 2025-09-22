@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://honeycomb.io/schemas/hpsf-component.json",
+  "title": "HPSF Component Template",
+  "description": "JSON Schema for HPSF (Honeycomb Pipeline Specification Format) component YAML templates",
+  "type": "object",
+  "required": ["kind", "name", "type", "status", "version"],
+  "properties": {
+    "kind": {
+      "type": "string",
+      "description": "The unique type of the component; there can be only one component with any given kind",
+      "pattern": "^[A-Za-z][A-Za-z0-9]*$"
+    },
+    "name": {
+      "type": "string",
+      "description": "What the user calls the component. The name here is used to fill in the default name (a number will be appended)",
+      "minLength": 1
+    },
+    "style": {
+      "type": "string",
+      "description": "Used to control UI rendering",
+      "enum": ["receiver", "processor", "exporter", "sampler", "condition", "dropper", "startsampling"]
+    },
+    "logo": {
+      "type": "string",
+      "description": "Used to define the logo used for receivers and exporters. Valid logos are listed in hound NodeComponentLogo.tsx",
+      "examples": ["opentelemetry", "honeycomb"]
+    },
+    "type": {
+      "type": "string",
+      "description": "The generalized type of component for broad classification",
+      "enum": ["base", "meta", "template"]
+    },
+    "status": {
+      "type": "string",
+      "description": "The development status of the component. alpha, stable, and archived are public; use development if you don't want people to see it without a feature flag",
+      "enum": ["alpha", "stable", "archived", "development", "deprecated"]
+    },
+    "version": {
+      "type": "string",
+      "description": "Version should be bumped when the component is updated",
+      "pattern": "^v\\d+\\.\\d+\\.\\d+$"
+    },
+    "summary": {
+      "type": "string",
+      "description": "The short description, easily visible in the UI and the sidebar",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Longer description that only shows up on demand"
+    },
+    "comment": {
+      "type": "string",
+      "description": "Internal comment for developers"
+    },
+    "tags": {
+      "type": "array",
+      "description": "Help the user find and organize the component in the sidebar. Follow the key:value format",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$",
+        "examples": ["category:exporter", "service:collector", "signal:OTelTraces", "vendor:Honeycomb"]
+      },
+      "uniqueItems": true
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the component",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "ports": {
+      "type": "array",
+      "description": "The things that allow connections to other components",
+      "items": {
+        "$ref": "#/$defs/TemplatePort"
+      }
+    },
+    "properties": {
+      "type": "array",
+      "description": "The user-editable values for this component",
+      "items": {
+        "$ref": "#/$defs/TemplateProperty"
+      }
+    },
+    "validations": {
+      "type": "array",
+      "description": "Component-level validations that apply across properties. Permitted validations: at_least_one_of, exactly_one_of, mutually_exclusive, require_together, conditional_require_together",
+      "items": {
+        "type": "string",
+        "oneOf": [
+          {
+            "pattern": "^at_least_one_of\\(.+\\)$",
+            "description": "at_least_one_of validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^exactly_one_of\\(.+\\)$",
+            "description": "exactly_one_of validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^mutually_exclusive\\(.+\\)$",
+            "description": "mutually_exclusive validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^require_together\\(.+\\)$",
+            "description": "require_together validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^conditional_require_together\\(.+\\)$",
+            "description": "conditional_require_together validation with condition property, condition value, and dependent properties"
+          }
+        ]
+      }
+    },
+    "templates": {
+      "type": "array",
+      "description": "Control how this component is rendered in configurations. There can be multiple entries if the component can generate more than one template",
+      "items": {
+        "$ref": "#/$defs/TemplateData"
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "TemplatePort": {
+      "type": "object",
+      "description": "A port on a component where data flows in or out",
+      "required": ["name", "direction", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name that shows up in the UI next to the handle. Used in connections between components. Changing name across versions is a BREAKING change and requires a major version bump",
+          "minLength": 1
+        },
+        "direction": {
+          "type": "string",
+          "description": "Note that receivers have output ports and exporters have input ports",
+          "enum": ["input", "output"]
+        },
+        "type": {
+          "type": "string",
+          "description": "Be careful to specify the port types accurately",
+          "enum": [
+            "unknown",
+            "OTelTraces",
+            "OTelLogs",
+            "OTelMetrics",
+            "OTelEvent",
+            "Honeycomb",
+            "HoneycombEvents",
+            "SampleData",
+            "number",
+            "string",
+            "bool"
+          ]
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional note about the port"
+        },
+        "index": {
+          "type": "integer",
+          "description": "Optional index to control port ordering in the UI",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemplateProperty": {
+      "type": "object",
+      "description": "A user-settable value that can be used to configure the component",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the property; this is used by the templates so the name should be a valid Go identifier",
+          "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        },
+        "summary": {
+          "type": "string",
+          "description": "Shows up in the UI",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string",
+          "description": "An on-demand longer description"
+        },
+        "type": {
+          "type": "string",
+          "description": "The datatype of the value and partly controls the property editor that will be used for this value",
+          "enum": ["int", "float", "string", "bool", "stringarray", "map", "conditions", "duration", "rule"]
+        },
+        "subtype": {
+          "type": "string",
+          "description": "Can further constrain the property editor; e.g., a oneof() subtype will cause a dropdown to be used instead of a text box",
+          "examples": ["oneof(basic, normal, detailed)", "oneof(all, none)"]
+        },
+        "advanced": {
+          "type": "boolean",
+          "description": "If true, this property shows up under 'Advanced' and is hidden by default",
+          "default": false
+        },
+        "validations": {
+          "type": "array",
+          "description": "Constraints on the value, independent of the property editor. Permitted validations can be found in templateComponent.go",
+          "items": {
+            "type": "string",
+            "oneOf": [
+              {
+                "enum": ["positive", "noblanks", "nonempty", "url", "duration", "hostorip", "regex"]
+              },
+              {
+                "pattern": "^oneof\\(.+\\)$",
+                "description": "oneof validation with comma-separated values in parentheses"
+              },
+              {
+                "pattern": "^atleast\\(\\d+\\)$",
+                "description": "atleast validation with numeric value in parentheses"
+              },
+              {
+                "pattern": "^atmost\\(\\d+\\)$",
+                "description": "atmost validation with numeric value in parentheses"
+              },
+              {
+                "pattern": "^inrange\\(\\d+(?:\\.\\d+)?,\\s*\\d+(?:\\.\\d+)?\\)$",
+                "description": "inrange validation with two numeric values (integers or floats) in parentheses"
+              }
+            ]
+          }
+        },
+        "default": {
+          "description": "The default value for the property. Type depends on the property type",
+          "examples": ["basic", 100, true, "https://api.honeycomb.io:443", "${HONEYCOMB_EXPORTER_APIKEY}"]
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemplateData": {
+      "type": "object",
+      "description": "A template for generating configuration data",
+      "required": ["kind", "name", "format"],
+      "if": {
+        "properties": {
+          "kind": {
+            "not": {
+              "const": "refinery_rules"
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["data"]
+      },
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "The type of configuration data it generates",
+          "enum": ["collector_config", "refinery_config", "refinery_rules"]
+        },
+        "name": {
+          "type": "string",
+          "description": "Used to identify the template. Should be unique",
+          "minLength": 1
+        },
+        "format": {
+          "type": "string",
+          "description": "The format of the data. This is an escape hatch for specialized components",
+          "enum": ["collector", "dotted", "dottedConfig", "rules"]
+        },
+        "meta": {
+          "type": "object",
+          "description": "Extra component-level info. Contents depend on the format",
+          "properties": {
+            "componentSection": {
+              "type": "string",
+              "description": "For collectors: exporters, receivers, processors etc",
+              "enum": ["exporters", "receivers", "processors", "extensions"]
+            },
+            "signalTypes": {
+              "type": "array",
+              "description": "For collectors: array of which signal types this component handles",
+              "items": {
+                "type": "string",
+                "enum": ["traces", "metrics", "logs"]
+              }
+            },
+            "collectorComponentName": {
+              "type": "string",
+              "description": "For collectors: the name by which the underlying collector component is known"
+            },
+            "env": {
+              "type": "string",
+              "description": "For refinery rules: the environment for the rules. Can use template variables"
+            },
+            "sampler": {
+              "type": "string",
+              "description": "For refinery rules: the kind of sampler being configured (the name used in Refinery configs)"
+            },
+            "condition": {
+              "type": "boolean",
+              "description": "For refinery rules: indicates if this is a condition component"
+            },
+            "scope": {
+              "type": "string",
+              "description": "For refinery rules: the scope for condition evaluation (e.g., 'span', 'trace')"
+            }
+          },
+          "additionalProperties": false
+        },
+        "data": {
+          "type": "array",
+          "description": "Run through Go's text/templates to convert them to configurations",
+          "items": {
+            "$ref": "#/$defs/TemplateDataItem"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "TemplateDataItem": {
+      "type": "object",
+      "description": "A single key-value pair in template data",
+      "required": ["key", "value"],
+      "properties": {
+        "key": {
+          "type": "string",
+          "description": "The name of the yaml key under which this value will be stored. For non-collectors, this is a 'dotted' key. For refinery rules, special key '!condition!' indicates a semicolon-separated list of key=value pairs",
+          "minLength": 1
+        },
+        "value": {
+          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, primitive values, or arrays",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object"
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "integer"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "suppress_if": {
+          "type": "string",
+          "description": "A value that evaluates to nonzero if the entire key/value pair should be omitted. Can contain Go template expressions"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}
