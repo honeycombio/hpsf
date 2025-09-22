@@ -116,14 +116,15 @@
           "description": "Be careful to specify the port types accurately",
           "enum": [
             "unknown",
-            "OTelTraces", 
-            "OTelLogs", 
-            "OTelMetrics", 
-            "OTelEvent", 
-            "Honeycomb", 
+            "OTelTraces",
+            "OTelLogs",
+            "OTelMetrics",
+            "OTelEvent",
+            "Honeycomb",
             "HoneycombEvents",
-            "number", 
-            "string", 
+            "SampleData",
+            "number",
+            "string",
             "bool"
           ]
         },
