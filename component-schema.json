@@ -191,8 +191,8 @@
                 "description": "atmost validation with numeric value in parentheses"
               },
               {
-                "pattern": "^inrange\\(\\d+,\\s*\\d+\\)$",
-                "description": "inrange validation with two numeric values in parentheses"
+                "pattern": "^inrange\\(\\d+(?:\\.\\d+)?,\\s*\\d+(?:\\.\\d+)?\\)$",
+                "description": "inrange validation with two numeric values (integers or floats) in parentheses"
               }
             ]
           }
