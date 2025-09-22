@@ -176,7 +176,7 @@
             "type": "string",
             "oneOf": [
               {
-                "enum": ["positive", "noblanks", "nonempty", "url", "duration"]
+                "enum": ["positive", "noblanks", "nonempty", "url", "duration", "hostorip", "regex"]
               },
               {
                 "pattern": "^oneof\\(.+\\)$",
@@ -286,7 +286,7 @@
           "minLength": 1
         },
         "value": {
-          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, or a boolean value",
+          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, or primitive values",
           "oneOf": [
             {
               "type": "string"
@@ -296,6 +296,9 @@
             },
             {
               "type": "boolean"
+            },
+            {
+              "type": "integer"
             }
           ]
         },
