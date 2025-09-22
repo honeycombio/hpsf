@@ -212,7 +212,19 @@
     "TemplateData": {
       "type": "object",
       "description": "A template for generating configuration data",
-      "required": ["kind", "name", "format", "data"],
+      "required": ["kind", "name", "format"],
+      "if": {
+        "properties": {
+          "kind": {
+            "not": {
+              "const": "refinery_rules"
+            }
+          }
+        }
+      },
+      "then": {
+        "required": ["data"]
+      },
       "properties": {
         "kind": {
           "type": "string",
