@@ -85,6 +85,35 @@
         "$ref": "#/$defs/TemplateProperty"
       }
     },
+    "validations": {
+      "type": "array",
+      "description": "Component-level validations that apply across properties. Permitted validations: at_least_one_of, exactly_one_of, mutually_exclusive, require_together, conditional_require_together",
+      "items": {
+        "type": "string",
+        "oneOf": [
+          {
+            "pattern": "^at_least_one_of\\(.+\\)$",
+            "description": "at_least_one_of validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^exactly_one_of\\(.+\\)$",
+            "description": "exactly_one_of validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^mutually_exclusive\\(.+\\)$",
+            "description": "mutually_exclusive validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^require_together\\(.+\\)$",
+            "description": "require_together validation with comma-separated property names in parentheses"
+          },
+          {
+            "pattern": "^conditional_require_together\\(.+\\)$",
+            "description": "conditional_require_together validation with condition property, condition value, and dependent properties"
+          }
+        ]
+      }
+    },
     "templates": {
       "type": "array",
       "description": "Control how this component is rendered in configurations. There can be multiple entries if the component can generate more than one template",
