@@ -131,6 +131,11 @@
         "note": {
           "type": "string",
           "description": "Optional note about the port"
+        },
+        "index": {
+          "type": "integer",
+          "description": "Optional index to control port ordering in the UI",
+          "minimum": 0
         }
       },
       "additionalProperties": false
