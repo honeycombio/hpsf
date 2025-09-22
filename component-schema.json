@@ -286,13 +286,16 @@
           "minLength": 1
         },
         "value": {
-          "description": "The value of the key that should end up in the config. Can contain Go template expressions or be an object for empty configurations",
+          "description": "The value of the key that should end up in the config. Can contain Go template expressions, be an object for empty configurations, or a boolean value",
           "oneOf": [
             {
               "type": "string"
             },
             {
               "type": "object"
+            },
+            {
+              "type": "boolean"
             }
           ]
         },
