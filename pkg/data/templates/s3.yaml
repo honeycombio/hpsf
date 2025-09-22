@@ -9,8 +9,8 @@ description: |
 components:
   - name: OTel Receiver_1
     kind: OTelReceiver
-  - name: Trace Converter_1
-    kind: TraceConverter
+  - name: Start Sampling_1
+    kind: SamplingSequencer
   - name: OTel HTTP Exporter_1
     kind: OTelHTTPExporter
     properties:
@@ -21,23 +21,23 @@ components:
     kind: HoneycombExporter
     properties:
       - name: APIKey
-        value: ${HONEYCOMB_EXPORTER_APIKEY}
+        value: ${HTP_EXPORTER_APIKEY}
   - name: EMA Throughput Sampler_1
-    kind: EMAThroughput
+    kind: EMAThroughputSampler
     properties:
       - name: FieldList
         value:
           - http.request.method
           - http.response.status_code
   - name: S3 Exporter_1
-    kind: S3Exporter
+    kind: S3ArchiveExporter
 connections:
   - source:
       component: OTel Receiver_1
       port: Traces
       type: OTelTraces
     destination:
-      component: Trace Converter_1
+      component: Start Sampling_1
       port: Traces
       type: OTelTraces
   - source:
@@ -49,20 +49,20 @@ connections:
       port: Metrics
       type: OTelMetrics
   - source:
-      component: Trace Converter_1
+      component: Start Sampling_1
       port: Events
       type: HoneycombEvents
     destination:
       component: EMA Throughput Sampler_1
-      port: Traces
+      port: Events
       type: HoneycombEvents
   - source:
       component: EMA Throughput Sampler_1
-      port: SampledOutput
+      port: Events
       type: HoneycombEvents
     destination:
       component: Honeycomb Exporter_1
-      port: Traces
+      port: Events
       type: HoneycombEvents
   - source:
       component: OTel Receiver_1

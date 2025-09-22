@@ -199,20 +199,14 @@ func (dc DottedConfig) FindIndexedValues() map[string]int {
 
 // Merge combines two `DottedConfig` structs together; the values from the
 // `DottedConfig` passed in will override any values that are not slices.
-func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
+func (dc DottedConfig) Merge(other TemplateConfig) error {
 	otherDotted, ok := other.(DottedConfig)
 	if !ok {
 		// if the other TemplateConfig is not a DottedConfig, we can't merge it
-		return dc
+		return fmt.Errorf("cannot merge %T with DottedConfig", other)
 	}
 	baseIndices := dc.FindIndexedValues()
 	for k, v := range otherDotted {
-		// if we haven't seen this key before, we can just add it
-		if _, ok := dc[k]; !ok {
-			dc[k] = v
-			continue
-		}
-
 		// let's check if we need to adjust the value based on indices
 		otherKey, otherIndex, ok := findIndexedValue(k)
 		if ok {
@@ -247,9 +241,8 @@ func (dc DottedConfig) Merge(other TemplateConfig) TemplateConfig {
 		default:
 			dc[k] = v
 		}
-
 	}
-	return dc
+	return nil
 }
 
 // NewDottedConfig recursively converts a map into a DottedConfig.

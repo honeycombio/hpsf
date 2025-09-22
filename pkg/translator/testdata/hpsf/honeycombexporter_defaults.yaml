@@ -2,7 +2,9 @@ components:
   - name: otlp
     kind: OTelReceiver
   - name: refinery
-    kind: TraceConverter
+    kind: SamplingSequencer
+  - name: sampler
+    kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
 connections:
@@ -17,11 +19,19 @@ connections:
       type: OTelTraces
   - source:
       component: refinery
-      port: Traces
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler
+      port: Events
       type: Honeycomb
     destination:
       component: honeycomb
-      port: HoneycombEvents
+      port: Events
       type: HoneycombEvents
   # metrics: otel -> honeycomb
   - source:

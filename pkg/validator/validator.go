@@ -2,8 +2,6 @@ package validator
 
 import (
 	"errors"
-
-	y "gopkg.in/yaml.v3"
 )
 
 // Result is the value returned by the Validate method; it conforms to the error interface
@@ -70,6 +68,7 @@ func (e Result) IsEmpty() bool {
 	return e.Len() == 0
 }
 
+// ErrOrNil returns the Result as an error if it contains any errors, or nil if it is empty.
 func (e Result) ErrOrNil() error {
 	if e.IsEmpty() {
 		return nil
@@ -82,18 +81,4 @@ func (e Result) ErrOrNil() error {
 // errors.
 type Validator interface {
 	Validate() error
-}
-
-// this is a brain-dead validator that just tries to unmarshal the input into appropriate forms
-func EnsureYAML(input []byte) (map[string]any, error) {
-	// validate the input is parseable YAML (parses into a map)
-
-	// try unmarshaling into map
-	var hpsfMap map[string]any
-	err := y.Unmarshal(input, &hpsfMap)
-	if err != nil {
-		return nil, err
-	}
-
-	return hpsfMap, nil
 }

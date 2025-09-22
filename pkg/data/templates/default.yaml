@@ -1,27 +1,23 @@
 name: Default Template
 kind: TemplateDefault
 version: v0.1.0
-summary: The default configuration that receives traces, metrics, and logs and forwards them to the OpenTelemetry HTTP exporter.
+summary: The default configuration that receives traces, metrics, and logs and forwards them to the Honeycomb exporter.
 description: |
   This is the default configuration that forwards traces, metrics, and logs received via OpenTelemetry
-  components to the OpenTelemetry HTTP exporter. This is useful for testing and debugging, or
+  components to the Honeycomb exporter. This is useful for testing and debugging, or
   as a starting point for more complex configurations.
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: OTel HTTP Exporter 1
-    kind: OTelHTTPExporter
-    properties:
-      - name: Headers
-        value:
-          x-honeycomb-team: ${HONEYCOMB_API_KEY}
+  - name: Honeycomb Exporter 1
+    kind: HoneycombExporter
 connections:
   - source:
       component: OTel Receiver 1
       port: Traces
       type: OTelTraces
     destination:
-      component: OTel HTTP Exporter 1
+      component: Honeycomb Exporter 1
       port: Traces
       type: OTelTraces
   - source:
@@ -29,7 +25,7 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: OTel HTTP Exporter 1
+      component: Honeycomb Exporter 1
       port: Metrics
       type: OTelMetrics
   - source:
@@ -37,7 +33,7 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: OTel HTTP Exporter 1
+      component: Honeycomb Exporter 1
       port: Logs
       type: OTelLogs
 layout:
@@ -46,7 +42,7 @@ layout:
       position:
         x: -100
         y: 0
-    - name: OTel HTTP Exporter 1
+    - name: Honeycomb Exporter 1
       position:
         x: 200
         y: 0

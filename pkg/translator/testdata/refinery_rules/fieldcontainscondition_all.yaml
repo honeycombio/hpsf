@@ -1,0 +1,12 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Conditions:
+                    - Field: error.message
+                      Operator: contains
+                      Value: timeout
+                      Datatype: string

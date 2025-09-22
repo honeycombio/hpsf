@@ -1,32 +1,32 @@
 kind: NopExporter
-name: DefaultNopExporter
+name: Export Nothing
 version: v0.1.0
 style: exporter
 logo: opentelemetry
 type: base
-status: alpha
+status: development
 summary: An "exporter" that does nothing, but might be useful for testing.
-description: |
-  A simple no-op exporter.
-  This exporter does nothing. It is required for the minimal collector.
+description: A simple no-op exporter. This exporter does nothing. It is required for the minimal collector.
 tags:
-  - category:exporter
-  - category:nop
-  - category:debug
+  - category:output
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
 ports:
+  # inputs
   - name: Traces
     direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: input
-    type: OTelMetrics
   - name: Logs
     direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 templates:
   - kind: collector_config
     name: nop_exporter_collector

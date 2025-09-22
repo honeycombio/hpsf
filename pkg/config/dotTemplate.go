@@ -1,15 +1,16 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 )
 
 type dottedConfigTemplateKV struct {
-	key         string
-	value       any
-	suppress_if string
+	key        string
+	value      any
+	suppressIf string
 }
 
 // dottedConfigTemplate is the type we use for templates that properly modeled by
@@ -26,7 +27,7 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 		}
 		var sk, sv, suppr string
 		if mk, ok := m["key"]; !ok {
-			return nil, fmt.Errorf("missing key in template data")
+			return nil, errors.New("missing key in template data")
 		} else {
 			if _, ok := mk.(string); !ok {
 				return nil, fmt.Errorf("expected string for key, got %T", mk)
@@ -34,7 +35,7 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 			sk = mk.(string)
 		}
 		if _, ok := m["value"]; !ok {
-			return nil, fmt.Errorf("missing value in template data")
+			return nil, errors.New("missing value in template data")
 		} else {
 			if _, ok := m["value"].(string); !ok {
 				return nil, fmt.Errorf("expected string for v, got %T", m["value"])
@@ -47,7 +48,7 @@ func buildDottedConfigTemplate(data []any) (dottedConfigTemplate, error) {
 			}
 			suppr = m["suppress_if"].(string)
 		}
-		d = append(d, dottedConfigTemplateKV{key: sk, value: sv, suppress_if: suppr})
+		d = append(d, dottedConfigTemplateKV{key: sk, value: sv, suppressIf: suppr})
 	}
 	return d, nil
 }
@@ -62,9 +63,9 @@ func (t *TemplateComponent) generateDottedConfig(dct dottedConfigTemplate, userd
 		if err != nil {
 			return nil, err
 		}
-		if kv.suppress_if != "" {
+		if kv.suppressIf != "" {
 			// if the suppress_if condition is met, we skip this key
-			condition, err := t.applyTemplate(kv.suppress_if, userdata)
+			condition, err := t.applyTemplate(kv.suppressIf, userdata)
 			if err != nil {
 				return nil, err
 			}

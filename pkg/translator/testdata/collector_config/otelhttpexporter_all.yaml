@@ -2,14 +2,14 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
 exporters:
     otlphttp/otlp_out:
-        endpoint: myhost.com:1234
+        endpoint: http://myhost.com:1234
         headers:
             x-honeycomb-dataset: custom
             x-honeycomb-team: ${HONEYCOMB_API_KEY}
@@ -28,7 +28,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/f7b-5aa:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [otlphttp/otlp_out]

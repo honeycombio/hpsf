@@ -1,0 +1,39 @@
+name: transformprocessor_single_signal_test
+version: v0.1.0
+summary: Test for TransformProcessor with only trace statements
+description: |
+  Test configuration with an OTel receiver, TransformProcessor with only trace statements,
+  and OTel HTTP exporter. Tests that other signal types are not affected.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: transform_1
+    kind: TransformProcessor
+    properties:
+      - name: ErrorMode
+        value: propagate
+      - name: TraceStatements
+        value:
+          - 'set(span.attributes["trace_only"], "true")'
+          - 'set(span.name, Concat([span.name, " [transformed]"], ""))'
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces

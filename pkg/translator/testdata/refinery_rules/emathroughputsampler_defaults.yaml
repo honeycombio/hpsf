@@ -1,0 +1,9 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        EMAThroughputSampler:
+            GoalThroughputPerSec: 100
+            UseClusterSize: true
+            FieldList:
+                - http.method
+                - http.status_code

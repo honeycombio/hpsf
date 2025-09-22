@@ -1,0 +1,51 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: EMADynamic Sampler_1
+    kind: EMADynamicSampler
+    properties:
+      - name: GoalSampleRate
+        value: 120
+      - name: AdjustmentInterval
+        value: 99
+      - name: FieldList
+        value: [http.status_code]
+      - name: MaxKeys
+        value: 1000
+      - name: Weight
+        value: 0.1
+      - name: AgeOutValue
+        value: 0.2
+      - name: BurstMultiple
+        value: 2.5
+      - name: BurstDetectionDelay
+        value: 5
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: EMADynamic Sampler_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: EMADynamic Sampler_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents

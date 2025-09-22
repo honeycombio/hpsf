@@ -1,0 +1,61 @@
+kind: CustomFilterProcessor
+name: Filter by Custom OTTL
+style: processor
+type: base
+status: development
+version: v0.0.0
+summary: A processor that can be used to filter telemetry.
+description: Filters traces, metrics, and logs based on rules defined in the configuration.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
+  - output:Traces
+  - output:Logs
+  - output:Metrics
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: Rules
+    type: rule
+  - name: Signal
+    type: string
+    subtype: oneof(traces, metrics, logs)
+    validations:
+      - oneof(traces, metrics, logs)
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs] # we'll generate a name for each pipeline if there's more than 1
+      collectorComponentName: filter
+    data:
+      - key: "{{ .ComponentName }}"
+        value: "{{ .HProps.Rules | encodeAsMap }}"
+        suppress_if: "{{ not .HProps.Rules }}"

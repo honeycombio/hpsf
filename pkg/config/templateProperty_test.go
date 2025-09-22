@@ -65,6 +65,13 @@ func Test_getValidationRule(t *testing.T) {
 		{"float range high end", "inrange(1.5,5.5)", 5.5, true},
 		{"float range fail low", "inrange(1.5,5.5)", 1.4, false},
 		{"float range fail high", "inrange(1.5,5.5)", 5.6, false},
+		{"valid regex", "regex", "[a-z]+", true},
+		{"invalid regex", "regex", "[a-z", false},
+		{"valid regex with quantifier", "regex", "\\d{3,5}", true},
+		{"invalid regex with unmatched paren", "regex", "(abc", false},
+		{"valid regex with anchors", "regex", "^start.*end$", true},
+		{"invalid regex with bad quantifier", "regex", "*+", false},
+		{"environment variable", "regex", "$REGEX_PATTERN", true},
 	}
 	for _, tt := range tests {
 		name := fmt.Sprintf("%s_%v", tt.validation, tt.name)

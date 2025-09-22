@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -73,6 +74,10 @@ func getValidationRule(validation string) func(val any) bool {
 	case "url":
 		// url will check if the value can be parsed as a URL
 		return isURL
+	case "hostorip":
+		// hostorip will check if the value is a valid host or IP address
+		// without a scheme or port.
+		return isHostOrIP
 	case "duration":
 		// duration will check if the value can be parsed as a duration string
 		return isDuration
@@ -85,6 +90,9 @@ func getValidationRule(validation string) func(val any) bool {
 	case "inrange":
 		// inRange will check if the value is within a specified range
 		return inRange(args...)
+	case "regex":
+		// regex will check if the value is a valid regular expression
+		return isValidRegex
 	default:
 		// If no match, always return false
 		return alwaysFail
@@ -101,7 +109,6 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 	if err := prop.Type.ValueCoerce(prop.Value, &value); err != nil {
 		// if the type of the property does not match the type of the template property, return an error
 		return hpsf.NewError("value cannot be converted to expected type " + tp.Type.String()).
-			WithComponent(prop.Name). // include the component name for context
 			WithProperty(tp.Name).
 			WithCause(err)
 	}
@@ -116,7 +123,6 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 		if !validationFunc(value) {
 			// if the validation fails, return an error
 			return hpsf.NewError("validation failed for property: " + validation).
-				WithComponent(prop.Name).
 				WithProperty(tp.Name)
 		}
 	}
@@ -124,7 +130,7 @@ func (tp *TemplateProperty) Validate(prop hpsf.Property) error {
 }
 
 // always returns false
-func alwaysFail(val any) bool {
+func alwaysFail(_ any) bool {
 	return false
 }
 
@@ -142,6 +148,10 @@ func positive(val any) bool {
 // ensures that no strings are blank, even in string slices
 // use nonempty to ensure that a slace has at least one value
 func noBlankStrings(val any) bool {
+	// nil happens when there is no default value and no value is supplied
+	if val == nil {
+		return false
+	}
 	switch v := val.(type) {
 	case string:
 		return len(v) > 0
@@ -201,8 +211,15 @@ func oneof(options ...string) func(val any) bool {
 
 // checks that the value can be parsed as a URL and contains a non-empty scheme and host.
 // it also should not contain a port
+// we special-case environment variable expansions
 func isURL(val any) bool {
-	u, ok := url.Parse(fmt.Sprint(val))
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	u, ok := url.Parse(s)
 	if ok != nil {
 		return false
 	}
@@ -216,6 +233,34 @@ func isURL(val any) bool {
 		return false
 	}
 	return true
+}
+
+// Matches a valid hostname without checking it on the net. This pattern taken from
+// https://github.com/asaskevich/govalidator/blob/master/patterns.go#L33
+// The govalidator library is big, intended to validate structs, and
+// uses reflect, so we don't want to depend on it just for this pattern.
+var dnsNamePat = regexp.MustCompile(`^([a-zA-Z0-9_]{1}[a-zA-Z0-9_-]{0,62}){1}(\.[a-zA-Z0-9_]{1}[a-zA-Z0-9_-]{0,62})*[\._]?$`)
+
+// checks if the value is a valid host or IP address without a scheme or port
+// we special-case environment variable expansions
+func isHostOrIP(val any) bool {
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	ip := net.ParseIP(s)
+	if ip != nil {
+		return true
+	}
+
+	if dnsNamePat.MatchString(s) {
+		// If it matches the DNS name pattern, we're going to say it's a valid host
+		return true
+	}
+
+	return false
 }
 
 // isDuration checks if the value can be parsed as a duration string
@@ -303,4 +348,16 @@ func inRange(options ...string) func(val any) bool {
 			return false // for other types, return false
 		}
 	}
+}
+
+// isValidRegex checks if the value is a valid regular expression
+func isValidRegex(val any) bool {
+	s := fmt.Sprint(val)
+	// If the value is an environment variable, we don't validate it here
+	if len(s) > 0 && s[0] == '$' {
+		return true // environment variables are always valid
+	}
+
+	_, err := regexp.Compile(s)
+	return err == nil
 }

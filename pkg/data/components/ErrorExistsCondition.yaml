@@ -1,0 +1,45 @@
+kind: ErrorExistsCondition
+name: Check for Errors
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks if an error exists in any span of a trace
+description: This checks if any span in a trace has an error.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: ErrorFields
+    summary: The name of the field(s) to check for errors. If any of these fields exist in any span of a trace, the test will pass.
+    description: |
+      The field names to check for errors.
+    type: stringarray
+    validations:
+      - nonempty
+      - noblanks
+    default: ["error"]
+templates:
+  - kind: refinery_rules
+    name: ErrorExistsCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Fields
+        value: "{{ .Values.ErrorFields | encodeAsArray}}"
+      - key: Operator
+        value: exists

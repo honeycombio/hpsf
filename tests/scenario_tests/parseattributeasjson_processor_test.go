@@ -10,16 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseAttributeAsJSONDefaults(t *testing.T) {
+func TestAttributeJSONParsingProcessorDefaults(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "traces")
+	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline, got %v", tracesPipelineNames)
+
+	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, tracesPipelineNames[0].String())
 	require.True(t, getResult.Found)
 	assert.Contains(t, processors, "transform/json_parser_1")
 
-	_, processors, _, getResult = collectorprovider.GetPipelineConfig(collectorConfig, "logs")
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+
+	_, processors, _, getResult = collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found)
 	assert.Contains(t, processors, "transform/json_parser_1")
 
@@ -34,7 +40,7 @@ func TestParseAttributeAsJSONDefaults(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestParseAttributeAsJSONCustom(t *testing.T) {
+func TestAttributeJSONParsingProcessorCustom(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_custom.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
@@ -50,7 +56,7 @@ func TestParseAttributeAsJSONCustom(t *testing.T) {
 	assert.Len(t, logStatement.Statements, 3)
 }
 
-func TestParseAttributeAsJSONSpanSignal(t *testing.T) {
+func TestAttributeJSONParsingProcessorSpanSignal(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_span.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)

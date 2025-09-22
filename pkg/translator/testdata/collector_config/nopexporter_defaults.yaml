@@ -2,9 +2,9 @@ receivers:
     otlp/otlp_in:
         protocols:
             grpc:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4317
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
             http:
-                endpoint: ${STRAWS_COLLECTOR_POD_IP}:4318
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
 exporters:
@@ -14,7 +14,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs:
+        logs/d50-a95:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [nop/otlp_out]

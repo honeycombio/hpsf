@@ -1,29 +1,37 @@
 components:
-  - name: honeycomb_in
-    kind: TraceConverter
-  - name: honeycomb_out
-    kind: HoneycombExporter
-  - name: DeterministicSampler_1
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Deterministic Sampler_1
     kind: DeterministicSampler
     properties:
-      - name: Environment
-        value: test
       - name: SampleRate
-        value: 90
+        value: 120
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
 connections:
   - source:
-      component: honeycomb_in
-      port: TraceOut
-      type: Honeycomb
-    destination:
-      component: DeterministicSampler_1
-      port: Input
-      type: Honeycomb
-  - source:
-      component: DeterministicSampler_1
-      port: Kept
-      type: Honeycomb
-    destination:
-      component: honeycomb_out
+      component: OTel Receiver_1
       port: Traces
-      type: Honeycomb
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Deterministic Sampler_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Deterministic Sampler_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents

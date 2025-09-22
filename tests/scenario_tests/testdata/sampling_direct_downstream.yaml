@@ -1,0 +1,93 @@
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check Duration_1
+    kind: LongDurationCondition
+  - name: Sample at a Fixed Rate_1
+    kind: DeterministicSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+  - name: Sample by Events per Second_1
+    kind: EMAThroughputSampler
+    properties:
+      - name: GoalThroughputPerSec
+        value: 200
+      - name: FieldList
+        value: ["http.method", "http.status_code"]
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Check Duration_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at a Fixed Rate_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at a Fixed Rate_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Sample by Events per Second_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Sample by Events per Second_1
+      port: Sample
+      type: SampleData
+layout:
+  components:
+    - name: Receive OTel_1
+      position:
+        x: -40
+        y: -40
+    - name: Start Sampling_1
+      position:
+        x: 220
+        y: -80
+    - name: Check Duration_1
+      position:
+        x: 400
+        y: -80
+    - name: Sample at a Fixed Rate_1
+      position:
+        x: 611
+        y: -80
+    - name: Send to Honeycomb_1
+      position:
+        x: 836
+        y: -80
+    - name: Sample by Events per Second_1
+      position:
+        x: 480
+        y: 80

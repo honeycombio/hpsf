@@ -85,7 +85,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	docker run -d --name smoke-refinery \
 		-v ./tmp/refinery-config.yaml:/etc/refinery/refinery.yaml \
 		-v ./tmp/refinery-rules.yaml:/etc/refinery/rules.yaml \
-		-e HONEYCOMB_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
+		-e HTP_EXPORTER_APIKEY=hccik_01jj2jj42424jjjjjjj2jjjjjj424jjj2jjjjjjjjjjjjjjj4jjjjj24jj \
 		honeycombio/refinery:latest || exit 1
 	sleep 1
 
@@ -94,6 +94,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-refinery'; \
 		docker rm 'smoke-refinery'; \
+		echo "+++ refinery failed to started up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -117,34 +118,19 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	# generate the configs from the provided file
 	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
 
-	# check yq is installed and at least version 4.0.0
-	if ! command -v yq &> /dev/null; then \
-		echo "+++ yq could not be found, please install it"; \
-		exit 1; \
-	fi
-	if [ "$$(yq --version | cut -d' ' -f2 | cut -d'.' -f1)" -lt 4 ]; then \
-		echo "+++ yq version is less than 4.0.0, please update it"; \
-		exit 1; \
-	fi
-
 	# use yq to remove the usage processor and honeycomb extension from collector config
 	yq -i e \
-		'del(.processors.usage) | \
-		 del(.extensions.honeycomb) | \
-		 del(.service.extensions[] | select(. == "honeycomb")) | \
-		 del(.service.pipelines.traces.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.metrics.processors[] | select(. == "usage")) | \
-		 del(.service.pipelines.logs.processors[] | select(. == "usage"))' \
+		'del(.processors.usage) | del(.extensions.honeycomb) | del(.service.extensions[] | select(. == "honeycomb")) | del(.service.pipelines.traces*.processors[] | select(. == "usage")) | del(.service.pipelines.metrics*.processors[] | select(. == "usage")) | del(.service.pipelines.logs*.processors[] | select(. == "usage"))' \
 		tmp/collector-config.yaml || exit 1
 
 	# run collector with the generated config
 	docker run -d --name smoke-collector \
-		--entrypoint /otelcol-contrib \
-		-v ./tmp/collector-config.yaml:/etc/otelcol-contrib/config.yaml \
-		-e STRAWS_COLLECTOR_POD_IP=localhost \
-		-e STRAWS_REFINERY_POD_IP=localhost \
-		honeycombio/supervised-collector:latest \
-		--config /etc/otelcol-contrib/config.yaml || exit 1
+		--entrypoint /honeycomb-otelcol \
+		-v ./tmp/collector-config.yaml:/config.yaml \
+		-e HTP_COLLECTOR_POD_IP=localhost \
+		-e HTP_REFINERY_POD_IP=localhost \
+		honeycombio/supervised-collector:v0.1.0 \
+		--config /config.yaml || exit 1
 	sleep 1
 
 	# check if the container is running
@@ -152,6 +138,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ container not running"; \
 		docker logs 'smoke-collector'; \
 		docker rm 'smoke-collector'; \
+		echo "+++ collector failed to start up for $(FILE)"; \
 		exit 1; \
 	else \
 		echo "+++ container is running"; \
@@ -160,13 +147,25 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		echo "+++ collector successfully started up for $(FILE)"; \
 	fi
 
-.PHONY: smoke
+.PHONY: smoke_templates
 #: run smoke tests for HPSF templates
-smoke: pkg/data/templates/*.yaml
+smoke_templates: pkg/data/templates/*.yaml
 	for file in $^ ; do \
 		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
+
+.PHONY: smoke_components
+#: run smoke tests for components
+smoke_components: tests/smoke/*.yaml
+	for file in $^ ; do \
+		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
+		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
+	done
+
+.PHONY: smoke
+#: run smoke tests for HPSF
+smoke: smoke_templates smoke_components
 
 .PHONY: unsmoke
 unsmoke:
@@ -181,3 +180,31 @@ regenerate_translator_testdata:
 	@echo "+++ regenerating translator testdata"
 	@echo
 	OVERWRITE_TESTDATA=1 go test ./pkg/translator/
+
+.PHONY: lint
+lint:
+	go tool -modfile=.github/tools.mod golangci-lint run
+
+.PHONY: bulk_export_components
+bulk_export_components:
+	@echo
+	@echo "+++ exporting components"
+	@echo
+	go run ./cmd/component2csv --export=export.csv pkg/data/components/*.yaml
+
+.PHONY: bulk_import_components
+bulk_import_components:
+	@echo
+	@echo "+++ importing components"
+	@echo
+	go run ./cmd/component2csv --import=export.csv pkg/data/components/*.yaml
+
+.PHONY: rewrite_components
+rewrite_components:
+	@echo
+	@echo "+++ rewriting components"
+	@echo
+	go run ./cmd/component2csv --export=rewrite.csv pkg/data/components/*.yaml
+	go run ./cmd/component2csv --import=rewrite.csv pkg/data/components/*.yaml
+	rm -f rewrite.csv
+

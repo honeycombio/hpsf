@@ -9,7 +9,7 @@ processors:
     usage: {}
 exporters:
     otlp/otlp_out:
-        endpoint: https://api.honeycomb.io:443
+        endpoint: api.honeycomb.io:443
         sending_queue:
             batch:
                 flush_timeout: 200ms
@@ -23,7 +23,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces:
+        traces/f7b-5aa:
             receivers: [otlp/otlp_in]
             processors: [usage]
             exporters: [otlp/otlp_out]

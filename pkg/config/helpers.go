@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"text/template"
 	"time"
@@ -37,6 +38,7 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"buildurl":      buildurl,
 		"comment":       comment,
 		"encodeAsArray": encodeAsArray,
 		"encodeAsBool":  encodeAsBool,
@@ -53,6 +55,38 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// buildurl constructs a URL based on the provided parameters. A path is optional.
+func buildurl(args ...any) string {
+	var insecure bool
+	var port int
+	var host, path string
+	switch len(args) {
+	case 4:
+		path = args[3].(string)
+	case 3:
+		path = ""
+	default:
+		return ""
+	}
+
+	insecure = args[0].(bool)
+	host = args[1].(string)
+	port = _asInt(args[2])
+	scheme := "https"
+	if insecure {
+		scheme = "http"
+	}
+
+	url := fmt.Sprintf("%s://%s:%d", scheme, host, port)
+	if path != "" {
+		if !strings.HasPrefix(path, "/") {
+			path = "/" + path
+		}
+		url += path
+	}
+	return url
 }
 
 // places a comment in the output file, even if the specified comment has multiple lines
@@ -106,7 +140,7 @@ func encodeAsFloat(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
-		value = fmt.Sprintf("%d", v)
+		value = strconv.Itoa(v)
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
@@ -125,7 +159,7 @@ func encodeAsInt(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
-		value = fmt.Sprintf("%d", v)
+		value = strconv.Itoa(v)
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
@@ -213,19 +247,11 @@ func yamlf(a any) string {
 }
 
 // The functions below are internal to this file hence the leading underscore.
-// Some of these are currently unused but will likely be used in the future.
-
-// internal function to compare two "any" values for equivalence
-func _equivalent(a, b any) bool {
-	va := fmt.Sprintf("%v", a)
-	vb := fmt.Sprintf("%v", b)
-	return va == vb
-}
 
 // this formats an integer with underscores for readability.
 // e.g. 1000000 becomes 1_000_000
 func _formatIntWithUnderscores(i int) string {
-	s := fmt.Sprintf("%d", i)
+	s := strconv.Itoa(i)
 	var output []string
 	for len(s) > 3 {
 		output = append([]string{s[len(s)-3:]}, output...)
@@ -268,27 +294,6 @@ func _isZeroValue(value any) bool {
 	}
 }
 
-// Takes a key that may or may not be in the incoming data,
-// and returns the value found, possibly doing a recursive call
-// separated by dots in the key.
-func _fetch(data map[string]any, key string) (any, bool) {
-	if value, ok := data[key]; ok {
-		return value, true
-	}
-	if strings.Contains(key, ".") {
-		parts := strings.SplitN(key, ".", 2)
-		groups := strings.Split(parts[0], "/")
-		for _, g := range groups {
-			if value, ok := data[g]; ok {
-				if submap, ok := value.(map[string]any); ok {
-					return _fetch(submap, parts[1])
-				}
-			}
-		}
-	}
-	return nil, false
-}
-
 // Takes a value that is a slice of strings or a slice of any and returns a
 // slice of strings.
 func _getStringsFrom(value any) []string {
@@ -306,4 +311,19 @@ func _getStringsFrom(value any) []string {
 		}
 	}
 	return result
+}
+
+// Converts a value to an int, handling various types.
+func _asInt(a any) int {
+	switch v := a.(type) {
+	case int:
+		return v
+	case float64:
+		return int(v)
+	case string:
+		if i, err := strconv.Atoi(v); err == nil {
+			return i
+		}
+	}
+	return 0
 }

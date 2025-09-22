@@ -1,30 +1,34 @@
 kind: OTelReceiver
-name: OTel Receiver
+name: Receive OTel
 style: receiver
 logo: opentelemetry
 type: base
 status: alpha
 version: v0.1.0
 summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both.
-description: |
-  Imports OTLP signals from OpenTelemetry via gRPC or HTTP.
-  This receiver can be configured to listen on both gRPC and HTTP, or just one.
+description: |-
+  Imports OTLP signals from OpenTelemetry via gRPC or HTTP. This receiver can be configured to listen
+  on both gRPC and HTTP, or just one.
 tags:
-  - category:receiver
+  - category:input
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - output:Traces
+  - output:Logs
+  - output:Metrics
 ports:
+  # outputs
   - name: Traces
     direction: output
     type: OTelTraces
-  - name: Metrics
-    direction: output
-    type: OTelMetrics
   - name: Logs
     direction: output
     type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
 properties:
   - name: Host
     summary: The hostname or IP address on which to listen
@@ -35,7 +39,8 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${STRAWS_COLLECTOR_POD_IP}
+      - hostorip
+    default: ${HTP_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
     summary: The port on which to listen for gRPC traffic.
@@ -44,7 +49,7 @@ properties:
       The OTel default is 4317. Set to 0 to disable gRPC.
     type: int
     validations:
-      - inrange(1, 65535)
+      - inrange(0, 65535)
     default: 4317
     advanced: true
   - name: HTTPPort
@@ -54,7 +59,7 @@ properties:
       The OTel default is 4318. Set to 0 to disable HTTP.
     type: int
     validations:
-      - inrange(1, 65535)
+      - inrange(0, 65535)
     default: 4318
     advanced: true
 templates:
@@ -72,4 +77,4 @@ templates:
       - key: "{{ .ComponentName }}.protocols.http.endpoint"
         value: "{{ .Values.Host }}:{{ .Values.HTTPPort }}"
         suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
-      # service is not part of the template, it's generated automatically by the collectorConfig
+    # service is not part of the template, it's generated automatically by the collectorConfig

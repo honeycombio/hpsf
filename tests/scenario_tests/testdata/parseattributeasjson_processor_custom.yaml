@@ -9,7 +9,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: json_parser_1
-    kind: ParseAttributeAsJSON
+    kind: AttributeJSONParsingProcessor
     properties:
       - name: Attribute
         value: "json_payload"
@@ -25,11 +25,11 @@ connections:
       type: OTelTraces
     destination:
       component: json_parser_1
-      port: Spans
+      port: Traces
       type: OTelTraces
   - source:
       component: json_parser_1
-      port: Spans
+      port: Traces
       type: OTelTraces
     destination:
       component: OTel HTTP Exporter 1

@@ -10,19 +10,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestParseLogBodyAsJSONProcessor(t *testing.T) {
+func TestLogBodyJSONParsingProcessorProcessor(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parselogbodyasjson_processor_log_body.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	// Should only have logs pipeline since ParseLogBodyAsJSON only works with logs
-	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "logs")
+	// Should only have logs pipeline since LogBodyJSONParsingProcessor only works with logs
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+
+	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found)
 	assert.Contains(t, processors, "transform/json_parser_1")
-
-	// Should not have traces pipeline
-	_, _, _, getResult = collectorprovider.GetPipelineConfig(collectorConfig, "traces")
-	require.False(t, getResult.Found)
 
 	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/json_parser_1")
 	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
@@ -37,19 +36,18 @@ func TestParseLogBodyAsJSONProcessor(t *testing.T) {
 	assert.Contains(t, logStatement.Statements[0], "log.body")
 }
 
-func TestParseLogBodyAsJSONProcessorStandalone(t *testing.T) {
+func TestLogBodyJSONParsingProcessorProcessorStandalone(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parselogbodyasjson_processor_test.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	// Should only have logs pipeline since ParseLogBodyAsJSON only works with logs
-	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, "logs")
+	// Should only have logs pipeline since LogBodyJSONParsingProcessor only works with logs
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+
+	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found)
 	assert.Contains(t, processors, "transform/parse_log_body_1")
-
-	// Should not have traces pipeline
-	_, _, _, getResult = collectorprovider.GetPipelineConfig(collectorConfig, "traces")
-	require.False(t, getResult.Found)
 
 	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/parse_log_body_1")
 	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)

@@ -1,32 +1,32 @@
 kind: NopReceiver
-name: DefaultNopReceiver
+name: Receive Nothing
 version: v0.1.0
 style: receiver
 logo: opentelemetry
 type: base
-status: alpha
+status: development
 summary: A no-op "receiver" that does nothing, but might be useful for testing.
-description: |
-  A simple no-op receiver.
-  This receiver does nothing. It is required for the minimal configuration.
+description: A simple no-op receiver. This receiver does nothing. It is required for the minimal configuration.
 tags:
-  - category:receiver
-  - category:nop
-  - category:debug
+  - category:input
   - service:collector
   - signal:OTelTraces
   - signal:OTelMetrics
   - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
 ports:
+  # inputs
   - name: Traces
-    direction: output
+    direction: input
     type: OTelTraces
-  - name: Metrics
-    direction: output
-    type: OTelMetrics
   - name: Logs
-    direction: output
+    direction: input
     type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
 templates:
   - kind: collector_config
     name: nop_receiver_collector

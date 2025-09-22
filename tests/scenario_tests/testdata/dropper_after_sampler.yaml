@@ -1,0 +1,38 @@
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Drop_1
+    kind: Dropper
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Drop_1
+      port: Sample
+      type: SampleData
+layout:
+  components:
+    - name: Receive OTel_1
+      position:
+        x: 50
+        y: 0
+    - name: Start Sampling_1
+      position:
+        x: 277
+        y: 0
+    - name: Drop_1
+      position:
+        x: 875
+        y: 0
