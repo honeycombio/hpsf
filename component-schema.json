@@ -252,6 +252,14 @@
             "sampler": {
               "type": "string",
               "description": "For refinery rules: the kind of sampler being configured (the name used in Refinery configs)"
+            },
+            "condition": {
+              "type": "boolean",
+              "description": "For refinery rules: indicates if this is a condition component"
+            },
+            "scope": {
+              "type": "string",
+              "description": "For refinery rules: the scope for condition evaluation (e.g., 'span', 'trace')"
             }
           },
           "additionalProperties": false
