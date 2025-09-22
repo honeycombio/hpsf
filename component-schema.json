@@ -19,7 +19,7 @@
     "style": {
       "type": "string",
       "description": "Used to control UI rendering",
-      "enum": ["receiver", "processor", "exporter", "sampler"]
+      "enum": ["receiver", "processor", "exporter", "sampler", "condition"]
     },
     "logo": {
       "type": "string",
