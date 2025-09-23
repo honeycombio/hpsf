@@ -1,0 +1,67 @@
+kind: ErrorSamplingGroup
+name: Error Sampling Group
+version: v0.1.0
+style: meta
+type: meta
+status: alpha
+summary: A meta component that combines error detection with specialized sampling
+description: |
+  This meta component groups together an error detection condition with a
+  high-throughput sampler to ensure error traces are adequately sampled
+  while maintaining overall throughput targets.
+tags:
+  - category:meta
+  - signal:HoneycombEvents
+  - input:SampleData
+  - output:Events
+ports:
+  # inputs
+  - name: Sample
+    direction: input
+    type: SampleData
+    note: "Input traces to be conditionally sampled"
+  # outputs
+  - name: Events
+    direction: output
+    type: HoneycombEvents
+    note: "The traces that are sampled (retained for further processing)"
+properties:
+  - name: GoalThroughputPerSec
+    summary: The target throughput to achieve for error traces (in events per second)
+    description: |
+      The desired throughput to achieve for error traces specifically.
+      This allows you to ensure adequate sampling of error cases.
+    type: int
+    validations:
+      - positive
+    default: 50
+  - name: ErrorFieldName
+    summary: The field name to check for errors
+    description: |
+      The field name that indicates an error condition. Common values
+      include "error", "error.message", "status", etc.
+    type: string
+    validations:
+      - nonempty
+    default: "error"
+  - name: FieldList
+    summary: The field names of the keys to use for controlling sampling
+    description: |
+      The field names of keys to use for sampling. These should be chosen
+      from fields with relatively low cardinality, such as HTTP method,
+      status code, etc.
+    type: stringarray
+    validations:
+      - noblanks
+      - nonempty
+    default: ["http.method", "http.status_code"]
+# Children are defined when the meta component is instantiated in HPSF documents
+# The templates section handles how this meta component generates configurations
+templates:
+  - kind: refinery_rules
+    name: Error_Sampling_Rules
+    format: rules
+    meta:
+      env: "__default__"
+      composite: true
+    data: []  # Meta components delegate config generation to their children

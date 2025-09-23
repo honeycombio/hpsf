@@ -102,13 +102,49 @@ func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVers
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
-		// found it, manufacture a new instance of the component
+		// Check if this is a meta component based on the template component's type
+		if tc.Type == config.ComponentTypeMeta {
+			return t.buildMetaComponent(component, artifactVersion)
+		}
+
+		// Regular component - manufacture a new instance
 		tc.SetHPSF(component)
 		return &tc, nil
 	}
 
+	// Handle generic meta components (kind == "MetaComponent")
+	if component.Kind == "MetaComponent" {
+		return t.buildMetaComponent(component, artifactVersion)
+	}
+
 	// nothing found so we're done
 	return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
+}
+
+// buildMetaComponent creates a MetaComponent from an HPSF Component definition
+func (t *Translator) buildMetaComponent(component *hpsf.Component, artifactVersion string) (*config.MetaComponent, error) {
+	// Create the meta component
+	metaComponent := config.NewMetaComponent(*component)
+
+	// Process each child component
+	for _, child := range component.Children {
+		// Recursively build the child component
+		childConfig, err := t.MakeConfigComponent(&child, artifactVersion)
+		if err != nil {
+			return nil, fmt.Errorf("failed to build child component %s in meta component %s: %w",
+				child.Name, component.Name, err)
+		}
+
+		// Add the child to the meta component
+		metaComponent.AddChild(childConfig)
+	}
+
+	// Validate the completed meta component
+	if err := metaComponent.Validate(); err != nil {
+		return nil, fmt.Errorf("meta component %s validation failed: %w", component.Name, err)
+	}
+
+	return metaComponent, nil
 }
 
 // getMatchingTemplateComponents returns the template components that match the components in the HPSF document.
@@ -122,10 +158,19 @@ func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]con
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
 			continue
 		}
-		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
+		if c.Kind == "MetaComponent" {
+			// Meta components are handled specially and don't need template components
+			// Create a placeholder template component for tracking purposes
+			placeholder := config.TemplateComponent{
+				Kind:  "MetaComponent",
+				Name:  c.Name,
+				Style: "meta",
+			}
+			templateComps[c.GetSafeName()] = placeholder
+		} else if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
 			templateComps[c.GetSafeName()] = comp
 		} else {
-			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
+			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s", c.Kind, c.Version))
 		}
 	}
 	return templateComps, result

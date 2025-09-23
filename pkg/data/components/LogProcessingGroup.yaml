@@ -1,0 +1,58 @@
+kind: LogProcessingGroup
+name: Log Processing Group
+version: v0.1.0
+style: meta
+type: meta
+status: alpha
+summary: A meta component that combines JSON parsing with attribute transformation
+description: |
+  This meta component groups together JSON parsing of log bodies with
+  attribute transformation to create a reusable log processing pipeline
+  that can be easily configured and deployed.
+tags:
+  - category:meta
+  - signal:Logs
+  - input:OTelLogs
+  - output:OTelLogs
+ports:
+  # inputs
+  - name: Logs
+    direction: input
+    type: OTelLogs
+    note: "Raw log data to be processed"
+  # outputs
+  - name: ProcessedLogs
+    direction: output
+    type: OTelLogs
+    note: "Logs after JSON parsing and attribute transformation"
+properties:
+  - name: TargetField
+    summary: The target field for JSON parsing
+    description: |
+      The field that contains JSON data to be parsed. Common values
+      include "body", "message", or specific attribute names.
+    type: string
+    validations:
+      - nonempty
+    default: "body"
+  - name: TransformRules
+    summary: The transformation rules to apply
+    description: |
+      A list of transformation rules to apply to the parsed attributes.
+      Each rule should be in the format expected by the transform processor.
+    type: stringarray
+    validations:
+      - nonempty
+    default: ["set(attributes[\"processed\"], true)"]
+# Children are defined when the meta component is instantiated in HPSF documents
+templates:
+  - kind: collector_config
+    name: Log_Processing_Config
+    format: collector
+    meta:
+      componentSection: processors
+      signalType: logs
+      collectorComponentName: logprocessing
+    data:
+      - key: "{{ .ComponentName }}"
+        value: {}  # Meta components delegate detailed config to children

@@ -19,7 +19,7 @@
     "style": {
       "type": "string",
       "description": "Used to control UI rendering",
-      "enum": ["receiver", "processor", "exporter", "sampler", "condition", "dropper", "startsampling"]
+      "enum": ["receiver", "processor", "exporter", "sampler", "condition", "dropper", "startsampling", "meta"]
     },
     "logo": {
       "type": "string",
@@ -121,6 +121,13 @@
         "$ref": "#/$defs/TemplateData"
       },
       "minItems": 1
+    },
+    "children": {
+      "type": "array",
+      "description": "Child component definitions for meta components. Only used when type is 'meta'",
+      "items": {
+        "$ref": "#"
+      }
     }
   },
   "additionalProperties": false,

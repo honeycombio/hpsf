@@ -259,13 +259,17 @@ type Property struct {
 	Type  PropType `yaml:"type,omitempty"`
 }
 
+// Component represents a component in an HPSF document.
+// The Children field is only used when Kind == "MetaComponent".
+// For all other component types, this field will be nil and ignored.
 type Component struct {
-	Name       string     `yaml:"name"`
-	Kind       string     `yaml:"kind"`
-	Version    string     `yaml:"version,omitempty"`
-	Ports      []Port     `yaml:"ports,omitempty"`
-	Properties []Property `yaml:"properties,omitempty"`
-	Style      string     `yaml:"style,omitempty"`
+	Name       string      `yaml:"name"`
+	Kind       string      `yaml:"kind"`
+	Version    string      `yaml:"version,omitempty"`
+	Ports      []Port      `yaml:"ports,omitempty"`
+	Properties []Property  `yaml:"properties,omitempty"`
+	Style      string      `yaml:"style,omitempty"`
+	Children   []Component `yaml:"children,omitempty"` // Only used when Kind == "MetaComponent"
 }
 
 type ErrorSeverity string
