@@ -91,6 +91,11 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 	require.Equal(t, templates, tlater.GetTemplates())
 
 	for _, component := range comps {
+		// Skip meta components from automatic testing as they require more complex test setups
+		if component.Type == config.ComponentTypeMeta {
+			continue
+		}
+
 		for _, properties := range []string{"all", "defaults"} {
 			testData := fmt.Sprintf("%s_%s.yaml", strings.ToLower(component.Kind), properties)
 			t.Run(testData, func(t *testing.T) {

@@ -186,25 +186,32 @@ func (m *MetaComponent) generateRefineryConfig(pipeline hpsf.PathWithConnections
 // generateRefineryRulesConfig generates refinery rules by composing child components into rules
 func (m *MetaComponent) generateRefineryRulesConfig(pipeline hpsf.PathWithConnections, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// For refinery rules, we need to compose conditions and samplers from child components
-	// This is a simplified initial implementation - we'll enhance this based on specific needs
-
-	rulesConfig := tmpl.NewRulesConfig(tmpl.Output, nil, nil)
-
-	// Collect configurations from all child components and merge them
+	// Generate configs from all children first
+	var childConfigs []tmpl.TemplateConfig
 	for _, child := range m.Children {
 		childConfig, err := child.GenerateConfig(hpsftypes.RefineryRules, pipeline, userdata)
 		if err != nil {
 			return nil, err
 		}
 		if childConfig != nil {
-			err = rulesConfig.Merge(childConfig)
-			if err != nil {
-				return nil, err
-			}
+			childConfigs = append(childConfigs, childConfig)
 		}
 	}
 
-	return rulesConfig, nil
+	if len(childConfigs) == 0 {
+		return nil, nil // No child configs generated
+	}
+
+	// Use the first child config as base and merge others into it
+	baseConfig := childConfigs[0]
+	for _, childConfig := range childConfigs[1:] {
+		err := baseConfig.Merge(childConfig)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return baseConfig, nil
 }
 
 // generateCollectorConfig generates collector configuration by merging child component configs
