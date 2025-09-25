@@ -59,6 +59,37 @@ validate:
 		go run ./cmd/hpsf -i $(CONFIG) $${format} || exit 1; \
 	done
 
+RULES ?= tests/refinery2hpsf/02-complex-refinery.yaml
+OUTPUT ?= tmp/generated-workflow.yaml
+.PHONY: test-refinery-generation
+#: test Refinery to HPSF generation with single rules file (usage: make test-refinery-generation RULES=tests/refinery2hpsf/01-simple-refinery.yaml OUTPUT=my-workflow.yaml)
+test-refinery-generation:
+	@echo
+	@echo "+++ testing Refinery to HPSF generation with $(RULES)"
+	@echo
+	mkdir -p $(dir $(OUTPUT))
+	go run ./cmd/refinery2hpsf -r $(RULES) -o $(OUTPUT) -v
+	@echo
+	@echo "+++ validating generated workflow"
+	@echo
+	go run ./cmd/hpsf -i $(OUTPUT) validate
+
+.PHONY: test-refinery-generation-all
+#: test Refinery to HPSF generation for all test Refinery rules files
+test-refinery-generation-all: tests/refinery2hpsf/*-refinery.yaml
+	@echo
+	@echo "+++ testing Refinery to HPSF generation for all test rules"
+	@echo
+	mkdir -p tmp
+	for rules_file in $^ ; do \
+		output_file="tmp/$$(basename $${rules_file} .yaml)-workflow.yaml"; \
+		echo; \
+		echo "+++ generating workflow from $${rules_file} -> $${output_file}"; \
+		go run ./cmd/refinery2hpsf -r $${rules_file} -o $${output_file} -v || exit 1; \
+		echo "+++ validating $${output_file}"; \
+		go run ./cmd/hpsf -i $${output_file} validate || exit 1; \
+	done
+
 .PHONY: validate_all
 validate_all: examples/hpsf* pkg/data/templates/*
 	for file in $^ ; do \

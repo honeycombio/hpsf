@@ -1,0 +1,45 @@
+RulesVersion: 2
+Samplers:
+  __default__:
+    RulesBasedSampler:
+      Rules:
+        # High priority: Sample all error traces
+        - Name: "Error Traces"
+          SampleRate: 1
+          Scope: trace
+          Conditions:
+            - Fields: ["error", "error.message"]
+              Operator: exists
+
+        # High priority: Sample long duration traces
+        - Name: "Long Duration Traces"
+          SampleRate: 1
+          Scope: trace
+          Conditions:
+            - Field: duration_ms
+              Operator: ">="
+              Value: 5000
+              Datatype: int
+
+        # Medium priority: Sample HTTP 4xx and 5xx responses
+        - Name: "HTTP Error Responses"
+          SampleRate: 10
+          Scope: trace
+          Conditions:
+            - Fields: ["http.status_code", "http.response.status_code"]
+              Operator: ">="
+              Value: 400
+              Datatype: int
+
+        # Drop test service traces
+        - Name: "Test Service Traces"
+          Drop: true
+          Conditions:
+            - Field: service.name
+              Operator: "="
+              Value: "test-service"
+              Datatype: string
+
+        # Default sampling for everything else
+        - Name: "Default Sampling"
+          SampleRate: 100

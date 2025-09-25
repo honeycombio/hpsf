@@ -1,0 +1,316 @@
+kind: HPSF
+version: v1
+name: Generated_Refinery_Workflow
+summary: Generated from Refinery sampling rules
+description: HPSF workflow automatically generated from Refinery sampling rules
+components:
+    - name: OTel_Receiver_1
+      kind: OTelReceiver
+      properties:
+        - name: Host
+          value: 0.0.0.0
+        - name: GRPCPort
+          value: 4317
+        - name: HTTPPort
+          value: 4318
+    - name: Start_Sampling_2
+      kind: SamplingSequencer
+      properties:
+        - name: Host
+          value: refinery
+        - name: Port
+          value: 8080
+    - name: Deterministic_Sampler_3
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 50
+    - name: EMA_Throughput_Sampler_4
+      kind: EMAThroughputSampler
+      properties:
+        - name: GoalThroughputPerSec
+          value: 100
+        - name: FieldList
+          value:
+            - http.method
+            - service.name
+            - operation.name
+    - name: EMA_Dynamic_Sampler_5
+      kind: EMADynamicSampler
+      properties:
+        - name: GoalSampleRate
+          value: 25
+        - name: FieldList
+          value:
+            - service.name
+            - http.route
+    - name: Condition_Error Traces_6
+      kind: FieldExistsCondition
+      properties:
+        - name: Field
+          value: error
+        - name: ShouldExist
+          value: true
+    - name: Sample_Error Traces_7
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_Slow Traces_8
+      kind: CompareIntegerFieldCondition
+      properties:
+        - name: Field
+          value: duration_ms
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 5000
+    - name: Sample_Slow Traces_9
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_HTTP Errors_10
+      kind: CompareIntegerFieldCondition
+      properties:
+        - name: Field
+          value: http.status_code
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 400
+    - name: Sample_HTTP Errors_11
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 10
+    - name: Condition_Test Services_12
+      kind: CompareStringFieldCondition
+      properties:
+        - name: Field
+          value: service.name
+        - name: Operator
+          value: =
+        - name: Value
+          value: test-service
+    - name: Drop_Test Services_13
+      kind: Dropper
+    - name: Condition_Database Queries_14
+      kind: FieldContainsCondition
+      properties:
+        - name: Field
+          value: db.statement
+        - name: Value
+          value: SELECT
+    - name: Sample_Database Queries_15
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 20
+    - name: Sample_Default Sampling_16
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 100
+    - name: Send_to_Honeycomb_17
+      kind: HoneycombExporter
+      properties:
+        - name: APIKey
+          value: ${HTP_EXPORTER_APIKEY}
+        - name: APIEndpoint
+          value: api.honeycomb.io
+        - name: Mode
+          value: all
+connections:
+    - source:
+        component: OTel_Receiver_1
+        port: Traces
+        type: OTelTraces
+      destination:
+        component: Start_Sampling_2
+        port: Traces
+        type: OTelTraces
+    - source:
+        component: OTel_Receiver_1
+        port: Logs
+        type: OTelLogs
+      destination:
+        component: Start_Sampling_2
+        port: Logs
+        type: OTelLogs
+    - source:
+        component: Start_Sampling_2
+        port: Rule 1
+        type: SampleData
+      destination:
+        component: Deterministic_Sampler_3
+        port: Sample
+        type: SampleData
+    - source:
+        component: Start_Sampling_2
+        port: Rule 2
+        type: SampleData
+      destination:
+        component: EMA_Throughput_Sampler_4
+        port: Sample
+        type: SampleData
+    - source:
+        component: Start_Sampling_2
+        port: Rule 3
+        type: SampleData
+      destination:
+        component: EMA_Dynamic_Sampler_5
+        port: Sample
+        type: SampleData
+    - source:
+        component: Start_Sampling_2
+        port: Rule 4
+        type: SampleData
+      destination:
+        component: Condition_Error Traces_6
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Error Traces_6
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Error Traces_7
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Error Traces_6
+        port: Rule 5
+        type: SampleData
+      destination:
+        component: Condition_Slow Traces_8
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Slow Traces_8
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Slow Traces_9
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Slow Traces_8
+        port: Rule 6
+        type: SampleData
+      destination:
+        component: Condition_HTTP Errors_10
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_HTTP Errors_10
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_HTTP Errors_11
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_HTTP Errors_10
+        port: Rule 7
+        type: SampleData
+      destination:
+        component: Condition_Test Services_12
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Test Services_12
+        port: Sample
+        type: SampleData
+      destination:
+        component: Drop_Test Services_13
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Test Services_12
+        port: Rule 8
+        type: SampleData
+      destination:
+        component: Condition_Database Queries_14
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Database Queries_14
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Database Queries_15
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Database Queries_14
+        port: Rule 9
+        type: SampleData
+      destination:
+        component: Sample_Default Sampling_16
+        port: Sample
+        type: SampleData
+    - source:
+        component: Deterministic_Sampler_3
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: EMA_Throughput_Sampler_4
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: EMA_Dynamic_Sampler_5
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Error Traces_7
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Slow Traces_9
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_HTTP Errors_11
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Database Queries_15
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Default Sampling_16
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Events
+        type: HoneycombEvents

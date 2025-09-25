@@ -1,0 +1,15 @@
+RulesVersion: 2
+Samplers:
+  __default__:
+    DeterministicSampler:
+      SampleRate: 50
+
+    EMAThroughputSampler:
+      GoalThroughputPerSec: 100
+      UseClusterSize: true
+      InitialSampleRate: 10
+      AdjustmentInterval: 60s
+      FieldList:
+        - http.method
+        - service.name
+      MaxKeys: 500

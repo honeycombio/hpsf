@@ -1,0 +1,94 @@
+kind: HPSF
+version: v1
+name: Simple_Workflow
+summary: Generated from Refinery configuration
+description: HPSF workflow automatically generated from Refinery configuration and sampling rules
+components:
+    - name: OTel_Receiver_1
+      kind: OTelReceiver
+      properties:
+        - name: Host
+          value: 0.0.0.0
+        - name: GRPCPort
+          value: 4317
+        - name: HTTPPort
+          value: 4318
+    - name: Start_Sampling_2
+      kind: SamplingSequencer
+      properties:
+        - name: Host
+          value: refinery
+        - name: Port
+          value: 8080
+    - name: Deterministic_Sampler_3
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 50
+    - name: EMA_Throughput_Sampler_4
+      kind: EMAThroughputSampler
+      properties:
+        - name: GoalThroughputPerSec
+          value: 100
+        - name: FieldList
+          value:
+            - http.method
+            - service.name
+    - name: Send_to_Honeycomb_5
+      kind: HoneycombExporter
+      properties:
+        - name: APIKey
+          value: your-honeycomb-api-key
+        - name: APIEndpoint
+          value: api.honeycomb.io
+        - name: Mode
+          value: all
+connections:
+    - source:
+        component: OTel_Receiver_1
+        port: Traces
+        type: OTelTraces
+      destination:
+        component: Start_Sampling_2
+        port: Traces
+        type: OTelTraces
+    - source:
+        component: OTel_Receiver_1
+        port: Logs
+        type: OTelLogs
+      destination:
+        component: Start_Sampling_2
+        port: Logs
+        type: OTelLogs
+    - source:
+        component: Start_Sampling_2
+        port: Rule 1
+        type: SampleData
+      destination:
+        component: Deterministic_Sampler_3
+        port: Sample
+        type: SampleData
+    - source:
+        component: Start_Sampling_2
+        port: Rule 2
+        type: SampleData
+      destination:
+        component: EMA_Throughput_Sampler_4
+        port: Sample
+        type: SampleData
+    - source:
+        component: Deterministic_Sampler_3
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_5
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: EMA_Throughput_Sampler_4
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_5
+        port: Events
+        type: HoneycombEvents

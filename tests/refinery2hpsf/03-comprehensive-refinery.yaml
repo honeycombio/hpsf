@@ -1,0 +1,88 @@
+# Example Refinery rules file for generating HPSF workflows
+# This file contains various types of samplers and conditions to demonstrate
+# the full capabilities of the refinery2hpsf converter
+
+RulesVersion: 2
+Samplers:
+  __default__:
+    # Complex rules-based sampling with multiple conditions
+    RulesBasedSampler:
+      Rules:
+        # Sample all error traces at full rate
+        - Name: "Error Traces"
+          SampleRate: 1
+          Scope: trace
+          Conditions:
+            - Fields: ["error", "error.message", "exception"]
+              Operator: exists
+
+        # Sample slow traces (> 5 seconds) at full rate
+        - Name: "Slow Traces"
+          SampleRate: 1
+          Scope: trace
+          Conditions:
+            - Field: duration_ms
+              Operator: ">="
+              Value: 5000
+              Datatype: int
+
+        # Sample HTTP error responses at 10:1 rate
+        - Name: "HTTP Errors"
+          SampleRate: 10
+          Scope: trace
+          Conditions:
+            - Fields: ["http.status_code", "http.response.status_code"]
+              Operator: ">="
+              Value: 400
+              Datatype: int
+
+        # Drop traces from test services
+        - Name: "Test Services"
+          Drop: true
+          Conditions:
+            - Field: service.name
+              Operator: "="
+              Value: "test-service"
+              Datatype: string
+
+        # Sample database queries that contain "SELECT" at 20:1 rate
+        - Name: "Database Queries"
+          SampleRate: 20
+          Conditions:
+            - Field: db.statement
+              Operator: contains
+              Value: "SELECT"
+              Datatype: string
+
+        # Default sampling for everything else
+        - Name: "Default Sampling"
+          SampleRate: 100
+
+    # Simple deterministic sampler (1:50 rate)
+    DeterministicSampler:
+      SampleRate: 50
+
+    # EMA Throughput sampler targeting 100 traces/second
+    EMAThroughputSampler:
+      GoalThroughputPerSec: 100
+      UseClusterSize: true
+      InitialSampleRate: 10
+      AdjustmentInterval: 60s
+      FieldList:
+        - http.method
+        - service.name
+        - operation.name
+      MaxKeys: 500
+
+    # EMA Dynamic sampler for proportional sampling
+    EMADynamicSampler:
+      GoalSampleRate: 25
+      AdjustmentInterval: 30s
+      Weight: 0.3
+      AgeOutValue: 0.2
+      BurstMultiple: 10.0
+      BurstDetectionDelay: 3
+      FieldList:
+        - service.name
+        - http.route
+      MaxKeys: 1000
