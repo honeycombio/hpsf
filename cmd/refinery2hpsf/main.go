@@ -34,13 +34,13 @@ func main() {
 
 	// Validate input file exists
 	if _, err := os.Stat(opts.RefineryRules); err != nil {
-		log.Fatalf("rules file %s is not accessible: %w", opts.RefineryRules, err)
+		log.Fatalf("rules file %s is not accessible: %e", opts.RefineryRules, err)
 	}
 
 	// Read the Refinery rules
 	rulesData, err := os.ReadFile(opts.RefineryRules)
 	if err != nil {
-		log.Fatalf("failed to read rules file %s: %w", opts.RefineryRules, err)
+		log.Fatalf("failed to read rules file %s: %e", opts.RefineryRules, err)
 	}
 
 	// Generate the workflow
