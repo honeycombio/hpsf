@@ -3,7 +3,7 @@ GOTESTCMD = $(if $(shell command -v gotestsum),gotestsum --junitfile ./test_resu
 
 .PHONY: test
 #: run all tests
-test: test_with_race test_all test_scenarios
+test: test_with_race test_all test_scenarios test-refinery-generation
 
 .PHONY: test_with_race
 #: run only tests tagged with potential race conditions
