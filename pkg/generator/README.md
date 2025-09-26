@@ -8,13 +8,12 @@ The `generator` package allows you to automatically convert existing Refinery sa
 
 ## Features
 
-- **Simplified API**: Only requires a Refinery rules file - configuration uses sensible defaults
 - **Automatic component generation**: Creates appropriate HPSF components based on Refinery rules
-- **OpenTelemetry Collector Receiver**: Generates OTel receiver components with standard ports (4317 gRPC, 4318 HTTP)
+- **OpenTelemetry Collector Receiver**: Generates OTel receiver components
 - **Start Sampling component**: Creates sampling sequencer components for data processing
 - **Condition components**: Converts Refinery sampling conditions into HPSF condition components
 - **Sampler components**: Supports various Refinery samplers (Deterministic, EMA Throughput, EMA Dynamic, Rules-based)
-- **Honeycomb Exporter**: Automatically creates Honeycomb exporter components with default settings
+- **Honeycomb Exporter**: Automatically creates Honeycomb exporter components
 - **Proper connections**: Automatically connects components based on data flow requirements
 
 ## Supported Refinery Features
@@ -32,11 +31,11 @@ The `generator` package allows you to automatically convert existing Refinery sa
 - **HTTP status conditions**: Specialized handling for HTTP status codes
 - **Multiple field support**: Conditions can check multiple fields
 
-### Default Configuration
-The package uses the following default values:
-- **Honeycomb Exporter**: API endpoint set to `api.honeycomb.io` (API key configuration left to user)
-- **Receivers**: OTel receiver on `0.0.0.0:4317` (gRPC) and `0.0.0.0:4318` (HTTP)
-- **Start Sampling**: Refinery service on `refinery:8080`
+### Component Generation
+The generator creates clean HPSF components following official template patterns:
+- **Honeycomb Exporter**: Clean exporter component (configuration managed by HPSF runtime)
+- **Receivers**: Clean OTel receiver component (ports and settings managed by HPSF runtime)
+- **Start Sampling**: Clean sampling sequencer component (endpoints managed by HPSF runtime)
 
 ## Usage
 
@@ -57,21 +56,8 @@ go run ./cmd/refinery2hpsf \
 ```go
 import "github.com/honeycombio/hpsf/pkg/generator"
 
-// Generate from file
-workflow, err := generator.GenerateFromFile("rules.yaml")
-
 // Generate from raw data
 workflow, err := generator.GenerateFromBytes(rulesData)
-
-// Write to file
-err = generator.WriteWorkflowToFile(workflow, "output.yaml")
-```
-
-### Directory-based Generation
-
-```go
-// Automatically find and use Refinery rules files in a directory
-workflow, err := generator.GenerateFromDirectory("/path/to/refinery/configs")
 ```
 
 ## Generated Workflow Structure
@@ -113,21 +99,9 @@ name: Generated_Refinery_Workflow
 components:
   - name: OTel_Receiver_1
     kind: OTelReceiver
-    properties:
-      - name: Host
-        value: 0.0.0.0
-      - name: GRPCPort
-        value: 4317
-      - name: HTTPPort
-        value: 4318
 
   - name: Start_Sampling_2
     kind: SamplingSequencer
-    properties:
-      - name: Host
-        value: refinery
-      - name: Port
-        value: 8080
 
   - name: Condition_Error_Traces_3
     kind: FieldExistsCondition
@@ -145,9 +119,6 @@ components:
 
   - name: Send_to_Honeycomb_5
     kind: HoneycombExporter
-    properties:
-      - name: APIEndpoint
-        value: api.honeycomb.io
 
 connections:
   # ... appropriate connections between components
@@ -161,7 +132,6 @@ Generated workflows are automatically validated against HPSF schema requirements
 
 - Only supports `__default__` environment in rules
 - Complex nested conditions are simplified to single conditions
-- Honeycomb exporter is always generated but API key configuration is left to the user
 - Some advanced Refinery features may not have direct HPSF equivalents
 
 ## Error Handling
