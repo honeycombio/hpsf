@@ -10,8 +10,8 @@ import (
 )
 
 type Options struct {
-	Verbose      bool   `short:"v" long:"verbose" description:"enable verbose mode"`
-	Output       string `short:"o" long:"output" description:"output file" default:"-"`
+	Verbose       bool   `short:"v" long:"verbose" description:"enable verbose mode"`
+	Output        string `short:"o" long:"output" description:"output file" default:"-"`
 	RefineryRules string `short:"r" long:"refinery-rules" description:"Path to Refinery rules file" required:"true"`
 }
 
@@ -32,13 +32,20 @@ func main() {
 		log.Fatalf("error reading command line: %v", err)
 	}
 
-	// Validate input file
-	if err := generator.ValidateInputFile(opts.RefineryRules); err != nil {
-		log.Fatalf("input file validation failed: %v", err)
+	// Validate input file exists
+	if _, err := os.Stat(opts.RefineryRules); err != nil {
+		log.Fatalf("rules file %s is not accessible: %w", opts.RefineryRules, err)
+	}
+
+	// Read the Refinery rules
+	rulesData, err := os.ReadFile(opts.RefineryRules)
+	if err != nil {
+		log.Fatalf("failed to read rules file %s: %w", opts.RefineryRules, err)
 	}
 
 	// Generate the workflow
-	workflow, err := generator.GenerateFromFile(opts.RefineryRules)
+	gen := generator.NewGenerator()
+	workflow, err := gen.GenerateWorkflow(rulesData)
 	if err != nil {
 		log.Fatalf("error generating HPSF workflow: %v", err)
 	}
