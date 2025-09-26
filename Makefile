@@ -187,9 +187,17 @@ smoke_components: tests/smoke/*.yaml
 		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
 	done
 
+.PHONY: smoke_refinery_generation
+#: run smoke tests for generated Refinery workflows
+smoke_refinery_generation: tests/refinery2hpsf/*-workflow.yaml
+	for file in $^ ; do \
+		$(MAKE) .smoke_refinery FILE=$${file} || exit 1; \
+		$(MAKE) .smoke_collector FILE=$${file} || exit 1; \
+	done
+
 .PHONY: smoke
 #: run smoke tests for HPSF
-smoke: smoke_templates smoke_components
+smoke: smoke_templates smoke_components smoke_refinery_generation
 
 .PHONY: unsmoke
 unsmoke:
