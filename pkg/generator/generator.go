@@ -2,6 +2,7 @@ package generator
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"gopkg.in/yaml.v3"
@@ -9,26 +10,26 @@ import (
 
 // RefineryRules represents the sampling rules configuration
 type RefineryRules struct {
-	RulesVersion int                            `yaml:"RulesVersion"`
+	RulesVersion int                               `yaml:"RulesVersion"`
 	Samplers     map[string]map[string]interface{} `yaml:"Samplers"`
 }
 
 // RuleCondition represents a condition in a rules-based sampler
 type RuleCondition struct {
-	Field     string      `yaml:"Field,omitempty"`
-	Fields    []string    `yaml:"Fields,omitempty"`
-	Operator  string      `yaml:"Operator"`
-	Value     interface{} `yaml:"Value,omitempty"`
-	Datatype  string      `yaml:"Datatype,omitempty"`
+	Field    string      `yaml:"Field,omitempty"`
+	Fields   []string    `yaml:"Fields,omitempty"`
+	Operator string      `yaml:"Operator"`
+	Value    interface{} `yaml:"Value,omitempty"`
+	Datatype string      `yaml:"Datatype,omitempty"`
 }
 
 // SamplingRule represents a single sampling rule
 type SamplingRule struct {
-	Name        string          `yaml:"Name"`
-	SampleRate  int             `yaml:"SampleRate,omitempty"`
-	Drop        bool            `yaml:"Drop,omitempty"`
-	Scope       string          `yaml:"Scope,omitempty"`
-	Conditions  []RuleCondition `yaml:"Conditions,omitempty"`
+	Name       string          `yaml:"Name"`
+	SampleRate int             `yaml:"SampleRate,omitempty"`
+	Drop       bool            `yaml:"Drop,omitempty"`
+	Scope      string          `yaml:"Scope,omitempty"`
+	Conditions []RuleCondition `yaml:"Conditions,omitempty"`
 }
 
 // RulesBasedSampler represents a rules-based sampler configuration
@@ -45,7 +46,6 @@ type Generator struct {
 func NewGenerator() *Generator {
 	return &Generator{componentCounter: 1}
 }
-
 
 // GenerateWorkflow creates an HPSF workflow from Refinery rules
 func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
@@ -112,25 +112,18 @@ func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
 // generateOTelReceiver creates an OpenTelemetry Collector Receiver component
 func (g *Generator) generateOTelReceiver() *hpsf.Component {
 	return &hpsf.Component{
-		Name: g.getNextComponentName("OTel_Receiver"),
-		Kind: "OTelReceiver",
-		Properties: []hpsf.Property{
-			{Name: "Host", Value: "0.0.0.0"},
-			{Name: "GRPCPort", Value: 4317},
-			{Name: "HTTPPort", Value: 4318},
-		},
+		Name:       g.getNextComponentName("OTel_Receiver"),
+		Kind:       "OTelReceiver",
+		Properties: []hpsf.Property{},
 	}
 }
 
 // generateStartSampling creates a Start Sampling component
 func (g *Generator) generateStartSampling() *hpsf.Component {
 	return &hpsf.Component{
-		Name: g.getNextComponentName("Start_Sampling"),
-		Kind: "SamplingSequencer",
-		Properties: []hpsf.Property{
-			{Name: "Host", Value: "refinery"},
-			{Name: "Port", Value: 8080},
-		},
+		Name:       g.getNextComponentName("Start_Sampling"),
+		Kind:       "SamplingSequencer",
+		Properties: []hpsf.Property{},
 	}
 }
 
@@ -148,7 +141,15 @@ func (g *Generator) generateSamplingComponents(rules RefineryRules, startSamplin
 			continue
 		}
 
-		for samplerType, samplerConfig := range samplers {
+		// Sort sampler types for deterministic ordering
+		samplerTypes := make([]string, 0, len(samplers))
+		for samplerType := range samplers {
+			samplerTypes = append(samplerTypes, samplerType)
+		}
+		sort.Strings(samplerTypes)
+
+		for _, samplerType := range samplerTypes {
+			samplerConfig := samplers[samplerType]
 			switch samplerType {
 			case "RulesBasedSampler":
 				ruleComponents, ruleConnections := g.generateRulesBasedSampler(samplerConfig, startSamplingName, &ruleIndex)
@@ -283,8 +284,8 @@ func (g *Generator) generateDeterministicSampler(config interface{}) *hpsf.Compo
 // generateEMAThroughputSampler creates an EMA Throughput sampler component
 func (g *Generator) generateEMAThroughputSampler(config interface{}) *hpsf.Component {
 	component := &hpsf.Component{
-		Name: g.getNextComponentName("EMA_Throughput_Sampler"),
-		Kind: "EMAThroughputSampler",
+		Name:       g.getNextComponentName("EMA_Throughput_Sampler"),
+		Kind:       "EMAThroughputSampler",
 		Properties: []hpsf.Property{},
 	}
 
@@ -336,8 +337,8 @@ func (g *Generator) generateEMAThroughputSampler(config interface{}) *hpsf.Compo
 // generateEMADynamicSampler creates an EMA Dynamic sampler component
 func (g *Generator) generateEMADynamicSampler(config interface{}) *hpsf.Component {
 	component := &hpsf.Component{
-		Name: g.getNextComponentName("EMA_Dynamic_Sampler"),
-		Kind: "EMADynamicSampler",
+		Name:       g.getNextComponentName("EMA_Dynamic_Sampler"),
+		Kind:       "EMADynamicSampler",
 		Properties: []hpsf.Property{},
 	}
 
