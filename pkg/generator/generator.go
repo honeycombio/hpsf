@@ -96,6 +96,12 @@ func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
 	exporterComponent := g.generateHoneycombExporter()
 	workflow.Components = append(workflow.Components, exporterComponent)
 
+	// Connect OTel Receiver metrics directly to Honeycomb exporter (metrics bypass sampling)
+	workflow.Connections = append(workflow.Connections, g.createConnection(
+		receiverComponent.Name, "Metrics", hpsf.CTYPE_METRICS,
+		exporterComponent.Name, "Metrics", hpsf.CTYPE_METRICS,
+	))
+
 	// Connect all samplers to the Honeycomb exporter
 	for _, component := range ruleComponents {
 		if g.isSamplerComponent(component.Kind) {

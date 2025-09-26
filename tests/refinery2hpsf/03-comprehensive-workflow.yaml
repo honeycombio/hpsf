@@ -232,6 +232,14 @@ connections:
         port: Sample
         type: SampleData
     - source:
+        component: OTel_Receiver_1
+        port: Metrics
+        type: OTelMetrics
+      destination:
+        component: Send_to_Honeycomb_17
+        port: Metrics
+        type: OTelMetrics
+    - source:
         component: Deterministic_Sampler_3
         port: Events
         type: HoneycombEvents
