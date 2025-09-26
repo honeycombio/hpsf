@@ -112,18 +112,25 @@ func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
 // generateOTelReceiver creates an OpenTelemetry Collector Receiver component
 func (g *Generator) generateOTelReceiver() *hpsf.Component {
 	return &hpsf.Component{
-		Name:       g.getNextComponentName("OTel_Receiver"),
-		Kind:       "OTelReceiver",
-		Properties: []hpsf.Property{},
+		Name: g.getNextComponentName("OTel_Receiver"),
+		Kind: "OTelReceiver",
+		Properties: []hpsf.Property{
+			{Name: "Host", Value: "0.0.0.0"},
+			{Name: "GRPCPort", Value: 4317},
+			{Name: "HTTPPort", Value: 4318},
+		},
 	}
 }
 
 // generateStartSampling creates a Start Sampling component
 func (g *Generator) generateStartSampling() *hpsf.Component {
 	return &hpsf.Component{
-		Name:       g.getNextComponentName("Start_Sampling"),
-		Kind:       "SamplingSequencer",
-		Properties: []hpsf.Property{},
+		Name: g.getNextComponentName("Start_Sampling"),
+		Kind: "SamplingSequencer",
+		Properties: []hpsf.Property{
+			{Name: "Host", Value: "refinery"},
+			{Name: "Port", Value: 8080},
+		},
 	}
 }
 
