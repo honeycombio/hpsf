@@ -114,11 +114,6 @@ func (g *Generator) generateOTelReceiver() *hpsf.Component {
 	return &hpsf.Component{
 		Name: g.getNextComponentName("OTel_Receiver"),
 		Kind: "OTelReceiver",
-		Properties: []hpsf.Property{
-			{Name: "Host", Value: "0.0.0.0"},
-			{Name: "GRPCPort", Value: 4317},
-			{Name: "HTTPPort", Value: 4318},
-		},
 	}
 }
 
@@ -127,10 +122,6 @@ func (g *Generator) generateStartSampling() *hpsf.Component {
 	return &hpsf.Component{
 		Name: g.getNextComponentName("Start_Sampling"),
 		Kind: "SamplingSequencer",
-		Properties: []hpsf.Property{
-			{Name: "Host", Value: "refinery"},
-			{Name: "Port", Value: 8080},
-		},
 	}
 }
 
@@ -508,9 +499,6 @@ func (g *Generator) generateHoneycombExporter() *hpsf.Component {
 	return &hpsf.Component{
 		Name: g.getNextComponentName("Send_to_Honeycomb"),
 		Kind: "HoneycombExporter",
-		Properties: []hpsf.Property{
-			{Name: "APIEndpoint", Value: "api.honeycomb.io"},
-		},
 	}
 }
 

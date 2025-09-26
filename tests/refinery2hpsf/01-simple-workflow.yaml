@@ -6,20 +6,8 @@ description: HPSF workflow automatically generated from Refinery sampling rules
 components:
     - name: OTel_Receiver_1
       kind: OTelReceiver
-      properties:
-        - name: Host
-          value: 0.0.0.0
-        - name: GRPCPort
-          value: 4317
-        - name: HTTPPort
-          value: 4318
     - name: Start_Sampling_2
       kind: SamplingSequencer
-      properties:
-        - name: Host
-          value: refinery
-        - name: Port
-          value: 8080
     - name: Deterministic_Sampler_3
       kind: DeterministicSampler
       properties:
@@ -36,9 +24,6 @@ components:
             - service.name
     - name: Send_to_Honeycomb_5
       kind: HoneycombExporter
-      properties:
-        - name: APIEndpoint
-          value: api.honeycomb.io
 connections:
     - source:
         component: OTel_Receiver_1
