@@ -9,12 +9,12 @@ The `generator` package allows you to automatically convert existing Refinery sa
 ## Features
 
 - **Automatic component generation**: Creates appropriate HPSF components based on Refinery rules
-- **OpenTelemetry Collector Receiver**: Generates OTel receiver components
-- **Start Sampling component**: Creates sampling sequencer components for data processing
+- **OpenTelemetry Collector Receiver**: Generates OTel receiver components for traces, logs, and metrics
+- **Start Sampling component**: Creates sampling sequencer components for trace/log processing
 - **Condition components**: Converts Refinery sampling conditions into HPSF condition components
 - **Sampler components**: Supports various Refinery samplers (Deterministic, EMA Throughput, EMA Dynamic, Rules-based)
 - **Honeycomb Exporter**: Automatically creates Honeycomb exporter components
-- **Proper connections**: Automatically connects components based on data flow requirements
+- **Smart connections**: Automatically connects components with proper data flow (metrics bypass sampling)
 
 ## Supported Refinery Features
 
@@ -64,11 +64,15 @@ workflow, err := generator.GenerateFromBytes(rulesData)
 
 The generated HPSF workflow follows this general structure:
 
-1. **OpenTelemetry Collector Receiver** - Receives traces and logs
-2. **Start Sampling Component** - Converts data for sampling pipeline
+1. **OpenTelemetry Collector Receiver** - Receives traces, logs, and metrics
+2. **Start Sampling Component** - Converts traces and logs for sampling pipeline
 3. **Condition Components** - Filter data based on rules
 4. **Sampler Components** - Apply sampling logic
-5. **Honeycomb Exporter** - Send sampled data to Honeycomb
+5. **Honeycomb Exporter** - Send sampled traces/logs and direct metrics to Honeycomb
+
+**Data Flow:**
+- **Traces & Logs**: OTel Receiver → Start Sampling → [Conditions/Samplers] → Honeycomb Exporter
+- **Metrics**: OTel Receiver → Honeycomb Exporter (direct, bypasses sampling)
 
 ## Example
 
@@ -121,7 +125,25 @@ components:
     kind: HoneycombExporter
 
 connections:
-  # ... appropriate connections between components
+  # Traces and Logs go through sampling
+  - source:
+      component: OTel_Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start_Sampling_2
+      port: Traces
+      type: OTelTraces
+  # Metrics bypass sampling and go directly to exporter
+  - source:
+      component: OTel_Receiver_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Send_to_Honeycomb_5
+      port: Metrics
+      type: OTelMetrics
+  # ... other connections
 ```
 
 ## Validation
