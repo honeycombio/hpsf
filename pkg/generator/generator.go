@@ -409,6 +409,7 @@ func (g *Generator) generateConditionComponent(conditions []RuleCondition, ruleN
 	switch condition.Operator {
 	case "exists", "does-not-exist":
 		kind = "FieldExistsCondition"
+		// Always use single Field - take first field from Fields array if available
 		field := condition.Field
 		if len(condition.Fields) > 0 {
 			field = condition.Fields[0]
@@ -430,11 +431,11 @@ func (g *Generator) generateConditionComponent(conditions []RuleCondition, ruleN
 			kind = "CompareStringFieldCondition"
 		}
 
+		// Always use single Field - take first field from Fields array if available
 		field := condition.Field
 		if len(condition.Fields) > 0 {
 			field = condition.Fields[0]
 		}
-
 		properties = []hpsf.Property{
 			{Name: "Field", Value: field},
 			{Name: "Operator", Value: condition.Operator},
@@ -443,6 +444,7 @@ func (g *Generator) generateConditionComponent(conditions []RuleCondition, ruleN
 
 	case "contains":
 		kind = "FieldContainsCondition"
+		// Always use single Field - take first field from Fields array if available
 		field := condition.Field
 		if len(condition.Fields) > 0 {
 			field = condition.Fields[0]
@@ -454,6 +456,7 @@ func (g *Generator) generateConditionComponent(conditions []RuleCondition, ruleN
 
 	case "starts-with":
 		kind = "FieldStartsWithCondition"
+		// Always use single Field - take first field from Fields array if available
 		field := condition.Field
 		if len(condition.Fields) > 0 {
 			field = condition.Fields[0]
@@ -466,6 +469,7 @@ func (g *Generator) generateConditionComponent(conditions []RuleCondition, ruleN
 	default:
 		// Fallback to a generic condition
 		kind = "FieldExistsCondition"
+		// Always use single Field - take first field from Fields array if available
 		field := condition.Field
 		if len(condition.Fields) > 0 {
 			field = condition.Fields[0]
