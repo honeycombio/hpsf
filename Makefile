@@ -68,11 +68,19 @@ test-refinery-generation: tests/refinery2hpsf/*-refinery.yaml
 	mkdir -p tmp
 	for rules_file in $^ ; do \
 		output_file="tmp/$$(basename $${rules_file} .yaml)-workflow.yaml"; \
+		expected_file="$$(echo $${rules_file} | sed 's/-refinery\.yaml/-workflow.yaml/')"; \
 		echo; \
 		echo "+++ generating workflow from $${rules_file} -> $${output_file}"; \
 		go run ./cmd/refinery2hpsf -r $${rules_file} -o $${output_file} -v || exit 1; \
 		echo "+++ validating $${output_file}"; \
 		go run ./cmd/hpsf -i $${output_file} validate || exit 1; \
+		echo "+++ comparing generated output to expected $${expected_file}"; \
+		if ! diff -u $${expected_file} $${output_file}; then \
+			echo "ERROR: Generated output differs from expected output"; \
+			exit 1; \
+		else \
+			echo "SUCCESS: Generated output matches expected output"; \
+		fi; \
 	done
 
 .PHONY: validate_all

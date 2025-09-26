@@ -6,26 +6,23 @@ description: HPSF workflow automatically generated from Refinery sampling rules
 components:
     - name: OTel_Receiver_1
       kind: OTelReceiver
-      properties:
-        - name: Host
-          value: 0.0.0.0
-        - name: GRPCPort
-          value: 4317
-        - name: HTTPPort
-          value: 4318
     - name: Start_Sampling_2
       kind: SamplingSequencer
-      properties:
-        - name: Host
-          value: refinery
-        - name: Port
-          value: 8080
     - name: Deterministic_Sampler_3
       kind: DeterministicSampler
       properties:
         - name: SampleRate
           value: 50
-    - name: EMA_Throughput_Sampler_4
+    - name: EMA_Dynamic_Sampler_4
+      kind: EMADynamicSampler
+      properties:
+        - name: GoalSampleRate
+          value: 25
+        - name: FieldList
+          value:
+            - service.name
+            - http.route
+    - name: EMA_Throughput_Sampler_5
       kind: EMAThroughputSampler
       properties:
         - name: GoalThroughputPerSec
@@ -35,15 +32,6 @@ components:
             - http.method
             - service.name
             - operation.name
-    - name: EMA_Dynamic_Sampler_5
-      kind: EMADynamicSampler
-      properties:
-        - name: GoalSampleRate
-          value: 25
-        - name: FieldList
-          value:
-            - service.name
-            - http.route
     - name: Condition_Error Traces_6
       kind: FieldExistsCondition
       properties:
@@ -115,12 +103,8 @@ components:
     - name: Send_to_Honeycomb_17
       kind: HoneycombExporter
       properties:
-        - name: APIKey
-          value: ${HTP_EXPORTER_APIKEY}
         - name: APIEndpoint
           value: api.honeycomb.io
-        - name: Mode
-          value: all
 connections:
     - source:
         component: OTel_Receiver_1
@@ -151,7 +135,7 @@ connections:
         port: Rule 2
         type: SampleData
       destination:
-        component: EMA_Throughput_Sampler_4
+        component: EMA_Dynamic_Sampler_4
         port: Sample
         type: SampleData
     - source:
@@ -159,7 +143,7 @@ connections:
         port: Rule 3
         type: SampleData
       destination:
-        component: EMA_Dynamic_Sampler_5
+        component: EMA_Throughput_Sampler_5
         port: Sample
         type: SampleData
     - source:
@@ -259,7 +243,7 @@ connections:
         port: Events
         type: HoneycombEvents
     - source:
-        component: EMA_Throughput_Sampler_4
+        component: EMA_Dynamic_Sampler_4
         port: Events
         type: HoneycombEvents
       destination:
@@ -267,7 +251,7 @@ connections:
         port: Events
         type: HoneycombEvents
     - source:
-        component: EMA_Dynamic_Sampler_5
+        component: EMA_Throughput_Sampler_5
         port: Events
         type: HoneycombEvents
       destination:

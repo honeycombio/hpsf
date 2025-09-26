@@ -1,25 +1,13 @@
 kind: HPSF
 version: v1
-name: My_Refinery_Workflow
-summary: Generated from Refinery configuration
-description: HPSF workflow automatically generated from Refinery configuration and sampling rules
+name: Generated_Refinery_Workflow
+summary: Generated from Refinery sampling rules
+description: HPSF workflow automatically generated from Refinery sampling rules
 components:
     - name: OTel_Receiver_1
       kind: OTelReceiver
-      properties:
-        - name: Host
-          value: 0.0.0.0
-        - name: GRPCPort
-          value: 4317
-        - name: HTTPPort
-          value: 4318
     - name: Start_Sampling_2
       kind: SamplingSequencer
-      properties:
-        - name: Host
-          value: refinery
-        - name: Port
-          value: 8080
     - name: Condition_Error Traces_3
       kind: FieldExistsCondition
       properties:
@@ -79,12 +67,8 @@ components:
     - name: Send_to_Honeycomb_12
       kind: HoneycombExporter
       properties:
-        - name: APIKey
-          value: your-honeycomb-api-key
         - name: APIEndpoint
           value: api.honeycomb.io
-        - name: Mode
-          value: all
 connections:
     - source:
         component: OTel_Receiver_1
