@@ -88,7 +88,7 @@ func (c UnconfiguredComponent) GenerateConfig(ct hpsftypes.Type, pipeline hpsf.P
 		rules := tmpl.NewRulesConfig(tmpl.Output, nil, nil)
 		rules.Samplers["__default__"] = &tmpl.V2SamplerChoice{
 			DeterministicSampler: &tmpl.DeterministicSamplerConfig{
-				SampleRate: 1,
+				SampleRate: 100,
 			},
 		}
 		return rules, nil
