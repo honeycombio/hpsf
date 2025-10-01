@@ -1,11 +1,13 @@
 name: Default Template
 kind: TemplateDefault
 version: v0.1.0
-summary: The default configuration that receives traces, metrics, and logs and forwards them to the Honeycomb exporter.
+summary: The default configuration that receives traces, metrics, and logs, applies deterministic sampling to traces and logs, and forwards them to the Honeycomb exporter.
 description: |
-  This is the default configuration that forwards traces, metrics, and logs received via OpenTelemetry
-  components to the Honeycomb exporter. This is useful for testing and debugging, or
-  as a starting point for more complex configurations.
+  This is the default configuration that receives telemetry data via OpenTelemetry and forwards it
+  to the Honeycomb exporter. Traces and logs are routed through a deterministic sampler with a
+  sample rate of 100 (1 in 100 traces/logs are sampled), while metrics bypass sampling and are
+  sent directly to Honeycomb. This configuration is useful for testing and debugging, or as a
+  starting point for more complex configurations.
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
