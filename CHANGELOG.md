@@ -1,5 +1,11 @@
 # hpsf library changelog
 
+## 0.19.0 2025-10-02
+
+### Features
+
+- feat: Add deterministic sampling to default workflow template (#235) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
 ## 0.18.0 2025-09-22
 
 ### Features
