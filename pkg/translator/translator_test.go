@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 	"text/template"
@@ -40,8 +41,8 @@ func TestThatEachTestFileHasAMatchingComponent(t *testing.T) {
 		// that has the same name as portion of the filename before the _.
 		// look it up in the components map
 		for _, file := range testFiles {
-			if file.Name() == "default.yaml" {
-				// don't mess with the default.yaml file
+			// ignore some files that don't correspond to components
+			if slices.Contains([]string{"default.yaml", "empty.yaml"}, file.Name()) {
 				continue
 			}
 			if !file.IsDir() && strings.HasSuffix(file.Name(), ".yaml") {
@@ -212,7 +213,7 @@ func TestDefaultHPSF(t *testing.T) {
 }
 
 func TestHPSFWithoutSamplerComponentGeneratesValidRefineryRules(t *testing.T) {
-	b, err := os.ReadFile("testdata/refinery_rules/default.yaml")
+	b, err := os.ReadFile("testdata/refinery_rules/empty.yaml")
 	require.NoError(t, err)
 	var expectedConfig = string(b)
 

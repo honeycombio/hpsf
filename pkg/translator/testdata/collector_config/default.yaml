@@ -21,20 +21,32 @@ exporters:
             enabled: true
             queue_size: 100000
             sizer: items
+    otlphttp/Start_Sampling_1:
+        endpoint: http://${HTP_REFINERY_SERVICE}:80
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+        tls:
+            insecure: true
 extensions:
     honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/5d5-96d:
+        logs/683-844:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
-            exporters: [otlphttp/Honeycomb_Exporter_1]
+            exporters: [otlphttp/Start_Sampling_1]
         metrics/11b-8e8:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
             exporters: [otlphttp/Honeycomb_Exporter_1]
-        traces/9e7-14c:
+        traces/aed-043:
             receivers: [otlp/OTel_Receiver_1]
             processors: [usage]
-            exporters: [otlphttp/Honeycomb_Exporter_1]
+            exporters: [otlphttp/Start_Sampling_1]
