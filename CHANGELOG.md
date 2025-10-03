@@ -2,7 +2,7 @@
 
 ## 0.20.0 2025-10-03
 
-- fix(poodle, pipelines): Make rules keep order according to rule index (#237) | [Kent Quirk](https://github.com/kentquirk)
+- fix: Make rules keep order according to rule index (#237) | [Kent Quirk](https://github.com/kentquirk)
 
 
 ## 0.19.0 2025-10-02
