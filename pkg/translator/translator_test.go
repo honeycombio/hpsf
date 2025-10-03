@@ -1243,3 +1243,61 @@ func TestArtifactVersionSupported(t *testing.T) {
 		})
 	}
 }
+
+// TestIndexedPortSequences ensures that for every component which specifies one or more
+// indexed ports (Index > 0), the index values:
+//  1. Start at 1 (no zero or negative values allowed)
+//  2. Are contiguous with no gaps (i.e. if the largest index is N there are exactly N indexed ports)
+//  3. Contain no duplicates
+//
+// This enforces deterministic ordering semantics relied upon by path and rules generation.
+func TestIndexedPortSequences(t *testing.T) {
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+
+	for _, comp := range comps {
+		var indexed []int
+		indexCount := map[int]int{}
+		for _, p := range comp.Ports {
+			if p.Index > 0 { // only consider explicitly indexed ports
+				indexed = append(indexed, p.Index)
+				indexCount[p.Index]++
+			} else if p.Index < 0 { // defensive: negative should never happen
+				t.Errorf("component %s has negative port index %d on port %s", comp.Kind, p.Index, p.Name)
+			}
+		}
+		if len(indexed) == 0 {
+			continue // nothing to validate for this component
+		}
+
+		// Sort indices to check ordering & gaps
+		slices.Sort(indexed)
+
+		// Must start at 1
+		if indexed[0] != 1 {
+			t.Errorf("component %s indexed ports must start at 1; got first index %d (all: %v)", comp.Kind, indexed[0], indexed)
+			continue
+		}
+
+		// Highest index determines expected count
+		highest := indexed[len(indexed)-1]
+		if highest != len(indexed) {
+			// Could be due to a gap or duplicates; build a list of missing indices for clarity
+			missing := []int{}
+			for i := 1; i <= highest; i++ {
+				if indexCount[i] == 0 {
+					missing = append(missing, i)
+				}
+			}
+			t.Errorf("component %s expected contiguous indices 1..%d with no gaps; found %v (missing %v)", comp.Kind, highest, indexed, missing)
+			continue
+		}
+
+		// Check for duplicates explicitly (any count > 1)
+		for idx, count := range indexCount {
+			if count > 1 {
+				t.Errorf("component %s has duplicate index %d (occurrences=%d)", comp.Kind, idx, count)
+			}
+		}
+	}
+}
