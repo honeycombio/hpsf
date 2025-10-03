@@ -1,5 +1,10 @@
 # hpsf library changelog
 
+## 0.20.0 2025-10-03
+
+- fix: Make rules keep order according to rule index (#237) | [Kent Quirk](https://github.com/kentquirk)
+
+
 ## 0.19.0 2025-10-02
 
 ### Features
