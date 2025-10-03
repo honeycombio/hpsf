@@ -1,5 +1,5 @@
 package hpsf
 
 var (
-	Version = "0.19.0"
+	Version = "0.20.0"
 )
