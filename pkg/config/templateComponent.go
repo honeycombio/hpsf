@@ -165,6 +165,7 @@ type TemplateComponent struct {
 	Validations []string           `yaml:"validations,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"-"`
+	SignalType  string             `yaml:"-"` // current signal type being processed
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection
 	collName    string
@@ -495,6 +496,8 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 			if !t.ConnectsUsingAppropriateType(signalType) {
 				continue
 			}
+			// Set the signal type for template expansion
+			t.SignalType = signalType.AsCollectorSignalType()
 			svcKey := fmt.Sprintf("pipelines.%s/%s.%s", signalType.AsCollectorSignalType(), pipeline.GetID(), section)
 			for _, kv := range ct.kvs[section] {
 				if kv.suppressIf != "" {

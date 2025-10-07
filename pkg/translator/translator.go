@@ -19,41 +19,70 @@ import (
 
 const LatestVersion = "latest"
 
-// mergeRoutingConnectors finds all routing/* connectors and merges them into a single routing connector
+// mergeRoutingConnectors finds all routing-* connectors and merges them by signal type
 func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 	connectorSection, ok := cc.Sections["connectors"]
 	if !ok {
 		return nil // no connectors, nothing to do
 	}
 
-	// Find all unique routing connector names
-	routingConnectorNames := make(map[string]bool)
+	// Find all unique routing connector names (routing-traces, routing-logs, routing-metrics, or legacy routing/*)
+	routingConnectorsBySignalType := make(map[string][]string) // signal type -> list of connector names
 	for key := range connectorSection {
-		if strings.HasPrefix(key, "routing/") {
-			// Extract connector name (e.g., "routing/router_production" from "routing/router_production.table.0.statement")
+		var connectorName string
+		var signalType string
+
+		if strings.HasPrefix(key, "routing_") {
+			// New format: routing_traces/component_name, routing_logs/component_name, etc.
 			parts := strings.SplitN(key, ".", 2)
-			connectorName := parts[0]
-			routingConnectorNames[connectorName] = true
+			connectorName = parts[0]
+			// Extract signal type from connector name (e.g., "routing_traces/router_staging" -> "traces")
+			after := strings.TrimPrefix(connectorName, "routing_")
+			slashPos := strings.Index(after, "/")
+			if slashPos > 0 {
+				signalType = after[:slashPos]
+			} else {
+				// Legacy single-level format: routing_traces
+				signalType = after
+			}
+		} else if strings.HasPrefix(key, "routing/") {
+			// Legacy format: routing/router_name
+			parts := strings.SplitN(key, ".", 2)
+			connectorName = parts[0]
+			// For legacy format, we need to detect signal type from the pipelines it references
+			// For now, treat as generic "routing"
+			signalType = "generic"
+		} else {
+			continue
+		}
+
+		// Track this connector for this signal type
+		found := false
+		for _, existing := range routingConnectorsBySignalType[signalType] {
+			if existing == connectorName {
+				found = true
+				break
+			}
+		}
+		if !found {
+			routingConnectorsBySignalType[signalType] = append(routingConnectorsBySignalType[signalType], connectorName)
 		}
 	}
 
-	routingConnectors := make([]string, 0, len(routingConnectorNames))
-	for name := range routingConnectorNames {
-		routingConnectors = append(routingConnectors, name)
-	}
+	// Process each signal type separately
+	for signalType, connectorNames := range routingConnectorsBySignalType {
+		if len(connectorNames) <= 1 {
+			continue // 0 or 1 routing connector for this signal type, nothing to merge
+		}
 
-	// Sort for deterministic output
-	sort.Strings(routingConnectors)
+		// Sort for deterministic output
+		sort.Strings(connectorNames)
 
-	if len(routingConnectors) <= 1 {
-		return nil // 0 or 1 routing connector, nothing to merge
-	}
+		// Collect all routing rules for this signal type
+		var defaultPipelines []string
+		tableEntries := make([]map[string]any, 0)
 
-	// Collect all routing rules
-	var defaultPipelines []string
-	tableEntries := make([]map[string]any, 0)
-
-	for _, connectorKey := range routingConnectors {
+		for _, connectorKey := range connectorNames {
 		// Check for default_pipelines
 		if defaultPipelinesKey := connectorKey + ".default_pipelines"; connectorSection[defaultPipelinesKey] != nil {
 			if pipelines, ok := connectorSection[defaultPipelinesKey].([]string); ok {
@@ -95,48 +124,57 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 			}
 		}
 
-		// Delete the old routing connector keys
-		for key := range connectorSection {
-			if strings.HasPrefix(key, connectorKey) {
-				delete(connectorSection, key)
+			// Delete the old routing connector keys
+			for key := range connectorSection {
+				if strings.HasPrefix(key, connectorKey) {
+					delete(connectorSection, key)
+				}
 			}
 		}
-	}
 
-	// Create the merged routing connector
-	if len(defaultPipelines) > 0 {
-		connectorSection["routing.default_pipelines"] = defaultPipelines
-	}
+		// Create the merged routing connector for this signal type
+		mergedConnectorName := fmt.Sprintf("routing_%s", signalType)
+		if signalType == "generic" {
+			mergedConnectorName = "routing" // Legacy format
+		}
 
-	if len(tableEntries) > 0 {
-		// Add table entries using indexed format (e.g., routing.table[0], routing.table[1])
-		for i, entry := range tableEntries {
-			if statement, ok := entry["statement"].(string); ok {
-				key := fmt.Sprintf("routing.table[%d].statement", i)
-				connectorSection[key] = statement
-			}
-			if pipelines, ok := entry["pipelines"].([]string); ok {
-				key := fmt.Sprintf("routing.table[%d].pipelines", i)
-				connectorSection[key] = pipelines
+		if len(defaultPipelines) > 0 {
+			connectorSection[mergedConnectorName+".default_pipelines"] = defaultPipelines
+		}
+
+		if len(tableEntries) > 0 {
+			// Add table entries using indexed format
+			for i, entry := range tableEntries {
+				if statement, ok := entry["statement"].(string); ok {
+					key := fmt.Sprintf("%s.table[%d].statement", mergedConnectorName, i)
+					connectorSection[key] = statement
+				}
+				if pipelines, ok := entry["pipelines"].([]string); ok {
+					key := fmt.Sprintf("%s.table[%d].pipelines", mergedConnectorName, i)
+					connectorSection[key] = pipelines
+				}
 			}
 		}
-	}
 
-	// Update pipeline connector references from routing/* to routing
-	if serviceSection, ok := cc.Sections["service"]; ok {
-		for key, value := range serviceSection {
-			if strings.Contains(key, ".connectors") {
-				if connectors, ok := value.([]string); ok {
-					updated := false
-					for i, conn := range connectors {
-						// Replace any routing/* connector with the merged routing connector
-						if strings.HasPrefix(conn, "routing/") {
-							connectors[i] = "routing"
-							updated = true
+		// Update pipeline references from old connector names to merged connector name
+		if serviceSection, ok := cc.Sections["service"]; ok {
+			for key, value := range serviceSection {
+				if strings.Contains(key, ".exporters") || strings.Contains(key, ".receivers") || strings.Contains(key, ".connectors") {
+					if connList, ok := value.([]string); ok {
+						updated := false
+						for i, conn := range connList {
+							// Check if this connector should be replaced with the merged one
+							for _, oldConnectorName := range connectorNames {
+								if conn == oldConnectorName {
+									connList[i] = mergedConnectorName
+									updated = true
+									break
+								}
+							}
 						}
-					}
-					if updated {
-						serviceSection[key] = connectors
+						if updated {
+							serviceSection[key] = connList
+						}
 					}
 				}
 			}
@@ -708,10 +746,57 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 // transformRouterPipelines transforms pipelines that use routing connectors to follow OTel conventions:
 // - Intake pipelines (with receivers and connectors but no exporters) move connector to exporters
 // - Output pipelines (with exporters but empty receivers and connectors) move connector to receivers
+// - Renames output pipelines to match environment names in routing connector config
 func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 	serviceSection, exists := cc.Sections["service"]
 	if !exists {
 		return nil
+	}
+
+	// Extract environment names from routing connector configuration
+	connectorSection, hasConnectors := cc.Sections["connectors"]
+	if !hasConnectors {
+		return nil
+	}
+
+	// Build map of expected environment pipeline names from routing connector config
+	expectedPipelines := make(map[string]bool) // e.g., "traces/production", "logs/staging"
+
+	// Get default_pipelines
+	if defaultPipelines, ok := connectorSection["routing.default_pipelines"]; ok {
+		if pipelines, ok := defaultPipelines.([]any); ok {
+			for _, p := range pipelines {
+				if pName, ok := p.(string); ok {
+					expectedPipelines[pName] = true
+				}
+			}
+		} else if pipelines, ok := defaultPipelines.([]string); ok {
+			for _, pName := range pipelines {
+				expectedPipelines[pName] = true
+			}
+		}
+	}
+
+	// Get pipelines from routing table
+	tableIdx := 0
+	for {
+		pipelinesKey := fmt.Sprintf("routing.table[%d].pipelines", tableIdx)
+		if pipelines, ok := connectorSection[pipelinesKey]; !ok {
+			break
+		} else {
+			if pipelineList, ok := pipelines.([]any); ok {
+				for _, p := range pipelineList {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelineList, ok := pipelines.([]string); ok {
+				for _, pName := range pipelineList {
+					expectedPipelines[pName] = true
+				}
+			}
+		}
+		tableIdx++
 	}
 
 	// First, collect all unique pipeline names
@@ -727,6 +812,9 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 		}
 		pipelineNames[parts[0]] = true
 	}
+
+	// Track pipeline renames for output pipelines
+	pipelineRenames := make(map[string]string) // old name -> new name
 
 	// Process each pipeline once
 	for pipelineName := range pipelineNames {
@@ -753,9 +841,9 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 				connectorsList = v
 			}
 
-			// Check if this has a routing connector
+			// Check if this has a routing connector (routing, routing_traces, routing_logs, routing_metrics, or routing/*)
 			for _, conn := range connectorsList {
-				if strings.HasPrefix(conn, "routing") {
+				if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
 					hasRouting = true
 					break
 				}
@@ -817,13 +905,135 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 			// Move connectors to exporters
 			serviceSection[exportersKey] = connectors
 			delete(serviceSection, connectorsKey)
+
+			// Rename intake pipeline to use consistent name (e.g., traces/intake)
+			parts := strings.SplitN(pipelineName, "/", 2)
+			if len(parts) == 2 {
+				signalType := parts[0]
+				intakeName := signalType + "/intake"
+				// Only rename if not already using the intake name
+				if pipelineName != intakeName {
+					pipelineRenames[pipelineName] = intakeName
+				}
+			}
 		} else if hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 2: Output pipeline - has routing connector, no receivers, has exporters → move connector to receivers
 			serviceSection[receiversKey] = connectors
 			delete(serviceSection, connectorsKey)
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
-			serviceSection[receiversKey] = []string{"routing"}
+			// Use signal-type-specific routing connector name
+			parts := strings.SplitN(pipelineName, "/", 2)
+			if len(parts) == 2 {
+				signalType := parts[0]
+				routingConnectorName := fmt.Sprintf("routing-%s", signalType)
+				serviceSection[receiversKey] = []string{routingConnectorName}
+
+				// Try to infer environment from exporter name
+				// Exporters often have environment names in them (e.g., "exporter_staging", "Start_Sampling_Production")
+				var envName string
+				for _, exp := range exportersFiltered {
+					// Extract potential environment name from exporter
+					// Look for common patterns like "_staging", "_production", "Staging", "Production"
+					expLower := strings.ToLower(exp)
+					for expectedName := range expectedPipelines {
+						if strings.HasPrefix(expectedName, signalType+"/") {
+							envPart := strings.TrimPrefix(expectedName, signalType+"/")
+							if strings.Contains(expLower, strings.ToLower(envPart)) {
+								envName = envPart
+								break
+							}
+						}
+					}
+					if envName != "" {
+						break
+					}
+				}
+
+				// If we found an environment name, use it
+				if envName != "" {
+					targetName := signalType + "/" + envName
+					if expectedPipelines[targetName] {
+						pipelineRenames[pipelineName] = targetName
+					}
+				} else {
+					// Fall back to finding any unused expected pipeline name for this signal type
+					for expectedName := range expectedPipelines {
+						if strings.HasPrefix(expectedName, signalType+"/") {
+							// Check if this expected pipeline name is already assigned to another pipeline
+							alreadyAssigned := false
+							for _, assignedName := range pipelineRenames {
+								if assignedName == expectedName {
+									alreadyAssigned = true
+									break
+								}
+							}
+							if !alreadyAssigned {
+								// Use this environment name for renaming
+								pipelineRenames[pipelineName] = expectedName
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// Group renames by target name to handle merges
+	renamesByTarget := make(map[string][]string) // target name -> list of source names
+	for oldName, newName := range pipelineRenames {
+		renamesByTarget[newName] = append(renamesByTarget[newName], oldName)
+	}
+
+	// Apply pipeline renames, merging duplicates
+	for newName, oldNames := range renamesByTarget {
+		if len(oldNames) == 1 {
+			// Simple rename, no merge needed
+			oldName := oldNames[0]
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+oldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+oldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+		} else {
+			// Multiple pipelines renaming to same name - merge them
+			// Take the first one as the canonical pipeline
+			firstOldName := oldNames[0]
+
+			// Rename the first one
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+firstOldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+firstOldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+
+			// Delete the duplicate pipelines
+			for _, oldName := range oldNames[1:] {
+				keysToDelete := make([]string, 0)
+				for key := range serviceSection {
+					if strings.HasPrefix(key, "pipelines."+oldName+".") {
+						keysToDelete = append(keysToDelete, key)
+					}
+				}
+				for _, key := range keysToDelete {
+					delete(serviceSection, key)
+				}
+			}
 		}
 	}
 

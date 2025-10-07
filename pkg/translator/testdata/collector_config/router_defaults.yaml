@@ -8,11 +8,27 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing/router:
+    routing_logs/routing/router:
         default_pipelines:
-            - traces/default
-            - metrics/default
-            - logs/default
+            - logs/production
+        table:
+            - pipelines:
+                - logs/production
+              statement: route() where attributes["deployment.environment"] == "production"
+    routing_metrics/routing/router:
+        default_pipelines:
+            - metrics/production
+        table:
+            - pipelines:
+                - metrics/production
+              statement: route() where attributes["deployment.environment"] == "production"
+    routing_traces/routing/router:
+        default_pipelines:
+            - traces/production
+        table:
+            - pipelines:
+                - traces/production
+              statement: route() where attributes["deployment.environment"] == "production"
 exporters:
     otlphttp/exporter:
         endpoint: https://api.honeycomb.io:443
@@ -32,27 +48,27 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/896-f66:
-            receivers: [otlp/receiver]
-            processors: [usage]
-            exporters: [routing/router]
         logs/a13-2a5:
-            receivers: [routing]
+            receivers: [routing-logs]
             processors: [usage]
             exporters: [otlphttp/exporter]
-        metrics/8cd-301:
-            receivers: [routing]
-            processors: [usage]
-            exporters: [otlphttp/exporter]
-        metrics/f99-f95:
+        logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/router]
-        traces/3fd-878:
+        metrics/8cd-301:
+            receivers: [routing-metrics]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
+        metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/router]
         traces/a03-0e4:
-            receivers: [routing]
+            receivers: [routing-traces]
             processors: [usage]
             exporters: [otlphttp/exporter]
+        traces/intake:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/router]

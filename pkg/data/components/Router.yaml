@@ -85,14 +85,15 @@ templates:
       signalTypes: [traces, metrics, logs]
       collectorComponentName: routing
     data:
-      # For default router, set default_pipelines
-      - key: "{{ .ComponentName }}.default_pipelines"
-        value: "{{ encodeAsArray (makeSlice \"traces/default\" \"metrics/default\" \"logs/default\") }}"
+      # For default router, set default_pipelines using environment name (signal-type specific)
+      # This is optional - only include if IsDefault is true
+      # Use unique connector name per component (e.g., routing_traces/router_staging)
+      # Note: Use underscores, not hyphens, as hyphens are invalid in OTel connector names
+      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.default_pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
         suppress_if: "{{ not .Values.IsDefault }}"
-      # For non-default routers, add routing table entry
-      - key: "{{ .ComponentName }}.table[0].statement"
+      # All routers (including default) add an entry to the routing table
+      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.table[0].statement"
         value: "route() where attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
-        suppress_if: "{{ .Values.IsDefault }}"
-      - key: "{{ .ComponentName }}.table[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"traces/%s\" .Values.EnvironmentName) (printf \"metrics/%s\" .Values.EnvironmentName) (printf \"logs/%s\" .Values.EnvironmentName)) }}"
-        suppress_if: "{{ .Values.IsDefault }}"
+      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.table[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"

@@ -8,21 +8,18 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing:
+    routing_traces:
         default_pipelines:
-            - traces/default
-            - metrics/default
-            - logs/default
+            - traces/development
         table:
             - pipelines:
+                - traces/development
+              statement: route() where attributes["deployment.environment"] == "development"
+            - pipelines:
                 - traces/production
-                - metrics/production
-                - logs/production
               statement: route() where attributes["deployment.environment"] == "production"
             - pipelines:
                 - traces/staging
-                - metrics/staging
-                - logs/staging
               statement: route() where attributes["deployment.environment"] == "staging"
 exporters:
     otlphttp/exporter_development:
@@ -70,26 +67,18 @@ service:
     extensions: [honeycomb]
     pipelines:
         traces/38d-8fd:
-            receivers: [routing]
+            receivers: [routing-traces]
             processors: [usage]
             exporters: [otlphttp/exporter_production]
-        traces/79b-875:
-            receivers: [otlp/receiver]
-            processors: [usage]
-            exporters: [routing]
         traces/a36-9bc:
-            receivers: [routing]
+            receivers: [routing-traces]
             processors: [usage]
             exporters: [otlphttp/exporter_staging]
-        traces/b22-9eb:
-            receivers: [otlp/receiver]
-            processors: [usage]
-            exporters: [routing]
-        traces/da1-516:
-            receivers: [otlp/receiver]
-            processors: [usage]
-            exporters: [routing]
         traces/fcb-37e:
-            receivers: [routing]
+            receivers: [routing-traces]
             processors: [usage]
             exporters: [otlphttp/exporter_development]
+        traces/intake:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/router_default]
