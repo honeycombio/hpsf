@@ -8,7 +8,7 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing_traces:
+    routing:
         default_pipelines:
             - traces/development
         table:
@@ -66,19 +66,19 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces/38d-8fd:
-            receivers: [routing-traces]
-            processors: [usage]
-            exporters: [otlphttp/exporter_production]
-        traces/a36-9bc:
-            receivers: [routing-traces]
-            processors: [usage]
-            exporters: [otlphttp/exporter_staging]
-        traces/fcb-37e:
-            receivers: [routing-traces]
+        traces/development:
+            receivers: [routing]
             processors: [usage]
             exporters: [otlphttp/exporter_development]
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing/router_default]
+            exporters: [routing/router_staging]
+        traces/production:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter_production]
+        traces/staging:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter_staging]

@@ -8,25 +8,15 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing_logs/routing/router:
+    routing:
         default_pipelines:
             - logs/production
-        table:
-            - pipelines:
-                - logs/production
-              statement: route() where attributes["deployment.environment"] == "production"
-    routing_metrics/routing/router:
-        default_pipelines:
             - metrics/production
-        table:
-            - pipelines:
-                - metrics/production
-              statement: route() where attributes["deployment.environment"] == "production"
-    routing_traces/routing/router:
-        default_pipelines:
             - traces/production
         table:
             - pipelines:
+                - logs/production
+                - metrics/production
                 - traces/production
               statement: route() where attributes["deployment.environment"] == "production"
 exporters:
@@ -48,27 +38,27 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/a13-2a5:
-            receivers: [routing-logs]
-            processors: [usage]
-            exporters: [otlphttp/exporter]
         logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/router]
-        metrics/8cd-301:
-            receivers: [routing-metrics]
+        logs/production:
+            receivers: [routing]
             processors: [usage]
             exporters: [otlphttp/exporter]
         metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/router]
-        traces/a03-0e4:
-            receivers: [routing-traces]
+        metrics/production:
+            receivers: [routing]
             processors: [usage]
             exporters: [otlphttp/exporter]
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/router]
+        traces/production:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter]

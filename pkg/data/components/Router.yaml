@@ -87,13 +87,12 @@ templates:
     data:
       # For default router, set default_pipelines using environment name (signal-type specific)
       # This is optional - only include if IsDefault is true
-      # Use unique connector name per component (e.g., routing_traces/router_staging)
-      # Note: Use underscores, not hyphens, as hyphens are invalid in OTel connector names
-      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.default_pipelines"
+      - key: "routing.default_pipelines"
         value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
         suppress_if: "{{ not .Values.IsDefault }}"
       # All routers (including default) add an entry to the routing table
-      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.table[0].statement"
+      # Use component name to create unique table entries that will be merged
+      - key: "routing.table_{{ .ComponentName }}[0].statement"
         value: "route() where attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
-      - key: "routing_{{ .SignalType }}/{{ .ComponentName }}.table[0].pipelines"
+      - key: "routing.table_{{ .ComponentName }}[0].pipelines"
         value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
