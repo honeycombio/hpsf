@@ -1,0 +1,98 @@
+kind: Router
+name: Route to Environment
+style: router
+logo: honeycomb
+type: base
+status: alpha
+version: v0.1.0
+summary: Routes traces, logs, and metrics to different Honeycomb environments
+description: |-
+  Routes telemetry data (traces, logs, and metrics) to different Honeycomb environments
+  within the same pipeline deployment. Each Router component handles routing for a specific
+  environment based on a telemetry attribute. One Router should be marked as the default
+  to handle unmatched traffic.
+tags:
+  - category:routing
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - input:Traces
+  - input:Metrics
+  - input:Logs
+  - output:Traces
+  - output:Metrics
+  - output:Logs
+  - vendor:Honeycomb
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: EnvironmentName
+    summary: The name of the Honeycomb environment to route traffic to
+    description: |
+      The name of the Honeycomb environment this router will route traffic to.
+      This value is used to match against the routing attribute on incoming telemetry.
+    type: string
+    validations:
+      - noblanks
+      - nonempty
+    advanced: false
+  - name: RoutingAttribute
+    summary: The telemetry attribute name to use for routing decisions
+    description: |
+      The name of the resource attribute that will be checked to determine which
+      environment the telemetry should be routed to. For example, "deployment.environment"
+      or "service.namespace". This attribute should be present on incoming telemetry data.
+    type: string
+    validations:
+      - noblanks
+    default: deployment.environment
+    advanced: true
+  - name: IsDefault
+    summary: Whether this router should handle unmatched telemetry
+    description: |
+      When set to true, this router will handle all telemetry that doesn't match
+      any other router's environment name. Only one Router in a workflow should have
+      this set to true.
+    type: bool
+    default: false
+    advanced: true
+templates:
+  - kind: collector_config
+    name: router_connector
+    format: collector
+    meta:
+      componentSection: connectors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: routing
+    data:
+      # For default router, set default_pipelines
+      - key: "{{ .ComponentName }}.default_pipelines"
+        value: "{{ encodeAsArray (makeSlice \"traces/default\" \"metrics/default\" \"logs/default\") }}"
+        suppress_if: "{{ not .Values.IsDefault }}"
+      # For non-default routers, add routing table entry
+      - key: "{{ .ComponentName }}.table[0].statement"
+        value: "route() where attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
+        suppress_if: "{{ .Values.IsDefault }}"
+      - key: "{{ .ComponentName }}.table[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"traces/%s\" .Values.EnvironmentName) (printf \"metrics/%s\" .Values.EnvironmentName) (printf \"logs/%s\" .Values.EnvironmentName)) }}"
+        suppress_if: "{{ .Values.IsDefault }}"

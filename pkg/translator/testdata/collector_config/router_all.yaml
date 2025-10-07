@@ -1,0 +1,95 @@
+receivers:
+    otlp/receiver:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+connectors:
+    routing:
+        default_pipelines:
+            - traces/default
+            - metrics/default
+            - logs/default
+        table:
+            - pipelines:
+                - traces/production
+                - metrics/production
+                - logs/production
+              statement: route() where attributes["deployment.environment"] == "production"
+            - pipelines:
+                - traces/staging
+                - metrics/staging
+                - logs/staging
+              statement: route() where attributes["deployment.environment"] == "staging"
+exporters:
+    otlphttp/exporter_development:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+    otlphttp/exporter_production:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+    otlphttp/exporter_staging:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/38d-8fd:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter_production]
+        traces/79b-875:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing]
+        traces/a36-9bc:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter_staging]
+        traces/b22-9eb:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing]
+        traces/da1-516:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing]
+        traces/fcb-37e:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter_development]

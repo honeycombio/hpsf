@@ -24,7 +24,8 @@ var _ TemplateConfig = (*CollectorConfig)(nil)
 // signalPipeline is a struct that represents a pipeline in the collector config.
 type signalPipeline struct {
 	Receivers  []string `yaml:"receivers,flow"`
-	Processors []string `yaml:"processors,flow"`
+	Processors []string `yaml:"processors,omitempty,flow"`
+	Connectors []string `yaml:"connectors,omitempty,flow"`
 	Exporters  []string `yaml:"exporters,flow"`
 }
 
@@ -39,6 +40,7 @@ type collectorConfigService struct {
 type collectorConfigFormat struct {
 	Receivers  map[string]any          `yaml:"receivers,omitempty"`
 	Processors map[string]any          `yaml:"processors,omitempty"`
+	Connectors map[string]any          `yaml:"connectors,omitempty"`
 	Exporters  map[string]any          `yaml:"exporters,omitempty"`
 	Extensions map[string]any          `yaml:"extensions,omitempty"`
 	Service    *collectorConfigService `yaml:"service"`

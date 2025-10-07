@@ -6,6 +6,7 @@ import (
 	"iter"
 	"maps"
 	"sort"
+	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -17,6 +18,133 @@ import (
 )
 
 const LatestVersion = "latest"
+
+// mergeRoutingConnectors finds all routing/* connectors and merges them into a single routing connector
+func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
+	connectorSection, ok := cc.Sections["connectors"]
+	if !ok {
+		return nil // no connectors, nothing to do
+	}
+
+	// Find all unique routing connector names
+	routingConnectorNames := make(map[string]bool)
+	for key := range connectorSection {
+		if strings.HasPrefix(key, "routing/") {
+			// Extract connector name (e.g., "routing/router_production" from "routing/router_production.table.0.statement")
+			parts := strings.SplitN(key, ".", 2)
+			connectorName := parts[0]
+			routingConnectorNames[connectorName] = true
+		}
+	}
+
+	routingConnectors := make([]string, 0, len(routingConnectorNames))
+	for name := range routingConnectorNames {
+		routingConnectors = append(routingConnectors, name)
+	}
+
+	// Sort for deterministic output
+	sort.Strings(routingConnectors)
+
+	if len(routingConnectors) <= 1 {
+		return nil // 0 or 1 routing connector, nothing to merge
+	}
+
+	// Collect all routing rules
+	var defaultPipelines []string
+	tableEntries := make([]map[string]any, 0)
+
+	for _, connectorKey := range routingConnectors {
+		// Check for default_pipelines
+		if defaultPipelinesKey := connectorKey + ".default_pipelines"; connectorSection[defaultPipelinesKey] != nil {
+			if pipelines, ok := connectorSection[defaultPipelinesKey].([]string); ok {
+				defaultPipelines = pipelines
+			}
+		}
+
+		// Check for table entries (they have format routing/name.table[0].statement, routing/name.table[0].pipelines)
+		// We need to find all table[N] entries for this connector
+		tablePrefix := connectorKey + ".table["
+		tableIndices := make(map[string]bool)
+		for key := range connectorSection {
+			if strings.HasPrefix(key, tablePrefix) {
+				// Extract the index (e.g., "0" from "routing/name.table[0].statement")
+				after := strings.TrimPrefix(key, tablePrefix)
+				closeBracket := strings.Index(after, "]")
+				if closeBracket > 0 {
+					idx := after[:closeBracket]
+					tableIndices[idx] = true
+				}
+			}
+		}
+
+		// Collect table entries
+		for idx := range tableIndices {
+			entry := make(map[string]any)
+			statementKey := connectorKey + ".table[" + idx + "].statement"
+			pipelinesKey := connectorKey + ".table[" + idx + "].pipelines"
+
+			if statement, ok := connectorSection[statementKey].(string); ok {
+				entry["statement"] = statement
+			}
+			if pipelines, ok := connectorSection[pipelinesKey].([]string); ok {
+				entry["pipelines"] = pipelines
+			}
+
+			if len(entry) > 0 {
+				tableEntries = append(tableEntries, entry)
+			}
+		}
+
+		// Delete the old routing connector keys
+		for key := range connectorSection {
+			if strings.HasPrefix(key, connectorKey) {
+				delete(connectorSection, key)
+			}
+		}
+	}
+
+	// Create the merged routing connector
+	if len(defaultPipelines) > 0 {
+		connectorSection["routing.default_pipelines"] = defaultPipelines
+	}
+
+	if len(tableEntries) > 0 {
+		// Add table entries using indexed format (e.g., routing.table[0], routing.table[1])
+		for i, entry := range tableEntries {
+			if statement, ok := entry["statement"].(string); ok {
+				key := fmt.Sprintf("routing.table[%d].statement", i)
+				connectorSection[key] = statement
+			}
+			if pipelines, ok := entry["pipelines"].([]string); ok {
+				key := fmt.Sprintf("routing.table[%d].pipelines", i)
+				connectorSection[key] = pipelines
+			}
+		}
+	}
+
+	// Update pipeline connector references from routing/* to routing
+	if serviceSection, ok := cc.Sections["service"]; ok {
+		for key, value := range serviceSection {
+			if strings.Contains(key, ".connectors") {
+				if connectors, ok := value.([]string); ok {
+					updated := false
+					for i, conn := range connectors {
+						// Replace any routing/* connector with the merged routing connector
+						if strings.HasPrefix(conn, "routing/") {
+							connectors[i] = "routing"
+							updated = true
+						}
+					}
+					if updated {
+						serviceSection[key] = connectors
+					}
+				}
+			}
+		}
+	}
+
+	return nil
+}
 
 // A Translator is responsible for translating an HPSF document into a
 // collection of components, and then further rendering those into configuration
@@ -577,6 +705,290 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
+// transformRouterPipelines transforms pipelines that use routing connectors to follow OTel conventions:
+// - Intake pipelines (with receivers and connectors but no exporters) move connector to exporters
+// - Output pipelines (with exporters but empty receivers and connectors) move connector to receivers
+func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
+	serviceSection, exists := cc.Sections["service"]
+	if !exists {
+		return nil
+	}
+
+	// First, collect all unique pipeline names
+	pipelineNames := make(map[string]bool)
+	for key := range serviceSection {
+		if !strings.HasPrefix(key, "pipelines.") {
+			continue
+		}
+		pipelinePath := key[len("pipelines."):]
+		parts := strings.SplitN(pipelinePath, ".", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		pipelineNames[parts[0]] = true
+	}
+
+	// Process each pipeline once
+	for pipelineName := range pipelineNames {
+		receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineName)
+		connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+		exportersKey := fmt.Sprintf("pipelines.%s.exporters", pipelineName)
+
+		receivers, hasReceivers := serviceSection[receiversKey]
+		connectors, hasConnectors := serviceSection[connectorsKey]
+		exporters, hasExporters := serviceSection[exportersKey]
+
+		// Get connectors list if it exists
+		var connectorsList []string
+		var hasRouting bool
+		if hasConnectors {
+			switch v := connectors.(type) {
+			case []any:
+				for _, c := range v {
+					if s, ok := c.(string); ok {
+						connectorsList = append(connectorsList, s)
+					}
+				}
+			case []string:
+				connectorsList = v
+			}
+
+			// Check if this has a routing connector
+			for _, conn := range connectorsList {
+				if strings.HasPrefix(conn, "routing") {
+					hasRouting = true
+					break
+				}
+			}
+		}
+
+		// Skip if this pipeline has connectors but no routing connector
+		if hasConnectors && !hasRouting {
+			continue
+		}
+
+		// Determine if this is an intake or output pipeline
+		// Receivers and exporters can be []any or []string
+		var receiversList []string
+		if hasReceivers && receivers != nil {
+			switch v := receivers.(type) {
+			case []any:
+				for _, r := range v {
+					if s, ok := r.(string); ok {
+						receiversList = append(receiversList, s)
+					}
+				}
+			case []string:
+				receiversList = v
+			}
+		}
+
+		var exportersList []string
+		if hasExporters && exporters != nil {
+			switch v := exporters.(type) {
+			case []any:
+				for _, e := range v {
+					if s, ok := e.(string); ok {
+						exportersList = append(exportersList, s)
+					}
+				}
+			case []string:
+				exportersList = v
+			}
+		}
+
+		// Filter out empty strings from lists (sometimes empty arrays contain empty strings)
+		receiversFiltered := make([]string, 0)
+		for _, r := range receiversList {
+			if r != "" {
+				receiversFiltered = append(receiversFiltered, r)
+			}
+		}
+
+		exportersFiltered := make([]string, 0)
+		for _, e := range exportersList {
+			if e != "" {
+				exportersFiltered = append(exportersFiltered, e)
+			}
+		}
+
+		// Case 1: Intake pipeline - has receivers and routing connector, no exporters → move connector to exporters
+		if hasRouting && len(receiversFiltered) > 0 && len(exportersFiltered) == 0 {
+			// Move connectors to exporters
+			serviceSection[exportersKey] = connectors
+			delete(serviceSection, connectorsKey)
+		} else if hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
+			// Case 2: Output pipeline - has routing connector, no receivers, has exporters → move connector to receivers
+			serviceSection[receiversKey] = connectors
+			delete(serviceSection, connectorsKey)
+		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
+			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
+			serviceSection[receiversKey] = []string{"routing"}
+		}
+	}
+
+	return nil
+}
+
+// generateConfigWithRouters handles special pipeline generation when Router components are present.
+// It creates intake pipelines (receiver → router) and environment-specific pipelines (router → exporter).
+func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+
+	// Separate paths into those before and after routers
+	// We'll build intake pipelines (receiver → router) and output pipelines (router → exporter)
+	intakePaths := make([]hpsf.PathWithConnections, 0)
+	outputPaths := make([]hpsf.PathWithConnections, 0)
+
+	for _, path := range paths {
+		// Find if this path contains a router
+		routerIndex := -1
+		for i, comp := range path.Path {
+			if c, ok := comps.Get(comp.GetSafeName()); ok {
+				if tc, ok := c.(*config.TemplateComponent); ok {
+					if tc.Style == "router" {
+						routerIndex = i
+						break
+					}
+				}
+			}
+		}
+
+		if routerIndex >= 0 {
+			// Split the path at the router
+			// Intake path: receiver → ... → router (router is last component in intake)
+			if routerIndex >= 0 {
+				intakePath := hpsf.PathWithConnections{
+					Path:     path.Path[:routerIndex+1],
+					ConnType: path.ConnType,
+				}
+				intakePaths = append(intakePaths, intakePath)
+			}
+
+			// Output path: router → ... → exporter (router is first component in output)
+			if routerIndex < len(path.Path) {
+				outputPath := hpsf.PathWithConnections{
+					Path:     path.Path[routerIndex:],
+					ConnType: path.ConnType,
+				}
+				outputPaths = append(outputPaths, outputPath)
+			}
+		} else {
+			// No router in this path, treat as regular path
+			intakePaths = append(intakePaths, path)
+		}
+	}
+
+	// Generate configs for intake paths (these will have routing connector as exporter)
+	intakeComposites := make([]tmpl.TemplateConfig, 0)
+	for _, path := range intakePaths {
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, path, userdata)
+		if err != nil {
+			return nil, err
+		}
+
+		mergedSomething := false
+		for _, comp := range path.Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in intake path", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, path, userdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
+		}
+		if mergedSomething {
+			intakeComposites = append(intakeComposites, composite)
+		}
+	}
+
+	// Generate configs for output paths (these will have routing connector as receiver)
+	outputComposites := make([]tmpl.TemplateConfig, 0)
+	for _, path := range outputPaths {
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, path, userdata)
+		if err != nil {
+			return nil, err
+		}
+
+		mergedSomething := false
+		// Skip the router component itself when generating output pipeline components
+		// (we only want processors and exporters after the router)
+		for i, comp := range path.Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in output path", comp.GetSafeName())
+			}
+
+			// Skip router component config generation for output paths
+			if tc, ok := c.(*config.TemplateComponent); ok && tc.Style == "router" {
+				continue
+			}
+
+			// For the first non-router component, we need to note that it comes from routing connector
+			// This is handled by the path connection type
+			if i == 0 {
+				// This is the router itself, skip it
+				continue
+			}
+
+			compConfig, err := c.GenerateConfig(ct, path, userdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
+		}
+		if mergedSomething {
+			outputComposites = append(outputComposites, composite)
+		}
+	}
+
+	// Merge all composites
+	allComposites := append(intakeComposites, outputComposites...)
+
+	if len(allComposites) == 0 {
+		unconfigured := config.UnconfiguredComponent{Component: dummy}
+		return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	}
+
+	finalConfig := allComposites[0]
+	for _, comp := range allComposites[1:] {
+		if err := finalConfig.Merge(comp); err != nil {
+			return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
+		}
+	}
+
+	// Merge routing connectors and transform pipelines
+	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
+		if err := mergeRoutingConnectors(collectorConfig); err != nil {
+			return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+		}
+
+		// Transform pipelines to use routing connector properly
+		// Intake pipelines (receiver → router) should have routing in exporters
+		// Output pipelines (router → exporter) should have routing in receivers
+		if err := transformRouterPipelines(collectorConfig); err != nil {
+			return nil, fmt.Errorf("failed to transform router pipelines: %w", err)
+		}
+	}
+
+	return finalConfig, nil
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
@@ -639,6 +1051,22 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 	composites := make([]tmpl.TemplateConfig, 0, len(paths))
 
+	// Check if any paths contain Router components - if so, we need special handling
+	hasRouter := false
+	for comp := range comps.Items() {
+		if tc, ok := comp.(*config.TemplateComponent); ok {
+			if tc.Style == "router" {
+				hasRouter = true
+				break
+			}
+		}
+	}
+
+	// If we have routers, use special pipeline generation
+	if hasRouter {
+		return t.generateConfigWithRouters(h, comps, paths, ct, userdata)
+	}
+
 	// now we can iterate over the paths and generate a configuration for each
 	for _, path := range paths {
 		// Start with a base component so we always have a valid config
@@ -680,10 +1108,27 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
 			}
 		}
+
+		// Post-process: merge multiple routing connectors into a single one
+		if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
+			if err := mergeRoutingConnectors(collectorConfig); err != nil {
+				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
 		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
-		return composites[0], nil
+		config := composites[0]
+
+		// Post-process: merge multiple routing connectors into a single one
+		if collectorConfig, ok := config.(*tmpl.CollectorConfig); ok {
+			if err := mergeRoutingConnectors(collectorConfig); err != nil {
+				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
+		return config, nil
 	}
 
 	// Start with a base component so we always have a valid config

@@ -1,0 +1,58 @@
+receivers:
+    otlp/receiver:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+connectors:
+    routing/router:
+        default_pipelines:
+            - traces/default
+            - metrics/default
+            - logs/default
+exporters:
+    otlphttp/exporter:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/896-f66:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/router]
+        logs/a13-2a5:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
+        metrics/8cd-301:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
+        metrics/f99-f95:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/router]
+        traces/3fd-878:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/router]
+        traces/a03-0e4:
+            receivers: [routing]
+            processors: [usage]
+            exporters: [otlphttp/exporter]

@@ -1,0 +1,63 @@
+components:
+  - name: receiver
+    kind: OTelReceiver
+  - name: router
+    kind: Router
+    properties:
+      - name: EnvironmentName
+        value: staging
+      - name: RoutingAttribute
+        value: service.namespace
+      - name: IsDefault
+        value: false
+  - name: exporter
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: router
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: router
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: exporter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: receiver
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: router
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: router
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: exporter
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: receiver
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: router
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: router
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: exporter
+      port: Metrics
+      type: OTelMetrics

@@ -485,7 +485,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 	// and the values from the properties
 	t.collName = ct.collectorComponentName
 	config := tmpl.NewCollectorConfig()
-	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
+	sectionOrder := []string{"receivers", "processors", "connectors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
 		for _, signalType := range hpsf.CollectorSignalTypes {
 			if pipeline.ConnType != signalType {
