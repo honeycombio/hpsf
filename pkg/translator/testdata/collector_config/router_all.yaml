@@ -25,7 +25,7 @@ exporters:
         endpoint: https://api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
-            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_DEVELOPMENT}
         sending_queue:
             batch:
                 flush_timeout: 200ms
@@ -38,7 +38,7 @@ exporters:
         endpoint: https://api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
-            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_PRODUCTION}
         sending_queue:
             batch:
                 flush_timeout: 200ms
@@ -51,7 +51,7 @@ exporters:
         endpoint: https://api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
-            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_STAGING}
         sending_queue:
             batch:
                 flush_timeout: 200ms

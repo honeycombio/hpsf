@@ -144,9 +144,26 @@ func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
 func (rc *RulesConfig) RenderYAML() ([]byte, error) {
 	rc.maybePromoteSingleRuleSampler()
 
-	// If a default environment is specified, create __default__ sampler pointing to it
+	// If a default environment is specified with a Router component:
+	// 1. Create __default__ from the default environment's config (Refinery requires __default__)
+	// 2. Remove the redundant default environment entry (e.g., remove "dev" if dev is the default)
 	if rc.defaultEnv != "" && rc.Samplers[rc.defaultEnv] != nil {
+		// Copy the default environment's sampler to __default__
 		rc.Samplers["__default__"] = rc.Samplers[rc.defaultEnv]
+		// Remove the redundant default environment entry
+		delete(rc.Samplers, rc.defaultEnv)
+	} else if rc.defaultEnv == "" {
+		// No router - check if we need to create __default__ from the first sampler
+		if len(rc.Samplers) > 0 {
+			// Find if there's already a __default__ sampler
+			if _, hasDefault := rc.Samplers["__default__"]; !hasDefault {
+				// Create __default__ from first sampler if none exists
+				for _, sampler := range rc.Samplers {
+					rc.Samplers["__default__"] = sampler
+					break
+				}
+			}
+		}
 	}
 
 	data, err := y.Marshal(rc)
