@@ -1231,6 +1231,15 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		}
 	}
 
+	// For refinery rules, set the default environment from Router if present
+	if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+		if defaultEnv, exists := userdata["router_default_env"]; exists {
+			if defaultEnvStr, ok := defaultEnv.(string); ok {
+				rulesConfig.SetDefaultEnv(defaultEnvStr)
+			}
+		}
+	}
+
 	return finalConfig, nil
 }
 
@@ -1367,6 +1376,15 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 			}
 		}
 
+		// For refinery rules, set the default environment from Router if present
+		if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+			if defaultEnv, exists := userdata["router_default_env"]; exists {
+				if defaultEnvStr, ok := defaultEnv.(string); ok {
+					rulesConfig.SetDefaultEnv(defaultEnvStr)
+				}
+			}
+		}
+
 		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
@@ -1376,6 +1394,15 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 		if collectorConfig, ok := config.(*tmpl.CollectorConfig); ok {
 			if err := mergeRoutingConnectors(collectorConfig); err != nil {
 				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
+		// For refinery rules, set the default environment from Router if present
+		if rulesConfig, ok := config.(*tmpl.RulesConfig); ok {
+			if defaultEnv, exists := userdata["router_default_env"]; exists {
+				if defaultEnvStr, ok := defaultEnv.(string); ok {
+					rulesConfig.SetDefaultEnv(defaultEnvStr)
+				}
 			}
 		}
 

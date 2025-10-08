@@ -8,9 +8,9 @@ version: v0.1.0
 summary: Routes traces, logs, and metrics to different Honeycomb environments
 description: |-
   Routes telemetry data (traces, logs, and metrics) to different Honeycomb environments
-  within the same pipeline deployment. Each Router component handles routing for a specific
-  environment based on a telemetry attribute. One Router should be marked as the default
-  to handle unmatched traffic.
+  within the same pipeline deployment. The Router defines multiple environments and uses
+  a telemetry attribute to determine which environment each span/log/metric should be
+  routed to. A default environment handles any unmatched telemetry.
 tags:
   - category:routing
   - service:collector
@@ -46,14 +46,15 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: EnvironmentName
-    summary: The name of the Honeycomb environment to route traffic to
+  - name: Environments
+    summary: List of environment names to route to
     description: |
-      The name of the Honeycomb environment this router will route traffic to.
-      This value is used to match against the routing attribute on incoming telemetry.
-    type: string
+      List of environment names (e.g., ["staging", "production"]). Each environment
+      will get its own routing rule in the OTel collector and its own sampler
+      configuration in Refinery rules. The router will match telemetry based on
+      the RoutingAttribute value.
+    type: stringarray
     validations:
-      - noblanks
       - nonempty
     advanced: false
   - name: RoutingAttribute
@@ -61,21 +62,24 @@ properties:
     description: |
       The name of the resource attribute that will be checked to determine which
       environment the telemetry should be routed to. For example, "deployment.environment"
-      or "service.namespace". This attribute should be present on incoming telemetry data.
+      or "service.namespace". The router will generate OTTL conditions like:
+      attributes["deployment.environment"] == "staging"
     type: string
     validations:
       - noblanks
     default: deployment.environment
     advanced: true
-  - name: IsDefault
-    summary: Whether this router should handle unmatched telemetry
+  - name: DefaultEnvironment
+    summary: Which environment handles unmatched telemetry
     description: |
-      When set to true, this router will handle all telemetry that doesn't match
-      any other router's environment name. Only one Router in a workflow should have
-      this set to true.
-    type: bool
-    default: false
-    advanced: true
+      The name of the environment that should handle telemetry that doesn't match
+      any of the defined environments. This is used for the OTel routing connector's
+      default_pipelines and for Refinery's __default__ sampler. Must be one of the
+      environments defined in the Environments list.
+    type: string
+    validations:
+      - noblanks
+    advanced: false
 templates:
   - kind: collector_config
     name: router_connector
@@ -86,21 +90,61 @@ templates:
       collectorComponentName: routing
     data:
       # Each signal type gets its own routing connector instance (routing/logs, routing/traces, routing/metrics)
-      # For default router, set default_pipelines (optional)
+      # Set default_pipelines for the DefaultEnvironment if specified
       - key: "routing/{{ .SignalType }}.default_pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
-        suppress_if: "{{ not .Values.IsDefault }}"
-      # All routers add entries to the routing table for their signal type
-      # Use 'condition' with OTTL expression, evaluated in 'resource' context
-      - key: "routing/{{ .SignalType }}.table_{{ .ComponentName }}[0].context"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.DefaultEnvironment)) }}"
+        suppress_if: "{{ not .Values.DefaultEnvironment }}"
+      # Generate table entries for environments (hard-coded for now, supports up to 5 environments)
+      # Skip the default environment since it's handled by default_pipelines
+      # TODO: Make this more dynamic
+      - key: "routing/{{ .SignalType }}.table_env0[0].context"
         value: "resource"
-      - key: "routing/{{ .SignalType }}.table_{{ .ComponentName }}[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
-      - key: "routing/{{ .SignalType }}.table_{{ .ComponentName }}[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
+        suppress_if: "{{ or (not (index .HProps.Environments 0)) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env0[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 0 }}\""
+        suppress_if: "{{ or (not (index .HProps.Environments 0)) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env0[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 0))) }}"
+        suppress_if: "{{ or (not (index .HProps.Environments 0)) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env1[0].context"
+        value: "resource"
+        suppress_if: "{{ or (not (index .HProps.Environments 1)) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env1[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 1 }}\""
+        suppress_if: "{{ or (not (index .HProps.Environments 1)) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env1[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 1))) }}"
+        suppress_if: "{{ or (not (index .HProps.Environments 1)) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env2[0].context"
+        value: "resource"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env2[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 2 }}\""
+        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env2[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 2))) }}"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env3[0].context"
+        value: "resource"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env3[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 3 }}\""
+        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env3[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 3))) }}"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env4[0].context"
+        value: "resource"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env4[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 4 }}\""
+        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
+      - key: "routing/{{ .SignalType }}.table_env4[0].pipelines"
+        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 4))) }}"
+        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
   - kind: refinery_rules
-    name: router_environment
+    name: router_default_env
     format: rules
     meta:
-      env: "{{ .Values.EnvironmentName }}"
+      default_env: "{{ .Values.DefaultEnvironment }}"
       sampler: unknown

@@ -68,11 +68,12 @@ func RMTFromStyle(style string) (RulesMergeType, error) {
 // the type of component that created the object so that Merge can be done
 // correctly; objects ready for rendering will have a compType of Output.
 type RulesConfig struct {
-	Version  int                         `yaml:"RulesVersion,omitempty"`
-	Samplers map[string]*V2SamplerChoice `yaml:"Samplers,omitempty"`
-	compType RulesMergeType              `yaml:"-"`
-	meta     map[string]string           `yaml:"-"`
-	kvs      map[string]any              `yaml:"-"`
+	Version        int                         `yaml:"RulesVersion,omitempty"`
+	Samplers       map[string]*V2SamplerChoice `yaml:"Samplers,omitempty"`
+	compType       RulesMergeType              `yaml:"-"`
+	meta           map[string]string           `yaml:"-"`
+	kvs            map[string]any              `yaml:"-"`
+	defaultEnv     string                      `yaml:"-"` // The environment to use for __default__
 }
 
 // keys used to index the metadata map in RulesConfig
@@ -91,6 +92,10 @@ func NewRulesConfig(rmt RulesMergeType, meta map[string]string, kvs map[string]a
 		meta:     meta,
 		kvs:      kvs,
 	}
+}
+
+func (rc *RulesConfig) SetDefaultEnv(env string) {
+	rc.defaultEnv = env
 }
 
 func (rc *RulesConfig) RenderToMap(m map[string]any) map[string]any {
@@ -138,6 +143,12 @@ func (rc *RulesConfig) maybePromoteSingleRuleSampler() {
 
 func (rc *RulesConfig) RenderYAML() ([]byte, error) {
 	rc.maybePromoteSingleRuleSampler()
+
+	// If a default environment is specified, create __default__ sampler pointing to it
+	if rc.defaultEnv != "" && rc.Samplers[rc.defaultEnv] != nil {
+		rc.Samplers["__default__"] = rc.Samplers[rc.defaultEnv]
+	}
+
 	data, err := y.Marshal(rc)
 	if err != nil {
 		return nil, err
@@ -272,8 +283,9 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		switch otherRC.compType {
 		case StartSampling:
 			// this is what happens at the start of a pipeline
-			// Preserve the existing environment if already set (e.g., from a Router component)
+			// Preserve the existing environment and default_env if already set (e.g., from a Router component)
 			existingEnv := rc.meta[MetaEnv]
+			existingDefaultEnv := rc.defaultEnv
 			rc.Version = otherRC.Version
 			rc.compType = otherRC.compType
 			rc.meta = otherRC.meta
@@ -281,6 +293,10 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			// Restore the environment if it was set and the new one is __default__
 			if existingEnv != "" && existingEnv != "__default__" && rc.meta[MetaEnv] == "__default__" {
 				rc.meta[MetaEnv] = existingEnv
+			}
+			// Preserve the default environment setting from the Router
+			if existingDefaultEnv != "" {
+				rc.defaultEnv = existingDefaultEnv
 			}
 		case Condition:
 			// We know the pipeline_index (ruleIndex) is in rc.meta.
@@ -381,6 +397,11 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			}
 			rc.Samplers[rc.meta[MetaEnv]] = sampler
 		case Output:
+			// When merging two Output configs, capture default_env metadata if present
+			if defaultEnv, ok := otherRC.meta["default_env"]; ok && defaultEnv != "" {
+				rc.defaultEnv = defaultEnv
+			}
+
 			// if they have the same environment, and both are rules-based, we
 			// add to the rules slice. if they have different environments, we
 			// add to the Samplers map.

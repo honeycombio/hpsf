@@ -341,7 +341,7 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 				}
 
 				// For Start Sampling components, check if there's a Router component that routes to it
-				// by examining the HPSF connections
+				// by examining the HPSF connections and determine which environment this sequencer handles
 				if t.Style == "startsampling" {
 					if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
 						// Find connections that lead to this SamplingSequencer
@@ -350,14 +350,32 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 								// Find the source component
 								for _, comp := range hpsfDoc.Components {
 									if comp.Name == conn.Source.Component && comp.Kind == "Router" {
-										envProp := comp.GetProperty("EnvironmentName")
-										if envProp != nil && envProp.Value != nil {
-											// Override the template's env metadata with the Router's EnvironmentName
-											if envStr, ok := envProp.Value.(string); ok && envStr != "" {
-												rt.env = envStr
-												break
+										// Get the Environments array from the Router
+										envsProp := comp.GetProperty("Environments")
+										if envsProp != nil && envsProp.Value != nil {
+											if envs, ok := envsProp.Value.([]any); ok {
+												// Try to match this SamplingSequencer to an environment by name
+												// Look for environment names in the component name (case-insensitive)
+												compNameLower := strings.ToLower(t.hpsf.Name)
+												for _, e := range envs {
+													if envStr, ok := e.(string); ok {
+														if strings.Contains(compNameLower, strings.ToLower(envStr)) {
+															rt.env = envStr
+															break
+														}
+													}
+												}
 											}
 										}
+
+										// Also get the DefaultEnvironment and store it in userdata for later use
+										defaultEnvProp := comp.GetProperty("DefaultEnvironment")
+										if defaultEnvProp != nil && defaultEnvProp.Value != nil {
+											if defaultEnv, ok := defaultEnvProp.Value.(string); ok && defaultEnv != "" {
+												userdata["router_default_env"] = defaultEnv
+											}
+										}
+										break
 									}
 								}
 							}

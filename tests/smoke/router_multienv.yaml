@@ -3,38 +3,50 @@ components:
   - name: Receive OTel
     kind: OTelReceiver
 
-  # Routers for staging and production environments
-  - name: router_staging
+  # Router for dev, staging, and production environments
+  - name: router
     kind: Router
     properties:
-      - name: EnvironmentName
-        value: staging
+      - name: Environments
+        value: [dev, staging, production]
       - name: RoutingAttribute
         value: deployment.environment
-
-  - name: router_production
-    kind: Router
-    properties:
-      - name: EnvironmentName
-        value: production
-      - name: RoutingAttribute
-        value: deployment.environment
+      - name: DefaultEnvironment
+        value: dev
 
   # Sampling sequencers for each environment (traces and logs)
+  - name: Start Sampling Dev
+    kind: SamplingSequencer
+
   - name: Start Sampling Staging
     kind: SamplingSequencer
 
   - name: Start Sampling Production
     kind: SamplingSequencer
 
-  # Keep all samplers for each environment
-  - name: Keep All Staging
-    kind: KeepAllSampler
+  # Samplers for each environment with different sample rates
+  - name: Sampler Dev
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 1
 
-  - name: Keep All Production
-    kind: KeepAllSampler
+  - name: Sampler Staging
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 10
+
+  - name: Sampler Production
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 100
 
   # Exporters for each environment
+  - name: exporter_dev
+    kind: HoneycombExporter
+
   - name: exporter_staging
     kind: HoneycombExporter
 
@@ -42,22 +54,14 @@ components:
     kind: HoneycombExporter
 
 connections:
-  # Receiver to routers for all signals
+  # Receiver to router for all signals
   # Traces
   - source:
       component: Receive OTel
       port: Traces
       type: OTelTraces
     destination:
-      component: router_staging
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Receive OTel
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: router_production
+      component: router
       port: Traces
       type: OTelTraces
 
@@ -67,15 +71,7 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: router_staging
-      port: Logs
-      type: OTelLogs
-  - source:
-      component: Receive OTel
-      port: Logs
-      type: OTelLogs
-    destination:
-      component: router_production
+      component: router
       port: Logs
       type: OTelLogs
 
@@ -85,21 +81,61 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: router_staging
+      component: router
       port: Metrics
       type: OTelMetrics
+
+  # Dev environment: traces and logs go through sampling
   - source:
-      component: Receive OTel
+      component: router
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling Dev
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: router
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Start Sampling Dev
+      port: Logs
+      type: OTelLogs
+
+  # Dev: sampling to sampler
+  - source:
+      component: Start Sampling Dev
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Sampler Dev
+      port: Sample
+      type: SampleData
+
+  # Dev: sampler output to exporter
+  - source:
+      component: Sampler Dev
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: exporter_dev
+      port: Events
+      type: HoneycombEvents
+
+  # Dev: metrics bypass sampling and go directly to exporter
+  - source:
+      component: router
       port: Metrics
       type: OTelMetrics
     destination:
-      component: router_production
+      component: exporter_dev
       port: Metrics
       type: OTelMetrics
 
   # Staging environment: traces and logs go through sampling
   - source:
-      component: router_staging
+      component: router
       port: Traces
       type: OTelTraces
     destination:
@@ -107,7 +143,7 @@ connections:
       port: Traces
       type: OTelTraces
   - source:
-      component: router_staging
+      component: router
       port: Logs
       type: OTelLogs
     destination:
@@ -115,19 +151,19 @@ connections:
       port: Logs
       type: OTelLogs
 
-  # Staging: sampling to keep all sampler
+  # Staging: sampling to sampler
   - source:
       component: Start Sampling Staging
       port: Rule 1
       type: SampleData
     destination:
-      component: Keep All Staging
+      component: Sampler Staging
       port: Sample
       type: SampleData
 
   # Staging: sampler output to exporter
   - source:
-      component: Keep All Staging
+      component: Sampler Staging
       port: Events
       type: HoneycombEvents
     destination:
@@ -137,7 +173,7 @@ connections:
 
   # Staging: metrics bypass sampling and go directly to exporter
   - source:
-      component: router_staging
+      component: router
       port: Metrics
       type: OTelMetrics
     destination:
@@ -147,7 +183,7 @@ connections:
 
   # Production environment: traces and logs go through sampling
   - source:
-      component: router_production
+      component: router
       port: Traces
       type: OTelTraces
     destination:
@@ -155,7 +191,7 @@ connections:
       port: Traces
       type: OTelTraces
   - source:
-      component: router_production
+      component: router
       port: Logs
       type: OTelLogs
     destination:
@@ -163,19 +199,19 @@ connections:
       port: Logs
       type: OTelLogs
 
-  # Production: sampling to keep all sampler
+  # Production: sampling to sampler
   - source:
       component: Start Sampling Production
       port: Rule 1
       type: SampleData
     destination:
-      component: Keep All Production
+      component: Sampler Production
       port: Sample
       type: SampleData
 
   # Production: sampler output to exporter
   - source:
-      component: Keep All Production
+      component: Sampler Production
       port: Events
       type: HoneycombEvents
     destination:
@@ -185,7 +221,7 @@ connections:
 
   # Production: metrics bypass sampling and go directly to exporter
   - source:
-      component: router_production
+      component: router
       port: Metrics
       type: OTelMetrics
     destination:
@@ -199,35 +235,43 @@ layout:
       position:
         x: -800
         y: 0
-    - name: router_staging
+    - name: router
       position:
         x: -500
-        y: -200
-    - name: router_production
+        y: 0
+    - name: Start Sampling Dev
       position:
-        x: -500
-        y: 200
+        x: -200
+        y: -400
     - name: Start Sampling Staging
       position:
         x: -200
-        y: -200
+        y: 0
     - name: Start Sampling Production
       position:
         x: -200
-        y: 200
-    - name: Keep All Staging
+        y: 400
+    - name: Sampler Dev
       position:
         x: 100
-        y: -200
-    - name: Keep All Production
+        y: -400
+    - name: Sampler Staging
       position:
         x: 100
-        y: 200
+        y: 0
+    - name: Sampler Production
+      position:
+        x: 100
+        y: 400
+    - name: exporter_dev
+      position:
+        x: 400
+        y: -400
     - name: exporter_staging
       position:
         x: 400
-        y: -200
+        y: 0
     - name: exporter_production
       position:
         x: 400
-        y: 200
+        y: 400
