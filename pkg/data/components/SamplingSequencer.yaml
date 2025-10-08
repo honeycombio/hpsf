@@ -77,6 +77,15 @@ ports:
     type: SampleData
     index: 12
 properties:
+  - name: EnvironmentName
+    summary: The environment name this component serves (e.g., dev, staging, production).
+    description: |
+      The environment name this component serves. When set, the API key environment variable
+      will be constructed as HTP_EXPORTER_APIKEY_<ENVIRONMENT> (e.g., HTP_EXPORTER_APIKEY_DEV).
+      The environment name will be converted to uppercase.
+      If not set, defaults to using HTP_EXPORTER_APIKEY.
+    type: string
+    advanced: false
   - name: Host
     summary: The hostname or IP address on which to listen.
     description: |
@@ -160,6 +169,8 @@ templates:
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ not .Values.UseTLS | encodeAsBool }}"
         suppress_if: "{{ .Values.UseTLS }}"
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
+        value: "{{ if .Values.EnvironmentName }}${HTP_EXPORTER_APIKEY_{{ .Values.EnvironmentName | upper }}}{{ else }}${HTP_EXPORTER_APIKEY}{{ end }}"
       - key: "{{ .ComponentName }}.headers"
         value: "{{ .HProps.Headers | encodeAsMap }}"
         suppress_if: "{{ not .HProps.Headers }}"
