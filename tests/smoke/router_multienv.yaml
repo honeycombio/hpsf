@@ -17,21 +17,12 @@ components:
   # Sampling sequencers for each environment (traces and logs)
   - name: Start Sampling Dev
     kind: SamplingSequencer
-    properties:
-      - name: EnvironmentName
-        value: dev
 
   - name: Start Sampling Staging
     kind: SamplingSequencer
-    properties:
-      - name: EnvironmentName
-        value: staging
 
   - name: Start Sampling Production
     kind: SamplingSequencer
-    properties:
-      - name: EnvironmentName
-        value: production
 
   # Samplers for each environment with different sample rates
   - name: Sampler Dev

@@ -984,6 +984,20 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 					targetName := signalType + "/" + envName
 					if expectedPipelines[targetName] {
 						pipelineRenames[pipelineName] = targetName
+
+						// Inject environment-specific API key header into otlphttp exporters
+						exportersSection, hasExportersSection := cc.Sections["exporters"]
+						if hasExportersSection {
+							for _, exp := range exportersFiltered {
+								// Check if this is an otlphttp exporter that needs the API key header
+								headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
+								if _, hasHeader := exportersSection[headerKey]; !hasHeader {
+									// Only inject if the header doesn't already exist
+									envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+									exportersSection[headerKey] = envVarName
+								}
+							}
+						}
 					}
 				} else {
 					// Fall back to finding any unused expected pipeline name for this signal type
