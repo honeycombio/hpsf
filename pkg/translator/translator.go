@@ -951,6 +951,42 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 			// Case 2: Output pipeline - has routing connector, no receivers, has exporters → move connector to receivers
 			serviceSection[receiversKey] = connectors
 			delete(serviceSection, connectorsKey)
+
+			// Try to infer environment and inject API key headers
+			if signalType != "" {
+				var envName string
+				for _, exp := range exportersFiltered {
+					expLower := strings.ToLower(exp)
+					for expectedName := range expectedPipelines {
+						if strings.HasPrefix(expectedName, signalType+"/") {
+							envPart := strings.TrimPrefix(expectedName, signalType+"/")
+							if strings.Contains(expLower, strings.ToLower(envPart)) {
+								envName = envPart
+								break
+							}
+						}
+					}
+					if envName != "" {
+						break
+					}
+				}
+
+				if envName != "" {
+					// Inject environment-specific API key header into otlphttp exporters
+					exportersSection, hasExportersSection := cc.Sections["exporters"]
+					if hasExportersSection {
+						for _, exp := range exportersFiltered {
+							headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
+							existingValue, hasHeader := exportersSection[headerKey]
+							// Inject if header doesn't exist or if it's set to the default value
+							if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+								envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+								exportersSection[headerKey] = envVarName
+							}
+						}
+					}
+				}
+			}
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
 			// Use signal-type-specific routing connector name
@@ -989,10 +1025,10 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 						exportersSection, hasExportersSection := cc.Sections["exporters"]
 						if hasExportersSection {
 							for _, exp := range exportersFiltered {
-								// Check if this is an otlphttp exporter that needs the API key header
 								headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
-								if _, hasHeader := exportersSection[headerKey]; !hasHeader {
-									// Only inject if the header doesn't already exist
+								existingValue, hasHeader := exportersSection[headerKey]
+								// Inject if header doesn't exist or if it's set to the default value
+								if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
 									envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
 									exportersSection[headerKey] = envVarName
 								}
