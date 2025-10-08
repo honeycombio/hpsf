@@ -9,20 +9,19 @@ processors:
     usage: {}
 connectors:
     routing:
-        default_pipelines:
-            - metrics/production
-            - traces/production
-            - logs/production
         table:
-            - pipelines:
+            - condition: attributes["deployment.environment"] == "production"
+              context: resource
+              pipelines:
                 - logs/production
-              statement: route() where attributes["deployment.environment"] == "production"
-            - pipelines:
+            - condition: attributes["deployment.environment"] == "production"
+              context: resource
+              pipelines:
                 - metrics/production
-              statement: route() where attributes["deployment.environment"] == "production"
-            - pipelines:
+            - condition: attributes["deployment.environment"] == "production"
+              context: resource
+              pipelines:
                 - traces/production
-              statement: route() where attributes["deployment.environment"] == "production"
 exporters:
     otlphttp/exporter:
         endpoint: https://api.honeycomb.io:443

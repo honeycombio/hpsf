@@ -110,6 +110,15 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 
 	// Create merged table entries
 	for i, entry := range allTableEntries {
+		// Copy all fields from the entry to the merged table
+		if context, ok := entry["context"].(string); ok {
+			key := fmt.Sprintf("routing.table[%d].context", i)
+			connectorSection[key] = context
+		}
+		if condition, ok := entry["condition"].(string); ok {
+			key := fmt.Sprintf("routing.table[%d].condition", i)
+			connectorSection[key] = condition
+		}
 		if statement, ok := entry["statement"].(string); ok {
 			key := fmt.Sprintf("routing.table[%d].statement", i)
 			connectorSection[key] = statement

@@ -92,7 +92,10 @@ templates:
         suppress_if: "{{ not .Values.IsDefault }}"
       # All routers (including default) add an entry to the routing table
       # Use component name AND signal type to create unique table entries that will be merged
-      - key: "routing.table_{{ .SignalType }}_{{ .ComponentName }}[0].statement"
-        value: "route() where attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
+      # Use 'condition' with OTTL expression (not 'statement' with route() wrapper)
+      - key: "routing.table_{{ .SignalType }}_{{ .ComponentName }}[0].context"
+        value: "resource"
+      - key: "routing.table_{{ .SignalType }}_{{ .ComponentName }}[0].condition"
+        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
       - key: "routing.table_{{ .SignalType }}_{{ .ComponentName }}[0].pipelines"
         value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
