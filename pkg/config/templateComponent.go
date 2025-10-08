@@ -339,11 +339,37 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 					return nil, fmt.Errorf("error %w getting RulesComponentType from style %s for %s",
 						err, t.Style, t.Kind)
 				}
-				tmpl, err := t.generateRulesConfig(rt, rmt, index, userdata)
+
+				// For Start Sampling components, check if there's a Router component that routes to it
+				// by examining the HPSF connections
+				if t.Style == "startsampling" {
+					if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
+						// Find connections that lead to this SamplingSequencer
+						for _, conn := range hpsfDoc.Connections {
+							if conn.Destination.Component == t.hpsf.Name {
+								// Find the source component
+								for _, comp := range hpsfDoc.Components {
+									if comp.Name == conn.Source.Component && comp.Kind == "Router" {
+										envProp := comp.GetProperty("EnvironmentName")
+										if envProp != nil && envProp.Value != nil {
+											// Override the template's env metadata with the Router's EnvironmentName
+											if envStr, ok := envProp.Value.(string); ok && envStr != "" {
+												rt.env = envStr
+												break
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				cfg, err := t.generateRulesConfig(rt, rmt, index, userdata)
 				if err != nil {
 					return nil, err
 				}
-				generatedTemplates = append(generatedTemplates, tmpl)
+				generatedTemplates = append(generatedTemplates, cfg)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}

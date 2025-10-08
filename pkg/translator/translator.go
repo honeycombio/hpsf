@@ -1074,6 +1074,12 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 
+	// Add the HPSF document to userdata so components can access it during generation
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+	userdata["hpsf"] = h
+
 	// Separate paths into those before and after routers
 	// We'll build intake pipelines (receiver → router) and output pipelines (router → exporter)
 	intakePaths := make([]hpsf.PathWithConnections, 0)
@@ -1229,6 +1235,12 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	// Add the HPSF document to userdata so components can access it during generation
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+	userdata["hpsf"] = h
+
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components

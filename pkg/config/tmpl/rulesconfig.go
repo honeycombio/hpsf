@@ -272,10 +272,16 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 		switch otherRC.compType {
 		case StartSampling:
 			// this is what happens at the start of a pipeline
+			// Preserve the existing environment if already set (e.g., from a Router component)
+			existingEnv := rc.meta[MetaEnv]
 			rc.Version = otherRC.Version
 			rc.compType = otherRC.compType
 			rc.meta = otherRC.meta
 			rc.kvs = otherRC.kvs
+			// Restore the environment if it was set and the new one is __default__
+			if existingEnv != "" && existingEnv != "__default__" && rc.meta[MetaEnv] == "__default__" {
+				rc.meta[MetaEnv] = existingEnv
+			}
 		case Condition:
 			// We know the pipeline_index (ruleIndex) is in rc.meta.
 			// We need to figure out the condition index by looking at the RulesBasedSampler.Rules.Conditions

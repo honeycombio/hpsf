@@ -98,3 +98,9 @@ templates:
         value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ .Values.EnvironmentName }}\""
       - key: "routing/{{ .SignalType }}.table_{{ .ComponentName }}[0].pipelines"
         value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.EnvironmentName)) }}"
+  - kind: refinery_rules
+    name: router_environment
+    format: rules
+    meta:
+      env: "{{ .Values.EnvironmentName }}"
+      sampler: unknown
