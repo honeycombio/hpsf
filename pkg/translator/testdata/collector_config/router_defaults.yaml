@@ -8,16 +8,26 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing:
+    routing/logs:
+        default_pipelines:
+            - logs/production
         table:
             - condition: attributes["deployment.environment"] == "production"
               context: resource
               pipelines:
                 - logs/production
+    routing/metrics:
+        default_pipelines:
+            - metrics/production
+        table:
             - condition: attributes["deployment.environment"] == "production"
               context: resource
               pipelines:
                 - metrics/production
+    routing/traces:
+        default_pipelines:
+            - traces/production
+        table:
             - condition: attributes["deployment.environment"] == "production"
               context: resource
               pipelines:
@@ -44,24 +54,24 @@ service:
         logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing]
+            exporters: [routing/logs]
         logs/production:
-            receivers: [routing]
+            receivers: [routing/logs]
             processors: [usage]
             exporters: [otlphttp/exporter]
         metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing]
+            exporters: [routing/metrics]
         metrics/production:
-            receivers: [routing]
+            receivers: [routing/metrics]
             processors: [usage]
             exporters: [otlphttp/exporter]
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing]
+            exporters: [routing/traces]
         traces/production:
-            receivers: [routing]
+            receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter]

@@ -8,7 +8,9 @@ receivers:
 processors:
     usage: {}
 connectors:
-    routing:
+    routing/traces:
+        default_pipelines:
+            - traces/development
         table:
             - condition: attributes["deployment.environment"] == "development"
               context: resource
@@ -68,18 +70,18 @@ service:
     extensions: [honeycomb]
     pipelines:
         traces/development:
-            receivers: [routing]
+            receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter_development]
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing]
+            exporters: [routing/traces]
         traces/production:
-            receivers: [routing]
+            receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter_production]
         traces/staging:
-            receivers: [routing]
+            receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter_staging]

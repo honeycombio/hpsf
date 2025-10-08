@@ -20,112 +20,150 @@ import (
 
 const LatestVersion = "latest"
 
-// mergeRoutingConnectors finds routing connector entries and merges them into a single routing connector
+// mergeRoutingConnectors finds routing connector entries and merges them per signal type
+// Creates separate routing connectors: routing/logs, routing/traces, routing/metrics
 func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 	connectorSection, ok := cc.Sections["connectors"]
 	if !ok {
 		return nil // no connectors, nothing to do
 	}
 
-	// Collect default_pipelines and table entries
-	// Multiple Router components generate table_componentname[0] entries that need to be merged
-	var defaultPipelines []string
-	tableEntriesByComponent := make(map[string][]map[string]any) // component name -> list of table entries
+	// Track entries by signal type and component: routing/logs, routing/traces, routing/metrics
+	// signalType -> component -> entries
+	tableEntriesBySignalType := make(map[string]map[string][]map[string]any)
+	defaultPipelinesBySignalType := make(map[string][]string) // signalType -> pipelines
 
 	for key, value := range connectorSection {
-		// Check for default_pipelines_{signaltype}
-		if strings.HasPrefix(key, "routing.default_pipelines_") {
-			if pipelines, ok := value.([]string); ok {
-				defaultPipelines = append(defaultPipelines, pipelines...)
+		// Check for routing/{signaltype}.default_pipelines
+		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".default_pipelines") {
+			// Format: routing/logs.default_pipelines
+			parts := strings.SplitN(key, "/", 2)
+			if len(parts) == 2 {
+				signalTypeWithKey := parts[1] // e.g. "logs.default_pipelines"
+				signalType := strings.SplitN(signalTypeWithKey, ".", 2)[0]
+				if pipelines, ok := value.([]string); ok {
+					defaultPipelinesBySignalType[signalType] = append(defaultPipelinesBySignalType[signalType], pipelines...)
+				}
 			}
 		}
 
-		// Check for table_{signaltype}_{component}[N] entries
-		// Format: routing.table_traces_router_staging[0].statement
-		if strings.Contains(key, ".table_") && strings.Contains(key, "[") {
-			// Extract signaltype_component from table_signaltype_component[N]
-			after := strings.SplitN(key, ".table_", 2)[1]
-			bracketPos := strings.Index(after, "[")
+		// Check for routing/{signaltype}.table_{component}[N].{field} entries
+		// Format: routing/logs.table_router_staging[0].condition
+		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table_") && strings.Contains(key, "[") {
+			// Extract signal type from routing/{signaltype}.table_...
+			parts := strings.SplitN(key, "/", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			afterSlash := parts[1] // e.g. "logs.table_router_staging[0].condition"
+
+			// Extract signal type (before first dot)
+			dotPos := strings.Index(afterSlash, ".")
+			if dotPos < 0 {
+				continue
+			}
+			signalType := afterSlash[:dotPos] // e.g. "logs"
+
+			// Extract component name from .table_{component}[N]
+			after := strings.SplitN(afterSlash, ".table_", 2)
+			if len(after) != 2 {
+				continue
+			}
+			afterTablePrefix := after[1] // e.g. "router_staging[0].condition"
+
+			bracketPos := strings.Index(afterTablePrefix, "[")
 			if bracketPos < 0 {
 				continue
 			}
-			// signaltype_component includes both signal type and component name
-			// We use this as the unique key to keep entries separate
-			signalTypeAndComponent := after[:bracketPos]
+			componentName := afterTablePrefix[:bracketPos] // e.g. "router_staging"
 
 			// Extract index
 			indexStart := bracketPos + 1
-			closeBracket := strings.Index(after[indexStart:], "]")
+			closeBracket := strings.Index(afterTablePrefix[indexStart:], "]")
 			if closeBracket < 0 {
 				continue
 			}
-			idx := after[indexStart : indexStart+closeBracket]
-
-			// Get or create entry for this signal type + component and index
-			if tableEntriesByComponent[signalTypeAndComponent] == nil {
-				tableEntriesByComponent[signalTypeAndComponent] = make([]map[string]any, 0)
+			idx := afterTablePrefix[indexStart : indexStart+closeBracket]
+			entryIdx, err := strconv.Atoi(idx)
+			if err != nil {
+				continue
 			}
 
-			// Find or create the entry for this index
-			var entry map[string]any
-			entryIdx, _ := strconv.Atoi(idx)
-			for len(tableEntriesByComponent[signalTypeAndComponent]) <= entryIdx {
-				tableEntriesByComponent[signalTypeAndComponent] = append(tableEntriesByComponent[signalTypeAndComponent], make(map[string]any))
+			// Extract field name (context, condition, pipelines)
+			fieldStart := indexStart + closeBracket + 2 // +2 to skip "]."
+			if fieldStart >= len(afterTablePrefix) {
+				continue
 			}
-			entry = tableEntriesByComponent[signalTypeAndComponent][entryIdx]
+			fieldName := afterTablePrefix[fieldStart:]
 
-			// Extract the field name (statement or pipelines)
-			suffix := after[indexStart+closeBracket+2:] // +2 to skip "]."
-			entry[suffix] = value
+			// Initialize nested maps if needed
+			if tableEntriesBySignalType[signalType] == nil {
+				tableEntriesBySignalType[signalType] = make(map[string][]map[string]any)
+			}
+			if tableEntriesBySignalType[signalType][componentName] == nil {
+				tableEntriesBySignalType[signalType][componentName] = make([]map[string]any, 0)
+			}
+
+			// Ensure we have enough entries for this index
+			for len(tableEntriesBySignalType[signalType][componentName]) <= entryIdx {
+				tableEntriesBySignalType[signalType][componentName] = append(
+					tableEntriesBySignalType[signalType][componentName],
+					make(map[string]any),
+				)
+			}
+
+			// Store the field in the entry
+			tableEntriesBySignalType[signalType][componentName][entryIdx][fieldName] = value
 		}
 	}
 
-	// Delete old table_* and default_pipelines_* keys
+	// Delete old routing/* keys
 	for key := range connectorSection {
-		if strings.Contains(key, ".table_") || strings.HasPrefix(key, "routing.default_pipelines_") {
+		if strings.HasPrefix(key, "routing/") {
 			delete(connectorSection, key)
 		}
 	}
 
-	// Don't set default_pipelines - it doesn't work correctly with multiple signal types
-	// Each signal type's routing connector instance would try to route to pipelines of other signal types
-	// which causes "missing consumer" errors. Instead, rely on explicit routing rules in the table.
-	// if len(defaultPipelines) > 0 {
-	// 	connectorSection["routing.default_pipelines"] = defaultPipelines
-	// }
-
-	// Merge all table entries into a single table
-	allTableEntries := make([]map[string]any, 0)
-	// Sort component names for deterministic output
-	componentNames := make([]string, 0, len(tableEntriesByComponent))
-	for componentName := range tableEntriesByComponent {
-		componentNames = append(componentNames, componentName)
-	}
-	sort.Strings(componentNames)
-
-	for _, componentName := range componentNames {
-		entries := tableEntriesByComponent[componentName]
-		allTableEntries = append(allTableEntries, entries...)
-	}
-
-	// Create merged table entries
-	for i, entry := range allTableEntries {
-		// Copy all fields from the entry to the merged table
-		if context, ok := entry["context"].(string); ok {
-			key := fmt.Sprintf("routing.table[%d].context", i)
-			connectorSection[key] = context
+	// For each signal type, merge table entries and create routing/{signaltype} connector
+	for signalType, componentEntries := range tableEntriesBySignalType {
+		// Sort component names for deterministic output
+		componentNames := make([]string, 0, len(componentEntries))
+		for componentName := range componentEntries {
+			componentNames = append(componentNames, componentName)
 		}
-		if condition, ok := entry["condition"].(string); ok {
-			key := fmt.Sprintf("routing.table[%d].condition", i)
-			connectorSection[key] = condition
+		sort.Strings(componentNames)
+
+		// Merge all table entries for this signal type
+		allTableEntries := make([]map[string]any, 0)
+		for _, componentName := range componentNames {
+			entries := componentEntries[componentName]
+			allTableEntries = append(allTableEntries, entries...)
 		}
-		if statement, ok := entry["statement"].(string); ok {
-			key := fmt.Sprintf("routing.table[%d].statement", i)
-			connectorSection[key] = statement
+
+		// Create merged table entries for routing/{signaltype}
+		for i, entry := range allTableEntries {
+			if context, ok := entry["context"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].context", signalType, i)
+				connectorSection[key] = context
+			}
+			if condition, ok := entry["condition"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].condition", signalType, i)
+				connectorSection[key] = condition
+			}
+			if statement, ok := entry["statement"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].statement", signalType, i)
+				connectorSection[key] = statement
+			}
+			if pipelines, ok := entry["pipelines"].([]string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].pipelines", signalType, i)
+				connectorSection[key] = pipelines
+			}
 		}
-		if pipelines, ok := entry["pipelines"].([]string); ok {
-			key := fmt.Sprintf("routing.table[%d].pipelines", i)
-			connectorSection[key] = pipelines
+
+		// Add default_pipelines if present for this signal type
+		if len(defaultPipelinesBySignalType[signalType]) > 0 {
+			key := fmt.Sprintf("routing/%s.default_pipelines", signalType)
+			connectorSection[key] = defaultPipelinesBySignalType[signalType]
 		}
 	}
 
@@ -710,41 +748,37 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 	// Build map of expected environment pipeline names from routing connector config
 	expectedPipelines := make(map[string]bool) // e.g., "traces/production", "logs/staging"
 
-	// Get default_pipelines
-	if defaultPipelines, ok := connectorSection["routing.default_pipelines"]; ok {
-		if pipelines, ok := defaultPipelines.([]any); ok {
-			for _, p := range pipelines {
-				if pName, ok := p.(string); ok {
+	// Get pipelines from routing/{signaltype} connectors
+	for key, value := range connectorSection {
+		// Check for routing/{signaltype}.default_pipelines
+		if strings.HasPrefix(key, "routing/") && strings.HasSuffix(key, ".default_pipelines") {
+			if pipelines, ok := value.([]any); ok {
+				for _, p := range pipelines {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelines, ok := value.([]string); ok {
+				for _, pName := range pipelines {
 					expectedPipelines[pName] = true
 				}
 			}
-		} else if pipelines, ok := defaultPipelines.([]string); ok {
-			for _, pName := range pipelines {
-				expectedPipelines[pName] = true
-			}
 		}
-	}
 
-	// Get pipelines from routing table
-	tableIdx := 0
-	for {
-		pipelinesKey := fmt.Sprintf("routing.table[%d].pipelines", tableIdx)
-		if pipelines, ok := connectorSection[pipelinesKey]; !ok {
-			break
-		} else {
-			if pipelineList, ok := pipelines.([]any); ok {
+		// Check for routing/{signaltype}.table[N].pipelines
+		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table[") && strings.HasSuffix(key, ".pipelines") {
+			if pipelineList, ok := value.([]any); ok {
 				for _, p := range pipelineList {
 					if pName, ok := p.(string); ok {
 						expectedPipelines[pName] = true
 					}
 				}
-			} else if pipelineList, ok := pipelines.([]string); ok {
+			} else if pipelineList, ok := value.([]string); ok {
 				for _, pName := range pipelineList {
 					expectedPipelines[pName] = true
 				}
 			}
 		}
-		tableIdx++
 	}
 
 	// First, collect all unique pipeline names
@@ -848,12 +882,23 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 			}
 		}
 
-		// Check if routing connector is in exporters (and normalize the name)
+		// Determine signal type from pipeline name
+		parts := strings.SplitN(pipelineName, "/", 2)
+		var signalType string
+		if len(parts) == 2 {
+			signalType = parts[0] // e.g., "traces", "logs", "metrics"
+		}
+
+		// Check if routing connector is in exporters (and normalize the name to routing/{signaltype})
 		var hasRoutingInExporters bool
 		for i, exp := range exportersFiltered {
 			if exp == "routing" || strings.HasPrefix(exp, "routing_") || strings.HasPrefix(exp, "routing/") {
-				// Normalize to "routing"
-				exportersFiltered[i] = "routing"
+				// Normalize to "routing/{signaltype}" if we know the signal type
+				if signalType != "" {
+					exportersFiltered[i] = "routing/" + signalType
+				} else {
+					exportersFiltered[i] = "routing"
+				}
 				hasRoutingInExporters = true
 			}
 		}
@@ -863,11 +908,16 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 
 		// Case 1: Intake pipeline - has receivers and routing connector, no other exporters
 		if hasRouting && len(receiversFiltered) > 0 && len(exportersFiltered) == 0 {
-			// Move connectors to exporters, normalizing routing connector names to "routing"
+			// Move connectors to exporters, normalizing routing connector names to "routing/{signaltype}"
 			normalizedConnectors := make([]string, len(connectorsList))
 			for i, conn := range connectorsList {
 				if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
-					normalizedConnectors[i] = "routing"
+					// Normalize to routing/{signaltype} if we know the signal type
+					if signalType != "" {
+						normalizedConnectors[i] = "routing/" + signalType
+					} else {
+						normalizedConnectors[i] = "routing"
+					}
 				} else {
 					normalizedConnectors[i] = conn
 				}
@@ -903,11 +953,9 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 			delete(serviceSection, connectorsKey)
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
-			// Use single routing connector name
-			parts := strings.SplitN(pipelineName, "/", 2)
-			if len(parts) == 2 {
-				signalType := parts[0]
-				routingConnectorName := "routing"
+			// Use signal-type-specific routing connector name
+			if signalType != "" {
+				routingConnectorName := "routing/" + signalType
 				serviceSection[receiversKey] = []string{routingConnectorName}
 
 				// Try to infer environment from exporter name
