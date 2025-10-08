@@ -7,31 +7,6 @@ receivers:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
     usage: {}
-connectors:
-    routing/logs:
-        default_pipelines:
-            - logs/production
-        table:
-            - condition: attributes["deployment.environment"] == "production"
-              context: resource
-              pipelines:
-                - logs/production
-    routing/metrics:
-        default_pipelines:
-            - metrics/production
-        table:
-            - condition: attributes["deployment.environment"] == "production"
-              context: resource
-              pipelines:
-                - metrics/production
-    routing/traces:
-        default_pipelines:
-            - traces/production
-        table:
-            - condition: attributes["deployment.environment"] == "production"
-              context: resource
-              pipelines:
-                - traces/production
 exporters:
     otlphttp/exporter:
         endpoint: https://api.honeycomb.io:443
@@ -51,27 +26,27 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
+        logs/a13-2a5:
+            receivers: [routing/logs]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
         logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/logs]
-        logs/production:
-            receivers: [routing/logs]
+        metrics/8cd-301:
+            receivers: [routing/metrics]
             processors: [usage]
             exporters: [otlphttp/exporter]
         metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/metrics]
-        metrics/production:
-            receivers: [routing/metrics]
+        traces/a03-0e4:
+            receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter]
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/traces]
-        traces/production:
-            receivers: [routing/traces]
-            processors: [usage]
-            exporters: [otlphttp/exporter]

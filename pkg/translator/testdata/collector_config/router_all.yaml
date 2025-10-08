@@ -12,18 +12,14 @@ connectors:
         default_pipelines:
             - traces/development
         table:
-            - condition: attributes["deployment.environment"] == "development"
-              context: resource
-              pipelines:
-                - traces/development
-            - condition: attributes["deployment.environment"] == "production"
-              context: resource
-              pipelines:
-                - traces/production
             - condition: attributes["deployment.environment"] == "staging"
               context: resource
               pipelines:
                 - traces/staging
+            - condition: attributes["deployment.environment"] == "production"
+              context: resource
+              pipelines:
+                - traces/production
 exporters:
     otlphttp/exporter_development:
         endpoint: https://api.honeycomb.io:443

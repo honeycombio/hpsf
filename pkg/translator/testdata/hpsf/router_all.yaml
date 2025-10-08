@@ -1,33 +1,15 @@
 components:
   - name: receiver
     kind: OTelReceiver
-  - name: router_production
+  - name: router
     kind: Router
     properties:
-      - name: EnvironmentName
-        value: production
+      - name: Environments
+        value: [development, staging, production]
       - name: RoutingAttribute
         value: deployment.environment
-      - name: IsDefault
-        value: false
-  - name: router_staging
-    kind: Router
-    properties:
-      - name: EnvironmentName
-        value: staging
-      - name: RoutingAttribute
-        value: deployment.environment
-      - name: IsDefault
-        value: false
-  - name: router_default
-    kind: Router
-    properties:
-      - name: EnvironmentName
+      - name: DefaultEnvironment
         value: development
-      - name: RoutingAttribute
-        value: deployment.environment
-      - name: IsDefault
-        value: true
   - name: exporter_production
     kind: HoneycombExporter
   - name: exporter_staging
@@ -35,52 +17,34 @@ components:
   - name: exporter_development
     kind: HoneycombExporter
 connections:
-  # Receiver to routers
+  # Receiver to router
   - source:
       component: receiver
       port: Traces
       type: OTelTraces
     destination:
-      component: router_production
+      component: router
       port: Traces
       type: OTelTraces
+  # Router to exporters (routing happens internally based on environment attribute)
   - source:
-      component: receiver
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: router_staging
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: receiver
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: router_default
-      port: Traces
-      type: OTelTraces
-  # Production router to exporter
-  - source:
-      component: router_production
+      component: router
       port: Traces
       type: OTelTraces
     destination:
       component: exporter_production
       port: Traces
       type: OTelTraces
-  # Staging router to exporter
   - source:
-      component: router_staging
+      component: router
       port: Traces
       type: OTelTraces
     destination:
       component: exporter_staging
       port: Traces
       type: OTelTraces
-  # Default router to exporter
   - source:
-      component: router_default
+      component: router
       port: Traces
       type: OTelTraces
     destination:

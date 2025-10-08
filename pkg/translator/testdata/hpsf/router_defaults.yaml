@@ -4,10 +4,12 @@ components:
   - name: router
     kind: Router
     properties:
-      - name: EnvironmentName
+      - name: Environments
+        value: [production]
+      - name: RoutingAttribute
+        value: deployment.environment
+      - name: DefaultEnvironment
         value: production
-      - name: IsDefault
-        value: true
   - name: exporter
     kind: HoneycombExporter
 connections:
