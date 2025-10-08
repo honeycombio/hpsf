@@ -73,7 +73,7 @@ service:
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing/router_staging]
+            exporters: [routing]
         traces/production:
             receivers: [routing]
             processors: [usage]

@@ -33,23 +33,25 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 	tableEntriesByComponent := make(map[string][]map[string]any) // component name -> list of table entries
 
 	for key, value := range connectorSection {
-		// Check for default_pipelines
-		if key == "routing.default_pipelines" {
+		// Check for default_pipelines_{signaltype}
+		if strings.HasPrefix(key, "routing.default_pipelines_") {
 			if pipelines, ok := value.([]string); ok {
 				defaultPipelines = append(defaultPipelines, pipelines...)
 			}
 		}
 
-		// Check for table_component_name[N] entries
-		// Format: routing.table_router_staging[0].statement
+		// Check for table_{signaltype}_{component}[N] entries
+		// Format: routing.table_traces_router_staging[0].statement
 		if strings.Contains(key, ".table_") && strings.Contains(key, "[") {
-			// Extract component name from table_componentname[N]
+			// Extract signaltype_component from table_signaltype_component[N]
 			after := strings.SplitN(key, ".table_", 2)[1]
 			bracketPos := strings.Index(after, "[")
 			if bracketPos < 0 {
 				continue
 			}
-			componentName := after[:bracketPos]
+			// signaltype_component includes both signal type and component name
+			// We use this as the unique key to keep entries separate
+			signalTypeAndComponent := after[:bracketPos]
 
 			// Extract index
 			indexStart := bracketPos + 1
@@ -59,18 +61,18 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 			}
 			idx := after[indexStart : indexStart+closeBracket]
 
-			// Get or create entry for this component and index
-			if tableEntriesByComponent[componentName] == nil {
-				tableEntriesByComponent[componentName] = make([]map[string]any, 0)
+			// Get or create entry for this signal type + component and index
+			if tableEntriesByComponent[signalTypeAndComponent] == nil {
+				tableEntriesByComponent[signalTypeAndComponent] = make([]map[string]any, 0)
 			}
 
 			// Find or create the entry for this index
 			var entry map[string]any
 			entryIdx, _ := strconv.Atoi(idx)
-			for len(tableEntriesByComponent[componentName]) <= entryIdx {
-				tableEntriesByComponent[componentName] = append(tableEntriesByComponent[componentName], make(map[string]any))
+			for len(tableEntriesByComponent[signalTypeAndComponent]) <= entryIdx {
+				tableEntriesByComponent[signalTypeAndComponent] = append(tableEntriesByComponent[signalTypeAndComponent], make(map[string]any))
 			}
-			entry = tableEntriesByComponent[componentName][entryIdx]
+			entry = tableEntriesByComponent[signalTypeAndComponent][entryIdx]
 
 			// Extract the field name (statement or pipelines)
 			suffix := after[indexStart+closeBracket+2:] // +2 to skip "]."
@@ -78,17 +80,19 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 		}
 	}
 
-	// Delete old table_* keys
+	// Delete old table_* and default_pipelines_* keys
 	for key := range connectorSection {
-		if strings.Contains(key, ".table_") {
+		if strings.Contains(key, ".table_") || strings.HasPrefix(key, "routing.default_pipelines_") {
 			delete(connectorSection, key)
 		}
 	}
 
-	// Set default_pipelines if we have any
-	if len(defaultPipelines) > 0 {
-		connectorSection["routing.default_pipelines"] = defaultPipelines
-	}
+	// Don't set default_pipelines - it doesn't work correctly with multiple signal types
+	// Each signal type's routing connector instance would try to route to pipelines of other signal types
+	// which causes "missing consumer" errors. Instead, rely on explicit routing rules in the table.
+	// if len(defaultPipelines) > 0 {
+	// 	connectorSection["routing.default_pipelines"] = defaultPipelines
+	// }
 
 	// Merge all table entries into a single table
 	allTableEntries := make([]map[string]any, 0)
@@ -850,8 +854,16 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 
 		// Case 1: Intake pipeline - has receivers and routing connector, no other exporters
 		if hasRouting && len(receiversFiltered) > 0 && len(exportersFiltered) == 0 {
-			// Move connectors to exporters
-			serviceSection[exportersKey] = connectors
+			// Move connectors to exporters, normalizing routing connector names to "routing"
+			normalizedConnectors := make([]string, len(connectorsList))
+			for i, conn := range connectorsList {
+				if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
+					normalizedConnectors[i] = "routing"
+				} else {
+					normalizedConnectors[i] = conn
+				}
+			}
+			serviceSection[exportersKey] = normalizedConnectors
 			delete(serviceSection, connectorsKey)
 
 			// Rename intake pipeline to use consistent name (e.g., traces/intake)

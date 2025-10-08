@@ -10,13 +10,17 @@ processors:
 connectors:
     routing:
         default_pipelines:
-            - logs/production
             - metrics/production
             - traces/production
+            - logs/production
         table:
             - pipelines:
                 - logs/production
+              statement: route() where attributes["deployment.environment"] == "production"
+            - pipelines:
                 - metrics/production
+              statement: route() where attributes["deployment.environment"] == "production"
+            - pipelines:
                 - traces/production
               statement: route() where attributes["deployment.environment"] == "production"
 exporters:
@@ -41,7 +45,7 @@ service:
         logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing/router]
+            exporters: [routing]
         logs/production:
             receivers: [routing]
             processors: [usage]
@@ -49,7 +53,7 @@ service:
         metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing/router]
+            exporters: [routing]
         metrics/production:
             receivers: [routing]
             processors: [usage]
@@ -57,7 +61,7 @@ service:
         traces/intake:
             receivers: [otlp/receiver]
             processors: [usage]
-            exporters: [routing/router]
+            exporters: [routing]
         traces/production:
             receivers: [routing]
             processors: [usage]
