@@ -15,42 +15,42 @@ components:
         value: dev
 
   # Sampling sequencers for each environment (traces and logs)
-  - name: Start Sampling Dev
+  - name: SamplingSequencer_dev
     kind: SamplingSequencer
 
-  - name: Start Sampling Staging
+  - name: SamplingSequencer_staging
     kind: SamplingSequencer
 
-  - name: Start Sampling Production
+  - name: SamplingSequencer_production
     kind: SamplingSequencer
 
   # Samplers for each environment with different sample rates
-  - name: Sampler Dev
+  - name: DeterministicSampler_dev
     kind: DeterministicSampler
     properties:
       - name: SampleRate
         value: 1
 
-  - name: Sampler Staging
+  - name: DeterministicSampler_staging
     kind: DeterministicSampler
     properties:
       - name: SampleRate
         value: 10
 
-  - name: Sampler Production
+  - name: DeterministicSampler_production
     kind: DeterministicSampler
     properties:
       - name: SampleRate
         value: 100
 
   # Exporters for each environment
-  - name: exporter_dev
+  - name: HoneycombExporter_dev
     kind: HoneycombExporter
 
-  - name: exporter_staging
+  - name: HoneycombExporter_staging
     kind: HoneycombExporter
 
-  - name: exporter_production
+  - name: HoneycombExporter_production
     kind: HoneycombExporter
 
 connections:
@@ -91,7 +91,7 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Start Sampling Dev
+      component: SamplingSequencer_dev
       port: Traces
       type: OTelTraces
   - source:
@@ -99,27 +99,27 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: Start Sampling Dev
+      component: SamplingSequencer_dev
       port: Logs
       type: OTelLogs
 
   # Dev: sampling to sampler
   - source:
-      component: Start Sampling Dev
+      component: SamplingSequencer_dev
       port: Rule 1
       type: SampleData
     destination:
-      component: Sampler Dev
+      component: DeterministicSampler_dev
       port: Sample
       type: SampleData
 
   # Dev: sampler output to exporter
   - source:
-      component: Sampler Dev
+      component: DeterministicSampler_dev
       port: Events
       type: HoneycombEvents
     destination:
-      component: exporter_dev
+      component: HoneycombExporter_dev
       port: Events
       type: HoneycombEvents
 
@@ -129,7 +129,7 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: exporter_dev
+      component: HoneycombExporter_dev
       port: Metrics
       type: OTelMetrics
 
@@ -139,7 +139,7 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Start Sampling Staging
+      component: SamplingSequencer_staging
       port: Traces
       type: OTelTraces
   - source:
@@ -147,27 +147,27 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: Start Sampling Staging
+      component: SamplingSequencer_staging
       port: Logs
       type: OTelLogs
 
   # Staging: sampling to sampler
   - source:
-      component: Start Sampling Staging
+      component: SamplingSequencer_staging
       port: Rule 1
       type: SampleData
     destination:
-      component: Sampler Staging
+      component: DeterministicSampler_staging
       port: Sample
       type: SampleData
 
   # Staging: sampler output to exporter
   - source:
-      component: Sampler Staging
+      component: DeterministicSampler_staging
       port: Events
       type: HoneycombEvents
     destination:
-      component: exporter_staging
+      component: HoneycombExporter_staging
       port: Events
       type: HoneycombEvents
 
@@ -177,7 +177,7 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: exporter_staging
+      component: HoneycombExporter_staging
       port: Metrics
       type: OTelMetrics
 
@@ -187,7 +187,7 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Start Sampling Production
+      component: SamplingSequencer_production
       port: Traces
       type: OTelTraces
   - source:
@@ -195,27 +195,27 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: Start Sampling Production
+      component: SamplingSequencer_production
       port: Logs
       type: OTelLogs
 
   # Production: sampling to sampler
   - source:
-      component: Start Sampling Production
+      component: SamplingSequencer_production
       port: Rule 1
       type: SampleData
     destination:
-      component: Sampler Production
+      component: DeterministicSampler_production
       port: Sample
       type: SampleData
 
   # Production: sampler output to exporter
   - source:
-      component: Sampler Production
+      component: DeterministicSampler_production
       port: Events
       type: HoneycombEvents
     destination:
-      component: exporter_production
+      component: HoneycombExporter_production
       port: Events
       type: HoneycombEvents
 
@@ -225,7 +225,7 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: exporter_production
+      component: HoneycombExporter_production
       port: Metrics
       type: OTelMetrics
 
@@ -239,39 +239,39 @@ layout:
       position:
         x: -500
         y: 0
-    - name: Start Sampling Dev
+    - name: SamplingSequencer_dev
       position:
         x: -200
         y: -400
-    - name: Start Sampling Staging
+    - name: SamplingSequencer_staging
       position:
         x: -200
         y: 0
-    - name: Start Sampling Production
+    - name: SamplingSequencer_production
       position:
         x: -200
         y: 400
-    - name: Sampler Dev
+    - name: DeterministicSampler_dev
       position:
         x: 100
         y: -400
-    - name: Sampler Staging
+    - name: DeterministicSampler_staging
       position:
         x: 100
         y: 0
-    - name: Sampler Production
+    - name: DeterministicSampler_production
       position:
         x: 100
         y: 400
-    - name: exporter_dev
+    - name: HoneycombExporter_dev
       position:
         x: 400
         y: -400
-    - name: exporter_staging
+    - name: HoneycombExporter_staging
       position:
         x: 400
         y: 0
-    - name: exporter_production
+    - name: HoneycombExporter_production
       position:
         x: 400
         y: 400
