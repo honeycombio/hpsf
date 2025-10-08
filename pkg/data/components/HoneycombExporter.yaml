@@ -33,6 +33,14 @@ ports:
     direction: input
     type: OTelMetrics
 properties:
+  - name: EnvironmentName
+    summary: The environment name this exporter serves (e.g., dev, staging, production).
+    description: |
+      The environment name this exporter serves. When set, the API key environment variable
+      will be constructed as HTP_EXPORTER_<ENVIRONMENT>_APIKEY (e.g., HTP_EXPORTER_DEV_APIKEY).
+      If not set, defaults to using HTP_EXPORTER_APIKEY.
+    type: string
+    advanced: false
   - name: APIKey
     summary: The API key to use to authenticate with Honeycomb.
     description: |
@@ -151,7 +159,7 @@ templates:
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
-        value: "{{ .Values.APIKey }}"
+        value: "{{ if .Values.EnvironmentName }}${HTP_EXPORTER_{{ .Values.EnvironmentName | upper }}_APIKEY}{{ else }}{{ .Values.APIKey }}{{ end }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-dataset"
         value: "{{ .Values.MetricsDataset }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"
