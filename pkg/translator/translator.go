@@ -462,11 +462,6 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 		if tmpl.Style == "startsampling" {
 			startSamplingCount++
 			startSamplingComp = c.GetSafeName()
-			if startSamplingCount > 1 {
-				err := hpsf.NewError("only one StartSampling component is allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
 		}
 	}
 	if startSamplingCount == 0 {
