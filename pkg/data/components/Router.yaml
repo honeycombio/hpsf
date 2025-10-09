@@ -55,17 +55,6 @@ ports:
     type: Environment
     index: 5
 properties:
-  - name: Environments
-    summary: List of environment names to route to
-    description: |
-      List of environment names (e.g., ["staging", "production"]). Each environment
-      will get its own routing rule in the OTel collector and its own sampler
-      configuration in Refinery rules. The router will match telemetry based on
-      the RoutingAttribute value.
-    type: stringarray
-    validations:
-      - nonempty
-    advanced: false
   - name: RoutingAttribute
     summary: The telemetry attribute name to use for routing decisions
     description: |
@@ -90,67 +79,6 @@ properties:
       - noblanks
     advanced: false
 templates:
-  - kind: collector_config
-    name: router_connector
-    format: collector
-    meta:
-      componentSection: connectors
-      signalTypes: [traces, metrics, logs]
-      collectorComponentName: routing
-    data:
-      # Each signal type gets its own routing connector instance (routing/logs, routing/traces, routing/metrics)
-      # Set default_pipelines for the DefaultEnvironment if specified
-      - key: "routing/{{ .SignalType }}.default_pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType .Values.DefaultEnvironment)) }}"
-        suppress_if: "{{ not .Values.DefaultEnvironment }}"
-      # Generate table entries for environments (hard-coded for now, supports up to 5 environments)
-      # Skip the default environment since it's handled by default_pipelines
-      # TODO: Make this more dynamic
-      - key: "routing/{{ .SignalType }}.table_env0[0].context"
-        value: "resource"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 1) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env0[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 0 }}\""
-        suppress_if: "{{ or (lt (len .HProps.Environments) 1) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env0[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 0))) }}"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 1) (eq (index .HProps.Environments 0) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env1[0].context"
-        value: "resource"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 2) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env1[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 1 }}\""
-        suppress_if: "{{ or (lt (len .HProps.Environments) 2) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env1[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 1))) }}"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 2) (eq (index .HProps.Environments 1) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env2[0].context"
-        value: "resource"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env2[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 2 }}\""
-        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env2[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 2))) }}"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 3) (eq (index .HProps.Environments 2) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env3[0].context"
-        value: "resource"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env3[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 3 }}\""
-        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env3[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 3))) }}"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 4) (eq (index .HProps.Environments 3) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env4[0].context"
-        value: "resource"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env4[0].condition"
-        value: "attributes[\"{{ .Values.RoutingAttribute }}\"] == \"{{ index .HProps.Environments 4 }}\""
-        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
-      - key: "routing/{{ .SignalType }}.table_env4[0].pipelines"
-        value: "{{ encodeAsArray (makeSlice (printf \"%s/%s\" .SignalType (index .HProps.Environments 4))) }}"
-        suppress_if: "{{ or (lt (len .HProps.Environments) 5) (eq (index .HProps.Environments 4) .Values.DefaultEnvironment) }}"
   - kind: refinery_rules
     name: router_default_env
     format: rules

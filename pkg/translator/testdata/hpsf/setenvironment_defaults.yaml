@@ -1,4 +1,7 @@
 components:
   - name: SetEnv
     kind: SetEnvironment
+    properties:
+      - name: EnvironmentName
+        value: production
 connections: []

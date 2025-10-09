@@ -4,8 +4,6 @@ components:
   - name: router
     kind: Router
     properties:
-      - name: Environments
-        value: [dev, staging, production]
       - name: RoutingAttribute
         value: deployment.environment
       - name: DefaultEnvironment
@@ -13,10 +11,19 @@ components:
   # SetEnvironment components for each environment
   - name: SetEnvironment_dev
     kind: SetEnvironment
+    properties:
+      - name: EnvironmentName
+        value: dev
   - name: SetEnvironment_staging
     kind: SetEnvironment
+    properties:
+      - name: EnvironmentName
+        value: staging
   - name: SetEnvironment_production
     kind: SetEnvironment
+    properties:
+      - name: EnvironmentName
+        value: production
   # Exporters for each environment (without environment in name to test API key injection)
   - name: exporter_dev
     kind: HoneycombExporter

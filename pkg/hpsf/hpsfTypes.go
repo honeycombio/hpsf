@@ -630,9 +630,10 @@ func (h *HPSF) isSourceComponent(c *Component, connType ConnectionType) bool {
 // sets of connections used. We generate all possible paths
 // and store them in a slice of these.
 type PathWithConnections struct {
-	ConnType    ConnectionType
-	Path        []*Component
-	Connections []*Connection
+	ConnType     ConnectionType
+	Path         []*Component
+	Connections  []*Connection
+	PipelineName string // Optional custom pipeline name; if empty, GetID() is used
 }
 
 func (p PathWithConnections) GetConnectionLeadingTo(componentName string) *Connection {
@@ -646,6 +647,11 @@ func (p PathWithConnections) GetConnectionLeadingTo(componentName string) *Conne
 }
 
 func (p PathWithConnections) GetID() string {
+	// If a custom pipeline name is set, use that instead of generating a hash
+	if p.PipelineName != "" {
+		return p.PipelineName
+	}
+
 	// return the ID of the path, which is a hash of the names of components in its path
 	// and the connection type, truncated to 6 characters.
 	buf := bytes.Buffer{}
