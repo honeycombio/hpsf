@@ -340,44 +340,64 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 						err, t.Style, t.Kind)
 				}
 
-				// For Start Sampling components, check if there's a Router component that routes to it
-				// by examining the HPSF connections and determine which environment this sequencer handles
-				if t.Style == "startsampling" {
-					if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
-						// Find connections that lead to this SamplingSequencer
-						for _, conn := range hpsfDoc.Connections {
-							if conn.Destination.Component == t.hpsf.Name {
-								// Find the source component
-								for _, comp := range hpsfDoc.Components {
-									if comp.Name == conn.Source.Component && comp.Kind == "Router" {
-										// Get the Environments array from the Router
-										envsProp := comp.GetProperty("Environments")
-										if envsProp != nil && envsProp.Value != nil {
-											if envs, ok := envsProp.Value.([]any); ok {
-												// Try to match this SamplingSequencer to an environment by name
-												// Look for environment names in the component name (case-insensitive)
-												compNameLower := strings.ToLower(t.hpsf.Name)
-												for _, e := range envs {
-													if envStr, ok := e.(string); ok {
-														if strings.Contains(compNameLower, strings.ToLower(envStr)) {
-															rt.env = envStr
-															break
-														}
-													}
-												}
-											}
-										}
+				// Determine environment for rules config
+				// This applies to all sampling components (startsampling and regular samplers/conditions)
+				if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
+					// Find Router component and get DefaultEnvironment for __default__ handling
+					var routerDefaultEnv string
+					for _, comp := range hpsfDoc.Components {
+						if comp.Kind == "Router" {
+							defaultEnvProp := comp.GetProperty("DefaultEnvironment")
+							if defaultEnvProp != nil && defaultEnvProp.Value != nil {
+								if defaultEnv, ok := defaultEnvProp.Value.(string); ok && defaultEnv != "" {
+									routerDefaultEnv = defaultEnv
+									userdata["router_default_env"] = defaultEnv
+								}
+							}
+							break
+						}
+					}
 
-										// Also get the DefaultEnvironment and store it in userdata for later use
-										defaultEnvProp := comp.GetProperty("DefaultEnvironment")
-										if defaultEnvProp != nil && defaultEnvProp.Value != nil {
-											if defaultEnv, ok := defaultEnvProp.Value.(string); ok && defaultEnv != "" {
-												userdata["router_default_env"] = defaultEnv
-											}
-										}
+					if t.Style == "startsampling" {
+						// For Start Sampling components, find the SetEnvironment component upstream
+						// SetEnvironment connects via OTel signal types (Traces/Logs/Metrics), not SampleData
+						var setEnvComp *hpsf.Component
+						for _, conn := range hpsfDoc.Connections {
+							if conn.Destination.Component == t.hpsf.Name &&
+								(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+								// Found connection to this sampling component, check if source is SetEnvironment
+								for _, comp := range hpsfDoc.Components {
+									if comp.Name == conn.Source.Component && comp.Kind == "SetEnvironment" {
+										setEnvComp = comp
 										break
 									}
 								}
+								break
+							}
+						}
+
+						// Get environment name from SetEnvironment component
+						if setEnvComp != nil {
+							envNameProp := setEnvComp.GetProperty("EnvironmentName")
+							if envNameProp != nil && envNameProp.Value != nil {
+								if envName, ok := envNameProp.Value.(string); ok && envName != "" {
+									rt.env = envName
+								}
+							}
+						}
+
+						// If this environment matches the router's default environment, use "__default__" instead
+						if rt.env != "" && rt.env == routerDefaultEnv {
+							rt.env = "__default__"
+						}
+					} else {
+						// For non-startsampling components (regular samplers, conditions)
+						// Check if environment was passed in userdata (from generateConfigWithRouters)
+						if env, ok := userdata["environment"].(string); ok && env != "" {
+							rt.env = env
+							// If this environment matches the router's default environment, use "__default__" instead
+							if rt.env == routerDefaultEnv {
+								rt.env = "__default__"
 							}
 						}
 					}

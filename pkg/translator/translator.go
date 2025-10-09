@@ -1310,6 +1310,134 @@ func sliceContains(slice []string, item string) bool {
 	return false
 }
 
+// generateRefineryRulesWithRouter handles refinery rules generation for multi-environment routing.
+// It processes sampling paths and sets the environment context from SetEnvironment components.
+func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+
+	// Build SetEnvironment to environment mapping
+	setEnvToEnvironment := make(map[string]string)
+	for _, conn := range h.Connections {
+		if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
+			destCompName := conn.Destination.Component
+			for _, hcomp := range h.Components {
+				if hcomp.Name == destCompName && hcomp.Kind == "SetEnvironment" {
+					for _, prop := range hcomp.Properties {
+						if prop.Name == "EnvironmentName" {
+							if envName, ok := prop.Value.(string); ok && envName != "" {
+								setEnvToEnvironment[destCompName] = envName
+							}
+							break
+						}
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// Generate configs for each sampling path with environment context
+	composites := make([]tmpl.TemplateConfig, 0)
+	for _, path := range paths {
+		// Only process sampling paths
+		if path.ConnType != hpsf.CTYPE_SAMPLE {
+			continue
+		}
+
+		// Create a copy of userdata for this path
+		pathUserdata := make(map[string]any)
+		for k, v := range userdata {
+			pathUserdata[k] = v
+		}
+
+		// Find environment by looking for SetEnvironment that connects to the SamplingSequencer
+		// Sampling paths don't include SetEnvironment because they follow SampleData connections
+		// We need to look at OTel signal connections to find which SetEnvironment feeds this sampler
+		var samplingSequencer *hpsf.Component
+		for _, comp := range path.Path {
+			if comp.Kind == "SamplingSequencer" {
+				samplingSequencer = comp
+				break
+			}
+		}
+
+		if samplingSequencer != nil {
+			// Find which SetEnvironment connects to this SamplingSequencer
+			for _, conn := range h.Connections {
+				if conn.Destination.Component == samplingSequencer.Name &&
+					(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+					// This connection leads to the sampling sequencer, check if source is SetEnvironment
+					for _, hcomp := range h.Components {
+						if hcomp.Name == conn.Source.Component && hcomp.Kind == "SetEnvironment" {
+							if envName, ok := setEnvToEnvironment[hcomp.Name]; ok {
+								pathUserdata["environment"] = envName
+								break
+							}
+						}
+					}
+					if _, ok := pathUserdata["environment"]; ok {
+						break
+					}
+				}
+			}
+		}
+
+		// Generate config for this path
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, path, pathUserdata)
+		if err != nil {
+			return nil, err
+		}
+
+		mergedSomething := false
+		for _, comp := range path.Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in sampling path", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, path, pathUserdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
+		}
+
+		if mergedSomething {
+			composites = append(composites, composite)
+		}
+	}
+
+	if len(composites) == 0 {
+		unconfigured := config.UnconfiguredComponent{Component: dummy}
+		return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	}
+
+	// Merge all composites
+	finalConfig := composites[0]
+	for _, comp := range composites[1:] {
+		if err := finalConfig.Merge(comp); err != nil {
+			return nil, fmt.Errorf("failed to merge refinery rules configs: %w", err)
+		}
+	}
+
+	// For refinery rules, set the default environment from Router if present
+	if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+		if defaultEnv, exists := userdata["router_default_env"]; exists {
+			if defaultEnvStr, ok := defaultEnv.(string); ok {
+				rulesConfig.SetDefaultEnv(defaultEnvStr)
+			}
+		}
+	}
+
+	return finalConfig, nil
+}
+
 // generateConfigWithRouters handles special pipeline generation when Router components are present.
 // It creates intake pipelines (receiver → router) and environment-specific pipelines (router → exporter).
 func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
@@ -1320,6 +1448,11 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		userdata = make(map[string]any)
 	}
 	userdata["hpsf"] = h
+
+	// For refinery rules, we need to handle sampling paths with environment context
+	if ct == hpsftypes.RefineryRules {
+		return t.generateRefineryRulesWithRouter(h, comps, paths, ct, userdata)
+	}
 
 	// Separate paths into those before and after routers
 	// We'll build intake pipelines (receiver → router) and output pipelines (router → exporter)
@@ -1739,9 +1872,30 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 
 	// now we can iterate over the paths and generate a configuration for each
 	for _, path := range paths {
+		// Create a copy of userdata for this path
+		pathUserdata := make(map[string]any)
+		for k, v := range userdata {
+			pathUserdata[k] = v
+		}
+
+		// For sampling paths, check if there's a SetEnvironment component and extract environment
+		if path.ConnType == hpsf.CTYPE_SAMPLE {
+			for _, comp := range path.Path {
+				if comp.Kind == "SetEnvironment" {
+					envNameProp := comp.GetProperty("EnvironmentName")
+					if envNameProp != nil && envNameProp.Value != nil {
+						if envName, ok := envNameProp.Value.(string); ok && envName != "" {
+							pathUserdata["environment"] = envName
+							break
+						}
+					}
+				}
+			}
+		}
+
 		// Start with a base component so we always have a valid config
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, path, userdata)
+		composite, err := base.GenerateConfig(ct, path, pathUserdata)
 		if err != nil {
 			return nil, err
 		}
@@ -1754,7 +1908,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 				return nil, fmt.Errorf("unknown component %s in path", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, path, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, pathUserdata)
 			if err != nil {
 				return nil, err
 			}
