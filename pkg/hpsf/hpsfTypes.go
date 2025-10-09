@@ -545,8 +545,24 @@ func (c *Container) Validate() error {
 	return result
 }
 
-// placeholder for where we'll store layout information later
-type Layout map[string]any
+type Pos struct {
+	X int `yaml:"x"`
+	Y int `yaml:"y"`
+}
+type Siz struct {
+	W int `yaml:"w"`
+	H int `yaml:"h"`
+}
+
+type LayoutComponent struct {
+	Name     string `yaml:"name"`
+	Position *Pos   `yaml:"position,omitempty"`
+	Size     *Siz   `yaml:"size,omitempty"`
+}
+
+type Layout struct {
+	Components []LayoutComponent `yaml:"components,omitempty"`
+}
 
 type HPSF struct {
 	Kind           string        `yaml:"kind,omitempty"`
@@ -558,7 +574,7 @@ type HPSF struct {
 	Components     []*Component  `yaml:"components,omitempty"`
 	Connections    []*Connection `yaml:"connections,omitempty"`
 	Containers     []Container   `yaml:"containers,omitempty"`
-	Layout         Layout        `yaml:"layout,omitempty"`
+	Layout         *Layout       `yaml:"layout,omitempty"`
 }
 
 // GetStartComponents generates a list of components that are not named as the destination of a connection

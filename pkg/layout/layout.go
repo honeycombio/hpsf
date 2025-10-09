@@ -146,13 +146,20 @@ func (g *Graph) AutoLayout(opts ...LayoutOption) error {
 	// 4. Initial row ordering within each column (before heuristics)
 	rowIndex := g.orderRows(columns, colIndex)
 
-	// 5. Assign concrete positions snapped to grid
+	// 5. Reduce edge crossings (barycentric + greedy swaps + two-column coordinated swaps)
+	if cfg.OptimizeCrossings {
+		g.reduceCrossings(columns, colIndex, rowIndex, cfg)
+	}
+
+	// 6. Assign concrete positions snapped to grid
 	g.assignPositions(columns, colIndex, rowIndex, cfg)
 
-	// 6. Column vertical shift optimization to tighten incoming edge lengths.
-	g.shiftColumnsForIncoming(columns, colIndex, cfg)
+	// 7. Column vertical shift optimization to tighten incoming edge lengths.
+	// This never introduces crossings since it preserves relative node order within columns.
+	if cfg.OptimizeLengths {
+		g.shiftColumnsForIncoming(columns, colIndex, cfg)
+	}
 
-	// Remaining steps will be implemented in subsequent commits.
 	return nil
 }
 
@@ -447,7 +454,7 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 		}
 	}
 
-	// Greedy pairwise swaps
+	// Greedy pairwise swaps within single columns
 	// We do multiple iterations per column until no more improvements or max iterations reached.
 	// This is a local optimization and may not reach a global optimum.
 	// We process columns independently, left to right, so earlier columns are fixed when processing later ones.
@@ -489,6 +496,72 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 			iterations++
 		}
 	}
+
+	// Two-column coordinated swaps
+	// If crossings remain, try swapping node pairs across adjacent column pairs.
+	// This can find solutions that require coordinated swaps (e.g., swap A↔B in col i AND swap C↔D in col i+1).
+	if baseCross > 0 {
+		twoColChanged := g.tryTwoColumnSwaps(columns, col, row, &baseCross, cfg)
+		if twoColChanged {
+			improved = true
+		}
+	}
+
+	return improved
+}
+
+// tryTwoColumnSwaps attempts coordinated swaps across pairs of adjacent columns.
+// For each adjacent column pair (i, i+1), it tries swapping one pair of nodes in column i
+// together with one pair of nodes in column i+1, accepting the swap if it reduces crossings.
+// This can solve cases where single-column optimization gets stuck in local optima.
+// Returns true if any improvement was made. Updates baseCross pointer with the new crossing count.
+func (g *Graph) tryTwoColumnSwaps(columns [][]*Node, col map[*Node]int, row map[*Node]int, baseCross *int, cfg *layoutConfig) bool {
+	improved := false
+
+	for colIdx := 0; colIdx < len(columns)-1; colIdx++ {
+		leftCol := columns[colIdx]
+		rightCol := columns[colIdx+1]
+
+		if len(leftCol) < 2 || len(rightCol) < 2 {
+			continue
+		}
+
+		// Try all combinations of swaps in both columns
+		for iL := 0; iL < len(leftCol)-1; iL++ {
+			for jL := iL + 1; jL < len(leftCol); jL++ {
+				nL1, nL2 := leftCol[iL], leftCol[jL]
+				rL1, rL2 := row[nL1], row[nL2]
+
+				for iR := 0; iR < len(rightCol)-1; iR++ {
+					for jR := iR + 1; jR < len(rightCol); jR++ {
+						nR1, nR2 := rightCol[iR], rightCol[jR]
+						rR1, rR2 := row[nR1], row[nR2]
+
+						// Try swapping both pairs simultaneously
+						row[nL1], row[nL2] = rL2, rL1
+						row[nR1], row[nR2] = rR2, rR1
+						g.assignPositions(columns, col, row, cfg)
+						newCross := g.countCrossings(row, col)
+
+						if newCross < *baseCross {
+							// Accept the coordinated swap
+							*baseCross = newCross
+							improved = true
+							if *baseCross == 0 {
+								return true
+							}
+						} else {
+							// Revert both swaps
+							row[nL1], row[nL2] = rL1, rL2
+							row[nR1], row[nR2] = rR1, rR2
+							g.assignPositions(columns, col, row, cfg)
+						}
+					}
+				}
+			}
+		}
+	}
+
 	return improved
 }
 

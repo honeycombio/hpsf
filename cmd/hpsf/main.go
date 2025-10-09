@@ -12,6 +12,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/data"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/hpsftypes"
+	"github.com/honeycombio/hpsf/pkg/layout"
 	"github.com/honeycombio/hpsf/pkg/translator"
 	"github.com/honeycombio/hpsf/pkg/validator"
 	"github.com/jessevdk/go-flags"
@@ -132,11 +133,26 @@ func main() {
 		if err != nil {
 			log.Fatalf("error unmarshaling input file: %v", err)
 		}
+
+		// Create layouter
+		layouter, err := layout.NewLayouter()
+		if err != nil {
+			log.Fatalf("error creating layouter: %v", err)
+		}
+
+		// count crossings before layout
+		crossingsBefore := layouter.CountCrossings(&h)
+
 		// run auto-layout
-		err = h.AutoLayout(hpsf.DefaultNodeSize())
+		err = layouter.AutoLayout(&h, hpsf.DefaultNodeSize())
 		if err != nil {
 			log.Fatalf("error computing layout: %v", err)
 		}
+
+		// count crossings after layout
+		crossingsAfter := layouter.CountCrossings(&h)
+		fmt.Fprintf(os.Stderr, "Crossings: %d -> %d\n", crossingsBefore, crossingsAfter)
+
 		// write it to the output file as yaml
 		data, err := y.Marshal(&h)
 		if err != nil {
