@@ -1,0 +1,50 @@
+kind: SetEnvironment
+name: Set Environment
+style: processor
+logo: environment
+type: base
+status: alpha
+version: v0.1.0
+summary: Associates telemetry data with a specific environment context.
+description: |-
+  The SetEnvironment component receives an environment context from a Router and applies it to
+  telemetry data flowing through the pipeline. This component acts as a junction point that marks
+  all downstream components as belonging to a specific environment (e.g., dev, staging, production).
+
+  This component is typically used in multi-environment routing scenarios where different
+  environments require different processing, sampling, or export configurations.
+tags:
+  - category:routing
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - input:Environment
+  - output:Traces
+  - output:Logs
+  - output:Metrics
+ports:
+  # Environment input
+  - name: Environment
+    direction: input
+    type: Environment
+  # Data signal outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: EnvironmentName
+    summary: The name of the environment (e.g., dev, staging, production).
+    description: |
+      The name of the environment this component represents. This is automatically set based on
+      the environment connection from the Router component. This value is used by downstream
+      components to determine environment-specific configuration like API keys.
+    type: string
+    advanced: true
+templates: []

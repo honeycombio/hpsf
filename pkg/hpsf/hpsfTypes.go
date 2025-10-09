@@ -18,16 +18,17 @@ import (
 type ConnectionType string
 
 const (
-	CTYPE_UNKNOWN ConnectionType = "unknown"
-	CTYPE_LOGS    ConnectionType = "OTelLogs"
-	CTYPE_METRICS ConnectionType = "OTelMetrics"
-	CTYPE_TRACES  ConnectionType = "OTelTraces"
-	CTYPE_EVENTS  ConnectionType = "OTelEvents"
-	CTYPE_HONEY   ConnectionType = "HoneycombEvents"
-	CTYPE_SAMPLE  ConnectionType = "SampleData"
-	CTYPE_NUMBER  ConnectionType = "number"
-	CTYPE_STRING  ConnectionType = "string"
-	CTYPE_BOOL    ConnectionType = "bool"
+	CTYPE_UNKNOWN     ConnectionType = "unknown"
+	CTYPE_LOGS        ConnectionType = "OTelLogs"
+	CTYPE_METRICS     ConnectionType = "OTelMetrics"
+	CTYPE_TRACES      ConnectionType = "OTelTraces"
+	CTYPE_EVENTS      ConnectionType = "OTelEvents"
+	CTYPE_HONEY       ConnectionType = "HoneycombEvents"
+	CTYPE_SAMPLE      ConnectionType = "SampleData"
+	CTYPE_ENVIRONMENT ConnectionType = "Environment"
+	CTYPE_NUMBER      ConnectionType = "number"
+	CTYPE_STRING      ConnectionType = "string"
+	CTYPE_BOOL        ConnectionType = "bool"
 )
 
 // These are the possible connection types that can be used in the HPSF pipelines.

@@ -35,7 +35,7 @@ ports:
   - name: Metrics
     direction: input
     type: OTelMetrics
-  # outputs
+  # outputs - telemetry signals
   - name: Traces
     direction: output
     type: OTelTraces
@@ -45,6 +45,27 @@ ports:
   - name: Metrics
     direction: output
     type: OTelMetrics
+  # outputs - environment connections
+  - name: Environment 1
+    direction: output
+    type: Environment
+    index: 1
+  - name: Environment 2
+    direction: output
+    type: Environment
+    index: 2
+  - name: Environment 3
+    direction: output
+    type: Environment
+    index: 3
+  - name: Environment 4
+    direction: output
+    type: Environment
+    index: 4
+  - name: Environment 5
+    direction: output
+    type: Environment
+    index: 5
 properties:
   - name: Environments
     summary: List of environment names to route to
