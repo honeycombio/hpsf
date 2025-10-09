@@ -17,3 +17,4 @@ CLAUDE.md
 # executables
 /cmd/component2csv/component2csv
 /cmd/hpsf/hpsf
+build/

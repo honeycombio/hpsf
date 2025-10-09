@@ -794,10 +794,16 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 	// Build a map of SetEnvironment components to their environment names
 	// This is based on the Environment connection from Router
 	setEnvToEnvironment := make(map[string]string) // SetEnvironment component name -> environment name
+	fmt.Printf("DEBUG: Building setEnvToEnvironment map...\n")
 	if h != nil {
+		fmt.Printf("DEBUG: Total connections: %d\n", len(h.Connections))
 		for _, conn := range h.Connections {
 			// Look for Environment connections from Router to SetEnvironment
+			fmt.Printf("DEBUG: Connection: '%s'.'%s' (%s) → '%s'.'%s' (%s)\n",
+				conn.Source.Component, conn.Source.PortName, conn.Source.Type,
+				conn.Destination.Component, conn.Destination.PortName, conn.Destination.Type)
 			if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
+				fmt.Printf("DEBUG: Found Environment connection!\n")
 				// Get the destination component (SetEnvironment)
 				destCompName := conn.Destination.Component
 
@@ -850,6 +856,8 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 	// This maps component names (e.g., exporter names) to their environment
 	componentToEnvironment := make(map[string]string) // component safe name -> environment name
 
+	fmt.Printf("DEBUG: setEnvToEnvironment = %+v\n", setEnvToEnvironment)
+
 	// For each SetEnvironment component, find which components are downstream
 	for setEnvComp, envName := range setEnvToEnvironment {
 		// Find all components that are downstream of this SetEnvironment
@@ -862,10 +870,14 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 					destComp := conn.Destination.Component
 					destSafeName := strings.ReplaceAll(destComp, " ", "_")
 					componentToEnvironment[destSafeName] = envName
+					fmt.Printf("DEBUG: Mapped component '%s' (safe: '%s') to environment '%s' via SetEnvironment '%s'\n",
+						destComp, destSafeName, envName, setEnvComp)
 				}
 			}
 		}
 	}
+
+	fmt.Printf("DEBUG: componentToEnvironment = %+v\n", componentToEnvironment)
 
 	// Track pipeline renames for output pipelines
 	pipelineRenames := make(map[string]string) // old name -> new name
@@ -1028,6 +1040,9 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 			if signalType != "" {
 				var envName string
 
+				fmt.Printf("DEBUG Case 2: Pipeline '%s', exporters: %+v\n", pipelineName, exportersFiltered)
+				fmt.Printf("DEBUG Case 2: componentToEnvironment map: %+v\n", componentToEnvironment)
+
 				// First, check if we have environment from SetEnvironment component
 				// by checking if any of the exporters in this pipeline are mapped to an environment
 				for _, exp := range exportersFiltered {
@@ -1037,9 +1052,13 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 					if len(expParts) == 2 {
 						expCompName = expParts[1]
 					}
+					fmt.Printf("DEBUG Case 2: Checking exporter '%s', component name '%s', looking for '%s' in map\n", exp, expCompName, expCompName)
 					if env, ok := componentToEnvironment[expCompName]; ok {
 						envName = env
+						fmt.Printf("DEBUG Case 2: Found environment '%s' for exporter '%s'\n", envName, expCompName)
 						break
+					} else {
+						fmt.Printf("DEBUG Case 2: No environment mapping found for '%s'\n", expCompName)
 					}
 				}
 
@@ -1070,6 +1089,8 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 					}
 				}
 
+				fmt.Printf("DEBUG Case 2: Final envName='%s' for pipeline '%s'\n", envName, pipelineName)
+
 				if envName != "" {
 					// Inject environment-specific API key header into otlphttp exporters
 					exportersSection, hasExportersSection := cc.Sections["exporters"]
@@ -1077,18 +1098,28 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 						for _, exp := range exportersFiltered {
 							headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
 							existingValue, hasHeader := exportersSection[headerKey]
+							fmt.Printf("DEBUG Case 2: Exporter '%s', header key '%s', existing value '%v', hasHeader=%v\n",
+								exp, headerKey, existingValue, hasHeader)
 							// Inject if header doesn't exist or if it's set to the default value
 							if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
 								envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
 								exportersSection[headerKey] = envVarName
+								fmt.Printf("DEBUG Case 2: Set '%s' = '%s'\n", headerKey, envVarName)
+							} else {
+								fmt.Printf("DEBUG Case 2: Skipping (hasHeader=%v, existingValue='%v')\n", hasHeader, existingValue)
 							}
 						}
+					} else {
+						fmt.Printf("DEBUG Case 2: No exporters section found\n")
 					}
+				} else {
+					fmt.Printf("DEBUG Case 2: envName is empty, skipping API key injection\n")
 				}
 			}
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
 			// Use signal-type-specific routing connector name
+			fmt.Printf("DEBUG Case 3: Pipeline '%s', exporters: %+v\n", pipelineName, exportersFiltered)
 			if signalType != "" {
 				routingConnectorName := "routing/" + signalType
 				serviceSection[receiversKey] = []string{routingConnectorName}
