@@ -30,6 +30,10 @@ service:
             receivers: [routing/logs]
             processors: [usage]
             exporters: [otlphttp/exporter]
+        logs/fd8-5dc:
+            receivers: [routing/logs]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
         logs/intake:
             receivers: [otlp/receiver]
             processors: [usage]
@@ -38,11 +42,19 @@ service:
             receivers: [routing/metrics]
             processors: [usage]
             exporters: [otlphttp/exporter]
+        metrics/ae6-df8:
+            receivers: [routing/metrics]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
         metrics/intake:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/metrics]
         traces/87b-a91:
+            receivers: [routing/traces]
+            processors: [usage]
+            exporters: [otlphttp/exporter]
+        traces/ddd-c0c:
             receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter]

@@ -674,13 +674,39 @@ func (h *HPSF) FindAllPaths(_ map[string]bool) []PathWithConnections {
 	findPaths = func(connType ConnectionType, c *Component, conns []*Connection) {
 		path = append(path, c)
 		if !h.isSourceComponent(c, connType) {
-			// we reached an end component, create a path
-			path := PathWithConnections{
-				ConnType:    connType,
-				Path:        slices.Clone(path),
-				Connections: slices.Clone(conns),
+			// Check if this component has Environment output connections
+			// If so, we need to follow those and continue with the original signal type
+			hasEnvironmentOutput := false
+			for _, conn := range h.Connections {
+				if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT {
+					hasEnvironmentOutput = true
+					break
+				}
 			}
-			paths = append(paths, path)
+
+			if hasEnvironmentOutput {
+				// Follow Environment connections to SetEnvironment components
+				visited := make(map[string]bool)
+				for _, conn := range h.Connections {
+					if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT && !visited[conn.Destination.Component] {
+						destComp := h.getComponent(conn.Destination.Component)
+						visited[conn.Destination.Component] = true
+						if destComp != nil {
+							// Add the Environment connection and continue following the original signal type
+							newConns := append(conns, conn)
+							findPaths(connType, destComp, newConns)
+						}
+					}
+				}
+			} else {
+				// we reached an end component, create a path
+				path := PathWithConnections{
+					ConnType:    connType,
+					Path:        slices.Clone(path),
+					Connections: slices.Clone(conns),
+				}
+				paths = append(paths, path)
+			}
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
 			visited := make(map[string]bool)
