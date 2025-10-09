@@ -26,7 +26,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        logs/a13-2a5:
+        logs/cfd-225:
             receivers: [routing/logs]
             processors: [usage]
             exporters: [otlphttp/exporter]
@@ -34,7 +34,7 @@ service:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/logs]
-        metrics/8cd-301:
+        metrics/980-d7f:
             receivers: [routing/metrics]
             processors: [usage]
             exporters: [otlphttp/exporter]
@@ -42,7 +42,7 @@ service:
             receivers: [otlp/receiver]
             processors: [usage]
             exporters: [routing/metrics]
-        traces/a03-0e4:
+        traces/87b-a91:
             receivers: [routing/traces]
             processors: [usage]
             exporters: [otlphttp/exporter]

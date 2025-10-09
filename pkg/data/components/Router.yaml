@@ -20,9 +20,7 @@ tags:
   - input:Traces
   - input:Metrics
   - input:Logs
-  - output:Traces
-  - output:Metrics
-  - output:Logs
+  - output:Environment
   - vendor:Honeycomb
 ports:
   # inputs
@@ -34,16 +32,6 @@ ports:
     type: OTelLogs
   - name: Metrics
     direction: input
-    type: OTelMetrics
-  # outputs - telemetry signals
-  - name: Traces
-    direction: output
-    type: OTelTraces
-  - name: Logs
-    direction: output
-    type: OTelLogs
-  - name: Metrics
-    direction: output
     type: OTelMetrics
   # outputs - environment connections
   - name: Environment 1
