@@ -950,19 +950,31 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 			// Try to infer environment and inject API key headers
 			if signalType != "" {
 				var envName string
-				for _, exp := range exportersFiltered {
-					expLower := strings.ToLower(exp)
-					for expectedName := range expectedPipelines {
-						if strings.HasPrefix(expectedName, signalType+"/") {
-							envPart := strings.TrimPrefix(expectedName, signalType+"/")
-							if strings.Contains(expLower, strings.ToLower(envPart)) {
-								envName = envPart
-								break
+
+				// First, try to extract environment from the pipeline name itself (most reliable)
+				// Pipeline names follow the pattern: traces/dev, metrics/prod, etc.
+				if len(parts) == 2 && parts[1] != "intake" {
+					// The environment is the second part of the pipeline name
+					// Skip "intake" pipelines as they're not environment-specific
+					envName = parts[1]
+				}
+
+				// If we couldn't get it from the pipeline name, try the exporter name
+				if envName == "" {
+					for _, exp := range exportersFiltered {
+						expLower := strings.ToLower(exp)
+						for expectedName := range expectedPipelines {
+							if strings.HasPrefix(expectedName, signalType+"/") {
+								envPart := strings.TrimPrefix(expectedName, signalType+"/")
+								if strings.Contains(expLower, strings.ToLower(envPart)) {
+									envName = envPart
+									break
+								}
 							}
 						}
-					}
-					if envName != "" {
-						break
+						if envName != "" {
+							break
+						}
 					}
 				}
 
@@ -989,9 +1001,11 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig) error {
 				routingConnectorName := "routing/" + signalType
 				serviceSection[receiversKey] = []string{routingConnectorName}
 
-				// Try to infer environment from exporter name
-				// Exporters often have environment names in them (e.g., "exporter_staging", "Start_Sampling_Production")
+				// Try to infer environment from pipeline name first, then exporter name
 				var envName string
+
+				// For Case 3, the pipeline name might not be renamed yet, so we need to find which
+				// environment this pipeline should belong to by matching exporter names first
 				for _, exp := range exportersFiltered {
 					// Extract potential environment name from exporter
 					// Look for common patterns like "_staging", "_production", "Staging", "Production"
