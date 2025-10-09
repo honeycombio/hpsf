@@ -1338,11 +1338,80 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		}
 	}
 
+	// Build SetEnvironment to environment mapping for this generation
+	setEnvToEnvironment := make(map[string]string)
+	for _, conn := range h.Connections {
+		if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
+			// This is an Environment connection from Router to SetEnvironment
+			destCompName := conn.Destination.Component
+			srcCompName := conn.Source.Component
+
+			// Find the Router component and get its Environments property
+			if c, ok := comps.Get(srcCompName); ok {
+				if tc, ok := c.(*config.TemplateComponent); ok {
+					if tc.Kind == "Router" {
+						// Get the Environments property from the HPSF component
+						for _, hcomp := range h.Components {
+							if hcomp.Name == srcCompName && hcomp.Kind == "Router" {
+								for _, prop := range hcomp.Properties {
+									if prop.Name == "Environments" {
+										if envs, ok := prop.Value.([]any); ok {
+											portName := conn.Source.PortName
+											if strings.HasPrefix(portName, "Environment ") {
+												indexStr := strings.TrimPrefix(portName, "Environment ")
+												if idx, err := strconv.Atoi(indexStr); err == nil && idx > 0 && idx <= len(envs) {
+													if envName, ok := envs[idx-1].(string); ok {
+														setEnvToEnvironment[destCompName] = envName
+														fmt.Printf("DEBUG generateConfigWithRouters: Mapped SetEnvironment '%s' to environment '%s'\n", destCompName, envName)
+													}
+												}
+											}
+										}
+										break
+									}
+								}
+								break
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 	// Generate configs for output paths (these will have routing connector as receiver)
 	outputComposites := make([]tmpl.TemplateConfig, 0)
-	for _, path := range outputPaths {
+	fmt.Printf("DEBUG generateConfigWithRouters: Processing %d output paths\n", len(outputPaths))
+	for pathIdx, path := range outputPaths {
+		// Debug: show path components
+		pathComps := []string{}
+		for _, c := range path.Path {
+			pathComps = append(pathComps, c.Name)
+		}
+		fmt.Printf("DEBUG generateConfigWithRouters: Path %d (%s): %v\n", pathIdx, path.ConnType, pathComps)
+
+		// Check if this path contains a SetEnvironment component and get its environment
+		pathEnv := ""
+		for _, comp := range path.Path {
+			if env, ok := setEnvToEnvironment[comp.Name]; ok {
+				pathEnv = env
+				fmt.Printf("DEBUG generateConfigWithRouters: Path %d contains SetEnvironment '%s' for environment '%s'\n", pathIdx, comp.Name, env)
+				break
+			}
+		}
+
+		// Create a copy of userdata for this path with environment context
+		pathUserdata := make(map[string]any)
+		for k, v := range userdata {
+			pathUserdata[k] = v
+		}
+		if pathEnv != "" {
+			pathUserdata["environment"] = pathEnv
+			fmt.Printf("DEBUG generateConfigWithRouters: Set environment='%s' in userdata for path\n", pathEnv)
+		}
+
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, path, userdata)
+		composite, err := base.GenerateConfig(ct, path, pathUserdata)
 		if err != nil {
 			return nil, err
 		}
@@ -1368,7 +1437,7 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 				continue
 			}
 
-			compConfig, err := c.GenerateConfig(ct, path, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, pathUserdata)
 			if err != nil {
 				return nil, err
 			}
