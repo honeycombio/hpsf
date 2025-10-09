@@ -1310,6 +1310,80 @@ func sliceContains(slice []string, item string) bool {
 	return false
 }
 
+// injectEnvironmentAPIKeys injects environment-specific API keys into exporters
+// based on the pipeline they're used in. This ensures ${HTP_EXPORTER_APIKEY_ENV}
+// variables are set correctly for each environment.
+func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, setEnvToEnvironment map[string]string) error {
+	if cc == nil {
+		return nil
+	}
+
+	serviceSection, hasServiceSection := cc.Sections["service"]
+	if !hasServiceSection {
+		return nil
+	}
+
+	exportersSection, hasExportersSection := cc.Sections["exporters"]
+	if !hasExportersSection {
+		return nil
+	}
+
+	// Build a map of unique environment names
+	environments := make(map[string]bool)
+	for _, envName := range setEnvToEnvironment {
+		environments[envName] = true
+	}
+
+	// For each pipeline in the service section
+	for key := range serviceSection {
+		// Look for pipeline exporter keys like "pipelines.traces/dev.exporters"
+		if !strings.HasPrefix(key, "pipelines.") || !strings.HasSuffix(key, ".exporters") {
+			continue
+		}
+
+		// Extract pipeline name from key: "pipelines.traces/dev.exporters" -> "traces/dev"
+		pipelineName := strings.TrimPrefix(key, "pipelines.")
+		pipelineName = strings.TrimSuffix(pipelineName, ".exporters")
+
+		// Extract environment from pipeline name: "traces/dev" -> "dev"
+		parts := strings.SplitN(pipelineName, "/", 2)
+		if len(parts) != 2 {
+			continue
+		}
+		envName := parts[1]
+
+		// Skip intake pipelines
+		if envName == "intake" {
+			continue
+		}
+
+		// Verify this is a known environment
+		if !environments[envName] {
+			continue
+		}
+
+		// Get the list of exporters for this pipeline
+		exporters, ok := serviceSection[key].([]string)
+		if !ok {
+			continue
+		}
+
+		// Inject environment-specific API key for each exporter
+		for _, exporter := range exporters {
+			headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exporter)
+			existingValue, hasHeader := exportersSection[headerKey]
+
+			// Inject if header doesn't exist or if it's set to the default value
+			if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+				envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+				exportersSection[headerKey] = envVarName
+			}
+		}
+	}
+
+	return nil
+}
+
 // generateRefineryRulesWithRouter handles refinery rules generation for multi-environment routing.
 // It processes sampling paths and sets the environment context from SetEnvironment components.
 func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
@@ -1771,6 +1845,12 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		// Output pipelines (router → exporter) should have routing in receivers
 		if err := transformRouterPipelines(collectorConfig, h, comps); err != nil {
 			return nil, fmt.Errorf("failed to transform router pipelines: %w", err)
+		}
+
+		// Inject environment-specific API keys for all environment pipelines
+		// This ensures exporters get the correct ${HTP_EXPORTER_APIKEY_ENV} variables
+		if err := injectEnvironmentAPIKeys(collectorConfig, setEnvToEnvironment); err != nil {
+			return nil, fmt.Errorf("failed to inject environment API keys: %w", err)
 		}
 	}
 
