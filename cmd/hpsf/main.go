@@ -127,6 +127,25 @@ func main() {
 		if err != nil {
 			log.Fatalf("error writing output file: %v", err)
 		}
+	case "layout":
+		h, err := hpsf.FromYAML(input)
+		if err != nil {
+			log.Fatalf("error unmarshaling input file: %v", err)
+		}
+		// run auto-layout
+		err = h.AutoLayout(hpsf.DefaultNodeSize())
+		if err != nil {
+			log.Fatalf("error computing layout: %v", err)
+		}
+		// write it to the output file as yaml
+		data, err := y.Marshal(&h)
+		if err != nil {
+			log.Fatalf("error marshaling output file: %v", err)
+		}
+		_, err = outf.Write(data)
+		if err != nil {
+			log.Fatalf("error writing output file: %v", err)
+		}
 	case "validate":
 		err = hpsf.EnsureHPSFYAML(string(inputData))
 		if err != nil {
