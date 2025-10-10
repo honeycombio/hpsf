@@ -294,19 +294,21 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 			continue
 		}
 		// Build sortable slice with computed keys.
+		// Use average (barycentric) position of predecessors instead of minimum
+		// to get a better initial ordering that considers all incoming edges.
 		type keyed struct {
 			n           *Node
-			minPredRow  int
+			avgPredRow  float64
 			minPredPort int
 		}
 		keyedNodes := make([]keyed, 0, len(colNodes))
 		for _, n := range colNodes {
-			minRow := 0
+			avgRow := 0.0
 			minPort := 0
 			if inc, ok := incoming[n]; ok && len(inc) > 0 {
-				// Initialize with large sentinels then compute minima.
+				totalRow := 0.0
+				countRow := 0
 				const big = int(^uint(0) >> 1) // max int
-				minRow = big
 				minPort = big
 				for _, e := range inc {
 					src := e.From.Node
@@ -314,25 +316,26 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 						continue
 					}
 					r, okR := row[src]
-					if okR && r < minRow {
-						minRow = r
+					if okR {
+						totalRow += float64(r)
+						countRow++
 					}
 					if e.From.Index < minPort {
 						minPort = e.From.Index
 					}
 				}
-				if minRow == big { // no valid predecessors with assigned rows yet
-					minRow = 0
+				if countRow > 0 {
+					avgRow = totalRow / float64(countRow)
 				}
 				if minPort == big {
 					minPort = 0
 				}
 			}
-			keyedNodes = append(keyedNodes, keyed{n: n, minPredRow: minRow, minPredPort: minPort})
+			keyedNodes = append(keyedNodes, keyed{n: n, avgPredRow: avgRow, minPredPort: minPort})
 		}
 		sort.SliceStable(keyedNodes, func(i, j int) bool {
-			if keyedNodes[i].minPredRow != keyedNodes[j].minPredRow {
-				return keyedNodes[i].minPredRow < keyedNodes[j].minPredRow
+			if keyedNodes[i].avgPredRow != keyedNodes[j].avgPredRow {
+				return keyedNodes[i].avgPredRow < keyedNodes[j].avgPredRow
 			}
 			if keyedNodes[i].minPredPort != keyedNodes[j].minPredPort {
 				return keyedNodes[i].minPredPort < keyedNodes[j].minPredPort
@@ -390,6 +393,46 @@ func (g *Graph) assignPositions(columns [][]*Node, col map[*Node]int, row map[*N
 	}
 }
 
+// findDownstreamNodes finds all nodes that are downstream (reachable) from the given node.
+// This is used for path-aware swapping to ensure that when we swap two nodes, we also
+// swap their downstream dependencies to maintain path ordering.
+func (g *Graph) findDownstreamNodes(start *Node, col map[*Node]int) []*Node {
+	visited := make(map[*Node]bool)
+	downstream := make([]*Node, 0)
+
+	var dfs func(*Node)
+	dfs = func(n *Node) {
+		if visited[n] {
+			return
+		}
+		visited[n] = true
+
+		// Find all edges where this node is the source
+		for _, e := range g.Edges {
+			if e == nil || e.From == nil || e.To == nil || e.From.Node == nil || e.To.Node == nil {
+				continue
+			}
+			if e.From.Node == n {
+				downstream = append(downstream, e.To.Node)
+				dfs(e.To.Node)
+			}
+		}
+	}
+
+	// Don't include the start node itself in the downstream list
+	for _, e := range g.Edges {
+		if e == nil || e.From == nil || e.To == nil || e.From.Node == nil || e.To.Node == nil {
+			continue
+		}
+		if e.From.Node == start {
+			downstream = append(downstream, e.To.Node)
+			dfs(e.To.Node)
+		}
+	}
+
+	return downstream
+}
+
 // countCrossings counts edge crossings.
 //
 // Only considers edges where the source column < target column. Multi-column span edges are treated the same.
@@ -430,6 +473,8 @@ func (g *Graph) countCrossings(row map[*Node]int, col map[*Node]int) int {
 
 // reduceCrossings attempts to reduce edge crossings by swapping rows of nodes within each column.
 // It mutates the row map in place and returns true if any swap was applied.
+// This function runs multiple passes of different optimization strategies until no further
+// improvement is possible or max iterations is reached.
 func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*Node]int, cfg *layoutConfig) bool {
 	improved := false
 	baseCross := g.countCrossings(row, col)
@@ -437,73 +482,103 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 		return false
 	}
 
-	// Barycentric sweeps
-	for sweep := 0; sweep < 4; sweep++ {
-		leftChanged := g.barycentricPass(columns, col, row, -1, cfg)
-		rightChanged := g.barycentricPass(columns, col, row, +1, cfg)
-		if !leftChanged && !rightChanged {
-			break
-		}
-		newCross := g.countCrossings(row, col)
-		if newCross < baseCross {
-			baseCross = newCross
-			improved = true
-		}
-		if baseCross == 0 {
-			return true
-		}
-	}
+	// Run multiple passes until we can't improve anymore
+	maxPasses := 5
+	for pass := 0; pass < maxPasses && baseCross > 0; pass++ {
+		passImproved := false
 
-	// Greedy pairwise swaps within single columns
-	// We do multiple iterations per column until no more improvements or max iterations reached.
-	// This is a local optimization and may not reach a global optimum.
-	// We process columns independently, left to right, so earlier columns are fixed when processing later ones.
-	// This is a heuristic; a more global approach could yield better results but would be more complex.
-	for _, colNodes := range columns {
-		if len(colNodes) < 2 {
-			continue
-		}
-		iterations := 0
-		for iterations < cfg.MaxSwapIterations {
-			changed := false
-			// Try all unordered pairs (i<j)
-			for i := 0; i < len(colNodes)-1; i++ {
-				n1 := colNodes[i]
-				for j := i + 1; j < len(colNodes); j++ {
-					n2 := colNodes[j]
-					// Swap simulated by exchanging row indices
-					r1, r2 := row[n1], row[n2]
-					row[n1], row[n2] = r2, r1
-					// Recompute positions to reflect swapped rows
-					g.assignPositions(columns, col, row, cfg)
-					newCross := g.countCrossings(row, col)
-					if newCross < baseCross { // accept
-						baseCross = newCross
-						changed = true
-						improved = true
-					} else { // revert
-						row[n1], row[n2] = r1, r2
-						g.assignPositions(columns, col, row, cfg)
-					}
-					if baseCross == 0 {
-						return true
-					}
-				}
-			}
-			if !changed {
+		// Barycentric sweeps - only use predecessor-based (leftward) ordering
+		// The successor-based (rightward) pass can undo good orderings
+		for sweep := 0; sweep < 4; sweep++ {
+			leftChanged := g.barycentricPass(columns, col, row, -1, cfg)
+			if !leftChanged {
 				break
 			}
-			iterations++
+			newCross := g.countCrossings(row, col)
+			if newCross < baseCross {
+				baseCross = newCross
+				improved = true
+				passImproved = true
+			}
+			if baseCross == 0 {
+				return true
+			}
 		}
-	}
 
-	// Two-column coordinated swaps
-	// If crossings remain, try swapping node pairs across adjacent column pairs.
-	// This can find solutions that require coordinated swaps (e.g., swap A↔B in col i AND swap C↔D in col i+1).
-	if baseCross > 0 {
-		twoColChanged := g.tryTwoColumnSwaps(columns, col, row, &baseCross, cfg)
-		if twoColChanged {
-			improved = true
+		// Greedy pairwise swaps within single columns
+		// We do multiple iterations per column until no more improvements or max iterations reached.
+		// This is a local optimization and may not reach a global optimum.
+		// We process columns independently, left to right, so earlier columns are fixed when processing later ones.
+		// This is a heuristic; a more global approach could yield better results but would be more complex.
+		for _, colNodes := range columns {
+			if len(colNodes) < 2 {
+				continue
+			}
+			iterations := 0
+			for iterations < cfg.MaxSwapIterations {
+				changed := false
+				// Try all unordered pairs (i<j)
+				for i := 0; i < len(colNodes)-1; i++ {
+					n1 := colNodes[i]
+					for j := i + 1; j < len(colNodes); j++ {
+						n2 := colNodes[j]
+						// Swap simulated by exchanging row indices
+						r1, r2 := row[n1], row[n2]
+						row[n1], row[n2] = r2, r1
+						// Recompute positions to reflect swapped rows
+						g.assignPositions(columns, col, row, cfg)
+						newCross := g.countCrossings(row, col)
+						if newCross < baseCross { // accept
+							baseCross = newCross
+							changed = true
+							improved = true
+							passImproved = true
+						} else { // revert
+							row[n1], row[n2] = r1, r2
+							g.assignPositions(columns, col, row, cfg)
+						}
+						if baseCross == 0 {
+							return true
+						}
+					}
+				}
+				if !changed {
+					break
+				}
+				iterations++
+			}
+		}
+
+		// Two-column coordinated swaps
+		// If crossings remain, try swapping node pairs across adjacent column pairs.
+		// This can find solutions that require coordinated swaps (e.g., swap A↔B in col i AND swap C↔D in col i+1).
+		if baseCross > 0 {
+			twoColChanged := g.tryTwoColumnSwaps(columns, col, row, &baseCross, cfg)
+			if twoColChanged {
+				improved = true
+				passImproved = true
+			}
+		}
+
+		// Column vertical shift optimization - run this even during crossing reduction
+		// because shifting columns can sometimes resolve crossings by aligning nodes
+		// with their predecessors. We need to check crossings again after shifting.
+		if baseCross > 0 {
+			// Assign positions first so shiftColumnsForIncoming has actual coordinates to work with
+			g.assignPositions(columns, col, row, cfg)
+			g.shiftColumnsForIncoming(columns, col, cfg)
+			// After shifting, recount crossings - the shift might have resolved some
+			newCross := g.countCrossings(row, col)
+			if newCross < baseCross {
+				baseCross = newCross
+				improved = true
+				passImproved = true
+			}
+		}
+
+		// If this pass didn't improve anything, we're done
+		if !passImproved {
+			break
 		}
 	}
 
