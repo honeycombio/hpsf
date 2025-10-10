@@ -351,25 +351,14 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 }
 
 // assignPositions sets concrete X,Y coordinates for each node based on its column & row indices.
-// Spacing uses the maximum node width/height plus configured margins, then snaps positions to the grid.
-// Row index is local to a column (restarts each column) which is acceptable because columns do not vertically align nodes across columns.
+// Horizontal spacing is uniform across all columns based on the widest node.
+// Vertical spacing is calculated per column based on the tallest node in each column,
+// allowing columns with smaller nodes to be more compact.
+// Row index is local to a column (restarts each column).
 func (g *Graph) assignPositions(columns [][]*Node, col map[*Node]int, row map[*Node]int, cfg *layoutConfig) {
 	if len(g.Nodes) == 0 {
 		return
 	}
-	// Compute max width/height
-	maxW := 0
-	maxH := 0
-	for _, n := range g.Nodes {
-		if n.Rect.Size.W > maxW {
-			maxW = n.Rect.Size.W
-		}
-		if n.Rect.Size.H > maxH {
-			maxH = n.Rect.Size.H
-		}
-	}
-	hSpace := maxW + cfg.HSeparation
-	vSpace := maxH + cfg.VSeparation
 
 	// Snap spacing itself to grid so aligned columns/rows remain on grid after multiplication.
 	snap := func(v int) int {
@@ -378,14 +367,34 @@ func (g *Graph) assignPositions(columns [][]*Node, col map[*Node]int, row map[*N
 		}
 		return ((v / cfg.SnapGridSize) + 1) * cfg.SnapGridSize
 	}
-	hSpace = snap(hSpace)
-	vSpace = snap(vSpace)
 
+	// Compute max width for horizontal spacing (uniform across all columns)
+	maxW := 0
+	for _, n := range g.Nodes {
+		if n.Rect.Size.W > maxW {
+			maxW = n.Rect.Size.W
+		}
+	}
+	hSpace := snap(maxW + cfg.HSeparation)
+
+	// Compute vertical spacing per column based on the tallest node in each column
+	colVSpace := make([]int, len(columns))
+	for colIdx, colNodes := range columns {
+		maxH := 0
+		for _, n := range colNodes {
+			if n.Rect.Size.H > maxH {
+				maxH = n.Rect.Size.H
+			}
+		}
+		colVSpace[colIdx] = snap(maxH + cfg.VSeparation)
+	}
+
+	// Assign positions
 	for _, n := range g.Nodes {
 		c := col[n]
 		r := row[n]
 		x := c * hSpace
-		y := r * vSpace
+		y := r * colVSpace[c]
 		// already snapped because spacing multiples are snapped, but ensure safety
 		x = snap(x)
 		y = snap(y)
