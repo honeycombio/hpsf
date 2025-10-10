@@ -905,6 +905,32 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 	return result
 }
 
+// validateRouterUsage validates that at most one Router component is used in the workflow.
+// Multiple Router components in a single workflow can cause ambiguous routing behavior and cycles.
+func (t *Translator) validateRouterUsage(h *hpsf.HPSF) validator.Result {
+	result := validator.NewResult("HPSF router validation errors")
+	routerCount := 0
+	var routerComponents []string
+
+	for _, c := range h.Components {
+		// Check for Router kind specifically (not just router style, which includes SetEnvironment)
+		if c.Kind == "Router" {
+			routerCount++
+			routerComponents = append(routerComponents, c.Name)
+		}
+	}
+
+	if routerCount > 1 {
+		err := hpsf.NewError(fmt.Sprintf("only one Router component is allowed per workflow, found %d", routerCount))
+		for _, name := range routerComponents {
+			err = err.WithComponent(name)
+		}
+		result.Add(err)
+	}
+
+	return result
+}
+
 // ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
 // components and templates installed in the translator.
 // Note that it returns a validation.Result so that the errors can be collected and reported in a
@@ -936,6 +962,7 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 
 	result.Add(t.validateProperties(h, templateComps))
 	result.Add(t.validateConnectionPorts(h, templateComps))
+	result.Add(t.validateRouterUsage(h))
 	result.Add(t.validateStartSampling(h, templateComps))
 	result.Add(t.validateSamplerConnections(h, templateComps))
 
