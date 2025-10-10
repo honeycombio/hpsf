@@ -40,6 +40,7 @@ type Rect struct {
 
 type Node struct {
 	Id      string  `yaml:"id"`
+	Style   string  `yaml:"style,omitempty"`
 	Rect    Rect    `yaml:"rect"`
 	Inputs  []*Port `yaml:"inputs,omitempty"`
 	Outputs []*Port `yaml:"outputs,omitempty"`

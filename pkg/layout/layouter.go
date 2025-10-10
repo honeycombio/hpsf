@@ -57,7 +57,8 @@ func (l *Layouter) buildLayoutGraph(h *hpsf.HPSF, nodeSize hpsf.NodeSize) (*Grap
 		}
 
 		node := &Node{
-			Id: comp.Name,
+			Id:    comp.Name,
+			Style: template.Style,
 			Rect: Rect{
 				Position: Position{X: 0, Y: 0},
 				Size:     Size{W: width, H: height},

@@ -114,11 +114,13 @@ func WithMaxSwapIterations(max int) LayoutOption {
 // AutoLayout computes an automatic layout for the graph. It is idempotent given the same node set & edges.
 // Steps (all executed only if graph is a DAG):
 //  1. Cycle detection (topological ordering). Returns ErrCycleDetected if a cycle is found.
-//  2. Column assignment (longest distance from any source).
-//  3. Initial ordering within columns.
-//  4. Position assignment (snap to grid).
-//  5. Crossing reduction (optional heuristic).
-//  6. Edge length minimization (optional heuristic).
+//  2. Separate connected and unconnected components.
+//  3. Column assignment (longest distance from any source) for connected components.
+//  4. Place unconnected components in columns based on style.
+//  5. Initial ordering within columns.
+//  6. Position assignment (snap to grid).
+//  7. Crossing reduction (optional heuristic).
+//  8. Edge length minimization (optional heuristic).
 //
 // Future work: expose margins & snap size as options; support SCC condensation instead of hard error on cycles.
 func (g *Graph) AutoLayout(opts ...LayoutOption) error {
@@ -131,30 +133,37 @@ func (g *Graph) AutoLayout(opts ...LayoutOption) error {
 		o(cfg)
 	}
 
-	// 1. Topological order (cycle detection)
-	order, err := g.topologicalOrder()
+	// 1. Separate connected and unconnected nodes
+	connectedNodes, unconnectedNodes := g.separateConnectedNodes()
+
+	// 2. Topological order (cycle detection) for connected nodes only
+	order, err := g.topologicalOrderForNodes(connectedNodes)
 	if err != nil {
 		return err
 	}
 
-	// 2. Column assignment (longest distance from any source) using topo order
+	// 3. Column assignment (longest distance from any source) using topo order for connected nodes
 	colIndex := g.assignColumns(order)
 
-	// 3. Group nodes per column & compute max node width/height for spacing
+	// 4. Assign columns for unconnected nodes based on style
+	g.assignUnconnectedColumns(unconnectedNodes, colIndex)
+
+	// 5. Group nodes per column & compute max node width/height for spacing
 	columns, _, _ := g.groupColumnsAndSizes(colIndex)
 
-	// 4. Initial row ordering within each column (before heuristics)
+	// 6. Initial row ordering within each column (before heuristics)
+	// This will place unconnected nodes at the bottom, sorted alphabetically
 	rowIndex := g.orderRows(columns, colIndex)
 
-	// 5. Reduce edge crossings (barycentric + greedy swaps + two-column coordinated swaps)
+	// 7. Reduce edge crossings (barycentric + greedy swaps + two-column coordinated swaps)
 	if cfg.OptimizeCrossings {
 		g.reduceCrossings(columns, colIndex, rowIndex, cfg)
 	}
 
-	// 6. Assign concrete positions snapped to grid
+	// 8. Assign concrete positions snapped to grid
 	g.assignPositions(columns, colIndex, rowIndex, cfg)
 
-	// 7. Column vertical shift optimization to tighten incoming edge lengths.
+	// 9. Column vertical shift optimization to tighten incoming edge lengths.
 	// This never introduces crossings since it preserves relative node order within columns.
 	if cfg.OptimizeLengths {
 		g.shiftColumnsForIncoming(columns, colIndex, cfg)
@@ -163,18 +172,63 @@ func (g *Graph) AutoLayout(opts ...LayoutOption) error {
 	return nil
 }
 
+// separateConnectedNodes separates nodes into connected and unconnected based on whether they have any edges.
+func (g *Graph) separateConnectedNodes() ([]*Node, []*Node) {
+	connected := make(map[*Node]bool)
+
+	// Mark all nodes that have at least one edge (incoming or outgoing)
+	for _, e := range g.Edges {
+		if e.From != nil && e.From.Node != nil {
+			connected[e.From.Node] = true
+		}
+		if e.To != nil && e.To.Node != nil {
+			connected[e.To.Node] = true
+		}
+	}
+
+	var connectedNodes []*Node
+	var unconnectedNodes []*Node
+
+	for _, n := range g.Nodes {
+		if connected[n] {
+			connectedNodes = append(connectedNodes, n)
+		} else {
+			unconnectedNodes = append(unconnectedNodes, n)
+		}
+	}
+
+	return connectedNodes, unconnectedNodes
+}
+
 // topologicalOrder returns a topological ordering of nodes or an error if a cycle is detected.
 func (g *Graph) topologicalOrder() ([]*Node, error) {
-	// Build in-degree and adjacency list.
-	indegree := make(map[*Node]int, len(g.Nodes))
-	adj := make(map[*Node][]*Node, len(g.Nodes))
-	for _, n := range g.Nodes {
-		indegree[n] = 0
+	return g.topologicalOrderForNodes(g.Nodes)
+}
+
+// topologicalOrderForNodes returns a topological ordering of the given nodes or an error if a cycle is detected.
+func (g *Graph) topologicalOrderForNodes(nodes []*Node) ([]*Node, error) {
+	if len(nodes) == 0 {
+		return []*Node{}, nil
 	}
+
+	// Build in-degree and adjacency list.
+	indegree := make(map[*Node]int, len(nodes))
+	adj := make(map[*Node][]*Node, len(nodes))
+	nodeSet := make(map[*Node]bool, len(nodes))
+
+	for _, n := range nodes {
+		indegree[n] = 0
+		nodeSet[n] = true
+	}
+
 	for _, e := range g.Edges {
 		src := e.From.Node
 		dst := e.To.Node
 		if src == nil || dst == nil { // malformed edge; ignore silently for now
+			continue
+		}
+		// Only consider edges between nodes in our subset
+		if !nodeSet[src] || !nodeSet[dst] {
 			continue
 		}
 		if src == dst { // self-loop => cycle
@@ -185,14 +239,14 @@ func (g *Graph) topologicalOrder() ([]*Node, error) {
 	}
 
 	// Queue of zero in-degree nodes.
-	queue := make([]*Node, 0, len(g.Nodes))
+	queue := make([]*Node, 0, len(nodes))
 	for n, d := range indegree {
 		if d == 0 {
 			queue = append(queue, n)
 		}
 	}
 
-	order := make([]*Node, 0, len(g.Nodes))
+	order := make([]*Node, 0, len(nodes))
 	for len(queue) > 0 {
 		// pop last (stack semantics ok; ordering arbitrary but deterministic given Go map iteration is randomized across runs, but if deterministic order is required we could sort IDs.)
 		n := queue[len(queue)-1]
@@ -206,7 +260,7 @@ func (g *Graph) topologicalOrder() ([]*Node, error) {
 		}
 	}
 
-	if len(order) != len(g.Nodes) {
+	if len(order) != len(nodes) {
 		return nil, ErrCycleDetected
 	}
 
@@ -241,6 +295,102 @@ func (g *Graph) assignColumns(order []*Node) map[*Node]int {
 	return col
 }
 
+// assignUnconnectedColumns assigns column indices to unconnected nodes based on their style.
+// Rules:
+// - All receivers go in column 0
+// - All exporters go in the same column (either with existing exporters, or after all other columns)
+// - Other components go in the first existing column containing components of the same style,
+//   or in a new column between receivers and exporters if no matching style exists
+func (g *Graph) assignUnconnectedColumns(unconnectedNodes []*Node, colIndex map[*Node]int) {
+	if len(unconnectedNodes) == 0 {
+		return
+	}
+
+	// Find current max column and track exporter column if it exists
+	maxCol := -1
+	exporterCol := -1
+	for node, col := range colIndex {
+		if col > maxCol {
+			maxCol = col
+		}
+		if node.Style == "exporter" && exporterCol < 0 {
+			exporterCol = col
+		}
+	}
+
+	// Group connected nodes by style and column
+	styleToColumns := make(map[string]map[int]bool)
+	for node, col := range colIndex {
+		if node.Style != "" {
+			if styleToColumns[node.Style] == nil {
+				styleToColumns[node.Style] = make(map[int]bool)
+			}
+			styleToColumns[node.Style][col] = true
+		}
+	}
+
+	// Assign columns to unconnected nodes
+	for _, node := range unconnectedNodes {
+		var targetCol int
+
+		switch node.Style {
+		case "receiver":
+			// All receivers go in column 0
+			targetCol = 0
+
+		case "exporter":
+			// All exporters go in the same column
+			if exporterCol >= 0 {
+				// Use existing exporter column
+				targetCol = exporterCol
+			} else {
+				// No existing exporters, create new column after all others
+				targetCol = maxCol + 1
+				exporterCol = targetCol // Remember this for subsequent exporters
+			}
+
+		default:
+			// Other components: find first existing column with same style
+			if columns, exists := styleToColumns[node.Style]; exists {
+				// Find the first column with this style
+				for col := 0; col <= maxCol+1; col++ {
+					if columns[col] {
+						targetCol = col
+						break
+					}
+				}
+			} else {
+				// No existing column with this style
+				// Place in a new column between receivers (col 0) and exporters
+				// Find the last non-exporter column
+				lastMiddleCol := 0
+				for s, cols := range styleToColumns {
+					if s != "exporter" {
+						for col := range cols {
+							if col > lastMiddleCol {
+								lastMiddleCol = col
+							}
+						}
+					}
+				}
+				targetCol = lastMiddleCol + 1
+			}
+		}
+
+		colIndex[node] = targetCol
+
+		// Update tracking maps
+		if styleToColumns[node.Style] == nil {
+			styleToColumns[node.Style] = make(map[int]bool)
+		}
+		styleToColumns[node.Style][targetCol] = true
+
+		if targetCol > maxCol {
+			maxCol = targetCol
+		}
+	}
+}
+
 // groupColumnsAndSizes organizes nodes into columns based on computed column index and
 // returns: slice of columns (each a slice of *Node) and the maximum width & height seen.
 func (g *Graph) groupColumnsAndSizes(col map[*Node]int) ([][]*Node, int, int) {
@@ -271,8 +421,8 @@ func (g *Graph) groupColumnsAndSizes(col map[*Node]int) ([][]*Node, int, int) {
 // Strategy:
 //
 //	Process columns left-to-right; for each column we sort that column's nodes by a key:
-//	  (min predecessor row, min predecessor output port index, node.Id)
-//	Nodes with no predecessors get key (0, 0, Id).
+//	  Connected nodes (those with edges): (avgPredRow, minPredPort, node.Id)
+//	  Unconnected nodes (no edges): placed at bottom, sorted alphabetically by Id
 //	Row indices are local to a column (they restart at 0 for each column) which matches test expectations.
 //
 // Returns a map of node -> rowIndex (local to its column).
@@ -288,12 +438,35 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 		incoming[e.To.Node] = append(incoming[e.To.Node], e)
 	}
 
+	// Determine which nodes are connected (have any edges)
+	connectedNodes := make(map[*Node]bool)
+	for _, e := range g.Edges {
+		if e.From != nil && e.From.Node != nil {
+			connectedNodes[e.From.Node] = true
+		}
+		if e.To != nil && e.To.Node != nil {
+			connectedNodes[e.To.Node] = true
+		}
+	}
+
 	// Iterate columns left to right so predecessor rows are known.
 	for _, colNodes := range columns {
 		if len(colNodes) == 0 {
 			continue
 		}
-		// Build sortable slice with computed keys.
+
+		// Separate connected and unconnected nodes in this column
+		var connected []*Node
+		var unconnected []*Node
+		for _, n := range colNodes {
+			if connectedNodes[n] {
+				connected = append(connected, n)
+			} else {
+				unconnected = append(unconnected, n)
+			}
+		}
+
+		// Build sortable slice with computed keys for connected nodes.
 		// Use average (barycentric) position of predecessors instead of minimum
 		// to get a better initial ordering that considers all incoming edges.
 		type keyed struct {
@@ -301,8 +474,8 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 			avgPredRow  float64
 			minPredPort int
 		}
-		keyedNodes := make([]keyed, 0, len(colNodes))
-		for _, n := range colNodes {
+		keyedNodes := make([]keyed, 0, len(connected))
+		for _, n := range connected {
 			avgRow := 0.0
 			minPort := 0
 			if inc, ok := incoming[n]; ok && len(inc) > 0 {
@@ -342,9 +515,22 @@ func (g *Graph) orderRows(columns [][]*Node, col map[*Node]int) map[*Node]int {
 			}
 			return keyedNodes[i].n.Id < keyedNodes[j].n.Id
 		})
+
+		// Sort unconnected nodes alphabetically by Id
+		sort.SliceStable(unconnected, func(i, j int) bool {
+			return unconnected[i].Id < unconnected[j].Id
+		})
+
 		// Assign row indices local to this column.
-		for rIdx, k := range keyedNodes {
+		// Connected nodes first, then unconnected nodes at the bottom.
+		rIdx := 0
+		for _, k := range keyedNodes {
 			row[k.n] = rIdx
+			rIdx++
+		}
+		for _, n := range unconnected {
+			row[n] = rIdx
+			rIdx++
 		}
 	}
 	return row
@@ -484,11 +670,24 @@ func (g *Graph) countCrossings(row map[*Node]int, col map[*Node]int) int {
 // It mutates the row map in place and returns true if any swap was applied.
 // This function runs multiple passes of different optimization strategies until no further
 // improvement is possible or max iterations is reached.
+// IMPORTANT: Only connected nodes (those with edges) are considered for swapping.
+// Unconnected nodes remain at the bottom of their columns.
 func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*Node]int, cfg *layoutConfig) bool {
 	improved := false
 	baseCross := g.countCrossings(row, col)
 	if baseCross == 0 {
 		return false
+	}
+
+	// Identify connected nodes (those with edges) - these are the only ones we can swap
+	connectedNodes := make(map[*Node]bool)
+	for _, e := range g.Edges {
+		if e.From != nil && e.From.Node != nil {
+			connectedNodes[e.From.Node] = true
+		}
+		if e.To != nil && e.To.Node != nil {
+			connectedNodes[e.To.Node] = true
+		}
 	}
 
 	// Run multiple passes until we can't improve anymore
@@ -499,7 +698,7 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 		// Barycentric sweeps - only use predecessor-based (leftward) ordering
 		// The successor-based (rightward) pass can undo good orderings
 		for sweep := 0; sweep < 4; sweep++ {
-			leftChanged := g.barycentricPass(columns, col, row, -1, cfg)
+			leftChanged := g.barycentricPass(columns, col, row, -1, connectedNodes, cfg)
 			if !leftChanged {
 				break
 			}
@@ -519,18 +718,32 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 		// This is a local optimization and may not reach a global optimum.
 		// We process columns independently, left to right, so earlier columns are fixed when processing later ones.
 		// This is a heuristic; a more global approach could yield better results but would be more complex.
+		// IMPORTANT: Only swap connected nodes, never unconnected nodes.
 		for _, colNodes := range columns {
 			if len(colNodes) < 2 {
 				continue
 			}
+
+			// Filter to only connected nodes in this column
+			var connectedInCol []*Node
+			for _, n := range colNodes {
+				if connectedNodes[n] {
+					connectedInCol = append(connectedInCol, n)
+				}
+			}
+
+			if len(connectedInCol) < 2 {
+				continue // Need at least 2 connected nodes to swap
+			}
+
 			iterations := 0
 			for iterations < cfg.MaxSwapIterations {
 				changed := false
-				// Try all unordered pairs (i<j)
-				for i := 0; i < len(colNodes)-1; i++ {
-					n1 := colNodes[i]
-					for j := i + 1; j < len(colNodes); j++ {
-						n2 := colNodes[j]
+				// Try all unordered pairs (i<j) of connected nodes only
+				for i := 0; i < len(connectedInCol)-1; i++ {
+					n1 := connectedInCol[i]
+					for j := i + 1; j < len(connectedInCol); j++ {
+						n2 := connectedInCol[j]
 						// Swap simulated by exchanging row indices
 						r1, r2 := row[n1], row[n2]
 						row[n1], row[n2] = r2, r1
@@ -562,7 +775,7 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 		// If crossings remain, try swapping node pairs across adjacent column pairs.
 		// This can find solutions that require coordinated swaps (e.g., swap A↔B in col i AND swap C↔D in col i+1).
 		if baseCross > 0 {
-			twoColChanged := g.tryTwoColumnSwaps(columns, col, row, &baseCross, cfg)
+			twoColChanged := g.tryTwoColumnSwaps(columns, col, row, &baseCross, connectedNodes, cfg)
 			if twoColChanged {
 				improved = true
 				passImproved = true
@@ -599,26 +812,41 @@ func (g *Graph) reduceCrossings(columns [][]*Node, col map[*Node]int, row map[*N
 // together with one pair of nodes in column i+1, accepting the swap if it reduces crossings.
 // This can solve cases where single-column optimization gets stuck in local optima.
 // Returns true if any improvement was made. Updates baseCross pointer with the new crossing count.
-func (g *Graph) tryTwoColumnSwaps(columns [][]*Node, col map[*Node]int, row map[*Node]int, baseCross *int, cfg *layoutConfig) bool {
+// IMPORTANT: Only swaps connected nodes, never unconnected nodes.
+func (g *Graph) tryTwoColumnSwaps(columns [][]*Node, col map[*Node]int, row map[*Node]int, baseCross *int, connectedNodes map[*Node]bool, cfg *layoutConfig) bool {
 	improved := false
 
 	for colIdx := 0; colIdx < len(columns)-1; colIdx++ {
 		leftCol := columns[colIdx]
 		rightCol := columns[colIdx+1]
 
-		if len(leftCol) < 2 || len(rightCol) < 2 {
+		// Filter to only connected nodes
+		var leftConnected []*Node
+		var rightConnected []*Node
+		for _, n := range leftCol {
+			if connectedNodes[n] {
+				leftConnected = append(leftConnected, n)
+			}
+		}
+		for _, n := range rightCol {
+			if connectedNodes[n] {
+				rightConnected = append(rightConnected, n)
+			}
+		}
+
+		if len(leftConnected) < 2 || len(rightConnected) < 2 {
 			continue
 		}
 
-		// Try all combinations of swaps in both columns
-		for iL := 0; iL < len(leftCol)-1; iL++ {
-			for jL := iL + 1; jL < len(leftCol); jL++ {
-				nL1, nL2 := leftCol[iL], leftCol[jL]
+		// Try all combinations of swaps in both columns (connected nodes only)
+		for iL := 0; iL < len(leftConnected)-1; iL++ {
+			for jL := iL + 1; jL < len(leftConnected); jL++ {
+				nL1, nL2 := leftConnected[iL], leftConnected[jL]
 				rL1, rL2 := row[nL1], row[nL2]
 
-				for iR := 0; iR < len(rightCol)-1; iR++ {
-					for jR := iR + 1; jR < len(rightCol); jR++ {
-						nR1, nR2 := rightCol[iR], rightCol[jR]
+				for iR := 0; iR < len(rightConnected)-1; iR++ {
+					for jR := iR + 1; jR < len(rightConnected); jR++ {
+						nR1, nR2 := rightConnected[iR], rightConnected[jR]
 						rR1, rR2 := row[nR1], row[nR2]
 
 						// Try swapping both pairs simultaneously
@@ -652,7 +880,8 @@ func (g *Graph) tryTwoColumnSwaps(columns [][]*Node, col map[*Node]int, row map[
 // barycentricPass reorders rows within each column based on the average (barycentric) row
 // of neighboring nodes in the adjacent column (direction -1: predecessors / left, +1: successors / right).
 // Returns true if any row index changed. It updates positions if changes occur.
-func (g *Graph) barycentricPass(columns [][]*Node, col map[*Node]int, row map[*Node]int, direction int, cfg *layoutConfig) bool {
+// IMPORTANT: Only reorders connected nodes. Unconnected nodes remain at the bottom of their columns.
+func (g *Graph) barycentricPass(columns [][]*Node, col map[*Node]int, row map[*Node]int, direction int, connectedNodes map[*Node]bool, cfg *layoutConfig) bool {
 	changed := false
 	for cIdx, colNodes := range columns {
 		if len(colNodes) < 2 {
@@ -662,12 +891,29 @@ func (g *Graph) barycentricPass(columns [][]*Node, col map[*Node]int, row map[*N
 		if neighborCol < 0 || neighborCol >= len(columns) {
 			continue
 		}
+
+		// Separate connected and unconnected nodes
+		var connected []*Node
+		var unconnected []*Node
+		for _, n := range colNodes {
+			if connectedNodes[n] {
+				connected = append(connected, n)
+			} else {
+				unconnected = append(unconnected, n)
+			}
+		}
+
+		if len(connected) < 2 {
+			continue // Need at least 2 connected nodes to reorder
+		}
+
+		// Score and sort only connected nodes
 		type scored struct {
 			n   *Node
 			avg float64
 		}
-		scoredNodes := make([]scored, 0, len(colNodes))
-		for _, n := range colNodes {
+		scoredNodes := make([]scored, 0, len(connected))
+		for _, n := range connected {
 			var total float64
 			count := 0
 			for _, e := range g.Edges {
@@ -701,11 +947,24 @@ func (g *Graph) barycentricPass(columns [][]*Node, col map[*Node]int, row map[*N
 			}
 			return scoredNodes[i].n.Id < scoredNodes[j].n.Id
 		})
-		for newR, s := range scoredNodes {
-			if row[s.n] != newR {
-				row[s.n] = newR
+
+		// Reassign row indices for connected nodes, keeping unconnected at the bottom
+		rIdx := 0
+		for _, s := range scoredNodes {
+			if row[s.n] != rIdx {
+				row[s.n] = rIdx
 				changed = true
 			}
+			rIdx++
+		}
+		// Unconnected nodes stay at the bottom with their current relative ordering
+		// (they were already sorted alphabetically in orderRows)
+		for _, n := range unconnected {
+			if row[n] != rIdx {
+				row[n] = rIdx
+				changed = true
+			}
+			rIdx++
 		}
 	}
 	if changed {
