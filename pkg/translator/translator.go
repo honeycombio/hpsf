@@ -791,50 +791,21 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 		pipelineNames[parts[0]] = true
 	}
 
-	// Build a map of SetEnvironment components to their environment names
-	// Get environment names from SetEnvironment components' EnvironmentName property
-	setEnvToEnvironment := make(map[string]string) // SetEnvironment component name -> environment name
+	// Build a map of exporter safe names to their environment names
+	// Read environment directly from HoneycombExporter components' EnvironmentName property
+	exporterToEnvironment := make(map[string]string) // exporter safe name -> environment name
 	if h != nil {
-		for _, conn := range h.Connections {
-			// Look for Environment connections from Router to SetEnvironment
-			if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
-				// Get the destination component (SetEnvironment)
-				destCompName := conn.Destination.Component
-
-				// Find the SetEnvironment component and get its EnvironmentName property
-				for _, hcomp := range h.Components {
-					if hcomp.Name == destCompName && hcomp.Kind == "SetEnvironment" {
-						for _, prop := range hcomp.Properties {
-							if prop.Name == "EnvironmentName" {
-								if envName, ok := prop.Value.(string); ok && envName != "" {
-									setEnvToEnvironment[destCompName] = envName
-								}
-								break
-							}
+		for _, hcomp := range h.Components {
+			if hcomp.Kind == "HoneycombExporter" {
+				safeName := hcomp.GetSafeName()
+				// Get EnvironmentName property from exporter
+				for _, prop := range hcomp.Properties {
+					if prop.Name == "EnvironmentName" {
+						if envName, ok := prop.Value.(string); ok && envName != "" {
+							exporterToEnvironment[safeName] = envName
 						}
 						break
 					}
-				}
-			}
-		}
-	}
-
-	// Build a map of components to environments for API key injection
-	// This maps component names (e.g., exporter names) to their environment
-	componentToEnvironment := make(map[string]string) // component safe name -> environment name
-
-	// For each SetEnvironment component, find which components are downstream
-	for setEnvComp, envName := range setEnvToEnvironment {
-		// Find all components that are downstream of this SetEnvironment
-		// by looking at connections in the HPSF
-		if h != nil {
-			for _, conn := range h.Connections {
-				if conn.Source.Component == setEnvComp {
-					// This is an output from SetEnvironment
-					// The destination component is in the environment
-					destComp := conn.Destination.Component
-					destSafeName := strings.ReplaceAll(destComp, " ", "_")
-					componentToEnvironment[destSafeName] = envName
 				}
 			}
 		}
@@ -997,12 +968,11 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 			serviceSection[receiversKey] = connectors
 			delete(serviceSection, connectorsKey)
 
-			// Try to infer environment and inject API key headers
+			// Try to infer environment from exporters
 			if signalType != "" {
 				var envName string
 
-				// First, check if we have environment from SetEnvironment component
-				// by checking if any of the exporters in this pipeline are mapped to an environment
+				// Check if any of the exporters in this pipeline have an environment set
 				for _, exp := range exportersFiltered {
 					// Remove the exporter type prefix (e.g., "otlphttp/") to get the component name
 					expParts := strings.SplitN(exp, "/", 2)
@@ -1010,37 +980,16 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 					if len(expParts) == 2 {
 						expCompName = expParts[1]
 					}
-					if env, ok := componentToEnvironment[expCompName]; ok {
+					if env, ok := exporterToEnvironment[expCompName]; ok {
 						envName = env
 						break
 					}
 				}
 
-				// If not, try to extract environment from the pipeline name itself
+				// If not found in exporter properties, try to extract from pipeline name
 				// Pipeline names follow the pattern: traces/dev, metrics/prod, etc.
 				if envName == "" && len(parts) == 2 && parts[1] != "intake" {
-					// The environment is the second part of the pipeline name
-					// Skip "intake" pipelines as they're not environment-specific
 					envName = parts[1]
-				}
-
-				// If we still couldn't get it, try the exporter name
-				if envName == "" {
-					for _, exp := range exportersFiltered {
-						expLower := strings.ToLower(exp)
-						for expectedName := range expectedPipelines {
-							if strings.HasPrefix(expectedName, signalType+"/") {
-								envPart := strings.TrimPrefix(expectedName, signalType+"/")
-								if strings.Contains(expLower, strings.ToLower(envPart)) {
-									envName = envPart
-									break
-								}
-							}
-						}
-						if envName != "" {
-							break
-						}
-					}
 				}
 
 				if envName != "" {
@@ -1220,71 +1169,26 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 				exportersSection, hasExportersSection := cc.Sections["exporters"]
 
 				if hasExportersSection {
-					// Find SetEnvironment components for this environment
-					for setEnvComp, setEnvName := range setEnvToEnvironment {
-						if setEnvName == envName {
-							// Traverse connections from this SetEnvironment to find exporters
-							// We need to follow the signal type connections (not Environment connections)
-							visited := make(map[string]bool)
-							var findExporters func(compName string)
-							findExporters = func(compName string) {
-								if visited[compName] {
-									return
+					// Look for exporters with matching environment
+					for exporterSafeName, exporterEnv := range exporterToEnvironment {
+						if exporterEnv == envName {
+							// Find the exporter key in the exporters section
+							for exporterKey := range exportersSection {
+								exporterName := exporterKey
+								if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
+									exporterName = exporterKey[:dotIdx]
 								}
-								visited[compName] = true
-
-								// Check if this component is an exporter
-								// Find the component in the HPSF
-								var comp *hpsf.Component
-								for i := range h.Components {
-									if h.Components[i].Name == compName {
-										comp = h.Components[i]
+								// Exporter names have format: {type}/{componentSafeName}
+								if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
+									exporterCompName := exporterName[slashIdx+1:]
+									if exporterCompName == exporterSafeName {
+										if !sliceContains(exportersForEnv, exporterName) {
+											exportersForEnv = append(exportersForEnv, exporterName)
+										}
 										break
 									}
 								}
-
-								if comp != nil {
-									compSafeName := comp.GetSafeName()
-									// Look for this component in the exporters section
-									for exporterKey := range exportersSection {
-										exporterName := exporterKey
-										if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
-											exporterName = exporterKey[:dotIdx]
-										}
-										// Exporter names have format: {type}/{componentSafeName}
-										if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
-											exporterCompName := exporterName[slashIdx+1:]
-											if exporterCompName == compSafeName {
-												if !sliceContains(exportersForEnv, exporterName) {
-													exportersForEnv = append(exportersForEnv, exporterName)
-												}
-											}
-										}
-									}
-								}
-
-								// Follow signal type connections (not Environment connections)
-								for _, conn := range h.Connections {
-									if conn.Source.Component == compName && conn.Source.Type != hpsf.CTYPE_ENVIRONMENT {
-										// Only follow connections of the expected signal type
-										// Convert signal type string to ConnectionType
-										var expectedConnType hpsf.ConnectionType
-										switch signalType {
-										case "traces":
-											expectedConnType = hpsf.CTYPE_TRACES
-										case "logs":
-											expectedConnType = hpsf.CTYPE_LOGS
-										case "metrics":
-											expectedConnType = hpsf.CTYPE_METRICS
-										}
-										if expectedConnType != "" && conn.Source.Type == expectedConnType {
-											findExporters(conn.Destination.Component)
-										}
-									}
-								}
 							}
-
-							findExporters(setEnvComp)
 						}
 					}
 				}
@@ -1311,15 +1215,10 @@ func sliceContains(slice []string, item string) bool {
 }
 
 // injectEnvironmentAPIKeys injects environment-specific API keys into exporters
-// based on the pipeline they're used in. This ensures ${HTP_EXPORTER_APIKEY_ENV}
+// based on their EnvironmentName property. This ensures ${HTP_EXPORTER_APIKEY_ENV}
 // variables are set correctly for each environment.
-func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, setEnvToEnvironment map[string]string) error {
+func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, exporterToEnvironment map[string]string) error {
 	if cc == nil {
-		return nil
-	}
-
-	serviceSection, hasServiceSection := cc.Sections["service"]
-	if !hasServiceSection {
 		return nil
 	}
 
@@ -1328,55 +1227,31 @@ func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, setEnvToEnvironment map[
 		return nil
 	}
 
-	// Build a map of unique environment names
-	environments := make(map[string]bool)
-	for _, envName := range setEnvToEnvironment {
-		environments[envName] = true
-	}
+	// For each exporter, inject environment-specific API key based on its environment property
+	for exporterSafeName, envName := range exporterToEnvironment {
+		// Find the exporter key in the exporters section
+		// Exporter keys have format: {type}/{componentSafeName}.headers.x-honeycomb-team
+		for exporterKey := range exportersSection {
+			exporterName := exporterKey
+			if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
+				exporterName = exporterKey[:dotIdx]
+			}
 
-	// For each pipeline in the service section
-	for key := range serviceSection {
-		// Look for pipeline exporter keys like "pipelines.traces/dev.exporters"
-		if !strings.HasPrefix(key, "pipelines.") || !strings.HasSuffix(key, ".exporters") {
-			continue
-		}
+			// Exporter names have format: {type}/{componentSafeName}
+			if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
+				exporterCompName := exporterName[slashIdx+1:]
+				if exporterCompName == exporterSafeName {
+					// Check if this is the API key header
+					headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exporterName)
+					existingValue, hasHeader := exportersSection[headerKey]
 
-		// Extract pipeline name from key: "pipelines.traces/dev.exporters" -> "traces/dev"
-		pipelineName := strings.TrimPrefix(key, "pipelines.")
-		pipelineName = strings.TrimSuffix(pipelineName, ".exporters")
-
-		// Extract environment from pipeline name: "traces/dev" -> "dev"
-		parts := strings.SplitN(pipelineName, "/", 2)
-		if len(parts) != 2 {
-			continue
-		}
-		envName := parts[1]
-
-		// Skip intake pipelines
-		if envName == "intake" {
-			continue
-		}
-
-		// Verify this is a known environment
-		if !environments[envName] {
-			continue
-		}
-
-		// Get the list of exporters for this pipeline
-		exporters, ok := serviceSection[key].([]string)
-		if !ok {
-			continue
-		}
-
-		// Inject environment-specific API key for each exporter
-		for _, exporter := range exporters {
-			headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exporter)
-			existingValue, hasHeader := exportersSection[headerKey]
-
-			// Inject if header doesn't exist or if it's set to the default value
-			if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
-				envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
-				exportersSection[headerKey] = envVarName
+					// Inject if header doesn't exist or if it's set to the default value
+					if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+						envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+						exportersSection[headerKey] = envVarName
+					}
+					break
+				}
 			}
 		}
 	}
@@ -1385,24 +1260,18 @@ func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, setEnvToEnvironment map[
 }
 
 // generateRefineryRulesWithRouter handles refinery rules generation for multi-environment routing.
-// It processes sampling paths and sets the environment context from SetEnvironment components.
+// It processes sampling paths and sets the environment context from HoneycombExporter components.
 func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 
-	// Build SetEnvironment to environment mapping
-	setEnvToEnvironment := make(map[string]string)
-	for _, conn := range h.Connections {
-		if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
-			destCompName := conn.Destination.Component
-			for _, hcomp := range h.Components {
-				if hcomp.Name == destCompName && hcomp.Kind == "SetEnvironment" {
-					for _, prop := range hcomp.Properties {
-						if prop.Name == "EnvironmentName" {
-							if envName, ok := prop.Value.(string); ok && envName != "" {
-								setEnvToEnvironment[destCompName] = envName
-							}
-							break
-						}
+	// Build exporter to environment mapping
+	exporterToEnvironment := make(map[string]string)
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						exporterToEnvironment[hcomp.Name] = envName
 					}
 					break
 				}
@@ -1424,9 +1293,9 @@ func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *Ordere
 			pathUserdata[k] = v
 		}
 
-		// Find environment by looking for SetEnvironment that connects to the SamplingSequencer
-		// Sampling paths don't include SetEnvironment because they follow SampleData connections
-		// We need to look at OTel signal connections to find which SetEnvironment feeds this sampler
+		// Find environment by looking for HoneycombExporter downstream from the SamplingSequencer
+		// Sampling paths follow SampleData connections, so we need to traverse OTel signal connections
+		// forward to find exporters
 		var samplingSequencer *hpsf.Component
 		for _, comp := range path.Path {
 			if comp.Kind == "SamplingSequencer" {
@@ -1436,23 +1305,34 @@ func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *Ordere
 		}
 
 		if samplingSequencer != nil {
-			// Find which SetEnvironment connects to this SamplingSequencer
-			for _, conn := range h.Connections {
-				if conn.Destination.Component == samplingSequencer.Name &&
-					(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
-					// This connection leads to the sampling sequencer, check if source is SetEnvironment
-					for _, hcomp := range h.Components {
-						if hcomp.Name == conn.Source.Component && hcomp.Kind == "SetEnvironment" {
-							if envName, ok := setEnvToEnvironment[hcomp.Name]; ok {
-								pathUserdata["environment"] = envName
-								break
-							}
+			// Traverse forward from SamplingSequencer to find HoneycombExporter
+			visited := make(map[string]bool)
+			var findExporterEnv func(compName string) string
+			findExporterEnv = func(compName string) string {
+				if visited[compName] {
+					return ""
+				}
+				visited[compName] = true
+
+				// Check if this is an exporter
+				if envName, ok := exporterToEnvironment[compName]; ok {
+					return envName
+				}
+
+				// Follow OTel signal connections downstream
+				for _, conn := range h.Connections {
+					if conn.Source.Component == compName &&
+						(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+						if env := findExporterEnv(conn.Destination.Component); env != "" {
+							return env
 						}
 					}
-					if _, ok := pathUserdata["environment"]; ok {
-						break
-					}
 				}
+				return ""
+			}
+
+			if env := findExporterEnv(samplingSequencer.Name); env != "" {
+				pathUserdata["environment"] = env
 			}
 		}
 
@@ -1628,24 +1508,17 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		}
 	}
 
-	// Build SetEnvironment to environment mapping for this generation
-	// Get environment names from SetEnvironment components' EnvironmentName property
-	setEnvToEnvironment := make(map[string]string)
-	for _, conn := range h.Connections {
-		if conn.Source.Type == hpsf.CTYPE_ENVIRONMENT {
-			// This is an Environment connection from Router to SetEnvironment
-			destCompName := conn.Destination.Component
-
-			// Find the SetEnvironment component and get its EnvironmentName property
-			for _, hcomp := range h.Components {
-				if hcomp.Name == destCompName && hcomp.Kind == "SetEnvironment" {
-					for _, prop := range hcomp.Properties {
-						if prop.Name == "EnvironmentName" {
-							if envName, ok := prop.Value.(string); ok && envName != "" {
-								setEnvToEnvironment[destCompName] = envName
-							}
-							break
-						}
+	// Build exporter to environment mapping for this generation
+	// Get environment names from HoneycombExporter components' EnvironmentName property
+	exporterToEnvironment := make(map[string]string)
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			safeName := hcomp.GetSafeName()
+			// Get EnvironmentName property from exporter
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						exporterToEnvironment[safeName] = envName
 					}
 					break
 				}
@@ -1656,10 +1529,11 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 	// Generate configs for output paths (these will have routing connector as receiver)
 	outputComposites := make([]tmpl.TemplateConfig, 0)
 	for i, path := range outputPaths {
-		// Check if this path contains a SetEnvironment component and get its environment
+		// Check if this path contains a HoneycombExporter component and get its environment
 		pathEnv := ""
 		for _, comp := range path.Path {
-			if env, ok := setEnvToEnvironment[comp.Name]; ok {
+			safeName := comp.GetSafeName()
+			if env, ok := exporterToEnvironment[safeName]; ok {
 				pathEnv = env
 				break
 			}
@@ -1739,11 +1613,11 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 
 	// Dynamically generate routing connector configuration
 	// This replaces the static template that was in Router.yaml
-	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok && len(setEnvToEnvironment) > 0 {
+	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok && len(exporterToEnvironment) > 0 {
 		// Get unique environment names
-		environments := make([]string, 0, len(setEnvToEnvironment))
+		environments := make([]string, 0, len(exporterToEnvironment))
 		envSet := make(map[string]bool)
-		for _, envName := range setEnvToEnvironment {
+		for _, envName := range exporterToEnvironment {
 			if !envSet[envName] {
 				environments = append(environments, envName)
 				envSet[envName] = true
@@ -1834,7 +1708,7 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
 		// Only merge routing connectors if we didn't dynamically generate them
 		// (dynamically generated connectors are already in the final merged format)
-		if len(setEnvToEnvironment) == 0 {
+		if len(exporterToEnvironment) == 0 {
 			if err := mergeRoutingConnectors(collectorConfig); err != nil {
 				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
 			}
@@ -1849,7 +1723,7 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 
 		// Inject environment-specific API keys for all environment pipelines
 		// This ensures exporters get the correct ${HTP_EXPORTER_APIKEY_ENV} variables
-		if err := injectEnvironmentAPIKeys(collectorConfig, setEnvToEnvironment); err != nil {
+		if err := injectEnvironmentAPIKeys(collectorConfig, exporterToEnvironment); err != nil {
 			return nil, fmt.Errorf("failed to inject environment API keys: %w", err)
 		}
 	}

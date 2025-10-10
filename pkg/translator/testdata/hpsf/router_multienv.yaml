@@ -11,26 +11,26 @@ components:
   # SetEnvironment components for each environment
   - name: SetEnvironment_dev
     kind: SetEnvironment
-    properties:
-      - name: EnvironmentName
-        value: dev
   - name: SetEnvironment_staging
     kind: SetEnvironment
-    properties:
-      - name: EnvironmentName
-        value: staging
   - name: SetEnvironment_production
     kind: SetEnvironment
-    properties:
-      - name: EnvironmentName
-        value: production
   # Exporters for each environment (without environment in name to test API key injection)
   - name: exporter_dev
     kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: dev
   - name: exporter_staging
     kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: staging
   - name: exporter_production
     kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: production
 connections:
   # Receiver to router
   - source:

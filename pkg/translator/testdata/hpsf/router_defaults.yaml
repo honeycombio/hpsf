@@ -10,11 +10,11 @@ components:
         value: production
   - name: SetEnvironment_production
     kind: SetEnvironment
+  - name: exporter
+    kind: HoneycombExporter
     properties:
       - name: EnvironmentName
         value: production
-  - name: exporter
-    kind: HoneycombExporter
 connections:
   # Receiver to router
   - source:

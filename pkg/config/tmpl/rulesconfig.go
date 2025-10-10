@@ -157,9 +157,13 @@ func (rc *RulesConfig) RenderYAML() ([]byte, error) {
 		if len(rc.Samplers) > 0 {
 			// Find if there's already a __default__ sampler
 			if _, hasDefault := rc.Samplers["__default__"]; !hasDefault {
-				// Create __default__ from first sampler if none exists
-				for _, sampler := range rc.Samplers {
+				// Create __default__ from first sampler if none exists, and remove the original
+				for envKey, sampler := range rc.Samplers {
 					rc.Samplers["__default__"] = sampler
+					// Delete the original key if it's not "__default__"
+					if envKey != "__default__" {
+						delete(rc.Samplers, envKey)
+					}
 					break
 				}
 			}

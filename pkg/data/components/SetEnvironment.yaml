@@ -38,15 +38,5 @@ ports:
   - name: Metrics
     direction: output
     type: OTelMetrics
-properties:
-  - name: EnvironmentName
-    summary: The name of the environment (e.g., dev, staging, production).
-    description: |
-      The name of the environment this component represents. This value is used by the Router
-      component to generate routing rules and by downstream components to determine
-      environment-specific configuration like API keys.
-    type: string
-    validations:
-      - noblanks
-    advanced: false
+properties: []
 templates: []

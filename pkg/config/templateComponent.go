@@ -359,32 +359,43 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 					}
 
 					if t.Style == "startsampling" {
-						// For Start Sampling components, find the SetEnvironment component upstream
-						// SetEnvironment connects via OTel signal types (Traces/Logs/Metrics), not SampleData
-						var setEnvComp *hpsf.Component
-						for _, conn := range hpsfDoc.Connections {
-							if conn.Destination.Component == t.hpsf.Name &&
-								(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
-								// Found connection to this sampling component, check if source is SetEnvironment
-								for _, comp := range hpsfDoc.Components {
-									if comp.Name == conn.Source.Component && comp.Kind == "SetEnvironment" {
-										setEnvComp = comp
-										break
+						// For Start Sampling components, find the HoneycombExporter component downstream
+						// Traverse connections forward to find exporters
+						visited := make(map[string]bool)
+						var findExporter func(compName string) string
+						findExporter = func(compName string) string {
+							if visited[compName] {
+								return ""
+							}
+							visited[compName] = true
+
+							// Check if this component is a HoneycombExporter
+							for _, comp := range hpsfDoc.Components {
+								if comp.Name == compName && comp.Kind == "HoneycombExporter" {
+									// Get EnvironmentName from this exporter
+									envProp := comp.GetProperty("EnvironmentName")
+									if envProp != nil && envProp.Value != nil {
+										if envName, ok := envProp.Value.(string); ok && envName != "" {
+											return envName
+										}
+									}
+									return ""
+								}
+							}
+
+							// Follow OTel signal connections downstream
+							for _, conn := range hpsfDoc.Connections {
+								if conn.Source.Component == compName &&
+									(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+									if env := findExporter(conn.Destination.Component); env != "" {
+										return env
 									}
 								}
-								break
 							}
+							return ""
 						}
 
-						// Get environment name from SetEnvironment component
-						if setEnvComp != nil {
-							envNameProp := setEnvComp.GetProperty("EnvironmentName")
-							if envNameProp != nil && envNameProp.Value != nil {
-								if envName, ok := envNameProp.Value.(string); ok && envName != "" {
-									rt.env = envName
-								}
-							}
-						}
+						rt.env = findExporter(t.hpsf.Name)
 
 						// If this environment matches the router's default environment, use "__default__" instead
 						if rt.env != "" && rt.env == routerDefaultEnv {
