@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"maps"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -365,6 +366,54 @@ func createMissingOutputPipelines(serviceSection map[string]any, cc *tmpl.Collec
 	}
 }
 
+var (
+	// Regex patterns for parsing routing connector keys
+	// Format: routing/logs.default_pipelines
+	defaultPipelinesPattern = regexp.MustCompile(`^routing/(\w+)\.default_pipelines$`)
+
+	// Format: routing/logs.table_router_staging[0].condition
+	tableEntryPattern = regexp.MustCompile(`^routing/(\w+)\.table_(\w+)\[(\d+)\]\.(\w+)$`)
+)
+
+// routingTableKey represents a parsed routing table entry key
+type routingTableKey struct {
+	signalType    string // e.g., "logs", "traces", "metrics"
+	componentName string // e.g., "router_staging"
+	index         int    // e.g., 0, 1, 2
+	fieldName     string // e.g., "condition", "pipelines", "statement"
+}
+
+// parseDefaultPipelinesKey parses keys like "routing/logs.default_pipelines"
+// Returns (signalType, true) if valid, ("", false) otherwise
+func parseDefaultPipelinesKey(key string) (string, bool) {
+	matches := defaultPipelinesPattern.FindStringSubmatch(key)
+	if len(matches) != 2 {
+		return "", false
+	}
+	return matches[1], true
+}
+
+// parseTableEntryKey parses keys like "routing/logs.table_router_staging[0].condition"
+// Returns (routingTableKey, true) if valid, (zero, false) otherwise
+func parseTableEntryKey(key string) (routingTableKey, bool) {
+	matches := tableEntryPattern.FindStringSubmatch(key)
+	if len(matches) != 5 {
+		return routingTableKey{}, false
+	}
+
+	index, err := strconv.Atoi(matches[3])
+	if err != nil {
+		return routingTableKey{}, false
+	}
+
+	return routingTableKey{
+		signalType:    matches[1],
+		componentName: matches[2],
+		index:         index,
+		fieldName:     matches[4],
+	}, true
+}
+
 // mergeRoutingConnectors finds routing connector entries and merges them per signal type
 // Creates separate routing connectors: routing/logs, routing/traces, routing/metrics
 func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
@@ -379,86 +428,34 @@ func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
 	defaultPipelinesBySignalType := make(map[string][]string) // signalType -> pipelines
 
 	for key, value := range connectorSection {
-		// Check for routing/{signaltype}.default_pipelines
-		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".default_pipelines") {
-			// Format: routing/logs.default_pipelines
-			parts := strings.SplitN(key, "/", 2)
-			if len(parts) == 2 {
-				signalTypeWithKey := parts[1] // e.g. "logs.default_pipelines"
-				signalType := strings.SplitN(signalTypeWithKey, ".", 2)[0]
-				if pipelines, ok := value.([]string); ok {
-					defaultPipelinesBySignalType[signalType] = append(defaultPipelinesBySignalType[signalType], pipelines...)
-				}
+		// Check for routing/{signaltype}.default_pipelines using regex
+		if signalType, ok := parseDefaultPipelinesKey(key); ok {
+			if pipelines, ok := value.([]string); ok {
+				defaultPipelinesBySignalType[signalType] = append(defaultPipelinesBySignalType[signalType], pipelines...)
 			}
+			continue
 		}
 
-		// Check for routing/{signaltype}.table_{component}[N].{field} entries
-		// Format: routing/logs.table_router_staging[0].condition
-		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table_") && strings.Contains(key, "[") {
-			// Extract signal type from routing/{signaltype}.table_...
-			parts := strings.SplitN(key, "/", 2)
-			if len(parts) != 2 {
-				continue
-			}
-			afterSlash := parts[1] // e.g. "logs.table_router_staging[0].condition"
-
-			// Extract signal type (before first dot)
-			dotPos := strings.Index(afterSlash, ".")
-			if dotPos < 0 {
-				continue
-			}
-			signalType := afterSlash[:dotPos] // e.g. "logs"
-
-			// Extract component name from .table_{component}[N]
-			after := strings.SplitN(afterSlash, ".table_", 2)
-			if len(after) != 2 {
-				continue
-			}
-			afterTablePrefix := after[1] // e.g. "router_staging[0].condition"
-
-			bracketPos := strings.Index(afterTablePrefix, "[")
-			if bracketPos < 0 {
-				continue
-			}
-			componentName := afterTablePrefix[:bracketPos] // e.g. "router_staging"
-
-			// Extract index
-			indexStart := bracketPos + 1
-			closeBracket := strings.Index(afterTablePrefix[indexStart:], "]")
-			if closeBracket < 0 {
-				continue
-			}
-			idx := afterTablePrefix[indexStart : indexStart+closeBracket]
-			entryIdx, err := strconv.Atoi(idx)
-			if err != nil {
-				continue
-			}
-
-			// Extract field name (context, condition, pipelines)
-			fieldStart := indexStart + closeBracket + 2 // +2 to skip "]."
-			if fieldStart >= len(afterTablePrefix) {
-				continue
-			}
-			fieldName := afterTablePrefix[fieldStart:]
-
+		// Check for routing/{signaltype}.table_{component}[N].{field} entries using regex
+		if parsed, ok := parseTableEntryKey(key); ok {
 			// Initialize nested maps if needed
-			if tableEntriesBySignalType[signalType] == nil {
-				tableEntriesBySignalType[signalType] = make(map[string][]map[string]any)
+			if tableEntriesBySignalType[parsed.signalType] == nil {
+				tableEntriesBySignalType[parsed.signalType] = make(map[string][]map[string]any)
 			}
-			if tableEntriesBySignalType[signalType][componentName] == nil {
-				tableEntriesBySignalType[signalType][componentName] = make([]map[string]any, 0)
+			if tableEntriesBySignalType[parsed.signalType][parsed.componentName] == nil {
+				tableEntriesBySignalType[parsed.signalType][parsed.componentName] = make([]map[string]any, 0)
 			}
 
 			// Ensure we have enough entries for this index
-			for len(tableEntriesBySignalType[signalType][componentName]) <= entryIdx {
-				tableEntriesBySignalType[signalType][componentName] = append(
-					tableEntriesBySignalType[signalType][componentName],
+			for len(tableEntriesBySignalType[parsed.signalType][parsed.componentName]) <= parsed.index {
+				tableEntriesBySignalType[parsed.signalType][parsed.componentName] = append(
+					tableEntriesBySignalType[parsed.signalType][parsed.componentName],
 					make(map[string]any),
 				)
 			}
 
 			// Store the field in the entry
-			tableEntriesBySignalType[signalType][componentName][entryIdx][fieldName] = value
+			tableEntriesBySignalType[parsed.signalType][parsed.componentName][parsed.index][parsed.fieldName] = value
 		}
 	}
 
