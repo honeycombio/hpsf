@@ -20,6 +20,351 @@ import (
 
 const LatestVersion = "latest"
 
+// extractExpectedPipelines extracts pipeline names referenced in routing connector configuration.
+// Returns a map of pipeline names (e.g., "traces/production", "logs/staging") to true.
+func extractExpectedPipelines(connectorSection map[string]any) map[string]bool {
+	expectedPipelines := make(map[string]bool)
+
+	for key, value := range connectorSection {
+		// Check for routing/{signaltype}.default_pipelines
+		if strings.HasPrefix(key, "routing/") && strings.HasSuffix(key, ".default_pipelines") {
+			if pipelines, ok := value.([]any); ok {
+				for _, p := range pipelines {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelines, ok := value.([]string); ok {
+				for _, pName := range pipelines {
+					expectedPipelines[pName] = true
+				}
+			}
+		}
+
+		// Check for routing/{signaltype}.table[N].pipelines
+		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table[") && strings.HasSuffix(key, ".pipelines") {
+			if pipelineList, ok := value.([]any); ok {
+				for _, p := range pipelineList {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelineList, ok := value.([]string); ok {
+				for _, pName := range pipelineList {
+					expectedPipelines[pName] = true
+				}
+			}
+		}
+	}
+
+	return expectedPipelines
+}
+
+// collectPipelineNames extracts all unique pipeline names from the service section.
+// Returns a map of pipeline names to true.
+func collectPipelineNames(serviceSection map[string]any) map[string]bool {
+	pipelineNames := make(map[string]bool)
+
+	for key := range serviceSection {
+		if !strings.HasPrefix(key, "pipelines.") {
+			continue
+		}
+		pipelinePath := key[len("pipelines."):]
+		parts := strings.SplitN(pipelinePath, ".", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		pipelineNames[parts[0]] = true
+	}
+
+	return pipelineNames
+}
+
+// buildExporterEnvironmentMap creates a mapping from exporter safe names to environment names.
+// Reads environment directly from HoneycombExporter components' EnvironmentName property.
+func buildExporterEnvironmentMap(h *hpsf.HPSF) map[string]string {
+	exporterToEnvironment := make(map[string]string)
+
+	if h == nil {
+		return exporterToEnvironment
+	}
+
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			safeName := hcomp.GetSafeName()
+			// Get EnvironmentName property from exporter
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						exporterToEnvironment[safeName] = envName
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return exporterToEnvironment
+}
+
+// getStringListFromAny converts []any or []string to []string, filtering out empty strings.
+// Returns nil if the value is not a supported type.
+func getStringListFromAny(value any) []string {
+	if value == nil {
+		return nil
+	}
+
+	var result []string
+	switch v := value.(type) {
+	case []any:
+		for _, item := range v {
+			if s, ok := item.(string); ok && s != "" {
+				result = append(result, s)
+			}
+		}
+	case []string:
+		for _, s := range v {
+			if s != "" {
+				result = append(result, s)
+			}
+		}
+	default:
+		return nil
+	}
+
+	return result
+}
+
+// normalizeRoutingConnector normalizes routing connector names to "routing/{signaltype}" format.
+func normalizeRoutingConnector(connectorName, signalType string) string {
+	if connectorName == "routing" || strings.HasPrefix(connectorName, "routing_") || strings.HasPrefix(connectorName, "routing/") {
+		if signalType != "" {
+			return "routing/" + signalType
+		}
+		return "routing"
+	}
+	return connectorName
+}
+
+// transformIntakePipeline transforms an intake pipeline by moving routing connector from connectors to exporters.
+// Returns the new name for the pipeline (e.g., "traces/intake") or empty string if no rename needed.
+func transformIntakePipeline(serviceSection map[string]any, pipelineName, signalType string, connectorsList []string) string {
+	connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+	exportersKey := fmt.Sprintf("pipelines.%s.exporters", pipelineName)
+
+	// Move connectors to exporters, normalizing routing connector names
+	normalizedConnectors := make([]string, len(connectorsList))
+	for i, conn := range connectorsList {
+		normalizedConnectors[i] = normalizeRoutingConnector(conn, signalType)
+	}
+	serviceSection[exportersKey] = normalizedConnectors
+	delete(serviceSection, connectorsKey)
+
+	// Generate intake pipeline name
+	if signalType != "" {
+		intakeName := signalType + "/intake"
+		if pipelineName != intakeName {
+			return intakeName
+		}
+	}
+	return ""
+}
+
+// inferEnvironmentFromExporters attempts to infer environment name from exporter components.
+func inferEnvironmentFromExporters(exportersList []string, exporterToEnvironment map[string]string, pipelineName string) string {
+	// First, check if any exporters have an environment set
+	for _, exp := range exportersList {
+		// Remove the exporter type prefix (e.g., "otlphttp/") to get the component name
+		expParts := strings.SplitN(exp, "/", 2)
+		expCompName := exp
+		if len(expParts) == 2 {
+			expCompName = expParts[1]
+		}
+		if env, ok := exporterToEnvironment[expCompName]; ok {
+			return env
+		}
+	}
+
+	// Try to extract from pipeline name (e.g., "traces/dev" -> "dev")
+	parts := strings.SplitN(pipelineName, "/", 2)
+	if len(parts) == 2 && parts[1] != "intake" {
+		return parts[1]
+	}
+
+	return ""
+}
+
+// injectEnvironmentAPIKey injects environment-specific API key for exporters in a pipeline.
+func injectEnvironmentAPIKey(exportersSection map[string]any, exportersList []string, envName string) {
+	if envName == "" {
+		return
+	}
+
+	for _, exp := range exportersList {
+		headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
+		existingValue, hasHeader := exportersSection[headerKey]
+		// Inject if header doesn't exist or if it's set to the default value
+		if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+			envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+			exportersSection[headerKey] = envVarName
+		}
+	}
+}
+
+// transformOutputPipeline transforms an output pipeline by moving routing connector from connectors to receivers
+// and injecting environment-specific API keys.
+func transformOutputPipeline(serviceSection map[string]any, cc *tmpl.CollectorConfig, pipelineName, signalType string, connectors any, exportersList []string, exporterToEnvironment map[string]string) {
+	receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineName)
+	connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+
+	// Move connectors to receivers
+	serviceSection[receiversKey] = connectors
+	delete(serviceSection, connectorsKey)
+
+	// Infer environment and inject API keys
+	if signalType != "" {
+		envName := inferEnvironmentFromExporters(exportersList, exporterToEnvironment, pipelineName)
+		if envName != "" {
+			exportersSection, hasExportersSection := cc.Sections["exporters"]
+			if hasExportersSection {
+				injectEnvironmentAPIKey(exportersSection, exportersList, envName)
+			}
+		}
+	}
+}
+
+// applyPipelineRenames renames pipelines in the service section, merging duplicates if multiple pipelines
+// are renamed to the same target name.
+func applyPipelineRenames(serviceSection map[string]any, pipelineRenames map[string]string) {
+	// Group renames by target name to handle merges
+	renamesByTarget := make(map[string][]string) // target name -> list of source names
+	for oldName, newName := range pipelineRenames {
+		renamesByTarget[newName] = append(renamesByTarget[newName], oldName)
+	}
+
+	// Apply pipeline renames, merging duplicates
+	for newName, oldNames := range renamesByTarget {
+		if len(oldNames) == 1 {
+			// Simple rename, no merge needed
+			oldName := oldNames[0]
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+oldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+oldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+		} else {
+			// Multiple pipelines renaming to same name - merge them
+			// Take the first one as the canonical pipeline
+			firstOldName := oldNames[0]
+
+			// Rename the first one
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+firstOldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+firstOldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+
+			// Delete the duplicate pipelines
+			for _, oldName := range oldNames[1:] {
+				keysToDelete := make([]string, 0)
+				for key := range serviceSection {
+					if strings.HasPrefix(key, "pipelines."+oldName+".") {
+						keysToDelete = append(keysToDelete, key)
+					}
+				}
+				for _, key := range keysToDelete {
+					delete(serviceSection, key)
+				}
+			}
+		}
+	}
+}
+
+// findExportersForEnvironment finds all exporters in the exporters section that match the given environment.
+func findExportersForEnvironment(exportersSection map[string]any, exporterToEnvironment map[string]string, envName string) []string {
+	exportersForEnv := make([]string, 0)
+
+	for exporterSafeName, exporterEnv := range exporterToEnvironment {
+		if exporterEnv == envName {
+			// Find the exporter key in the exporters section
+			for exporterKey := range exportersSection {
+				exporterName := exporterKey
+				if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
+					exporterName = exporterKey[:dotIdx]
+				}
+				// Exporter names have format: {type}/{componentSafeName}
+				if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
+					exporterCompName := exporterName[slashIdx+1:]
+					if exporterCompName == exporterSafeName {
+						if !sliceContains(exportersForEnv, exporterName) {
+							exportersForEnv = append(exportersForEnv, exporterName)
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return exportersForEnv
+}
+
+// createMissingOutputPipelines creates output pipelines that are referenced in routing connector config
+// but don't exist yet (this happens when output paths weren't generated).
+func createMissingOutputPipelines(serviceSection map[string]any, cc *tmpl.CollectorConfig, expectedPipelines map[string]bool, exporterToEnvironment map[string]string) {
+	exportersSection, hasExportersSection := cc.Sections["exporters"]
+	if !hasExportersSection {
+		return
+	}
+
+	for expectedPipeline := range expectedPipelines {
+		// Check if this pipeline already exists
+		pipelineExists := false
+		for key := range serviceSection {
+			if strings.HasPrefix(key, "pipelines."+expectedPipeline+".") {
+				pipelineExists = true
+				break
+			}
+		}
+
+		if !pipelineExists {
+			// Create the pipeline with routing connector as receiver
+			// Extract signal type from pipeline name (e.g., "traces/dev" -> "traces")
+			parts := strings.SplitN(expectedPipeline, "/", 2)
+			if len(parts) == 2 {
+				signalType := parts[0]
+				envName := parts[1]
+
+				// Set receivers to routing connector
+				receiversKey := fmt.Sprintf("pipelines.%s.receivers", expectedPipeline)
+				serviceSection[receiversKey] = []string{"routing/" + signalType}
+
+				// Find exporters for this environment
+				exportersForEnv := findExportersForEnvironment(exportersSection, exporterToEnvironment, envName)
+
+				if len(exportersForEnv) > 0 {
+					exportersKey := fmt.Sprintf("pipelines.%s.exporters", expectedPipeline)
+					serviceSection[exportersKey] = exportersForEnv
+				}
+			}
+		}
+	}
+}
+
 // mergeRoutingConnectors finds routing connector entries and merges them per signal type
 // Creates separate routing connectors: routing/logs, routing/traces, routing/metrics
 func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
@@ -735,81 +1080,15 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 		return nil
 	}
 
-	// Extract environment names from routing connector configuration
 	connectorSection, hasConnectors := cc.Sections["connectors"]
 	if !hasConnectors {
 		return nil
 	}
 
-	// Build map of expected environment pipeline names from routing connector config
-	expectedPipelines := make(map[string]bool) // e.g., "traces/production", "logs/staging"
-
-	// Get pipelines from routing/{signaltype} connectors
-	for key, value := range connectorSection {
-		// Check for routing/{signaltype}.default_pipelines
-		if strings.HasPrefix(key, "routing/") && strings.HasSuffix(key, ".default_pipelines") {
-			if pipelines, ok := value.([]any); ok {
-				for _, p := range pipelines {
-					if pName, ok := p.(string); ok {
-						expectedPipelines[pName] = true
-					}
-				}
-			} else if pipelines, ok := value.([]string); ok {
-				for _, pName := range pipelines {
-					expectedPipelines[pName] = true
-				}
-			}
-		}
-
-		// Check for routing/{signaltype}.table[N].pipelines
-		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table[") && strings.HasSuffix(key, ".pipelines") {
-			if pipelineList, ok := value.([]any); ok {
-				for _, p := range pipelineList {
-					if pName, ok := p.(string); ok {
-						expectedPipelines[pName] = true
-					}
-				}
-			} else if pipelineList, ok := value.([]string); ok {
-				for _, pName := range pipelineList {
-					expectedPipelines[pName] = true
-				}
-			}
-		}
-	}
-
-	// First, collect all unique pipeline names
-	pipelineNames := make(map[string]bool)
-	for key := range serviceSection {
-		if !strings.HasPrefix(key, "pipelines.") {
-			continue
-		}
-		pipelinePath := key[len("pipelines."):]
-		parts := strings.SplitN(pipelinePath, ".", 2)
-		if len(parts) < 2 {
-			continue
-		}
-		pipelineNames[parts[0]] = true
-	}
-
-	// Build a map of exporter safe names to their environment names
-	// Read environment directly from HoneycombExporter components' EnvironmentName property
-	exporterToEnvironment := make(map[string]string) // exporter safe name -> environment name
-	if h != nil {
-		for _, hcomp := range h.Components {
-			if hcomp.Kind == "HoneycombExporter" {
-				safeName := hcomp.GetSafeName()
-				// Get EnvironmentName property from exporter
-				for _, prop := range hcomp.Properties {
-					if prop.Name == "EnvironmentName" {
-						if envName, ok := prop.Value.(string); ok && envName != "" {
-							exporterToEnvironment[safeName] = envName
-						}
-						break
-					}
-				}
-			}
-		}
-	}
+	// Extract configuration from routing connectors and existing pipelines
+	expectedPipelines := extractExpectedPipelines(connectorSection)
+	pipelineNames := collectPipelineNames(serviceSection)
+	exporterToEnvironment := buildExporterEnvironmentMap(h)
 
 	// Track pipeline renames for output pipelines
 	pipelineRenames := make(map[string]string) // old name -> new name
@@ -820,82 +1099,27 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 		connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
 		exportersKey := fmt.Sprintf("pipelines.%s.exporters", pipelineName)
 
-		receivers, hasReceivers := serviceSection[receiversKey]
-		connectors, hasConnectors := serviceSection[connectorsKey]
-		exporters, hasExporters := serviceSection[exportersKey]
+		receivers := serviceSection[receiversKey]
+		connectors := serviceSection[connectorsKey]
+		exporters := serviceSection[exportersKey]
 
-		// Get connectors list if it exists
-		var connectorsList []string
-		var hasRouting bool
-		if hasConnectors {
-			switch v := connectors.(type) {
-			case []any:
-				for _, c := range v {
-					if s, ok := c.(string); ok {
-						connectorsList = append(connectorsList, s)
-					}
-				}
-			case []string:
-				connectorsList = v
-			}
+		// Convert pipeline components to string lists
+		connectorsList := getStringListFromAny(connectors)
+		receiversFiltered := getStringListFromAny(receivers)
+		exportersFiltered := getStringListFromAny(exporters)
 
-			// Check if this has a routing connector (routing, routing_traces, routing_logs, routing_metrics, or routing/*)
-			for _, conn := range connectorsList {
-				if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
-					hasRouting = true
-					break
-				}
+		// Check if this pipeline has a routing connector
+		hasRouting := false
+		for _, conn := range connectorsList {
+			if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
+				hasRouting = true
+				break
 			}
 		}
 
 		// Skip if this pipeline has connectors but no routing connector
-		if hasConnectors && !hasRouting {
+		if len(connectorsList) > 0 && !hasRouting {
 			continue
-		}
-
-		// Determine if this is an intake or output pipeline
-		// Receivers and exporters can be []any or []string
-		var receiversList []string
-		if hasReceivers && receivers != nil {
-			switch v := receivers.(type) {
-			case []any:
-				for _, r := range v {
-					if s, ok := r.(string); ok {
-						receiversList = append(receiversList, s)
-					}
-				}
-			case []string:
-				receiversList = v
-			}
-		}
-
-		var exportersList []string
-		if hasExporters && exporters != nil {
-			switch v := exporters.(type) {
-			case []any:
-				for _, e := range v {
-					if s, ok := e.(string); ok {
-						exportersList = append(exportersList, s)
-					}
-				}
-			case []string:
-				exportersList = v
-			}
-		}
-
-		// Filter out empty strings from lists (sometimes empty arrays contain empty strings)
-		receiversFiltered := make([]string, 0)
-		for _, r := range receiversList {
-			if r != "" {
-				receiversFiltered = append(receiversFiltered, r)
-			}
-		}
-
-		exportersFiltered := make([]string, 0)
-		for _, e := range exportersList {
-			if e != "" {
-				exportersFiltered = append(exportersFiltered, e)
-			}
 		}
 
 		// Determine signal type from pipeline name
@@ -924,90 +1148,21 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 
 		// Case 1: Intake pipeline - has receivers and routing connector, no other exporters
 		if hasRouting && len(receiversFiltered) > 0 && len(exportersFiltered) == 0 {
-			// Move connectors to exporters, normalizing routing connector names to "routing/{signaltype}"
-			normalizedConnectors := make([]string, len(connectorsList))
-			for i, conn := range connectorsList {
-				if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
-					// Normalize to routing/{signaltype} if we know the signal type
-					if signalType != "" {
-						normalizedConnectors[i] = "routing/" + signalType
-					} else {
-						normalizedConnectors[i] = "routing"
-					}
-				} else {
-					normalizedConnectors[i] = conn
-				}
-			}
-			serviceSection[exportersKey] = normalizedConnectors
-			delete(serviceSection, connectorsKey)
-
-			// Rename intake pipeline to use consistent name (e.g., traces/intake)
-			parts := strings.SplitN(pipelineName, "/", 2)
-			if len(parts) == 2 {
-				signalType := parts[0]
-				intakeName := signalType + "/intake"
-				// Only rename if not already using the intake name
-				if pipelineName != intakeName {
-					pipelineRenames[pipelineName] = intakeName
-				}
+			if newName := transformIntakePipeline(serviceSection, pipelineName, signalType, connectorsList); newName != "" {
+				pipelineRenames[pipelineName] = newName
 			}
 		} else if hasRoutingInExporters && len(receiversFiltered) > 0 {
 			// Case 1b: Intake pipeline - has receivers and routing connector already in exporters
-			// Rename intake pipeline to use consistent name (e.g., traces/intake)
-			parts := strings.SplitN(pipelineName, "/", 2)
-			if len(parts) == 2 {
-				signalType := parts[0]
+			// Just rename the pipeline
+			if signalType != "" {
 				intakeName := signalType + "/intake"
-				// Only rename if not already using the intake name
 				if pipelineName != intakeName {
 					pipelineRenames[pipelineName] = intakeName
 				}
 			}
 		} else if hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
-			// Case 2: Output pipeline - has routing connector, no receivers, has exporters → move connector to receivers
-			serviceSection[receiversKey] = connectors
-			delete(serviceSection, connectorsKey)
-
-			// Try to infer environment from exporters
-			if signalType != "" {
-				var envName string
-
-				// Check if any of the exporters in this pipeline have an environment set
-				for _, exp := range exportersFiltered {
-					// Remove the exporter type prefix (e.g., "otlphttp/") to get the component name
-					expParts := strings.SplitN(exp, "/", 2)
-					expCompName := exp
-					if len(expParts) == 2 {
-						expCompName = expParts[1]
-					}
-					if env, ok := exporterToEnvironment[expCompName]; ok {
-						envName = env
-						break
-					}
-				}
-
-				// If not found in exporter properties, try to extract from pipeline name
-				// Pipeline names follow the pattern: traces/dev, metrics/prod, etc.
-				if envName == "" && len(parts) == 2 && parts[1] != "intake" {
-					envName = parts[1]
-				}
-
-				if envName != "" {
-					// Inject environment-specific API key header into otlphttp exporters
-					exportersSection, hasExportersSection := cc.Sections["exporters"]
-					if hasExportersSection {
-						for _, exp := range exportersFiltered {
-							headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
-							existingValue, hasHeader := exportersSection[headerKey]
-							// Inject if header doesn't exist or if it's set to the default value
-							if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
-								envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
-								exportersSection[headerKey] = envVarName
-							}
-						}
-					}
-				}
-			}
+			// Case 2: Output pipeline - has routing connector, no receivers, has exporters
+			transformOutputPipeline(serviceSection, cc, pipelineName, signalType, connectors, exportersFiltered, exporterToEnvironment)
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
 			// Use signal-type-specific routing connector name
@@ -1082,124 +1237,9 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 		}
 	}
 
-	// Group renames by target name to handle merges
-	renamesByTarget := make(map[string][]string) // target name -> list of source names
-	for oldName, newName := range pipelineRenames {
-		renamesByTarget[newName] = append(renamesByTarget[newName], oldName)
-	}
-
-	// Apply pipeline renames, merging duplicates
-	for newName, oldNames := range renamesByTarget {
-		if len(oldNames) == 1 {
-			// Simple rename, no merge needed
-			oldName := oldNames[0]
-			keysToRename := make([]string, 0)
-			for key := range serviceSection {
-				if strings.HasPrefix(key, "pipelines."+oldName+".") {
-					keysToRename = append(keysToRename, key)
-				}
-			}
-
-			for _, oldKey := range keysToRename {
-				newKey := strings.Replace(oldKey, "pipelines."+oldName+".", "pipelines."+newName+".", 1)
-				serviceSection[newKey] = serviceSection[oldKey]
-				delete(serviceSection, oldKey)
-			}
-		} else {
-			// Multiple pipelines renaming to same name - merge them
-			// Take the first one as the canonical pipeline
-			firstOldName := oldNames[0]
-
-			// Rename the first one
-			keysToRename := make([]string, 0)
-			for key := range serviceSection {
-				if strings.HasPrefix(key, "pipelines."+firstOldName+".") {
-					keysToRename = append(keysToRename, key)
-				}
-			}
-
-			for _, oldKey := range keysToRename {
-				newKey := strings.Replace(oldKey, "pipelines."+firstOldName+".", "pipelines."+newName+".", 1)
-				serviceSection[newKey] = serviceSection[oldKey]
-				delete(serviceSection, oldKey)
-			}
-
-			// Delete the duplicate pipelines
-			for _, oldName := range oldNames[1:] {
-				keysToDelete := make([]string, 0)
-				for key := range serviceSection {
-					if strings.HasPrefix(key, "pipelines."+oldName+".") {
-						keysToDelete = append(keysToDelete, key)
-					}
-				}
-				for _, key := range keysToDelete {
-					delete(serviceSection, key)
-				}
-			}
-		}
-	}
-
-	// Create any missing output pipelines that are referenced in the routing connector config
-	// but don't exist yet (this happens when output paths weren't generated)
-	for expectedPipeline := range expectedPipelines {
-		// Check if this pipeline already exists
-		pipelineExists := false
-		for key := range serviceSection {
-			if strings.HasPrefix(key, "pipelines."+expectedPipeline+".") {
-				pipelineExists = true
-				break
-			}
-		}
-
-		if !pipelineExists {
-			// Create the pipeline with routing connector as receiver
-			// Extract signal type from pipeline name (e.g., "traces/dev" -> "traces")
-			parts := strings.SplitN(expectedPipeline, "/", 2)
-			if len(parts) == 2 {
-				signalType := parts[0]
-				envName := parts[1]
-
-				// Set receivers to routing connector
-				receiversKey := fmt.Sprintf("pipelines.%s.receivers", expectedPipeline)
-				serviceSection[receiversKey] = []string{"routing/" + signalType}
-
-				// Find exporters by traversing connections from SetEnvironment components
-				// that belong to this environment
-				exportersForEnv := make([]string, 0)
-				exportersSection, hasExportersSection := cc.Sections["exporters"]
-
-				if hasExportersSection {
-					// Look for exporters with matching environment
-					for exporterSafeName, exporterEnv := range exporterToEnvironment {
-						if exporterEnv == envName {
-							// Find the exporter key in the exporters section
-							for exporterKey := range exportersSection {
-								exporterName := exporterKey
-								if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
-									exporterName = exporterKey[:dotIdx]
-								}
-								// Exporter names have format: {type}/{componentSafeName}
-								if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
-									exporterCompName := exporterName[slashIdx+1:]
-									if exporterCompName == exporterSafeName {
-										if !sliceContains(exportersForEnv, exporterName) {
-											exportersForEnv = append(exportersForEnv, exporterName)
-										}
-										break
-									}
-								}
-							}
-						}
-					}
-				}
-
-				if len(exportersForEnv) > 0 {
-					exportersKey := fmt.Sprintf("pipelines.%s.exporters", expectedPipeline)
-					serviceSection[exportersKey] = exportersForEnv
-				}
-			}
-		}
-	}
+	// Apply pipeline renames and create missing pipelines
+	applyPipelineRenames(serviceSection, pipelineRenames)
+	createMissingOutputPipelines(serviceSection, cc, expectedPipelines, exporterToEnvironment)
 
 	return nil
 }
