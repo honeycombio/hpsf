@@ -21,6 +21,34 @@ import (
 
 const LatestVersion = "latest"
 
+var (
+	// Honeycomb environment name validation pattern
+	// Matches the Honeycomb slugification process: only allows a-z, 0-9, _, ~, ., and -
+	validEnvironmentNamePattern = regexp.MustCompile(`^[a-z0-9_~.\-]+$`)
+
+	// Maximum length for Honeycomb environment names
+	maxEnvironmentNameLength = 175
+)
+
+// validateEnvironmentName validates that an environment name conforms to Honeycomb's
+// slugification requirements: only lowercase letters, digits, and _~.- characters,
+// with a maximum length of 175 characters.
+func validateEnvironmentName(name string) error {
+	if name == "" {
+		return nil // Empty is allowed (will use default)
+	}
+
+	if len(name) > maxEnvironmentNameLength {
+		return fmt.Errorf("environment name exceeds maximum length of %d characters: %q", maxEnvironmentNameLength, name)
+	}
+
+	if !validEnvironmentNamePattern.MatchString(name) {
+		return fmt.Errorf("environment name contains invalid characters (only a-z, 0-9, _, ~, ., - are allowed): %q", name)
+	}
+
+	return nil
+}
+
 // extractExpectedPipelines extracts pipeline names referenced in routing connector configuration.
 // Returns a map of pipeline names (e.g., "traces/production", "logs/staging") to true.
 func extractExpectedPipelines(connectorSection map[string]any) map[string]bool {
@@ -83,11 +111,12 @@ func collectPipelineNames(serviceSection map[string]any) map[string]bool {
 
 // buildExporterEnvironmentMap creates a mapping from exporter safe names to environment names.
 // Reads environment directly from HoneycombExporter components' EnvironmentName property.
-func buildExporterEnvironmentMap(h *hpsf.HPSF) map[string]string {
+// Validates that environment names conform to Honeycomb's slugification requirements.
+func buildExporterEnvironmentMap(h *hpsf.HPSF) (map[string]string, error) {
 	exporterToEnvironment := make(map[string]string)
 
 	if h == nil {
-		return exporterToEnvironment
+		return exporterToEnvironment, nil
 	}
 
 	for _, hcomp := range h.Components {
@@ -97,6 +126,10 @@ func buildExporterEnvironmentMap(h *hpsf.HPSF) map[string]string {
 			for _, prop := range hcomp.Properties {
 				if prop.Name == "EnvironmentName" {
 					if envName, ok := prop.Value.(string); ok && envName != "" {
+						// Validate environment name format
+						if err := validateEnvironmentName(envName); err != nil {
+							return nil, fmt.Errorf("invalid EnvironmentName on component %q: %w", hcomp.Name, err)
+						}
 						exporterToEnvironment[safeName] = envName
 					}
 					break
@@ -105,7 +138,7 @@ func buildExporterEnvironmentMap(h *hpsf.HPSF) map[string]string {
 		}
 	}
 
-	return exporterToEnvironment
+	return exporterToEnvironment, nil
 }
 
 // getStringListFromAny converts []any or []string to []string, filtering out empty strings.
@@ -1112,7 +1145,10 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 	// Extract configuration from routing connectors and existing pipelines
 	expectedPipelines := extractExpectedPipelines(connectorSection)
 	pipelineNames := collectPipelineNames(serviceSection)
-	exporterToEnvironment := buildExporterEnvironmentMap(h)
+	exporterToEnvironment, err := buildExporterEnvironmentMap(h)
+	if err != nil {
+		return err
+	}
 
 	// Track pipeline renames for output pipelines
 	pipelineRenames := make(map[string]string) // old name -> new name
