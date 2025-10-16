@@ -44,12 +44,24 @@ The generator creates clean HPSF components following official template patterns
 The functionality is available through the dedicated `refinery2hpsf` command:
 
 ```bash
-# Generate HPSF workflow from Refinery rules file
+# Generate HPSF workflow from Refinery rules file (uses __default__ environment)
 go run ./cmd/refinery2hpsf \
   --refinery-rules tests/refinery2hpsf/01-simple-refinery.yaml \
   -o output-workflow.yaml \
   -v
+
+# Generate workflow for a specific environment
+go run ./cmd/refinery2hpsf \
+  --refinery-rules rules.yaml \
+  --environment MyEnvironment \
+  -o output-workflow.yaml
 ```
+
+**Options:**
+- `--refinery-rules` / `-r`: Path to the Refinery rules file (required)
+- `--output` / `-o`: Output file path, use `-` for stdout (default: `-`)
+- `--environment` / `-e`: Environment name to extract rules from (default: `__default__`)
+- `--verbose` / `-v`: Enable verbose output
 
 ### Programmatic API
 
@@ -152,7 +164,6 @@ Generated workflows are automatically validated against HPSF schema requirements
 
 ## Limitations
 
-- Only supports `__default__` environment in rules
 - Complex nested conditions are simplified to single conditions
 - Some advanced Refinery features may not have direct HPSF equivalents
 

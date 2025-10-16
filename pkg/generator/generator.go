@@ -48,7 +48,7 @@ func NewGenerator() *Generator {
 }
 
 // GenerateWorkflow creates an HPSF workflow from Refinery rules
-func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
+func (g *Generator) GenerateWorkflow(rulesData []byte, environment string) (*hpsf.HPSF, error) {
 	// Parse the Refinery rules
 	var rules RefineryRules
 	if err := yaml.Unmarshal(rulesData, &rules); err != nil {
@@ -84,7 +84,7 @@ func (g *Generator) GenerateWorkflow(rulesData []byte) (*hpsf.HPSF, error) {
 	))
 
 	// Generate sampling components from rules
-	ruleComponents, ruleConnections, err := g.generateSamplingComponents(rules, startSamplingComponent.Name)
+	ruleComponents, ruleConnections, err := g.generateSamplingComponents(rules, startSamplingComponent.Name, environment)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate sampling components: %w", err)
 	}
@@ -132,16 +132,16 @@ func (g *Generator) generateStartSampling() *hpsf.Component {
 }
 
 // generateSamplingComponents creates condition and sampler components based on rules
-func (g *Generator) generateSamplingComponents(rules RefineryRules, startSamplingName string) ([]*hpsf.Component, []*hpsf.Connection, error) {
+func (g *Generator) generateSamplingComponents(rules RefineryRules, startSamplingName string, environment string) ([]*hpsf.Component, []*hpsf.Connection, error) {
 	var components []*hpsf.Component
 	var connections []*hpsf.Connection
 
 	ruleIndex := 0
 
-	// Process each environment's samplers
+	// Process the specified environment's samplers
 	for env, samplers := range rules.Samplers {
-		if env != "__default__" {
-			// Skip non-default environments for now
+		if env != environment {
+			// Skip environments that don't match the specified environment
 			continue
 		}
 

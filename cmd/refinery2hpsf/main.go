@@ -13,6 +13,7 @@ type Options struct {
 	Verbose       bool   `short:"v" long:"verbose" description:"enable verbose mode"`
 	Output        string `short:"o" long:"output" description:"output file" default:"-"`
 	RefineryRules string `short:"r" long:"refinery-rules" description:"Path to Refinery rules file" required:"true"`
+	Environment   string `short:"e" long:"environment" description:"Environment to extract rules from" default:"__default__"`
 }
 
 func main() {
@@ -45,7 +46,7 @@ func main() {
 
 	// Generate the workflow
 	gen := generator.NewGenerator()
-	workflow, err := gen.GenerateWorkflow(rulesData)
+	workflow, err := gen.GenerateWorkflow(rulesData, opts.Environment)
 	if err != nil {
 		log.Fatalf("error generating HPSF workflow: %v", err)
 	}
