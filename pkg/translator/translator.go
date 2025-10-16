@@ -498,6 +498,85 @@ func (om *OrderedComponentMap) Items() iter.Seq[config.Component] {
 	}
 }
 
+// getFirstConnectionPortIndex attempts to read the index of the source port on the first
+// connection of a path. It returns (index, true) if a positive (non-zero) index is found.
+// Index 0 or any failure to determine the index returns (0, false) to indicate "unspecified".
+func getFirstConnectionPortIndex(path hpsf.PathWithConnections, comps *OrderedComponentMap) (int, bool) {
+	if len(path.Connections) == 0 {
+		return 0, false
+	}
+	first := path.Connections[0]
+	comp, ok := comps.Get(first.Source.GetSafeName())
+	if !ok {
+		return 0, false
+	}
+	tc, ok := comp.(*config.TemplateComponent)
+	if !ok {
+		return 0, false
+	}
+	idx := tc.GetPortIndex(first.Source.PortName)
+	if idx > 0 {
+		return idx, true
+	}
+	return 0, false
+}
+
+// orderPaths sorts paths deterministically. Precedence within a connection type:
+//  1. Has connections (paths with zero connections come last)
+//  2. Presence of a positive port index (indexed paths before non-indexed)
+//  3. Ascending numeric port index (if both indexed)
+//  4. Source component name (lexicographically)
+//  5. Source port name (lexicographically)
+//  6. Path ID (stable final tie breaker)
+//
+// This matches updated requirement: index ordering takes priority over component name.
+func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
+	sort.Slice(paths, func(i, j int) bool {
+		if paths[i].ConnType != paths[j].ConnType {
+			return paths[i].ConnType < paths[j].ConnType
+		}
+
+		// Handle zero-connection paths: they go last within the connection type group
+		li := len(paths[i].Connections)
+		lj := len(paths[j].Connections)
+		if li == 0 || lj == 0 {
+			if li == 0 && lj == 0 {
+				// stable ordering: compare IDs to keep determinate
+				return paths[i].GetID() < paths[j].GetID()
+			}
+			return lj != 0 // true if i has connections and j does not
+		}
+
+		// Both have at least one connection
+		// Primary: port index presence / value
+		idxI, hasIdxI := getFirstConnectionPortIndex(paths[i], comps)
+		idxJ, hasIdxJ := getFirstConnectionPortIndex(paths[j], comps)
+		if hasIdxI != hasIdxJ { // indexed before non-indexed
+			return hasIdxI
+		}
+		if hasIdxI && idxI != idxJ { // both indexed, numeric order
+			return idxI < idxJ
+		}
+
+		// Next: component name
+		srcCompI := paths[i].Connections[0].Source.Component
+		srcCompJ := paths[j].Connections[0].Source.Component
+		if srcCompI != srcCompJ {
+			return srcCompI < srcCompJ
+		}
+
+		// Next: source port name
+		portI := paths[i].Connections[0].Source.PortName
+		portJ := paths[j].Connections[0].Source.PortName
+		if portI != portJ {
+			return portI < portJ
+		}
+
+		// Last resort: deterministic by path ID
+		return paths[i].GetID() < paths[j].GetID()
+	})
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
@@ -553,28 +632,8 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 		}
 	}
 
-	// sort paths by connection type and the component name and port name of the
-	// first connection in the path
-	sort.Slice(paths, func(i, j int) bool {
-		if paths[i].ConnType != paths[j].ConnType {
-			return paths[i].ConnType < paths[j].ConnType
-		}
-
-		// if either path has no connections, we can determine the order by the presence of connections
-		if len(paths[i].Connections) == 0 || len(paths[j].Connections) == 0 {
-			return len(paths[i].Connections) == 0
-		}
-
-		// If both paths have connections, we can compare the first connection in each path.
-		// We compare by the source component name first
-		if paths[i].Connections[0].Source.Component != paths[j].Connections[0].Source.Component {
-			return paths[i].Connections[0].Source.Component < paths[j].Connections[0].Source.Component
-		}
-		// now compare the port names (this is what orders multiple paths from startsampling)
-		// This assumes that the port names are sorted in the same order as the port indexes,
-		// since port indexes are not available here.
-		return paths[i].Connections[0].Source.PortName < paths[j].Connections[0].Source.PortName
-	})
+	// Order the paths using port index (if specified) as a secondary key.
+	orderPaths(paths, comps)
 
 	// we need a dummy component to start with so that we can always have a valid config
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}

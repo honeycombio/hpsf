@@ -1,14 +1,23 @@
 name: Default Template
 kind: TemplateDefault
 version: v0.1.0
-summary: The default configuration that receives traces, metrics, and logs and forwards them to the Honeycomb exporter.
+summary: The default configuration that receives traces, metrics, and logs, applies deterministic sampling to traces and logs, and forwards them to the Honeycomb exporter.
 description: |
-  This is the default configuration that forwards traces, metrics, and logs received via OpenTelemetry
-  components to the Honeycomb exporter. This is useful for testing and debugging, or
-  as a starting point for more complex configurations.
+  This is the default configuration that receives telemetry data via OpenTelemetry and forwards it
+  to the Honeycomb exporter. Traces and logs are routed through a deterministic sampler with a
+  sample rate of 100 (1 in 100 traces/logs are sampled), while metrics bypass sampling and are
+  sent directly to Honeycomb. This configuration is useful for testing and debugging, or as a
+  starting point for more complex configurations.
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
+  - name: Start Sampling 1
+    kind: SamplingSequencer
+  - name: Deterministic Sampler 1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 100
   - name: Honeycomb Exporter 1
     kind: HoneycombExporter
 connections:
@@ -17,32 +26,56 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Honeycomb Exporter 1
+      component: Start Sampling 1
       port: Traces
       type: OTelTraces
   - source:
-      component: OTel Receiver 1
-      port: Metrics
-      type: OTelMetrics
+      component: Start Sampling 1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Deterministic Sampler 1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Deterministic Sampler 1
+      port: Events
+      type: HoneycombEvents
     destination:
       component: Honeycomb Exporter 1
-      port: Metrics
-      type: OTelMetrics
+      port: Events
+      type: HoneycombEvents
   - source:
       component: OTel Receiver 1
       port: Logs
       type: OTelLogs
     destination:
-      component: Honeycomb Exporter 1
+      component: Start Sampling 1
       port: Logs
       type: OTelLogs
+  - source:
+      component: OTel Receiver 1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Honeycomb Exporter 1
+      port: Metrics
+      type: OTelMetrics
 layout:
   components:
     - name: OTel Receiver 1
       position:
-        x: -100
-        y: 0
+        x: -160
+        y: 20
+    - name: Start Sampling 1
+      position:
+        x: 100
+        y: -20
+    - name: Deterministic Sampler 1
+      position:
+        x: 300
+        y: -20
     - name: Honeycomb Exporter 1
       position:
-        x: 200
+        x: 560
         y: 0
