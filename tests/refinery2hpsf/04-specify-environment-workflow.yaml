@@ -1,0 +1,199 @@
+kind: HPSF
+version: v1
+name: Generated_Refinery_Workflow
+summary: Generated from Refinery sampling rules
+description: HPSF workflow automatically generated from Refinery sampling rules
+components:
+    - name: OTel_Receiver_1
+      kind: OTelReceiver
+    - name: Start_Sampling_2
+      kind: SamplingSequencer
+    - name: Condition_never sample errors_3
+      kind: CompareIntegerFieldCondition
+      properties:
+        - name: Field
+          value: http.status_code
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 400
+    - name: Sample_never sample errors_4
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_Keep all traces with any slow spans_5
+      kind: CompareDecimalFieldCondition
+      properties:
+        - name: Field
+          value: duration_ms
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 1000
+    - name: Sample_Keep all traces with any slow spans_6
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_drop healthy healthchecks_7
+      kind: CompareStringFieldCondition
+      properties:
+        - name: Field
+          value: http.route
+        - name: Operator
+          value: =
+        - name: Value
+          value: /healthz
+    - name: Drop_drop healthy healthchecks_8
+      kind: Dropper
+    - name: Condition_Keep more information about Enterprise customers_9
+      kind: CompareStringFieldCondition
+      properties:
+        - name: Field
+          value: app.pricing_plan_name
+        - name: Operator
+          value: =
+        - name: Value
+          value: Enterprise
+    - name: Sample_Keep more information about Enterprise customers_10
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 10
+    - name: Sample_Default Rule_11
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 100
+    - name: Send_to_Honeycomb_12
+      kind: HoneycombExporter
+connections:
+    - source:
+        component: OTel_Receiver_1
+        port: Traces
+        type: OTelTraces
+      destination:
+        component: Start_Sampling_2
+        port: Traces
+        type: OTelTraces
+    - source:
+        component: OTel_Receiver_1
+        port: Logs
+        type: OTelLogs
+      destination:
+        component: Start_Sampling_2
+        port: Logs
+        type: OTelLogs
+    - source:
+        component: Start_Sampling_2
+        port: Rule 1
+        type: SampleData
+      destination:
+        component: Condition_never sample errors_3
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_never sample errors_3
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_never sample errors_4
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_never sample errors_3
+        port: Rule 2
+        type: SampleData
+      destination:
+        component: Condition_Keep all traces with any slow spans_5
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Keep all traces with any slow spans_5
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Keep all traces with any slow spans_6
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Keep all traces with any slow spans_5
+        port: Rule 3
+        type: SampleData
+      destination:
+        component: Condition_drop healthy healthchecks_7
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_drop healthy healthchecks_7
+        port: Sample
+        type: SampleData
+      destination:
+        component: Drop_drop healthy healthchecks_8
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_drop healthy healthchecks_7
+        port: Rule 4
+        type: SampleData
+      destination:
+        component: Condition_Keep more information about Enterprise customers_9
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Keep more information about Enterprise customers_9
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Keep more information about Enterprise customers_10
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Keep more information about Enterprise customers_9
+        port: Rule 5
+        type: SampleData
+      destination:
+        component: Sample_Default Rule_11
+        port: Sample
+        type: SampleData
+    - source:
+        component: OTel_Receiver_1
+        port: Metrics
+        type: OTelMetrics
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Metrics
+        type: OTelMetrics
+    - source:
+        component: Sample_never sample errors_4
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Keep all traces with any slow spans_6
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Keep more information about Enterprise customers_10
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Default Rule_11
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents

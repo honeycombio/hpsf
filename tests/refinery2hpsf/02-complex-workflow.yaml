@@ -1,0 +1,197 @@
+kind: HPSF
+version: v1
+name: Generated_Refinery_Workflow
+summary: Generated from Refinery sampling rules
+description: HPSF workflow automatically generated from Refinery sampling rules
+components:
+    - name: OTel_Receiver_1
+      kind: OTelReceiver
+    - name: Start_Sampling_2
+      kind: SamplingSequencer
+    - name: Condition_Error Traces_3
+      kind: FieldExistsCondition
+      properties:
+        - name: Field
+          value: error
+        - name: ShouldExist
+          value: true
+    - name: Sample_Error Traces_4
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_Long Duration Traces_5
+      kind: CompareIntegerFieldCondition
+      properties:
+        - name: Field
+          value: duration_ms
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 5000
+    - name: Sample_Long Duration Traces_6
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 1
+    - name: Condition_HTTP Error Responses_7
+      kind: CompareIntegerFieldCondition
+      properties:
+        - name: Field
+          value: http.status_code
+        - name: Operator
+          value: '>='
+        - name: Value
+          value: 400
+    - name: Sample_HTTP Error Responses_8
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 10
+    - name: Condition_Test Service Traces_9
+      kind: CompareStringFieldCondition
+      properties:
+        - name: Field
+          value: service.name
+        - name: Operator
+          value: =
+        - name: Value
+          value: test-service
+    - name: Drop_Test Service Traces_10
+      kind: Dropper
+    - name: Sample_Default Sampling_11
+      kind: DeterministicSampler
+      properties:
+        - name: SampleRate
+          value: 100
+    - name: Send_to_Honeycomb_12
+      kind: HoneycombExporter
+connections:
+    - source:
+        component: OTel_Receiver_1
+        port: Traces
+        type: OTelTraces
+      destination:
+        component: Start_Sampling_2
+        port: Traces
+        type: OTelTraces
+    - source:
+        component: OTel_Receiver_1
+        port: Logs
+        type: OTelLogs
+      destination:
+        component: Start_Sampling_2
+        port: Logs
+        type: OTelLogs
+    - source:
+        component: Start_Sampling_2
+        port: Rule 1
+        type: SampleData
+      destination:
+        component: Condition_Error Traces_3
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Error Traces_3
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Error Traces_4
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Error Traces_3
+        port: Rule 2
+        type: SampleData
+      destination:
+        component: Condition_Long Duration Traces_5
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Long Duration Traces_5
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_Long Duration Traces_6
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Long Duration Traces_5
+        port: Rule 3
+        type: SampleData
+      destination:
+        component: Condition_HTTP Error Responses_7
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_HTTP Error Responses_7
+        port: Sample
+        type: SampleData
+      destination:
+        component: Sample_HTTP Error Responses_8
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_HTTP Error Responses_7
+        port: Rule 4
+        type: SampleData
+      destination:
+        component: Condition_Test Service Traces_9
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Test Service Traces_9
+        port: Sample
+        type: SampleData
+      destination:
+        component: Drop_Test Service Traces_10
+        port: Sample
+        type: SampleData
+    - source:
+        component: Condition_Test Service Traces_9
+        port: Rule 5
+        type: SampleData
+      destination:
+        component: Sample_Default Sampling_11
+        port: Sample
+        type: SampleData
+    - source:
+        component: OTel_Receiver_1
+        port: Metrics
+        type: OTelMetrics
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Metrics
+        type: OTelMetrics
+    - source:
+        component: Sample_Error Traces_4
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Long Duration Traces_6
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_HTTP Error Responses_8
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents
+    - source:
+        component: Sample_Default Sampling_11
+        port: Events
+        type: HoneycombEvents
+      destination:
+        component: Send_to_Honeycomb_12
+        port: Events
+        type: HoneycombEvents

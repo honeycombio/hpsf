@@ -1,0 +1,45 @@
+Samplers:
+  MyEnvironment:
+    RulesBasedSampler:
+      Rules:
+        # Keep all errors for complete observability
+        - Name: never sample errors
+          SampleRate: 1
+          Conditions:
+            - Field: http.status_code
+              Operator: ">="
+              Value: 400
+              Datatype: int
+            - Field: http.status_code
+              Operator: "<="
+              Value: 511
+              Datatype: int
+
+        # Keep all slow traces to debug performance issues
+        - Name: Keep all traces with any slow spans
+          SampleRate: 1
+          Conditions:
+            - Field: duration_ms
+              Operator: ">="
+              Value: 1000
+              Datatype: float
+
+        # Drop noisy healthcheck traffic entirely
+        - Name: drop healthy healthchecks
+          Drop: true
+          Conditions:
+            - Field: http.route
+              Operator: "="
+              Value: "/healthz"
+
+        # Sample high-value customers at a lower rate
+        - Name: Keep more information about Enterprise customers
+          SampleRate: 10
+          Conditions:
+            - Field: app.pricing_plan_name
+              Operator: "="
+              Value: "Enterprise"
+
+        # Default deterministic sampling for everything else
+        - Name: Default Rule
+          SampleRate: 100
