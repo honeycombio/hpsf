@@ -70,8 +70,14 @@ test-refinery-generation: tests/refinery2hpsf/*-refinery.yaml
 		output_file="tmp/$$(basename $${rules_file} .yaml)-workflow.yaml"; \
 		expected_file="$$(echo $${rules_file} | sed 's/-refinery\.yaml/-workflow.yaml/')"; \
 		echo; \
+		echo "+++ detecting environment from $${rules_file}"; \
+		environment=$$(yq eval '.Samplers | keys | .[0]' $${rules_file}); \
+		if [ -z "$${environment}" ] || [ "$${environment}" = "null" ]; then \
+			environment="__default__"; \
+		fi; \
+		echo "+++ using environment: $${environment}"; \
 		echo "+++ generating workflow from $${rules_file} -> $${output_file}"; \
-		go run ./cmd/refinery2hpsf -r $${rules_file} -o $${output_file} -v || exit 1; \
+		go run ./cmd/refinery2hpsf -r $${rules_file} -e $${environment} -o $${output_file} -v || exit 1; \
 		echo "+++ validating $${output_file}"; \
 		go run ./cmd/hpsf -i $${output_file} validate || exit 1; \
 		echo "+++ comparing generated output to expected $${expected_file}"; \
