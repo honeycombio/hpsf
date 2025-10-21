@@ -1,3 +1,3 @@
 module github.com/honeycombio/hpsf/pkg/hpsftypes
 
-go 1.24.0
+go 1.25

@@ -1,6 +1,6 @@
 module github.com/honeycombio/hpsf
 
-go 1.24.0
+go 1.25
 
 require (
 	github.com/dgryski/go-metro v0.0.0-20250106013310-edb8663e5e33

@@ -8,7 +8,7 @@ jobs:
       - run:
           name: "Install Go"
           environment:
-            GO_VERSION: "1.24.4"
+            GO_VERSION: "1.25.3"
           command: |
             wget https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
