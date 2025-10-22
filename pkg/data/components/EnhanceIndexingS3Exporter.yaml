@@ -1,0 +1,190 @@
+kind: EnhanceIndexingS3Exporter
+name: Send to S3 with Enhanced Indexing
+type: base
+style: exporter
+logo: awss3
+status: development
+version: v0.1.0
+summary: Sends telemetry to AWS S3 with automatic field indexing for efficient querying.
+description: |
+  This component writes telemetry data to S3 while simultaneously generating 
+  field-based indexes that enable efficient querying of unsampled data. 
+  Automatically indexes trace.trace_id, service.name, and session.id, with 
+  support for additional custom fields.
+tags:
+  - category:output
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - vendor:Honeycomb
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+properties:
+  # Required S3 Configuration
+  - name: Bucket
+    summary: The S3 bucket in which to store the data.
+    description: |
+      The name of the S3 bucket in which to store the telemetry data and indexes. This is a required field.
+    type: string
+    validations:
+      - noblanks
+  - name: Region
+    summary: The AWS region in which to store the data.
+    description: |
+      The AWS region where the S3 bucket is located.
+    type: string
+    default: us-east-1
+  # Required Honeycomb API Configuration
+  - name: APIKey
+    summary: Honeycomb Management API Key for authentication.
+    description: |
+      The Management API Key for your Honeycomb account. This is required for 
+      API validation and usage tracking. Should be set via environment variable.
+    type: string
+    validations:
+      - noblanks
+    default: ${env:HONEYCOMB_MANAGEMENT_API_KEY}
+  - name: APISecret
+    summary: Honeycomb Management API Secret for authentication.
+    description: |
+      The Management API Secret for your Honeycomb account. This is required 
+      for API validation and usage tracking. Should be set via environment variable.
+    type: string
+    validations:
+      - noblanks
+    default: ${env:HONEYCOMB_MANAGEMENT_API_SECRET}
+  # Optional Configuration
+  - name: IndexedFields
+    summary: Additional fields to index beyond the defaults.
+    description: |
+      A list of additional field names to create indexes for. The exporter automatically 
+      indexes trace.trace_id, service.name, and session.id. Use this to specify additional 
+      fields like user.id, customer.id, etc. If empty, uses the team's Honeycomb configuration.
+    type: stringarray
+    default: []
+  # Advanced properties
+  - name: PartitionFormat
+    summary: The partition format to use when writing files to S3.
+    description: |
+      The partition format to use when writing files to S3. Must contain placeholders 
+      for year, month, day, hour, and minute. Supports both strftime format (%Y, %m, %d, %H, %M) 
+      and Go time format (2006, 01, 02, 15, 04).
+    type: string
+    default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
+    advanced: true
+  - name: Timeout
+    summary: The timeout to use when writing files to S3.
+    description: |
+      The timeout to use when writing files to S3 and making API calls.
+    type: duration
+    default: 30s
+    validations:
+      - duration
+    advanced: true
+  - name: Marshaler
+    summary: The marshaler to use when writing files to S3.
+    description: |
+      The data format for files written to S3. 'otlp_proto' creates smaller, more 
+      efficient files. 'otlp_json' creates human-readable files.
+    type: string
+    subtype: oneof(otlp_json, otlp_proto)
+    default: otlp_proto
+    validations:
+      - oneof(otlp_json, otlp_proto)
+    advanced: true
+  - name: BatchTimeout
+    summary: How long to wait before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout even if it hasn't reached the target size.
+    type: duration
+    default: 30s
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/log record count. Once a batch reaches 
+      this size it will be sent immediately.
+    type: int
+    default: 50000
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    summary: The size of the exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/log record count.
+      Items will be kept in the queue while batches are being created and sent.
+    type: int
+    default: 500000
+    validations:
+      - nonempty
+    advanced: true
+  - name: APIEndpoint
+    summary: The Honeycomb API endpoint URL.
+    description: |
+      The API endpoint for Honeycomb's management API. Defaults to the standard 
+      Honeycomb API endpoint. Must include protocol (http:// or https://).
+    type: string
+    default: https://api.honeycomb.io
+    advanced: true
+templates:
+  - name: enhance_indexing_s3_exporter_collector
+    kind: collector_config
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, logs]
+      collectorComponentName: enhance_indexing_s3_exporter
+    data:
+      # S3 Uploader Configuration
+      - key: "{{ .ComponentName }}.s3uploader.s3_bucket"
+        value: "{{ .Values.Bucket }}"
+      - key: "{{ .ComponentName }}.s3uploader.region"
+        value: "{{ .Values.Region }}"
+        suppress_if: "{{ not .HProps.Region }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_partition_format"
+        value: "{{ .Values.PartitionFormat }}"
+      - key: "{{ .ComponentName }}.s3uploader.compression"
+        value: "gzip"
+      # Honeycomb API Configuration
+      - key: "{{ .ComponentName }}.api_key"
+        value: "{{ .Values.APIKey }}"
+      - key: "{{ .ComponentName }}.api_secret"
+        value: "{{ .Values.APISecret }}"
+      - key: "{{ .ComponentName }}.api_endpoint"
+        value: "{{ .Values.APIEndpoint }}"
+      # Data Format
+      - key: "{{ .ComponentName }}.marshaler"
+        value: "{{ .Values.Marshaler }}"
+      # Indexing Configuration
+      - key: "{{ .ComponentName }}.indexed_fields"
+        value: "{{ .Values.IndexedFields | encodeAsArray }}"
+        suppress_if: "{{ not .Values.IndexedFields }}"
+      # Performance Configuration
+      - key: "{{ .ComponentName }}.timeout"
+        value: "{{ .Values.Timeout }}"
+        suppress_if: "{{ not .Values.Timeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"

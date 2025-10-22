@@ -1,0 +1,41 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+exporters:
+    enhance_indexing_s3_exporter/s3_out:
+        api_endpoint: https://api-dogfood.honeycomb.io
+        api_key: key
+        api_secret: secret
+        indexed_fields:
+            - agent.id
+            - rollout.id
+        marshaler: otlp_json
+        s3uploader:
+            compression: gzip
+            region: my-region
+            s3_bucket: my-bucket
+            s3_partition_format: my-partition-format
+        sending_queue:
+            batch:
+                flush_timeout: 30s
+                max_size: 200000
+                min_size: 200000
+            enabled: true
+            queue_size: 2000000
+            sizer: items
+        timeout: 30s
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/ae5-d11:
+            receivers: [otlp/otlp_in]
+            processors: [usage]
+            exporters: [enhance_indexing_s3_exporter/s3_out]
