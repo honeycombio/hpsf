@@ -98,10 +98,38 @@ func artifactVersionSupported(component config.TemplateComponent, v string) bool
 	return true
 }
 
+// componentVersionSupported checks if the requested version is compatible with the template version using semver.
+// It allows patch and minor version upgrades but prevents major version mismatches.
+func componentVersionSupported(templateVersion, requestedVersion string) bool {
+	// If no version specified, accept any template version
+	if requestedVersion == "" {
+		return true
+	}
+
+	// If template has no version, only accept empty requested version
+	if templateVersion == "" {
+		return requestedVersion == ""
+	}
+
+	// Check if both versions are valid semver
+	if !semver.IsValid(templateVersion) || !semver.IsValid(requestedVersion) {
+		// Fall back to string equality for invalid semver
+		return templateVersion == requestedVersion
+	}
+
+	// Check major version compatibility - must match
+	if semver.Major(templateVersion) != semver.Major(requestedVersion) {
+		return false
+	}
+
+	// Template version must be >= requested version (allows upgrades)
+	return semver.Compare(templateVersion, requestedVersion) >= 0
+}
+
 func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
+	if ok && componentVersionSupported(tc.Version, component.Version) && artifactVersionSupported(tc, artifactVersion) {
 		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
@@ -122,8 +150,9 @@ func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]con
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
 			continue
 		}
-		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
-			templateComps[c.GetSafeName()] = comp
+		tc, ok := t.components[c.Kind]
+		if ok && componentVersionSupported(tc.Version, c.Version) {
+			templateComps[c.GetSafeName()] = tc
 		} else {
 			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
 		}
