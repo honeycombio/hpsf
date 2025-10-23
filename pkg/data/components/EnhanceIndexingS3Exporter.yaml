@@ -42,6 +42,8 @@ properties:
       The AWS region where the S3 bucket is located.
     type: string
     default: us-east-1
+    validations:
+      - noblanks
   # Required Honeycomb API Configuration
   - name: APIKey
     summary: Honeycomb Management API Key for authentication.
@@ -79,6 +81,8 @@ properties:
       and Go time format (2006, 01, 02, 15, 04).
     type: string
     default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
+    validations:
+      - noblanks
     advanced: true
   - name: Timeout
     summary: The timeout to use when writing files to S3.
@@ -109,7 +113,6 @@ properties:
     default: 30s
     validations:
       - duration
-      - nonempty
     advanced: true
   - name: BatchSize
     summary: The size of a batch.
@@ -120,6 +123,7 @@ properties:
     default: 50000
     validations:
       - nonempty
+      - atleast(0)
     advanced: true
   - name: QueueSize
     summary: The size of the exporting queue.
@@ -130,6 +134,7 @@ properties:
     default: 500000
     validations:
       - nonempty
+      - atleast(0)
     advanced: true
   - name: APIEndpoint
     summary: The Honeycomb API endpoint URL.
@@ -138,6 +143,8 @@ properties:
       Honeycomb API endpoint. Must include protocol (http:// or https://).
     type: string
     default: https://api.honeycomb.io
+    validations:
+      - noblanks
     advanced: true
 templates:
   - name: enhance_indexing_s3_exporter_collector
