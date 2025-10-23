@@ -1,5 +1,18 @@
 # hpsf library changelog
 
+## 0.21.0 2025-10-23
+
+### Features
+
+- feat: add EnhanceIndexingS3Exporter (#241) | [Tyler Helmuth](https://github.com/TylerHelmuth)
+- feat: Add autolayout of HPSF (#239) | [Kent Quirk](https://github.com/kentquirk)
+- feat: Add utility to generate workflows from Refinery rules config (#233) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
+### Maintenance
+
+- maint: update deps in both main and tests directories (#242) | [Kent Quirk](https://github.com/kentquirk)
+- maint: Update golang to 1.25.3 (#240) | [Mike Goldsmith](https://github.com/MikeGoldsmith)
+
 ## 0.20.0 2025-10-03
 
 - fix: Make rules keep order according to rule index (#237) | [Kent Quirk](https://github.com/kentquirk)
