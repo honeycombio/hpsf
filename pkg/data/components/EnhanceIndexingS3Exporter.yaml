@@ -53,7 +53,7 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${env:HONEYCOMB_MANAGEMENT_API_KEY}
+    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
   - name: APISecret
     summary: Honeycomb Management API Secret for authentication.
     description: |
@@ -62,14 +62,14 @@ properties:
     type: string
     validations:
       - noblanks
-    default: ${env:HONEYCOMB_MANAGEMENT_API_SECRET}
+    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
   # Optional Configuration
   - name: IndexedFields
     summary: Additional fields to index beyond the defaults.
     description: |
       A list of additional field names to create indexes for. The exporter automatically 
       indexes trace.trace_id, service.name, and session.id. Use this to specify additional 
-      fields like user.id, customer.id, etc. If empty, uses the team's Honeycomb configuration.
+      fields like user.id, customer.id, etc.
     type: stringarray
     default: []
   # Advanced properties
