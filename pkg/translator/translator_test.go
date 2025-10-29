@@ -1309,7 +1309,6 @@ func TestComponentVersionSupported(t *testing.T) {
 		requestedVersion string
 		expected         bool
 	}{
-		// Empty version cases
 		{
 			name:             "empty requested version matches any template version",
 			templateVersion:  "v0.1.0",
