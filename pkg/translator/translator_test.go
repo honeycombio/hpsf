@@ -1301,3 +1301,118 @@ func TestIndexedPortSequences(t *testing.T) {
 		}
 	}
 }
+
+func TestComponentVersionSupported(t *testing.T) {
+	tests := []struct {
+		name             string
+		templateVersion  string
+		requestedVersion string
+		expected         bool
+	}{
+		{
+			name:             "empty requested version matches any template version",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "",
+			expected:         true,
+		},
+		{
+			name:             "empty template version only matches empty requested",
+			templateVersion:  "",
+			requestedVersion: "",
+			expected:         true,
+		},
+		{
+			name:             "empty template version rejects non-empty requested",
+			templateVersion:  "",
+			requestedVersion: "v0.1.0",
+			expected:         false,
+		},
+		{
+			name:             "exact version match",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "v0.1.0",
+			expected:         true,
+		},
+		{
+			name:             "patch upgrade allowed - v0.1.0 -> v0.1.1",
+			templateVersion:  "v0.1.1",
+			requestedVersion: "v0.1.0",
+			expected:         true,
+		},
+		{
+			name:             "patch downgrade not allowed - v0.1.1 -> v0.1.0",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "v0.1.1",
+			expected:         false,
+		},
+		{
+			name:             "minor upgrade allowed - v0.1.0 -> v0.2.0",
+			templateVersion:  "v0.2.0",
+			requestedVersion: "v0.1.0",
+			expected:         true,
+		},
+		{
+			name:             "minor downgrade not allowed - v0.2.0 -> v0.1.0",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "v0.2.0",
+			expected:         false,
+		},
+		{
+			name:             "major version upgrade not allowed - v0.1.0 -> v1.0.0",
+			templateVersion:  "v1.0.0",
+			requestedVersion: "v0.1.0",
+			expected:         false,
+		},
+		{
+			name:             "major version downgrade not allowed - v1.0.0 -> v0.1.0",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "v1.0.0",
+			expected:         false,
+		},
+		{
+			name:             "same major version different minor/patch allowed",
+			templateVersion:  "v1.2.3",
+			requestedVersion: "v1.1.0",
+			expected:         true,
+		},
+		{
+			name:             "invalid template version falls back to string equality",
+			templateVersion:  "invalid",
+			requestedVersion: "invalid",
+			expected:         true,
+		},
+		{
+			name:             "invalid requested version falls back to string equality",
+			templateVersion:  "invalid",
+			requestedVersion: "different",
+			expected:         false,
+		},
+		{
+			name:             "mixed invalid/valid semver falls back to string equality",
+			templateVersion:  "v0.1.0",
+			requestedVersion: "invalid",
+			expected:         false,
+		},
+		{
+			name:             "complex version with build metadata",
+			templateVersion:  "v1.0.1-alpha+001",
+			requestedVersion: "v1.0.0",
+			expected:         true,
+		},
+		{
+			name:             "prerelease versions",
+			templateVersion:  "v1.0.0-alpha.2",
+			requestedVersion: "v1.0.0-alpha.1",
+			expected:         true,
+		},
+	}
+	
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := componentVersionSupported(tt.templateVersion, tt.requestedVersion)
+			assert.Equal(t, tt.expected, result, 
+				"componentVersionSupported(%q, %q) = %t, expected %t", 
+				tt.templateVersion, tt.requestedVersion, result, tt.expected)
+		})
+	}
+}
