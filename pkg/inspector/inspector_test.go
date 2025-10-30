@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetExporterInfo_HoneycombExporter(t *testing.T) {
+func TestGetComponents_HoneycombExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -29,13 +29,13 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
-	require.Len(t, exporters, 1)
+	result := inspector.GetComponents(h)
+	require.Len(t, result.Exporters, 1)
 
-	exp := exporters[0]
+	exp := result.Exporters[0]
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Type)
 
@@ -43,7 +43,7 @@ components:
 	assert.Equal(t, "", exp.Metadata["Environment"])
 }
 
-func TestGetExporterInfo_S3ArchiveExporter(t *testing.T) {
+func TestGetComponents_S3ArchiveExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -66,10 +66,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -82,7 +82,7 @@ components:
 	assert.Equal(t, "telemetry/", exp.Metadata["Prefix"])
 }
 
-func TestGetExporterInfo_EnhanceIndexingS3Exporter(t *testing.T) {
+func TestGetComponents_EnhanceIndexingS3Exporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -113,10 +113,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -129,7 +129,7 @@ components:
 	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
 }
 
-func TestGetExporterInfo_OTelGRPCExporter(t *testing.T) {
+func TestGetComponents_OTelGRPCExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -152,10 +152,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -165,7 +165,7 @@ components:
 	assert.NotNil(t, exp.Metadata)
 }
 
-func TestGetExporterInfo_OTelHTTPExporter(t *testing.T) {
+func TestGetComponents_OTelHTTPExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -184,10 +184,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -197,7 +197,7 @@ components:
 	assert.NotNil(t, exp.Metadata)
 }
 
-func TestGetExporterInfo_DebugExporter(t *testing.T) {
+func TestGetComponents_DebugExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -212,10 +212,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -225,7 +225,7 @@ components:
 	assert.NotNil(t, exp.Metadata)
 }
 
-func TestGetExporterInfo_NopExporter(t *testing.T) {
+func TestGetComponents_NopExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -237,10 +237,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -250,7 +250,7 @@ components:
 	assert.NotNil(t, exp.Metadata)
 }
 
-func TestGetExporterInfo_MultipleExporters(t *testing.T) {
+func TestGetComponents_MultipleExporters(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -283,10 +283,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -307,14 +307,14 @@ components:
 	assert.True(t, exporterNames["Debug Export"])
 }
 
-func TestGetExporterInfo_InvalidYAML(t *testing.T) {
+func TestGetComponents_InvalidYAML(t *testing.T) {
 	hpsfConfig := `this is not valid yaml: {[`
 
 	_, err := hpsf.FromYAML(hpsfConfig)
 	assert.Error(t, err, "should return error for invalid YAML")
 }
 
-func TestGetExporterInfo_EmptyConfig(t *testing.T) {
+func TestGetComponents_EmptyConfig(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -324,14 +324,14 @@ components: []
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
-func TestGetExporterInfo_UnknownComponentKind(t *testing.T) {
+func TestGetComponents_UnknownComponentKind(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -346,14 +346,14 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
-func TestGetExporterInfo_MissingOptionalProperties(t *testing.T) {
+func TestGetComponents_MissingOptionalProperties(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -368,10 +368,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -381,7 +381,7 @@ components:
 	assert.Equal(t, "", exp.Metadata["Environment"])
 }
 
-func TestGetExporterInfo_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
+func TestGetComponents_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -396,10 +396,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -411,7 +411,7 @@ components:
 	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
 }
 
-func TestGetExporterInfo_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
+func TestGetComponents_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -430,10 +430,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -483,10 +483,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	info := extractor.GetComponents(h)
+	info := inspector.GetComponents(h)
 
 	// Verify receivers
 	require.Len(t, info.Receivers, 2)
@@ -514,7 +514,7 @@ components:
 	assert.Equal(t, "my-bucket", info.Exporters[1].Metadata["Bucket"])
 }
 
-func TestExporterInfo_MetadataAccessWithoutCasting(t *testing.T) {
+func TestGetComponents_MetadataAccessWithoutCasting(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -533,10 +533,10 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewInspector()
+	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := extractor.GetExporterInfo(h)
+	exporters := inspector.GetComponents(h).Exporters
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]

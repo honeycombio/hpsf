@@ -45,13 +45,6 @@ type InspectionResult struct {
 	Exporters  []ComponentInfo
 }
 
-// Deprecated type aliases for backward compatibility
-type Component = ComponentInfo
-type Components = InspectionResult
-type ReceiverInfo = ComponentInfo
-type ProcessorInfo = ComponentInfo
-type ExporterInfo = ComponentInfo
-
 // getPropertyValue retrieves a property value, first checking the component,
 // then falling back to the template default if not found.
 func getPropertyValue(c *hpsf.Component, t config.TemplateComponent, propertyName string) any {
@@ -113,13 +106,6 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 	return result
 }
 
-// GetExporterInfo extracts all exporter components from the HPSF document.
-// It returns a slice of ExporterInfo structs containing the exporter type and metadata.
-// Deprecated: Use GetComponents instead for more comprehensive component extraction.
-func (i *Inspector) GetExporterInfo(h hpsf.HPSF) []Component {
-	return i.GetComponents(h).Exporters
-}
-
 // extractComponentMetadata extracts metadata for receivers and processors (generic components)
 func (i *Inspector) extractComponentMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
@@ -142,17 +128,9 @@ func (i *Inspector) extractExporterMetadata(c *hpsf.Component, t config.Template
 		return i.extractS3ArchiveMetadata(c, t)
 	case "EnhanceIndexingS3Exporter":
 		return i.extractEnhanceIndexingS3Metadata(c, t)
-	case "OTelGRPCExporter":
-		return i.extractOTelGRPCMetadata(c, t)
-	case "OTelHTTPExporter":
-		return i.extractOTelHTTPMetadata(c, t)
-	case "DebugExporter":
-		return i.extractDebugMetadata(c, t)
-	case "NopExporter":
-		return i.extractNopMetadata(c, t)
 	default:
-		// For unknown exporters, use generic extraction
-		return i.extractComponentMetadata(c, t)
+		// For other exporters, return empty metadata
+		return make(map[string]any)
 	}
 }
 
@@ -200,24 +178,4 @@ func (i *Inspector) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config
 	}
 
 	return metadata
-}
-
-// extractOTelGRPCMetadata extracts OTLP gRPC exporter metadata
-func (i *Inspector) extractOTelGRPCMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	return make(map[string]any)
-}
-
-// extractOTelHTTPMetadata extracts OTLP HTTP exporter metadata
-func (i *Inspector) extractOTelHTTPMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	return make(map[string]any)
-}
-
-// extractDebugMetadata extracts Debug exporter metadata
-func (i *Inspector) extractDebugMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	return make(map[string]any)
-}
-
-// extractNopMetadata extracts Nop exporter metadata
-func (i *Inspector) extractNopMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	return make(map[string]any)
 }
