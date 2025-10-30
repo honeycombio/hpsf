@@ -1,4 +1,30 @@
-package hpsf
+package exporter
+
+import (
+	"fmt"
+
+	"github.com/honeycombio/hpsf/pkg/config"
+	"github.com/honeycombio/hpsf/pkg/data"
+	"github.com/honeycombio/hpsf/pkg/hpsf"
+)
+
+// Extractor handles extraction of exporter information from HPSF configurations.
+// It loads component templates to access default values and metadata.
+type Extractor struct {
+	templates map[string]config.TemplateComponent // kind -> template
+}
+
+// NewExtractor creates a new Extractor with embedded component templates loaded.
+func NewExtractor() (*Extractor, error) {
+	templates, err := data.LoadEmbeddedComponents()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load embedded components: %w", err)
+	}
+
+	return &Extractor{
+		templates: templates,
+	}, nil
+}
 
 // ExporterType represents the different types of exporters available in HPSF
 type ExporterType string
@@ -98,9 +124,29 @@ func (m NopExporterMetadata) GetType() ExporterType {
 	return ExporterTypeNop
 }
 
+// getPropertyDefault retrieves the default value for a property from the template component.
+// Returns empty string if no default is found.
+func (e *Extractor) getPropertyDefault(kind, propertyName string) string {
+	template, ok := e.templates[kind]
+	if !ok {
+		return ""
+	}
+
+	for _, prop := range template.Properties {
+		if prop.Name == propertyName {
+			if defaultVal, ok := prop.Default.(string); ok {
+				return defaultVal
+			}
+			return ""
+		}
+	}
+
+	return ""
+}
+
 // GetExporterInfo extracts all exporter components from the HPSF document.
 // It returns a slice of ExporterInfo structs containing the exporter type and metadata.
-func (h *HPSF) GetExporterInfo() []ExporterInfo {
+func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []ExporterInfo {
 	var exporters []ExporterInfo
 
 	// Iterate through all components
@@ -109,37 +155,37 @@ func (h *HPSF) GetExporterInfo() []ExporterInfo {
 		case "HoneycombExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeHoneycomb,
-				Metadata: extractHoneycombMetadata(c),
+				Metadata: e.extractHoneycombMetadata(c),
 			})
 		case "S3ArchiveExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeAWSS3,
-				Metadata: extractS3ArchiveMetadata(c),
+				Metadata: e.extractS3ArchiveMetadata(c),
 			})
 		case "EnhanceIndexingS3Exporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeEnhanceIndexingS3,
-				Metadata: extractEnhanceIndexingS3Metadata(c),
+				Metadata: e.extractEnhanceIndexingS3Metadata(c),
 			})
 		case "OTelGRPCExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeOTelGRPC,
-				Metadata: extractOTelGRPCMetadata(c),
+				Metadata: e.extractOTelGRPCMetadata(c),
 			})
 		case "OTelHTTPExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeOTelHTTP,
-				Metadata: extractOTelHTTPMetadata(c),
+				Metadata: e.extractOTelHTTPMetadata(c),
 			})
 		case "DebugExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeDebug,
-				Metadata: extractDebugMetadata(c),
+				Metadata: e.extractDebugMetadata(c),
 			})
 		case "NopExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeNop,
-				Metadata: extractNopMetadata(c),
+				Metadata: e.extractNopMetadata(c),
 			})
 		}
 	}
@@ -148,7 +194,7 @@ func (h *HPSF) GetExporterInfo() []ExporterInfo {
 }
 
 // extractHoneycombMetadata extracts Honeycomb exporter metadata
-func extractHoneycombMetadata(c *Component) *HoneycombExporterMetadata {
+func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component) *HoneycombExporterMetadata {
 	metadata := &HoneycombExporterMetadata{
 		Environment: "", // Can be populated from additional context if available
 	}
@@ -157,21 +203,26 @@ func extractHoneycombMetadata(c *Component) *HoneycombExporterMetadata {
 }
 
 // extractS3ArchiveMetadata extracts S3 Archive exporter metadata
-func extractS3ArchiveMetadata(c *Component) *S3ArchiveExporterMetadata {
+func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component) *S3ArchiveExporterMetadata {
 	metadata := &S3ArchiveExporterMetadata{}
 
+	// Get Region - use component value or template default
 	if prop := c.GetProperty("Region"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Region = val
 		}
+	} else {
+		metadata.Region = e.getPropertyDefault(c.Kind, "Region")
 	}
 
+	// Get Bucket - required property, no default
 	if prop := c.GetProperty("Bucket"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Bucket = val
 		}
 	}
 
+	// Get Prefix - optional property, no default
 	if prop := c.GetProperty("Prefix"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Prefix = val
@@ -182,21 +233,26 @@ func extractS3ArchiveMetadata(c *Component) *S3ArchiveExporterMetadata {
 }
 
 // extractEnhanceIndexingS3Metadata extracts Enhance Indexing S3 exporter metadata
-func extractEnhanceIndexingS3Metadata(c *Component) *EnhanceIndexingS3ExporterMetadata {
+func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component) *EnhanceIndexingS3ExporterMetadata {
 	metadata := &EnhanceIndexingS3ExporterMetadata{}
 
+	// Get Region - use component value or template default
 	if prop := c.GetProperty("Region"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Region = val
 		}
+	} else {
+		metadata.Region = e.getPropertyDefault(c.Kind, "Region")
 	}
 
+	// Get Bucket - required property, no default
 	if prop := c.GetProperty("Bucket"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Bucket = val
 		}
 	}
 
+	// Get Prefix - optional property, no default
 	if prop := c.GetProperty("Prefix"); prop != nil {
 		if val, ok := prop.Value.(string); ok {
 			metadata.Prefix = val
@@ -207,21 +263,21 @@ func extractEnhanceIndexingS3Metadata(c *Component) *EnhanceIndexingS3ExporterMe
 }
 
 // extractOTelGRPCMetadata extracts OTLP gRPC exporter metadata
-func extractOTelGRPCMetadata(c *Component) *OTelGRPCExporterMetadata {
+func (e *Extractor) extractOTelGRPCMetadata(c *hpsf.Component) *OTelGRPCExporterMetadata {
 	return &OTelGRPCExporterMetadata{}
 }
 
 // extractOTelHTTPMetadata extracts OTLP HTTP exporter metadata
-func extractOTelHTTPMetadata(c *Component) *OTelHTTPExporterMetadata {
+func (e *Extractor) extractOTelHTTPMetadata(c *hpsf.Component) *OTelHTTPExporterMetadata {
 	return &OTelHTTPExporterMetadata{}
 }
 
 // extractDebugMetadata extracts Debug exporter metadata
-func extractDebugMetadata(c *Component) *DebugExporterMetadata {
+func (e *Extractor) extractDebugMetadata(c *hpsf.Component) *DebugExporterMetadata {
 	return &DebugExporterMetadata{}
 }
 
 // extractNopMetadata extracts Nop exporter metadata
-func extractNopMetadata(c *Component) *NopExporterMetadata {
+func (e *Extractor) extractNopMetadata(c *hpsf.Component) *NopExporterMetadata {
 	return &NopExporterMetadata{}
 }

@@ -1,8 +1,9 @@
-package hpsf
+package exporter
 
 import (
 	"testing"
 
+	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -25,10 +26,13 @@ components:
         value: my-metrics
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -59,10 +63,13 @@ components:
         value: otlp_json
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -103,10 +110,13 @@ components:
         value: otlp_proto
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -139,10 +149,13 @@ components:
           x-custom-header: value
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -168,10 +181,13 @@ components:
         value: true
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -193,10 +209,13 @@ components:
         value: detailed
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -215,10 +234,13 @@ components:
     kind: NopExporter
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -258,10 +280,13 @@ components:
         value: basic
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -278,7 +303,7 @@ components:
 func TestGetExporterInfo_InvalidYAML(t *testing.T) {
 	hpsfConfig := `this is not valid yaml: {[`
 
-	_, err := FromYAML(hpsfConfig)
+	_, err := hpsf.FromYAML(hpsfConfig)
 	assert.Error(t, err, "should return error for invalid YAML")
 }
 
@@ -289,10 +314,13 @@ version: 1.0
 components: []
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
@@ -308,10 +336,13 @@ components:
         value: somevalue
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
@@ -327,10 +358,13 @@ components:
         value: test-key
 `
 
-	h, err := FromYAML(hpsfConfig)
+	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := h.GetExporterInfo()
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -340,6 +374,74 @@ components:
 	require.True(t, ok)
 	// Environment field should have zero value
 	assert.Empty(t, metadata.Environment)
+}
+
+func TestGetExporterInfo_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: Minimal S3
+    kind: S3ArchiveExporter
+    properties:
+      - name: Bucket
+        value: my-bucket
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
+	require.Len(t, exporters, 1)
+
+	exp := exporters[0]
+	assert.Equal(t, ExporterTypeAWSS3, exp.Type)
+
+	metadata, ok := exp.Metadata.(*S3ArchiveExporterMetadata)
+	require.True(t, ok)
+	// Region should use default from template
+	assert.Equal(t, "us-east-1", metadata.Region)
+	assert.Equal(t, "my-bucket", metadata.Bucket)
+	assert.Empty(t, metadata.Prefix)
+}
+
+func TestGetExporterInfo_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: Minimal Enhanced S3
+    kind: EnhanceIndexingS3Exporter
+    properties:
+      - name: Bucket
+        value: my-indexed-bucket
+      - name: APIKey
+        value: test-key
+      - name: APISecret
+        value: test-secret
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	exporters := extractor.GetExporterInfo(h)
+	require.Len(t, exporters, 1)
+
+	exp := exporters[0]
+	assert.Equal(t, ExporterTypeEnhanceIndexingS3, exp.Type)
+
+	metadata, ok := exp.Metadata.(*EnhanceIndexingS3ExporterMetadata)
+	require.True(t, ok)
+	// Region should use default from template
+	assert.Equal(t, "us-east-1", metadata.Region)
+	assert.Equal(t, "my-indexed-bucket", metadata.Bucket)
+	assert.Empty(t, metadata.Prefix)
 }
 
 func TestExporterMetadata_GetType(t *testing.T) {
