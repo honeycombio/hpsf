@@ -39,8 +39,8 @@ components:
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Type)
 
-	// Verify metadata is accessible without casting
-	assert.Equal(t, "", exp.Metadata["Environment"])
+	// Verify properties is accessible without casting
+	assert.Equal(t, "", exp.Properties["Environment"])
 }
 
 func TestGetComponents_S3ArchiveExporter(t *testing.T) {
@@ -76,10 +76,10 @@ components:
 	assert.Equal(t, "My S3 Archive", exp.Name)
 	assert.Equal(t, "S3ArchiveExporter", exp.Type)
 
-	// Verify metadata is accessible without casting
-	assert.Equal(t, "us-west-2", exp.Metadata["Region"])
-	assert.Equal(t, "my-telemetry-bucket", exp.Metadata["Bucket"])
-	assert.Equal(t, "telemetry/", exp.Metadata["Prefix"])
+	// Verify properties is accessible without casting
+	assert.Equal(t, "us-west-2", exp.Properties["Region"])
+	assert.Equal(t, "my-telemetry-bucket", exp.Properties["Bucket"])
+	assert.Equal(t, "telemetry/", exp.Properties["Prefix"])
 }
 
 func TestGetComponents_EnhanceIndexingS3Exporter(t *testing.T) {
@@ -123,10 +123,10 @@ components:
 	assert.Equal(t, "My Enhanced S3", exp.Name)
 	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
 
-	// Verify metadata is accessible without casting
-	assert.Equal(t, "eu-west-1", exp.Metadata["Region"])
-	assert.Equal(t, "my-indexed-bucket", exp.Metadata["Bucket"])
-	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
+	// Verify properties is accessible without casting
+	assert.Equal(t, "eu-west-1", exp.Properties["Region"])
+	assert.Equal(t, "my-indexed-bucket", exp.Properties["Bucket"])
+	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
 func TestGetComponents_OTelGRPCExporter(t *testing.T) {
@@ -161,8 +161,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "OTelGRPCExporter", exp.Type)
 
-	// Verify metadata map exists (even if empty)
-	assert.NotNil(t, exp.Metadata)
+	// Verify properties map exists (even if empty)
+	assert.NotNil(t, exp.Properties)
 }
 
 func TestGetComponents_OTelHTTPExporter(t *testing.T) {
@@ -193,8 +193,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "OTelHTTPExporter", exp.Type)
 
-	// Verify metadata map exists (even if empty)
-	assert.NotNil(t, exp.Metadata)
+	// Verify properties map exists (even if empty)
+	assert.NotNil(t, exp.Properties)
 }
 
 func TestGetComponents_DebugExporter(t *testing.T) {
@@ -221,8 +221,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "DebugExporter", exp.Type)
 
-	// Verify metadata map exists (even if empty)
-	assert.NotNil(t, exp.Metadata)
+	// Verify properties map exists (even if empty)
+	assert.NotNil(t, exp.Properties)
 }
 
 func TestGetComponents_NopExporter(t *testing.T) {
@@ -246,8 +246,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "NopExporter", exp.Type)
 
-	// Verify metadata map exists (even if empty)
-	assert.NotNil(t, exp.Metadata)
+	// Verify properties map exists (even if empty)
+	assert.NotNil(t, exp.Properties)
 }
 
 func TestGetComponents_MultipleExporters(t *testing.T) {
@@ -378,7 +378,7 @@ components:
 	assert.Equal(t, "HoneycombExporter", exp.Type)
 
 	// Environment field should have empty string value
-	assert.Equal(t, "", exp.Metadata["Environment"])
+	assert.Equal(t, "", exp.Properties["Environment"])
 }
 
 func TestGetComponents_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
@@ -406,9 +406,9 @@ components:
 	assert.Equal(t, "S3ArchiveExporter", exp.Type)
 
 	// Region should use default from template
-	assert.Equal(t, "us-east-1", exp.Metadata["Region"])
-	assert.Equal(t, "my-bucket", exp.Metadata["Bucket"])
-	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
+	assert.Equal(t, "us-east-1", exp.Properties["Region"])
+	assert.Equal(t, "my-bucket", exp.Properties["Bucket"])
+	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
 func TestGetComponents_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
@@ -440,9 +440,9 @@ components:
 	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
 
 	// Region should use default from template
-	assert.Equal(t, "us-east-1", exp.Metadata["Region"])
-	assert.Equal(t, "my-indexed-bucket", exp.Metadata["Bucket"])
-	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
+	assert.Equal(t, "us-east-1", exp.Properties["Region"])
+	assert.Equal(t, "my-indexed-bucket", exp.Properties["Bucket"])
+	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
 func TestGetComponentInfo_AllComponentTypes(t *testing.T) {
@@ -492,8 +492,8 @@ components:
 	require.Len(t, info.Receivers, 2)
 	assert.Equal(t, "OTLP Receiver", info.Receivers[0].Name)
 	assert.Equal(t, "OTelReceiver", info.Receivers[0].Type)
-	assert.Equal(t, 4317, info.Receivers[0].Metadata["GRPCPort"])
-	assert.Equal(t, 4318, info.Receivers[0].Metadata["HTTPPort"])
+	assert.Equal(t, 4317, info.Receivers[0].Properties["GRPCPort"])
+	assert.Equal(t, 4318, info.Receivers[0].Properties["HTTPPort"])
 	assert.Equal(t, "Another Receiver", info.Receivers[1].Name)
 	assert.Equal(t, "NopReceiver", info.Receivers[1].Type)
 
@@ -501,8 +501,8 @@ components:
 	require.Len(t, info.Processors, 1)
 	assert.Equal(t, "Memory Limiter", info.Processors[0].Name)
 	assert.Equal(t, "MemoryLimiterProcessor", info.Processors[0].Type)
-	assert.Equal(t, "1s", info.Processors[0].Metadata["CheckInterval"])
-	assert.Equal(t, 512, info.Processors[0].Metadata["MemoryLimitMiB"])
+	assert.Equal(t, "1s", info.Processors[0].Properties["CheckInterval"])
+	assert.Equal(t, 512, info.Processors[0].Properties["MemoryLimitMiB"])
 
 	// Verify exporters
 	require.Len(t, info.Exporters, 2)
@@ -510,11 +510,11 @@ components:
 	assert.Equal(t, "HoneycombExporter", info.Exporters[0].Type)
 	assert.Equal(t, "S3 Archive", info.Exporters[1].Name)
 	assert.Equal(t, "S3ArchiveExporter", info.Exporters[1].Type)
-	assert.Equal(t, "us-west-2", info.Exporters[1].Metadata["Region"])
-	assert.Equal(t, "my-bucket", info.Exporters[1].Metadata["Bucket"])
+	assert.Equal(t, "us-west-2", info.Exporters[1].Properties["Region"])
+	assert.Equal(t, "my-bucket", info.Exporters[1].Properties["Bucket"])
 }
 
-func TestGetComponents_MetadataAccessWithoutCasting(t *testing.T) {
+func TestGetComponents_PropertiesAccessWithoutCasting(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -542,16 +542,16 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "Test S3", exp.Name)
 
-	// Demonstrate accessing metadata without type casting
-	region := exp.Metadata["Region"]
+	// Demonstrate accessing properties without type casting
+	region := exp.Properties["Region"]
 	assert.Equal(t, "eu-central-1", region)
 
-	bucket := exp.Metadata["Bucket"]
+	bucket := exp.Properties["Bucket"]
 	assert.Equal(t, "test-bucket", bucket)
 
-	prefix := exp.Metadata["Prefix"]
+	prefix := exp.Properties["Prefix"]
 	assert.Equal(t, "data/", prefix)
 
 	// Non-existent keys return nil
-	assert.Nil(t, exp.Metadata["NonExistentKey"])
+	assert.Nil(t, exp.Properties["NonExistentKey"])
 }

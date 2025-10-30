@@ -9,7 +9,7 @@ import (
 )
 
 // Inspector provides information about components in HPSF configurations.
-// It loads component templates to access default values and metadata.
+// It loads component templates to access default values and properties.
 type Inspector struct {
 	templates map[string]config.TemplateComponent // kind -> template
 }
@@ -26,15 +26,15 @@ func NewInspector() (*Inspector, error) {
 	}, nil
 }
 
-// ComponentInfo represents a component (receiver, processor, or exporter) with its type and metadata
+// ComponentInfo represents a component (receiver, processor, or exporter) with its name, type, and properties
 type ComponentInfo struct {
 	// Name is the user-defined name of the component instance
 	Name string
 	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
 	Type string
-	// Metadata contains component-specific configuration details as key-value pairs
-	// Users can access values directly without type casting, e.g. metadata["Region"]
-	Metadata map[string]any
+	// Properties contains component-specific configuration details as key-value pairs
+	// Users can access values directly without type casting, e.g. properties["Region"]
+	Properties map[string]any
 }
 
 // InspectionResult holds information about all components in an HPSF configuration.
@@ -86,19 +86,19 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 			result.Receivers = append(result.Receivers, ComponentInfo{
 				Name:     c.Name,
 				Type:     c.Kind,
-				Metadata: i.extractComponentMetadata(c, t),
+				Properties: i.extractComponentProperties(c, t),
 			})
 		case "processor":
 			result.Processors = append(result.Processors, ComponentInfo{
 				Name:     c.Name,
 				Type:     c.Kind,
-				Metadata: i.extractComponentMetadata(c, t),
+				Properties: i.extractComponentProperties(c, t),
 			})
 		case "exporter":
 			result.Exporters = append(result.Exporters, ComponentInfo{
 				Name:     c.Name,
 				Type:     c.Kind,
-				Metadata: i.extractExporterMetadata(c, t),
+				Properties: i.extractExporterProperties(c, t),
 			})
 		}
 	}
@@ -106,76 +106,76 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 	return result
 }
 
-// extractComponentMetadata extracts metadata for receivers and processors (generic components)
-func (i *Inspector) extractComponentMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	metadata := make(map[string]any)
+// extractComponentProperties extracts properties for receivers and processors (generic components)
+func (i *Inspector) extractComponentProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	properties := make(map[string]any)
 
 	// For generic components, extract all properties with their values
 	for _, prop := range c.Properties {
-		metadata[prop.Name] = prop.Value
+		properties[prop.Name] = prop.Value
 	}
 
-	return metadata
+	return properties
 }
 
-// extractExporterMetadata extracts metadata for exporters with special handling
-func (i *Inspector) extractExporterMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+// extractExporterProperties extracts properties for exporters with special handling
+func (i *Inspector) extractExporterProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	// Use specialized extraction for known exporters
 	switch c.Kind {
 	case "HoneycombExporter":
-		return i.extractHoneycombMetadata(c, t)
+		return i.extractHoneycombProperties(c, t)
 	case "S3ArchiveExporter":
-		return i.extractS3ArchiveMetadata(c, t)
+		return i.extractS3ArchiveProperties(c, t)
 	case "EnhanceIndexingS3Exporter":
-		return i.extractEnhanceIndexingS3Metadata(c, t)
+		return i.extractEnhanceIndexingS3Properties(c, t)
 	default:
-		// For other exporters, return empty metadata
+		// For other exporters, return empty properties
 		return make(map[string]any)
 	}
 }
 
-// extractHoneycombMetadata extracts Honeycomb exporter metadata
-func (i *Inspector) extractHoneycombMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	metadata := make(map[string]any)
+// extractHoneycombProperties extracts Honeycomb exporter properties
+func (i *Inspector) extractHoneycombProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	properties := make(map[string]any)
 
 	// Environment - can be populated from additional context if available
-	metadata["Environment"] = ""
+	properties["Environment"] = ""
 
-	return metadata
+	return properties
 }
 
-// extractS3ArchiveMetadata extracts S3 Archive exporter metadata
-func (i *Inspector) extractS3ArchiveMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	metadata := make(map[string]any)
+// extractS3ArchiveProperties extracts S3 Archive exporter properties
+func (i *Inspector) extractS3ArchiveProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	properties := make(map[string]any)
 
 	// Extract selected properties with template defaults as fallback
 	if val := getPropertyValue(c, t, "Region"); val != nil {
-		metadata["Region"] = val
+		properties["Region"] = val
 	}
 	if val := getPropertyValue(c, t, "Bucket"); val != nil {
-		metadata["Bucket"] = val
+		properties["Bucket"] = val
 	}
 	if val := getPropertyValue(c, t, "Prefix"); val != nil {
-		metadata["Prefix"] = val
+		properties["Prefix"] = val
 	}
 
-	return metadata
+	return properties
 }
 
-// extractEnhanceIndexingS3Metadata extracts Enhance Indexing S3 exporter metadata
-func (i *Inspector) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	metadata := make(map[string]any)
+// extractEnhanceIndexingS3Properties extracts Enhance Indexing S3 exporter properties
+func (i *Inspector) extractEnhanceIndexingS3Properties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	properties := make(map[string]any)
 
 	// Extract selected properties with template defaults as fallback
 	if val := getPropertyValue(c, t, "Region"); val != nil {
-		metadata["Region"] = val
+		properties["Region"] = val
 	}
 	if val := getPropertyValue(c, t, "Bucket"); val != nil {
-		metadata["Bucket"] = val
+		properties["Bucket"] = val
 	}
 	if val := getPropertyValue(c, t, "Prefix"); val != nil {
-		metadata["Prefix"] = val
+		properties["Prefix"] = val
 	}
 
-	return metadata
+	return properties
 }
