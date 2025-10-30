@@ -36,6 +36,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
+	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Type)
 
 	// Verify metadata is accessible without casting
@@ -72,6 +73,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
+	assert.Equal(t, "My S3 Archive", exp.Name)
 	assert.Equal(t, "S3ArchiveExporter", exp.Type)
 
 	// Verify metadata is accessible without casting
@@ -118,6 +120,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
+	assert.Equal(t, "My Enhanced S3", exp.Name)
 	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
 
 	// Verify metadata is accessible without casting
@@ -288,13 +291,20 @@ components:
 
 	// Check that we have all the expected exporter types
 	exporterTypes := make(map[string]bool)
+	exporterNames := make(map[string]bool)
 	for _, exp := range exporters {
 		exporterTypes[exp.Type] = true
+		exporterNames[exp.Name] = true
 	}
 
 	assert.True(t, exporterTypes["HoneycombExporter"])
 	assert.True(t, exporterTypes["S3ArchiveExporter"])
 	assert.True(t, exporterTypes["DebugExporter"])
+
+	// Verify names are captured
+	assert.True(t, exporterNames["Honeycomb Export"])
+	assert.True(t, exporterNames["S3 Archive"])
+	assert.True(t, exporterNames["Debug Export"])
 }
 
 func TestGetExporterInfo_InvalidYAML(t *testing.T) {
@@ -480,20 +490,25 @@ components:
 
 	// Verify receivers
 	require.Len(t, info.Receivers, 2)
+	assert.Equal(t, "OTLP Receiver", info.Receivers[0].Name)
 	assert.Equal(t, "OTelReceiver", info.Receivers[0].Type)
 	assert.Equal(t, 4317, info.Receivers[0].Metadata["GRPCPort"])
 	assert.Equal(t, 4318, info.Receivers[0].Metadata["HTTPPort"])
+	assert.Equal(t, "Another Receiver", info.Receivers[1].Name)
 	assert.Equal(t, "NopReceiver", info.Receivers[1].Type)
 
 	// Verify processors
 	require.Len(t, info.Processors, 1)
+	assert.Equal(t, "Memory Limiter", info.Processors[0].Name)
 	assert.Equal(t, "MemoryLimiterProcessor", info.Processors[0].Type)
 	assert.Equal(t, "1s", info.Processors[0].Metadata["CheckInterval"])
 	assert.Equal(t, 512, info.Processors[0].Metadata["MemoryLimitMiB"])
 
 	// Verify exporters
 	require.Len(t, info.Exporters, 2)
+	assert.Equal(t, "Honeycomb Export", info.Exporters[0].Name)
 	assert.Equal(t, "HoneycombExporter", info.Exporters[0].Type)
+	assert.Equal(t, "S3 Archive", info.Exporters[1].Name)
 	assert.Equal(t, "S3ArchiveExporter", info.Exporters[1].Type)
 	assert.Equal(t, "us-west-2", info.Exporters[1].Metadata["Region"])
 	assert.Equal(t, "my-bucket", info.Exporters[1].Metadata["Bucket"])
@@ -525,6 +540,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
+	assert.Equal(t, "Test S3", exp.Name)
 
 	// Demonstrate accessing metadata without type casting
 	region := exp.Metadata["Region"]

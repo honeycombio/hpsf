@@ -28,6 +28,8 @@ func NewInspector() (*Inspector, error) {
 
 // ComponentInfo represents a component (receiver, processor, or exporter) with its type and metadata
 type ComponentInfo struct {
+	// Name is the user-defined name of the component instance
+	Name string
 	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
 	Type string
 	// Metadata contains component-specific configuration details as key-value pairs
@@ -36,6 +38,7 @@ type ComponentInfo struct {
 }
 
 // InspectionResult holds information about all components in an HPSF configuration.
+// TODO: Add support for sampler, startsampling and conditions later.
 type InspectionResult struct {
 	Receivers  []ComponentInfo
 	Processors []ComponentInfo
@@ -85,16 +88,19 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 		switch t.Style {
 		case "receiver":
 			result.Receivers = append(result.Receivers, ComponentInfo{
+				Name:     c.Name,
 				Type:     c.Kind,
 				Metadata: i.extractComponentMetadata(c, t),
 			})
 		case "processor":
 			result.Processors = append(result.Processors, ComponentInfo{
+				Name:     c.Name,
 				Type:     c.Kind,
 				Metadata: i.extractComponentMetadata(c, t),
 			})
 		case "exporter":
 			result.Exporters = append(result.Exporters, ComponentInfo{
+				Name:     c.Name,
 				Type:     c.Kind,
 				Metadata: i.extractExporterMetadata(c, t),
 			})
