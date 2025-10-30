@@ -36,7 +36,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeHoneycomb, exp.Type)
+	assert.Equal(t, "HoneycombExporter", exp.Type)
 
 	// Verify metadata is accessible without casting
 	assert.Equal(t, "", exp.Metadata["Environment"])
@@ -72,7 +72,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeAWSS3, exp.Type)
+	assert.Equal(t, "S3ArchiveExporter", exp.Type)
 
 	// Verify metadata is accessible without casting
 	assert.Equal(t, "us-west-2", exp.Metadata["Region"])
@@ -118,7 +118,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeEnhanceIndexingS3, exp.Type)
+	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
 
 	// Verify metadata is accessible without casting
 	assert.Equal(t, "eu-west-1", exp.Metadata["Region"])
@@ -156,7 +156,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeOTelGRPC, exp.Type)
+	assert.Equal(t, "OTelGRPCExporter", exp.Type)
 
 	// Verify metadata map exists (even if empty)
 	assert.NotNil(t, exp.Metadata)
@@ -188,7 +188,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeOTelHTTP, exp.Type)
+	assert.Equal(t, "OTelHTTPExporter", exp.Type)
 
 	// Verify metadata map exists (even if empty)
 	assert.NotNil(t, exp.Metadata)
@@ -216,7 +216,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeDebug, exp.Type)
+	assert.Equal(t, "DebugExporter", exp.Type)
 
 	// Verify metadata map exists (even if empty)
 	assert.NotNil(t, exp.Metadata)
@@ -241,7 +241,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeNop, exp.Type)
+	assert.Equal(t, "NopExporter", exp.Type)
 
 	// Verify metadata map exists (even if empty)
 	assert.NotNil(t, exp.Metadata)
@@ -287,14 +287,14 @@ components:
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
-	exporterTypes := make(map[ExporterType]bool)
+	exporterTypes := make(map[string]bool)
 	for _, exp := range exporters {
 		exporterTypes[exp.Type] = true
 	}
 
-	assert.True(t, exporterTypes[ExporterTypeHoneycomb])
-	assert.True(t, exporterTypes[ExporterTypeAWSS3])
-	assert.True(t, exporterTypes[ExporterTypeDebug])
+	assert.True(t, exporterTypes["HoneycombExporter"])
+	assert.True(t, exporterTypes["S3ArchiveExporter"])
+	assert.True(t, exporterTypes["DebugExporter"])
 }
 
 func TestGetExporterInfo_InvalidYAML(t *testing.T) {
@@ -365,7 +365,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeHoneycomb, exp.Type)
+	assert.Equal(t, "HoneycombExporter", exp.Type)
 
 	// Environment field should have empty string value
 	assert.Equal(t, "", exp.Metadata["Environment"])
@@ -393,7 +393,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeAWSS3, exp.Type)
+	assert.Equal(t, "S3ArchiveExporter", exp.Type)
 
 	// Region should use default from template
 	assert.Equal(t, "us-east-1", exp.Metadata["Region"])
@@ -427,12 +427,76 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, ExporterTypeEnhanceIndexingS3, exp.Type)
+	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
 
 	// Region should use default from template
 	assert.Equal(t, "us-east-1", exp.Metadata["Region"])
 	assert.Equal(t, "my-indexed-bucket", exp.Metadata["Bucket"])
 	assert.Nil(t, exp.Metadata["Prefix"]) // Not set in config
+}
+
+func TestGetComponentInfo_AllComponentTypes(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 4317
+      - name: HTTPPort
+        value: 4318
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+    properties:
+      - name: CheckInterval
+        value: 1s
+      - name: MemoryLimitMiB
+        value: 512
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+    properties:
+      - name: APIKey
+        value: test-key
+  - name: S3 Archive
+    kind: S3ArchiveExporter
+    properties:
+      - name: Bucket
+        value: my-bucket
+      - name: Region
+        value: us-west-2
+  - name: Another Receiver
+    kind: NopReceiver
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	extractor, err := NewExtractor()
+	require.NoError(t, err)
+
+	info := extractor.GetComponents(h)
+
+	// Verify receivers
+	require.Len(t, info.Receivers, 2)
+	assert.Equal(t, "OTelReceiver", info.Receivers[0].Type)
+	assert.Equal(t, 4317, info.Receivers[0].Metadata["GRPCPort"])
+	assert.Equal(t, 4318, info.Receivers[0].Metadata["HTTPPort"])
+	assert.Equal(t, "NopReceiver", info.Receivers[1].Type)
+
+	// Verify processors
+	require.Len(t, info.Processors, 1)
+	assert.Equal(t, "MemoryLimiterProcessor", info.Processors[0].Type)
+	assert.Equal(t, "1s", info.Processors[0].Metadata["CheckInterval"])
+	assert.Equal(t, 512, info.Processors[0].Metadata["MemoryLimitMiB"])
+
+	// Verify exporters
+	require.Len(t, info.Exporters, 2)
+	assert.Equal(t, "HoneycombExporter", info.Exporters[0].Type)
+	assert.Equal(t, "S3ArchiveExporter", info.Exporters[1].Type)
+	assert.Equal(t, "us-west-2", info.Exporters[1].Metadata["Region"])
+	assert.Equal(t, "my-bucket", info.Exporters[1].Metadata["Bucket"])
 }
 
 func TestExporterInfo_MetadataAccessWithoutCasting(t *testing.T) {

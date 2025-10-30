@@ -8,7 +8,7 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 )
 
-// Extractor handles extraction of exporter information from HPSF configurations.
+// Extractor handles extraction of component information from HPSF configurations.
 // It loads component templates to access default values and metadata.
 type Extractor struct {
 	templates map[string]config.TemplateComponent // kind -> template
@@ -26,26 +26,20 @@ func NewExtractor() (*Extractor, error) {
 	}, nil
 }
 
-// ExporterType represents the different types of exporters available in HPSF
-type ExporterType string
-
-const (
-	ExporterTypeHoneycomb         ExporterType = "Honeycomb"
-	ExporterTypeAWSS3             ExporterType = "AWSS3"
-	ExporterTypeEnhanceIndexingS3 ExporterType = "EnhanceIndexingS3"
-	ExporterTypeOTelGRPC          ExporterType = "OTelGRPC"
-	ExporterTypeOTelHTTP          ExporterType = "OTelHTTP"
-	ExporterTypeDebug             ExporterType = "Debug"
-	ExporterTypeNop               ExporterType = "Nop"
-)
-
-// ExporterInfo represents an exporter component with its type and metadata
-type ExporterInfo struct {
-	// Type is the exporter type (e.g., "Honeycomb", "AWSS3")
-	Type ExporterType
-	// Metadata contains exporter-specific configuration details as key-value pairs
+// Component represents a component (receiver, processor, or exporter) with its type and metadata
+type Component struct {
+	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
+	Type string
+	// Metadata contains component-specific configuration details as key-value pairs
 	// Users can access values directly without type casting, e.g. metadata["Region"]
 	Metadata map[string]any
+}
+
+// Components holds information about all components in an HPSF configuration.
+type Components struct {
+	Receivers  []Component
+	Processors []Component
+	Exporters  []Component
 }
 
 // getPropertyDefault retrieves the default value for a property from the template component.
@@ -63,10 +57,14 @@ func getPropertyDefault(t config.TemplateComponent, propertyName string) string 
 	return ""
 }
 
-// GetExporterInfo extracts all exporter components from the HPSF document.
-// It returns a slice of ExporterInfo structs containing the exporter type and metadata.
-func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []ExporterInfo {
-	var exporters []ExporterInfo
+// GetComponents extracts all components from the HPSF document.
+// It returns a Components struct containing receivers, processors, and exporters.
+func (e *Extractor) GetComponents(h hpsf.HPSF) Components {
+	components := Components{
+		Receivers:  []Component{},
+		Processors: []Component{},
+		Exporters:  []Component{},
+	}
 
 	// Iterate through all components
 	for _, c := range h.Components {
@@ -76,51 +74,70 @@ func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []ExporterInfo {
 			continue
 		}
 
-		// Check if the component is an exporter
-		if t.Style != "exporter" {
-			continue
-		}
-
-		switch c.Kind {
-		case "HoneycombExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeHoneycomb,
-				Metadata: e.extractHoneycombMetadata(c, t),
+		// Extract based on component style
+		switch t.Style {
+		case "receiver":
+			components.Receivers = append(components.Receivers, Component{
+				Type:     c.Kind,
+				Metadata: e.extractComponentMetadata(c, t),
 			})
-		case "S3ArchiveExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeAWSS3,
-				Metadata: e.extractS3ArchiveMetadata(c, t),
+		case "processor":
+			components.Processors = append(components.Processors, Component{
+				Type:     c.Kind,
+				Metadata: e.extractComponentMetadata(c, t),
 			})
-		case "EnhanceIndexingS3Exporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeEnhanceIndexingS3,
-				Metadata: e.extractEnhanceIndexingS3Metadata(c, t),
-			})
-		case "OTelGRPCExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeOTelGRPC,
-				Metadata: e.extractOTelGRPCMetadata(c, t),
-			})
-		case "OTelHTTPExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeOTelHTTP,
-				Metadata: e.extractOTelHTTPMetadata(c, t),
-			})
-		case "DebugExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeDebug,
-				Metadata: e.extractDebugMetadata(c, t),
-			})
-		case "NopExporter":
-			exporters = append(exporters, ExporterInfo{
-				Type:     ExporterTypeNop,
-				Metadata: e.extractNopMetadata(c, t),
+		case "exporter":
+			components.Exporters = append(components.Exporters, Component{
+				Type:     c.Kind,
+				Metadata: e.extractExporterMetadata(c, t),
 			})
 		}
 	}
 
-	return exporters
+	return components
+}
+
+// GetExporterInfo extracts all exporter components from the HPSF document.
+// It returns a slice of ExporterInfo structs containing the exporter type and metadata.
+// Deprecated: Use GetComponents instead for more comprehensive component extraction.
+func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []Component {
+	return e.GetComponents(h).Exporters
+}
+
+// extractComponentMetadata extracts metadata for receivers and processors (generic components)
+func (e *Extractor) extractComponentMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	metadata := make(map[string]any)
+
+	// For generic components, extract all properties with their values
+	for _, prop := range c.Properties {
+		metadata[prop.Name] = prop.Value
+	}
+
+	return metadata
+}
+
+// extractExporterMetadata extracts metadata for exporters with special handling
+func (e *Extractor) extractExporterMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+	// Use specialized extraction for known exporters
+	switch c.Kind {
+	case "HoneycombExporter":
+		return e.extractHoneycombMetadata(c, t)
+	case "S3ArchiveExporter":
+		return e.extractS3ArchiveMetadata(c, t)
+	case "EnhanceIndexingS3Exporter":
+		return e.extractEnhanceIndexingS3Metadata(c, t)
+	case "OTelGRPCExporter":
+		return e.extractOTelGRPCMetadata(c, t)
+	case "OTelHTTPExporter":
+		return e.extractOTelHTTPMetadata(c, t)
+	case "DebugExporter":
+		return e.extractDebugMetadata(c, t)
+	case "NopExporter":
+		return e.extractNopMetadata(c, t)
+	default:
+		// For unknown exporters, use generic extraction
+		return e.extractComponentMetadata(c, t)
+	}
 }
 
 // extractHoneycombMetadata extracts Honeycomb exporter metadata
