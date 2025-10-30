@@ -52,19 +52,22 @@ type ReceiverInfo = ComponentInfo
 type ProcessorInfo = ComponentInfo
 type ExporterInfo = ComponentInfo
 
-// getPropertyDefault retrieves the default value for a property from the template component.
-// Returns empty string if no default is found.
-func getPropertyDefault(t config.TemplateComponent, propertyName string) string {
-	for _, prop := range t.Properties {
-		if prop.Name == propertyName {
-			if defaultVal, ok := prop.Default.(string); ok {
-				return defaultVal
-			}
-			return ""
+// getPropertyValue retrieves a property value, first checking the component,
+// then falling back to the template default if not found.
+func getPropertyValue(c *hpsf.Component, t config.TemplateComponent, propertyName string) any {
+	// First, try to get from component
+	if prop := c.GetProperty(propertyName); prop != nil {
+		return prop.Value
+	}
+
+	// Fall back to template default
+	for _, templateProp := range t.Properties {
+		if templateProp.Name == propertyName {
+			return templateProp.Default
 		}
 	}
 
-	return ""
+	return nil
 }
 
 // GetComponents extracts all components from the HPSF document.
@@ -167,27 +170,15 @@ func (i *Inspector) extractHoneycombMetadata(c *hpsf.Component, t config.Templat
 func (i *Inspector) extractS3ArchiveMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
-	// Get Region - use component value or template default
-	if prop := c.GetProperty("Region"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Region"] = val
-		}
-	} else {
-		metadata["Region"] = getPropertyDefault(t, "Region")
+	// Extract selected properties with template defaults as fallback
+	if val := getPropertyValue(c, t, "Region"); val != nil {
+		metadata["Region"] = val
 	}
-
-	// Get Bucket - required property, no default
-	if prop := c.GetProperty("Bucket"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Bucket"] = val
-		}
+	if val := getPropertyValue(c, t, "Bucket"); val != nil {
+		metadata["Bucket"] = val
 	}
-
-	// Get Prefix - optional property, no default
-	if prop := c.GetProperty("Prefix"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Prefix"] = val
-		}
+	if val := getPropertyValue(c, t, "Prefix"); val != nil {
+		metadata["Prefix"] = val
 	}
 
 	return metadata
@@ -197,27 +188,15 @@ func (i *Inspector) extractS3ArchiveMetadata(c *hpsf.Component, t config.Templat
 func (i *Inspector) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
-	// Get Region - use component value or template default
-	if prop := c.GetProperty("Region"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Region"] = val
-		}
-	} else {
-		metadata["Region"] = getPropertyDefault(t, "Region")
+	// Extract selected properties with template defaults as fallback
+	if val := getPropertyValue(c, t, "Region"); val != nil {
+		metadata["Region"] = val
 	}
-
-	// Get Bucket - required property, no default
-	if prop := c.GetProperty("Bucket"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Bucket"] = val
-		}
+	if val := getPropertyValue(c, t, "Bucket"); val != nil {
+		metadata["Bucket"] = val
 	}
-
-	// Get Prefix - optional property, no default
-	if prop := c.GetProperty("Prefix"); prop != nil {
-		if val, ok := prop.Value.(string); ok {
-			metadata["Prefix"] = val
-		}
+	if val := getPropertyValue(c, t, "Prefix"); val != nil {
+		metadata["Prefix"] = val
 	}
 
 	return metadata
