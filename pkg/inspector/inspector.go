@@ -8,13 +8,15 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 )
 
-// Inspector provides information about components in HPSF configurations.
-// It loads component templates to access default values and properties.
+// Inspector extracts component information from HPSF configurations.
+// It uses embedded component templates to provide default property values
+// and categorize components by style (receiver, processor, or exporter).
 type Inspector struct {
 	templates map[string]config.TemplateComponent // kind -> template
 }
 
-// NewInspector creates a new Inspector with embedded component templates loaded.
+// NewInspector creates a new Inspector and loads all embedded component templates.
+// Returns an error if the templates cannot be loaded.
 func NewInspector() (*Inspector, error) {
 	templates, err := data.LoadEmbeddedComponents()
 	if err != nil {
@@ -26,25 +28,29 @@ func NewInspector() (*Inspector, error) {
 	}, nil
 }
 
-// ComponentInfo represents a component (receiver, processor, or exporter) with its name, kind, and properties
+// ComponentInfo represents a component extracted from an HPSF configuration.
+// It contains the component's identifying information (name, style, kind) and all
+// of its properties, including both explicitly set values and template defaults.
 type ComponentInfo struct {
-	// Name is the user-defined name of the component instance
+	// Name is the user-defined name of the component instance (e.g., "My S3 Archive")
 	Name string
-	// Style is the component style (e.g., "receiver", "processor", "exporter")
+	// Style categorizes the component type: "receiver", "processor", or "exporter"
 	Style string
-	// Kind is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
+	// Kind identifies the specific component template (e.g., "HoneycombExporter", "OTelReceiver")
 	Kind string
-	// Properties contains component-specific configuration details as key-value pairs
-	// Users can access values directly without type casting, e.g. properties["Region"]
+	// Properties contains all component properties, merging explicit values with template defaults.
+	// Access values directly without type casting: properties["Region"]
 	Properties map[string]any
 }
 
-// InspectionResult holds information about all components in an HPSF configuration.
+// InspectionResult holds all components extracted from an HPSF configuration.
+// Access components directly via the Components field, or use the filter methods
+// (Exporters, Receivers, Processors) to get components by style.
 type InspectionResult struct {
 	Components []ComponentInfo
 }
 
-// Exporters returns only the exporter components
+// Exporters returns only the exporter components (style == "exporter").
 func (r InspectionResult) Exporters() []ComponentInfo {
 	var exporters []ComponentInfo
 	for _, c := range r.Components {
@@ -55,7 +61,7 @@ func (r InspectionResult) Exporters() []ComponentInfo {
 	return exporters
 }
 
-// Receivers returns only the receiver components
+// Receivers returns only the receiver components (style == "receiver").
 func (r InspectionResult) Receivers() []ComponentInfo {
 	var receivers []ComponentInfo
 	for _, c := range r.Components {
@@ -66,7 +72,7 @@ func (r InspectionResult) Receivers() []ComponentInfo {
 	return receivers
 }
 
-// Processors returns only the processor components
+// Processors returns only the processor components (style == "processor").
 func (r InspectionResult) Processors() []ComponentInfo {
 	var processors []ComponentInfo
 	for _, c := range r.Components {
