@@ -2,7 +2,6 @@ package inspector
 
 import (
 	"fmt"
-	"slices"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/data"
@@ -47,41 +46,35 @@ type InspectionResult struct {
 
 // Exporters returns only the exporter components
 func (r InspectionResult) Exporters() []ComponentInfo {
-	return slices.Collect(func(yield func(ComponentInfo) bool) {
-		for _, c := range r.Components {
-			if c.Style == "exporter" {
-				if !yield(c) {
-					return
-				}
-			}
+	var exporters []ComponentInfo
+	for _, c := range r.Components {
+		if c.Style == "exporter" {
+			exporters = append(exporters, c)
 		}
-	})
+	}
+	return exporters
 }
 
 // Receivers returns only the receiver components
 func (r InspectionResult) Receivers() []ComponentInfo {
-	return slices.Collect(func(yield func(ComponentInfo) bool) {
-		for _, c := range r.Components {
-			if c.Style == "receiver" {
-				if !yield(c) {
-					return
-				}
-			}
+	var receivers []ComponentInfo
+	for _, c := range r.Components {
+		if c.Style == "receiver" {
+			receivers = append(receivers, c)
 		}
-	})
+	}
+	return receivers
 }
 
 // Processors returns only the processor components
 func (r InspectionResult) Processors() []ComponentInfo {
-	return slices.Collect(func(yield func(ComponentInfo) bool) {
-		for _, c := range r.Components {
-			if c.Style == "processor" {
-				if !yield(c) {
-					return
-				}
-			}
+	var processors []ComponentInfo
+	for _, c := range r.Components {
+		if c.Style == "processor" {
+			processors = append(processors, c)
 		}
-	})
+	}
+	return processors
 }
 
 // getPropertyValue retrieves a property value, first checking the component,
