@@ -32,10 +32,10 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
-	require.Len(t, result.Exporters, 1)
+	exporters := inspector.GetComponents(h).Exporters()
+	require.Len(t, exporters, 1)
 
-	exp := result.Exporters[0]
+	exp := exporters[0]
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Type)
 
@@ -69,7 +69,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -116,7 +116,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -155,7 +155,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -187,7 +187,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -215,7 +215,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -240,7 +240,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -286,7 +286,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -327,7 +327,7 @@ components: []
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
@@ -349,7 +349,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
@@ -371,7 +371,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -399,7 +399,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -433,7 +433,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -486,32 +486,35 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	info := inspector.GetComponents(h)
+	result := inspector.GetComponents(h)
 
 	// Verify receivers
-	require.Len(t, info.Receivers, 2)
-	assert.Equal(t, "OTLP Receiver", info.Receivers[0].Name)
-	assert.Equal(t, "OTelReceiver", info.Receivers[0].Type)
-	assert.Equal(t, 4317, info.Receivers[0].Properties["GRPCPort"])
-	assert.Equal(t, 4318, info.Receivers[0].Properties["HTTPPort"])
-	assert.Equal(t, "Another Receiver", info.Receivers[1].Name)
-	assert.Equal(t, "NopReceiver", info.Receivers[1].Type)
+	receivers := result.Receivers()
+	require.Len(t, receivers, 2)
+	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
+	assert.Equal(t, "OTelReceiver", receivers[0].Type)
+	assert.Equal(t, 4317, receivers[0].Properties["GRPCPort"])
+	assert.Equal(t, 4318, receivers[0].Properties["HTTPPort"])
+	assert.Equal(t, "Another Receiver", receivers[1].Name)
+	assert.Equal(t, "NopReceiver", receivers[1].Type)
 
 	// Verify processors
-	require.Len(t, info.Processors, 1)
-	assert.Equal(t, "Memory Limiter", info.Processors[0].Name)
-	assert.Equal(t, "MemoryLimiterProcessor", info.Processors[0].Type)
-	assert.Equal(t, "1s", info.Processors[0].Properties["CheckInterval"])
-	assert.Equal(t, 512, info.Processors[0].Properties["MemoryLimitMiB"])
+	processors := result.Processors()
+	require.Len(t, processors, 1)
+	assert.Equal(t, "Memory Limiter", processors[0].Name)
+	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Type)
+	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
+	assert.Equal(t, 512, processors[0].Properties["MemoryLimitMiB"])
 
 	// Verify exporters
-	require.Len(t, info.Exporters, 2)
-	assert.Equal(t, "Honeycomb Export", info.Exporters[0].Name)
-	assert.Equal(t, "HoneycombExporter", info.Exporters[0].Type)
-	assert.Equal(t, "S3 Archive", info.Exporters[1].Name)
-	assert.Equal(t, "S3ArchiveExporter", info.Exporters[1].Type)
-	assert.Equal(t, "us-west-2", info.Exporters[1].Properties["Region"])
-	assert.Equal(t, "my-bucket", info.Exporters[1].Properties["Bucket"])
+	exporters := result.Exporters()
+	require.Len(t, exporters, 2)
+	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
+	assert.Equal(t, "HoneycombExporter", exporters[0].Type)
+	assert.Equal(t, "S3 Archive", exporters[1].Name)
+	assert.Equal(t, "S3ArchiveExporter", exporters[1].Type)
+	assert.Equal(t, "us-west-2", exporters[1].Properties["Region"])
+	assert.Equal(t, "my-bucket", exporters[1].Properties["Bucket"])
 }
 
 func TestGetComponents_PropertiesAccessWithoutCasting(t *testing.T) {
@@ -536,7 +539,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters
+	exporters := inspector.GetComponents(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -554,4 +557,193 @@ components:
 
 	// Non-existent keys return nil
 	assert.Nil(t, exp.Properties["NonExistentKey"])
+}
+
+func TestInspectionResult_Exporters(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+    properties:
+      - name: APIKey
+        value: test-key
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+  - name: S3 Archive
+    kind: S3ArchiveExporter
+    properties:
+      - name: Bucket
+        value: my-bucket
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	inspector, err := NewInspector()
+	require.NoError(t, err)
+
+	result := inspector.GetComponents(h)
+
+	// Exporters() should return only exporters
+	exporters := result.Exporters()
+	require.Len(t, exporters, 2)
+	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
+	assert.Equal(t, "exporter", exporters[0].Style)
+	assert.Equal(t, "HoneycombExporter", exporters[0].Type)
+	assert.Equal(t, "S3 Archive", exporters[1].Name)
+	assert.Equal(t, "exporter", exporters[1].Style)
+	assert.Equal(t, "S3ArchiveExporter", exporters[1].Type)
+}
+
+func TestInspectionResult_Receivers(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+    properties:
+      - name: GRPCPort
+        value: 4317
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+    properties:
+      - name: APIKey
+        value: test-key
+  - name: Nop Receiver
+    kind: NopReceiver
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	inspector, err := NewInspector()
+	require.NoError(t, err)
+
+	result := inspector.GetComponents(h)
+
+	// Receivers() should return only receivers
+	receivers := result.Receivers()
+	require.Len(t, receivers, 2)
+	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
+	assert.Equal(t, "receiver", receivers[0].Style)
+	assert.Equal(t, "OTelReceiver", receivers[0].Type)
+	assert.Equal(t, 4317, receivers[0].Properties["GRPCPort"])
+	assert.Equal(t, "Nop Receiver", receivers[1].Name)
+	assert.Equal(t, "receiver", receivers[1].Style)
+	assert.Equal(t, "NopReceiver", receivers[1].Type)
+}
+
+func TestInspectionResult_Processors(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+    properties:
+      - name: CheckInterval
+        value: 1s
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	inspector, err := NewInspector()
+	require.NoError(t, err)
+
+	result := inspector.GetComponents(h)
+
+	// Processors() should return only processors
+	processors := result.Processors()
+	require.Len(t, processors, 1)
+	assert.Equal(t, "Memory Limiter", processors[0].Name)
+	assert.Equal(t, "processor", processors[0].Style)
+	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Type)
+	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
+}
+
+func TestInspectionResult_DirectComponentsAccess(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+  - name: S3 Archive
+    kind: S3ArchiveExporter
+    properties:
+      - name: Bucket
+        value: my-bucket
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	inspector, err := NewInspector()
+	require.NoError(t, err)
+
+	result := inspector.GetComponents(h)
+
+	// Can access all components directly
+	require.Len(t, result.Components, 4)
+
+	// Verify all components are present with correct styles
+	assert.Equal(t, "OTLP Receiver", result.Components[0].Name)
+	assert.Equal(t, "receiver", result.Components[0].Style)
+
+	assert.Equal(t, "Memory Limiter", result.Components[1].Name)
+	assert.Equal(t, "processor", result.Components[1].Style)
+
+	assert.Equal(t, "Honeycomb Export", result.Components[2].Name)
+	assert.Equal(t, "exporter", result.Components[2].Style)
+
+	assert.Equal(t, "S3 Archive", result.Components[3].Name)
+	assert.Equal(t, "exporter", result.Components[3].Style)
+
+	// Can iterate through all components
+	styleCount := make(map[string]int)
+	for _, comp := range result.Components {
+		styleCount[comp.Style]++
+	}
+	assert.Equal(t, 1, styleCount["receiver"])
+	assert.Equal(t, 1, styleCount["processor"])
+	assert.Equal(t, 2, styleCount["exporter"])
+}
+
+func TestInspectionResult_EmptyFilters(t *testing.T) {
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	inspector, err := NewInspector()
+	require.NoError(t, err)
+
+	result := inspector.GetComponents(h)
+
+	// Only has exporters, so receivers and processors should be empty
+	assert.Len(t, result.Exporters(), 1)
+	assert.Len(t, result.Receivers(), 0)
+	assert.Len(t, result.Processors(), 0)
 }

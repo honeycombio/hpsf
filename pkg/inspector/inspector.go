@@ -30,6 +30,8 @@ func NewInspector() (*Inspector, error) {
 type ComponentInfo struct {
 	// Name is the user-defined name of the component instance
 	Name string
+	// Style is the component style (e.g., "receiver", "processor", "exporter")
+	Style string
 	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
 	Type string
 	// Properties contains component-specific configuration details as key-value pairs
@@ -40,9 +42,33 @@ type ComponentInfo struct {
 // InspectionResult holds information about all components in an HPSF configuration.
 // TODO: Add support for sampler, startsampling and conditions later.
 type InspectionResult struct {
-	Receivers  []ComponentInfo
-	Processors []ComponentInfo
-	Exporters  []ComponentInfo
+	Components []ComponentInfo
+}
+
+// Exporters returns only the exporter components
+func (r InspectionResult) Exporters() []ComponentInfo {
+	return r.filterByStyle("exporter")
+}
+
+// Receivers returns only the receiver components
+func (r InspectionResult) Receivers() []ComponentInfo {
+	return r.filterByStyle("receiver")
+}
+
+// Processors returns only the processor components
+func (r InspectionResult) Processors() []ComponentInfo {
+	return r.filterByStyle("processor")
+}
+
+// filterByStyle returns components matching the given style
+func (r InspectionResult) filterByStyle(style string) []ComponentInfo {
+	var filtered []ComponentInfo
+	for _, c := range r.Components {
+		if c.Style == style {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
 }
 
 // getPropertyValue retrieves a property value, first checking the component,
@@ -64,12 +90,11 @@ func getPropertyValue(c *hpsf.Component, t config.TemplateComponent, propertyNam
 }
 
 // GetComponents extracts all components from the HPSF document.
-// It returns an InspectionResult containing receivers, processors, and exporters.
+// It returns an InspectionResult containing all components.
+// Use Exporters(), Receivers(), or Processors() methods to filter by style.
 func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 	result := InspectionResult{
-		Receivers:  []ComponentInfo{},
-		Processors: []ComponentInfo{},
-		Exporters:  []ComponentInfo{},
+		Components: []ComponentInfo{},
 	}
 
 	// Iterate through all components
@@ -80,27 +105,21 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 			continue
 		}
 
-		// Extract based on component style
-		switch t.Style {
-		case "receiver":
-			result.Receivers = append(result.Receivers, ComponentInfo{
-				Name:     c.Name,
-				Type:     c.Kind,
-				Properties: i.extractComponentProperties(c, t),
-			})
-		case "processor":
-			result.Processors = append(result.Processors, ComponentInfo{
-				Name:     c.Name,
-				Type:     c.Kind,
-				Properties: i.extractComponentProperties(c, t),
-			})
-		case "exporter":
-			result.Exporters = append(result.Exporters, ComponentInfo{
-				Name:     c.Name,
-				Type:     c.Kind,
-				Properties: i.extractExporterProperties(c, t),
-			})
+		// Extract properties based on component style
+		var properties map[string]any
+		if t.Style == "exporter" {
+			properties = i.extractExporterProperties(c, t)
+		} else {
+			properties = i.extractComponentProperties(c, t)
 		}
+
+		// Add component to result
+		result.Components = append(result.Components, ComponentInfo{
+			Name:       c.Name,
+			Style:      t.Style,
+			Type:       c.Kind,
+			Properties: properties,
+		})
 	}
 
 	return result
