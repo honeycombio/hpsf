@@ -77,24 +77,6 @@ func (r InspectionResult) Processors() []ComponentInfo {
 	return processors
 }
 
-// getPropertyValue retrieves a property value, first checking the component,
-// then falling back to the template default if not found.
-func getPropertyValue(c *hpsf.Component, t config.TemplateComponent, propertyName string) any {
-	// First, try to get from component
-	if prop := c.GetProperty(propertyName); prop != nil {
-		return prop.Value
-	}
-
-	// Fall back to template default
-	for _, templateProp := range t.Properties {
-		if templateProp.Name == propertyName {
-			return templateProp.Default
-		}
-	}
-
-	return nil
-}
-
 // Inspect extracts all components from the HPSF document.
 // It returns an InspectionResult containing all components.
 // Use Exporters(), Receivers(), or Processors() methods to filter by style.
@@ -111,95 +93,32 @@ func (i *Inspector) Inspect(h hpsf.HPSF) InspectionResult {
 			continue
 		}
 
-		// Extract properties based on component style
-		var properties map[string]any
-		if t.Style == "exporter" {
-			properties = i.extractExporterProperties(c, t)
-		} else {
-			properties = i.extractComponentProperties(c, t)
-		}
-
 		// Add component to result
 		result.Components = append(result.Components, ComponentInfo{
 			Name:       c.Name,
 			Style:      t.Style,
 			Kind:       c.Kind,
-			Properties: properties,
+			Properties: i.getProperties(c, t),
 		})
 	}
 
 	return result
 }
 
-// extractComponentProperties extracts properties for receivers and processors (generic components)
-func (i *Inspector) extractComponentProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+// getProperties extracts all properties from a component, using template defaults as fallback
+func (i *Inspector) getProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	properties := make(map[string]any)
 
-	// For generic components, extract all properties with their values
+	// Start with template defaults for all properties
+	for _, templateProp := range t.Properties {
+		if templateProp.Default != nil {
+			properties[templateProp.Name] = templateProp.Default
+		}
+	}
+
+	// Override with actual component values
 	for _, prop := range c.Properties {
 		properties[prop.Name] = prop.Value
-	}
-
-	return properties
-}
-
-// extractExporterProperties extracts properties for exporters with special handling
-func (i *Inspector) extractExporterProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	// Use specialized extraction for known exporters
-	switch c.Kind {
-	case "HoneycombExporter":
-		return i.extractHoneycombProperties(c, t)
-	case "S3ArchiveExporter":
-		return i.extractS3ArchiveProperties(c, t)
-	case "EnhanceIndexingS3Exporter":
-		return i.extractEnhanceIndexingS3Properties(c, t)
-	default:
-		// For other exporters, return empty properties
-		return make(map[string]any)
-	}
-}
-
-// extractHoneycombProperties extracts Honeycomb exporter properties
-func (i *Inspector) extractHoneycombProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	properties := make(map[string]any)
-
-	// Environment - can be populated from additional context if available
-	properties["Environment"] = ""
-
-	return properties
-}
-
-// extractS3ArchiveProperties extracts S3 Archive exporter properties
-func (i *Inspector) extractS3ArchiveProperties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	properties := make(map[string]any)
-
-	// Extract selected properties with template defaults as fallback
-	if val := getPropertyValue(c, t, "Region"); val != nil {
-		properties["Region"] = val
-	}
-	if val := getPropertyValue(c, t, "Bucket"); val != nil {
-		properties["Bucket"] = val
-	}
-	if val := getPropertyValue(c, t, "Prefix"); val != nil {
-		properties["Prefix"] = val
-	}
-
-	return properties
-}
-
-// extractEnhanceIndexingS3Properties extracts Enhance Indexing S3 exporter properties
-func (i *Inspector) extractEnhanceIndexingS3Properties(c *hpsf.Component, t config.TemplateComponent) map[string]any {
-	properties := make(map[string]any)
-
-	// Extract selected properties with template defaults as fallback
-	if val := getPropertyValue(c, t, "Region"); val != nil {
-		properties["Region"] = val
-	}
-	if val := getPropertyValue(c, t, "Bucket"); val != nil {
-		properties["Bucket"] = val
-	}
-	if val := getPropertyValue(c, t, "Prefix"); val != nil {
-		properties["Prefix"] = val
 	}
 
 	return properties
