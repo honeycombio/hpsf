@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetComponents_HoneycombExporter(t *testing.T) {
+func TestInspect_HoneycombExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -32,7 +32,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -43,7 +43,7 @@ components:
 	assert.Equal(t, "", exp.Properties["Environment"])
 }
 
-func TestGetComponents_S3ArchiveExporter(t *testing.T) {
+func TestInspect_S3ArchiveExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -69,7 +69,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -82,7 +82,7 @@ components:
 	assert.Equal(t, "telemetry/", exp.Properties["Prefix"])
 }
 
-func TestGetComponents_EnhanceIndexingS3Exporter(t *testing.T) {
+func TestInspect_EnhanceIndexingS3Exporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -116,7 +116,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -129,7 +129,7 @@ components:
 	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
-func TestGetComponents_OTelGRPCExporter(t *testing.T) {
+func TestInspect_OTelGRPCExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -155,7 +155,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -165,7 +165,7 @@ components:
 	assert.NotNil(t, exp.Properties)
 }
 
-func TestGetComponents_OTelHTTPExporter(t *testing.T) {
+func TestInspect_OTelHTTPExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -187,7 +187,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -197,7 +197,7 @@ components:
 	assert.NotNil(t, exp.Properties)
 }
 
-func TestGetComponents_DebugExporter(t *testing.T) {
+func TestInspect_DebugExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -215,7 +215,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -225,7 +225,7 @@ components:
 	assert.NotNil(t, exp.Properties)
 }
 
-func TestGetComponents_NopExporter(t *testing.T) {
+func TestInspect_NopExporter(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -240,7 +240,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -250,7 +250,7 @@ components:
 	assert.NotNil(t, exp.Properties)
 }
 
-func TestGetComponents_MultipleExporters(t *testing.T) {
+func TestInspect_MultipleExporters(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -286,7 +286,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -307,14 +307,14 @@ components:
 	assert.True(t, exporterNames["Debug Export"])
 }
 
-func TestGetComponents_InvalidYAML(t *testing.T) {
+func TestInspect_InvalidYAML(t *testing.T) {
 	hpsfConfig := `this is not valid yaml: {[`
 
 	_, err := hpsf.FromYAML(hpsfConfig)
 	assert.Error(t, err, "should return error for invalid YAML")
 }
 
-func TestGetComponents_EmptyConfig(t *testing.T) {
+func TestInspect_EmptyConfig(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -327,11 +327,11 @@ components: []
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
-func TestGetComponents_UnknownComponentKind(t *testing.T) {
+func TestInspect_UnknownComponentKind(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -349,11 +349,11 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
-func TestGetComponents_MissingOptionalProperties(t *testing.T) {
+func TestInspect_MissingOptionalProperties(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -371,7 +371,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -381,7 +381,7 @@ components:
 	assert.Equal(t, "", exp.Properties["Environment"])
 }
 
-func TestGetComponents_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
+func TestInspect_S3ArchiveExporter_UsesDefaultRegion(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -399,7 +399,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -411,7 +411,7 @@ components:
 	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
-func TestGetComponents_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
+func TestInspect_EnhanceIndexingS3Exporter_UsesDefaultRegion(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -433,7 +433,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -445,7 +445,7 @@ components:
 	assert.Nil(t, exp.Properties["Prefix"]) // Not set in config
 }
 
-func TestGetComponentInfo_AllComponentTypes(t *testing.T) {
+func TestInspect_AllComponentTypes(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -486,7 +486,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Verify receivers
 	receivers := result.Receivers()
@@ -517,7 +517,7 @@ components:
 	assert.Equal(t, "my-bucket", exporters[1].Properties["Bucket"])
 }
 
-func TestGetComponents_PropertiesAccessWithoutCasting(t *testing.T) {
+func TestInspect_PropertiesAccessWithoutCasting(t *testing.T) {
 	hpsfConfig := `
 kind: hpsf
 version: 1.0
@@ -539,7 +539,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	exporters := inspector.GetComponents(h).Exporters()
+	exporters := inspector.Inspect(h).Exporters()
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -586,7 +586,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Exporters() should return only exporters
 	exporters := result.Exporters()
@@ -626,7 +626,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Receivers() should return only receivers
 	receivers := result.Receivers()
@@ -662,7 +662,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Processors() should return only processors
 	processors := result.Processors()
@@ -697,7 +697,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Can access all components directly
 	require.Len(t, result.Components, 4)
@@ -740,7 +740,7 @@ components:
 	inspector, err := NewInspector()
 	require.NoError(t, err)
 
-	result := inspector.GetComponents(h)
+	result := inspector.Inspect(h)
 
 	// Only has exporters, so receivers and processors should be empty
 	assert.Len(t, result.Exporters(), 1)

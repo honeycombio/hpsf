@@ -41,7 +41,6 @@ type ComponentInfo struct {
 }
 
 // InspectionResult holds information about all components in an HPSF configuration.
-// TODO: Add support for sampler, startsampling and conditions later.
 type InspectionResult struct {
 	Components []ComponentInfo
 }
@@ -103,10 +102,10 @@ func getPropertyValue(c *hpsf.Component, t config.TemplateComponent, propertyNam
 	return nil
 }
 
-// GetComponents extracts all components from the HPSF document.
+// Inspect extracts all components from the HPSF document.
 // It returns an InspectionResult containing all components.
 // Use Exporters(), Receivers(), or Processors() methods to filter by style.
-func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
+func (i *Inspector) Inspect(h hpsf.HPSF) InspectionResult {
 	result := InspectionResult{
 		Components: []ComponentInfo{},
 	}
