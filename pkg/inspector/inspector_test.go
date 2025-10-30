@@ -1,4 +1,4 @@
-package exporter
+package inspector
 
 import (
 	"testing"
@@ -29,7 +29,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -65,7 +65,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -111,7 +111,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -149,7 +149,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -181,7 +181,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -209,7 +209,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -234,7 +234,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -280,7 +280,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -314,7 +314,7 @@ components: []
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -336,7 +336,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -358,7 +358,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -386,7 +386,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -420,7 +420,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)
@@ -473,7 +473,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	info := extractor.GetComponents(h)
@@ -518,7 +518,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	extractor, err := NewExtractor()
+	extractor, err := NewInspector()
 	require.NoError(t, err)
 
 	exporters := extractor.GetExporterInfo(h)

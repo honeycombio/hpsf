@@ -1,4 +1,4 @@
-package exporter
+package inspector
 
 import (
 	"fmt"
@@ -8,26 +8,26 @@ import (
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 )
 
-// Extractor handles extraction of component information from HPSF configurations.
+// Inspector provides information about components in HPSF configurations.
 // It loads component templates to access default values and metadata.
-type Extractor struct {
+type Inspector struct {
 	templates map[string]config.TemplateComponent // kind -> template
 }
 
-// NewExtractor creates a new Extractor with embedded component templates loaded.
-func NewExtractor() (*Extractor, error) {
+// NewInspector creates a new Inspector with embedded component templates loaded.
+func NewInspector() (*Inspector, error) {
 	templates, err := data.LoadEmbeddedComponents()
 	if err != nil {
 		return nil, fmt.Errorf("failed to load embedded components: %w", err)
 	}
 
-	return &Extractor{
+	return &Inspector{
 		templates: templates,
 	}, nil
 }
 
-// Component represents a component (receiver, processor, or exporter) with its type and metadata
-type Component struct {
+// ComponentInfo represents a component (receiver, processor, or exporter) with its type and metadata
+type ComponentInfo struct {
 	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
 	Type string
 	// Metadata contains component-specific configuration details as key-value pairs
@@ -35,12 +35,19 @@ type Component struct {
 	Metadata map[string]any
 }
 
-// Components holds information about all components in an HPSF configuration.
-type Components struct {
-	Receivers  []Component
-	Processors []Component
-	Exporters  []Component
+// InspectionResult holds information about all components in an HPSF configuration.
+type InspectionResult struct {
+	Receivers  []ComponentInfo
+	Processors []ComponentInfo
+	Exporters  []ComponentInfo
 }
+
+// Deprecated type aliases for backward compatibility
+type Component = ComponentInfo
+type Components = InspectionResult
+type ReceiverInfo = ComponentInfo
+type ProcessorInfo = ComponentInfo
+type ExporterInfo = ComponentInfo
 
 // getPropertyDefault retrieves the default value for a property from the template component.
 // Returns empty string if no default is found.
@@ -58,18 +65,18 @@ func getPropertyDefault(t config.TemplateComponent, propertyName string) string 
 }
 
 // GetComponents extracts all components from the HPSF document.
-// It returns a Components struct containing receivers, processors, and exporters.
-func (e *Extractor) GetComponents(h hpsf.HPSF) Components {
-	components := Components{
-		Receivers:  []Component{},
-		Processors: []Component{},
-		Exporters:  []Component{},
+// It returns an InspectionResult containing receivers, processors, and exporters.
+func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
+	result := InspectionResult{
+		Receivers:  []ComponentInfo{},
+		Processors: []ComponentInfo{},
+		Exporters:  []ComponentInfo{},
 	}
 
 	// Iterate through all components
 	for _, c := range h.Components {
 		// Look up the template for this component
-		t, ok := e.templates[c.Kind]
+		t, ok := i.templates[c.Kind]
 		if !ok {
 			continue
 		}
@@ -77,35 +84,35 @@ func (e *Extractor) GetComponents(h hpsf.HPSF) Components {
 		// Extract based on component style
 		switch t.Style {
 		case "receiver":
-			components.Receivers = append(components.Receivers, Component{
+			result.Receivers = append(result.Receivers, ComponentInfo{
 				Type:     c.Kind,
-				Metadata: e.extractComponentMetadata(c, t),
+				Metadata: i.extractComponentMetadata(c, t),
 			})
 		case "processor":
-			components.Processors = append(components.Processors, Component{
+			result.Processors = append(result.Processors, ComponentInfo{
 				Type:     c.Kind,
-				Metadata: e.extractComponentMetadata(c, t),
+				Metadata: i.extractComponentMetadata(c, t),
 			})
 		case "exporter":
-			components.Exporters = append(components.Exporters, Component{
+			result.Exporters = append(result.Exporters, ComponentInfo{
 				Type:     c.Kind,
-				Metadata: e.extractExporterMetadata(c, t),
+				Metadata: i.extractExporterMetadata(c, t),
 			})
 		}
 	}
 
-	return components
+	return result
 }
 
 // GetExporterInfo extracts all exporter components from the HPSF document.
 // It returns a slice of ExporterInfo structs containing the exporter type and metadata.
 // Deprecated: Use GetComponents instead for more comprehensive component extraction.
-func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []Component {
-	return e.GetComponents(h).Exporters
+func (i *Inspector) GetExporterInfo(h hpsf.HPSF) []Component {
+	return i.GetComponents(h).Exporters
 }
 
 // extractComponentMetadata extracts metadata for receivers and processors (generic components)
-func (e *Extractor) extractComponentMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractComponentMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// For generic components, extract all properties with their values
@@ -117,31 +124,31 @@ func (e *Extractor) extractComponentMetadata(c *hpsf.Component, t config.Templat
 }
 
 // extractExporterMetadata extracts metadata for exporters with special handling
-func (e *Extractor) extractExporterMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractExporterMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	// Use specialized extraction for known exporters
 	switch c.Kind {
 	case "HoneycombExporter":
-		return e.extractHoneycombMetadata(c, t)
+		return i.extractHoneycombMetadata(c, t)
 	case "S3ArchiveExporter":
-		return e.extractS3ArchiveMetadata(c, t)
+		return i.extractS3ArchiveMetadata(c, t)
 	case "EnhanceIndexingS3Exporter":
-		return e.extractEnhanceIndexingS3Metadata(c, t)
+		return i.extractEnhanceIndexingS3Metadata(c, t)
 	case "OTelGRPCExporter":
-		return e.extractOTelGRPCMetadata(c, t)
+		return i.extractOTelGRPCMetadata(c, t)
 	case "OTelHTTPExporter":
-		return e.extractOTelHTTPMetadata(c, t)
+		return i.extractOTelHTTPMetadata(c, t)
 	case "DebugExporter":
-		return e.extractDebugMetadata(c, t)
+		return i.extractDebugMetadata(c, t)
 	case "NopExporter":
-		return e.extractNopMetadata(c, t)
+		return i.extractNopMetadata(c, t)
 	default:
 		// For unknown exporters, use generic extraction
-		return e.extractComponentMetadata(c, t)
+		return i.extractComponentMetadata(c, t)
 	}
 }
 
 // extractHoneycombMetadata extracts Honeycomb exporter metadata
-func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractHoneycombMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Environment - can be populated from additional context if available
@@ -151,7 +158,7 @@ func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component, t config.Templat
 }
 
 // extractS3ArchiveMetadata extracts S3 Archive exporter metadata
-func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractS3ArchiveMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Get Region - use component value or template default
@@ -181,7 +188,7 @@ func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component, t config.Templat
 }
 
 // extractEnhanceIndexingS3Metadata extracts Enhance Indexing S3 exporter metadata
-func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Get Region - use component value or template default
@@ -211,21 +218,21 @@ func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config
 }
 
 // extractOTelGRPCMetadata extracts OTLP gRPC exporter metadata
-func (e *Extractor) extractOTelGRPCMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractOTelGRPCMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractOTelHTTPMetadata extracts OTLP HTTP exporter metadata
-func (e *Extractor) extractOTelHTTPMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractOTelHTTPMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractDebugMetadata extracts Debug exporter metadata
-func (e *Extractor) extractDebugMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractDebugMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractNopMetadata extracts Nop exporter metadata
-func (e *Extractor) extractNopMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
+func (i *Inspector) extractNopMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
