@@ -1449,7 +1449,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1494,7 +1494,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1549,7 +1549,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1596,7 +1596,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1636,7 +1636,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1672,7 +1672,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1705,7 +1705,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1759,7 +1759,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -1808,7 +1808,7 @@ components: []
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
@@ -1838,7 +1838,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
@@ -1868,7 +1868,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1904,7 +1904,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1946,7 +1946,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -2010,7 +2010,7 @@ components:
 	result := tlater.Inspect(h)
 
 	// Verify receivers
-	receivers := result.Receivers()
+	receivers := result.Filter(Receivers).Components
 	require.Len(t, receivers, 2)
 	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
 	assert.Equal(t, "OTelReceiver", receivers[0].Kind)
@@ -2020,7 +2020,7 @@ components:
 	assert.Equal(t, "NopReceiver", receivers[1].Kind)
 
 	// Verify processors
-	processors := result.Processors()
+	processors := result.Filter(Processors).Components
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Memory Limiter", processors[0].Name)
 	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
@@ -2028,7 +2028,7 @@ components:
 	assert.Equal(t, 512, processors[0].Properties["MemoryLimitMiB"])
 
 	// Verify exporters
-	exporters := result.Exporters()
+	exporters := result.Filter(Exporters).Components
 	require.Len(t, exporters, 2)
 	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
 	assert.Equal(t, "HoneycombExporter", exporters[0].Kind)
@@ -2068,7 +2068,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h).Exporters()
+	exporters := tlater.Inspect(h, Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -2126,7 +2126,7 @@ components:
 	result := tlater.Inspect(h)
 
 	// Exporters() should return only exporters
-	exporters := result.Exporters()
+	exporters := result.Filter(Exporters).Components
 	require.Len(t, exporters, 2)
 	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
 	assert.Equal(t, "exporter", exporters[0].Style)
@@ -2174,7 +2174,7 @@ components:
 	result := tlater.Inspect(h)
 
 	// Receivers() should return only receivers
-	receivers := result.Receivers()
+	receivers := result.Filter(Receivers).Components
 	require.Len(t, receivers, 2)
 	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
 	assert.Equal(t, "receiver", receivers[0].Style)
@@ -2218,7 +2218,7 @@ components:
 	result := tlater.Inspect(h)
 
 	// Processors() should return only processors
-	processors := result.Processors()
+	processors := result.Filter(Processors).Components
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Memory Limiter", processors[0].Name)
 	assert.Equal(t, "processor", processors[0].Style)
@@ -2312,7 +2312,7 @@ components:
 	result := tlater.Inspect(h)
 
 	// Only has exporters, so receivers and processors should be empty
-	assert.Len(t, result.Exporters(), 1)
-	assert.Len(t, result.Receivers(), 0)
-	assert.Len(t, result.Processors(), 0)
+	assert.Len(t, result.Filter(Exporters).Components, 1)
+	assert.Len(t, result.Filter(Receivers).Components, 0)
+	assert.Len(t, result.Filter(Processors).Components, 0)
 }

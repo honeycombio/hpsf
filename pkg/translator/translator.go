@@ -742,43 +742,58 @@ type InspectionResult struct {
 	Components []ComponentInfo
 }
 
-// Exporters returns only the exporter components (style == "exporter").
-func (r InspectionResult) Exporters() []ComponentInfo {
-	var exporters []ComponentInfo
+// Filter returns a new InspectionResult containing only components that match any of the given predicates.
+// This is useful if you need multiple filtering passes on an existing InspectionResult.
+func (r InspectionResult) Filter(predicates ...Predicate) InspectionResult {
+	filtered := InspectionResult{
+		Components: []ComponentInfo{},
+	}
+
 	for _, c := range r.Components {
-		if c.Style == "exporter" {
-			exporters = append(exporters, c)
+		matched := false
+		for _, p := range predicates {
+			if p(c) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			filtered.Components = append(filtered.Components, c)
 		}
 	}
-	return exporters
+
+	return filtered
 }
 
-// Receivers returns only the receiver components (style == "receiver").
-func (r InspectionResult) Receivers() []ComponentInfo {
-	var receivers []ComponentInfo
-	for _, c := range r.Components {
-		if c.Style == "receiver" {
-			receivers = append(receivers, c)
-		}
+type Predicate func(ComponentInfo) bool
+
+// Define some common predicates for filtering components.
+func Exporters(c ComponentInfo) bool {
+	return c.Style == "exporter"
+}
+
+func Processors(c ComponentInfo) bool {
+	return c.Style == "processor"
+}
+
+func Receivers(c ComponentInfo) bool {
+	return c.Style == "receiver"
+}
+
+func Samplers(c ComponentInfo) bool {
+	switch c.Style {
+	case "sampler", "startsampling", "condition":
+		return true
+	default:
+		return false
 	}
-	return receivers
 }
 
-// Processors returns only the processor components (style == "processor").
-func (r InspectionResult) Processors() []ComponentInfo {
-	var processors []ComponentInfo
-	for _, c := range r.Components {
-		if c.Style == "processor" {
-			processors = append(processors, c)
-		}
-	}
-	return processors
-}
-
-// Inspect extracts all components from the HPSF document.
-// It returns an InspectionResult containing all components.
-// Use Exporters(), Receivers(), or Processors() methods to filter by style.
-func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
+// Inspect extracts all components from the HPSF document, optionally filtering them.
+// It returns an InspectionResult containing all components that return true for any predicate.
+// Predicates are ORed together, not ANDed.
+// Several common predicates are provided (Exporters, Receivers, Processors, Samplers).
+func (t *Translator) Inspect(h hpsf.HPSF, predicates ...Predicate) InspectionResult {
 	result := InspectionResult{
 		Components: []ComponentInfo{},
 	}
@@ -791,13 +806,28 @@ func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 			continue
 		}
 
-		// Add component to result
-		result.Components = append(result.Components, ComponentInfo{
+		comp := ComponentInfo{
 			Name:       c.Name,
 			Style:      tc.Style,
 			Kind:       c.Kind,
 			Properties: getProperties(c, tc),
-		})
+		}
+
+		// Apply predicates (if any)
+		if len(predicates) > 0 {
+			matched := false
+			for _, p := range predicates {
+				if p(comp) {
+					matched = true
+					break
+				}
+			}
+			if !matched {
+				continue // Skip this component
+			}
+		}
+		// Add component to result
+		result.Components = append(result.Components, comp)
 	}
 
 	return result
