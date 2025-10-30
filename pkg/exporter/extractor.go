@@ -50,13 +50,8 @@ type ExporterInfo struct {
 
 // getPropertyDefault retrieves the default value for a property from the template component.
 // Returns empty string if no default is found.
-func (e *Extractor) getPropertyDefault(kind, propertyName string) string {
-	template, ok := e.templates[kind]
-	if !ok {
-		return ""
-	}
-
-	for _, prop := range template.Properties {
+func getPropertyDefault(t config.TemplateComponent, propertyName string) string {
+	for _, prop := range t.Properties {
 		if prop.Name == propertyName {
 			if defaultVal, ok := prop.Default.(string); ok {
 				return defaultVal
@@ -75,41 +70,52 @@ func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []ExporterInfo {
 
 	// Iterate through all components
 	for _, c := range h.Components {
+		// Look up the template for this component
+		t, ok := e.templates[c.Kind]
+		if !ok {
+			continue
+		}
+
+		// Check if the component is an exporter
+		if t.Style != "exporter" {
+			continue
+		}
+
 		switch c.Kind {
 		case "HoneycombExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeHoneycomb,
-				Metadata: e.extractHoneycombMetadata(c),
+				Metadata: e.extractHoneycombMetadata(c, t),
 			})
 		case "S3ArchiveExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeAWSS3,
-				Metadata: e.extractS3ArchiveMetadata(c),
+				Metadata: e.extractS3ArchiveMetadata(c, t),
 			})
 		case "EnhanceIndexingS3Exporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeEnhanceIndexingS3,
-				Metadata: e.extractEnhanceIndexingS3Metadata(c),
+				Metadata: e.extractEnhanceIndexingS3Metadata(c, t),
 			})
 		case "OTelGRPCExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeOTelGRPC,
-				Metadata: e.extractOTelGRPCMetadata(c),
+				Metadata: e.extractOTelGRPCMetadata(c, t),
 			})
 		case "OTelHTTPExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeOTelHTTP,
-				Metadata: e.extractOTelHTTPMetadata(c),
+				Metadata: e.extractOTelHTTPMetadata(c, t),
 			})
 		case "DebugExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeDebug,
-				Metadata: e.extractDebugMetadata(c),
+				Metadata: e.extractDebugMetadata(c, t),
 			})
 		case "NopExporter":
 			exporters = append(exporters, ExporterInfo{
 				Type:     ExporterTypeNop,
-				Metadata: e.extractNopMetadata(c),
+				Metadata: e.extractNopMetadata(c, t),
 			})
 		}
 	}
@@ -118,7 +124,7 @@ func (e *Extractor) GetExporterInfo(h hpsf.HPSF) []ExporterInfo {
 }
 
 // extractHoneycombMetadata extracts Honeycomb exporter metadata
-func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Environment - can be populated from additional context if available
@@ -128,7 +134,7 @@ func (e *Extractor) extractHoneycombMetadata(c *hpsf.Component) map[string]any {
 }
 
 // extractS3ArchiveMetadata extracts S3 Archive exporter metadata
-func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Get Region - use component value or template default
@@ -137,7 +143,7 @@ func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component) map[string]any {
 			metadata["Region"] = val
 		}
 	} else {
-		metadata["Region"] = e.getPropertyDefault(c.Kind, "Region")
+		metadata["Region"] = getPropertyDefault(t, "Region")
 	}
 
 	// Get Bucket - required property, no default
@@ -158,7 +164,7 @@ func (e *Extractor) extractS3ArchiveMetadata(c *hpsf.Component) map[string]any {
 }
 
 // extractEnhanceIndexingS3Metadata extracts Enhance Indexing S3 exporter metadata
-func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	metadata := make(map[string]any)
 
 	// Get Region - use component value or template default
@@ -167,7 +173,7 @@ func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component) map[stri
 			metadata["Region"] = val
 		}
 	} else {
-		metadata["Region"] = e.getPropertyDefault(c.Kind, "Region")
+		metadata["Region"] = getPropertyDefault(t, "Region")
 	}
 
 	// Get Bucket - required property, no default
@@ -188,21 +194,21 @@ func (e *Extractor) extractEnhanceIndexingS3Metadata(c *hpsf.Component) map[stri
 }
 
 // extractOTelGRPCMetadata extracts OTLP gRPC exporter metadata
-func (e *Extractor) extractOTelGRPCMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractOTelGRPCMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractOTelHTTPMetadata extracts OTLP HTTP exporter metadata
-func (e *Extractor) extractOTelHTTPMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractOTelHTTPMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractDebugMetadata extracts Debug exporter metadata
-func (e *Extractor) extractDebugMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractDebugMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
 
 // extractNopMetadata extracts Nop exporter metadata
-func (e *Extractor) extractNopMetadata(c *hpsf.Component) map[string]any {
+func (e *Extractor) extractNopMetadata(c *hpsf.Component, t config.TemplateComponent) map[string]any {
 	return make(map[string]any)
 }
