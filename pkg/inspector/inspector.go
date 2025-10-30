@@ -26,14 +26,14 @@ func NewInspector() (*Inspector, error) {
 	}, nil
 }
 
-// ComponentInfo represents a component (receiver, processor, or exporter) with its name, type, and properties
+// ComponentInfo represents a component (receiver, processor, or exporter) with its name, kind, and properties
 type ComponentInfo struct {
 	// Name is the user-defined name of the component instance
 	Name string
 	// Style is the component style (e.g., "receiver", "processor", "exporter")
 	Style string
-	// Type is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
-	Type string
+	// Kind is the component kind (e.g., "HoneycombExporter", "OTelReceiver", "MemoryLimiterProcessor")
+	Kind string
 	// Properties contains component-specific configuration details as key-value pairs
 	// Users can access values directly without type casting, e.g. properties["Region"]
 	Properties map[string]any
@@ -117,7 +117,7 @@ func (i *Inspector) GetComponents(h hpsf.HPSF) InspectionResult {
 		result.Components = append(result.Components, ComponentInfo{
 			Name:       c.Name,
 			Style:      t.Style,
-			Type:       c.Kind,
+			Kind:       c.Kind,
 			Properties: properties,
 		})
 	}

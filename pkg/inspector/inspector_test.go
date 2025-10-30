@@ -37,7 +37,7 @@ components:
 
 	exp := exporters[0]
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
-	assert.Equal(t, "HoneycombExporter", exp.Type)
+	assert.Equal(t, "HoneycombExporter", exp.Kind)
 
 	// Verify properties is accessible without casting
 	assert.Equal(t, "", exp.Properties["Environment"])
@@ -74,7 +74,7 @@ components:
 
 	exp := exporters[0]
 	assert.Equal(t, "My S3 Archive", exp.Name)
-	assert.Equal(t, "S3ArchiveExporter", exp.Type)
+	assert.Equal(t, "S3ArchiveExporter", exp.Kind)
 
 	// Verify properties is accessible without casting
 	assert.Equal(t, "us-west-2", exp.Properties["Region"])
@@ -121,7 +121,7 @@ components:
 
 	exp := exporters[0]
 	assert.Equal(t, "My Enhanced S3", exp.Name)
-	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
+	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Kind)
 
 	// Verify properties is accessible without casting
 	assert.Equal(t, "eu-west-1", exp.Properties["Region"])
@@ -159,7 +159,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "OTelGRPCExporter", exp.Type)
+	assert.Equal(t, "OTelGRPCExporter", exp.Kind)
 
 	// Verify properties map exists (even if empty)
 	assert.NotNil(t, exp.Properties)
@@ -191,7 +191,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "OTelHTTPExporter", exp.Type)
+	assert.Equal(t, "OTelHTTPExporter", exp.Kind)
 
 	// Verify properties map exists (even if empty)
 	assert.NotNil(t, exp.Properties)
@@ -219,7 +219,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "DebugExporter", exp.Type)
+	assert.Equal(t, "DebugExporter", exp.Kind)
 
 	// Verify properties map exists (even if empty)
 	assert.NotNil(t, exp.Properties)
@@ -244,7 +244,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "NopExporter", exp.Type)
+	assert.Equal(t, "NopExporter", exp.Kind)
 
 	// Verify properties map exists (even if empty)
 	assert.NotNil(t, exp.Properties)
@@ -293,7 +293,7 @@ components:
 	exporterTypes := make(map[string]bool)
 	exporterNames := make(map[string]bool)
 	for _, exp := range exporters {
-		exporterTypes[exp.Type] = true
+		exporterTypes[exp.Kind] = true
 		exporterNames[exp.Name] = true
 	}
 
@@ -375,7 +375,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "HoneycombExporter", exp.Type)
+	assert.Equal(t, "HoneycombExporter", exp.Kind)
 
 	// Environment field should have empty string value
 	assert.Equal(t, "", exp.Properties["Environment"])
@@ -403,7 +403,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "S3ArchiveExporter", exp.Type)
+	assert.Equal(t, "S3ArchiveExporter", exp.Kind)
 
 	// Region should use default from template
 	assert.Equal(t, "us-east-1", exp.Properties["Region"])
@@ -437,7 +437,7 @@ components:
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
-	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Type)
+	assert.Equal(t, "EnhanceIndexingS3Exporter", exp.Kind)
 
 	// Region should use default from template
 	assert.Equal(t, "us-east-1", exp.Properties["Region"])
@@ -492,17 +492,17 @@ components:
 	receivers := result.Receivers()
 	require.Len(t, receivers, 2)
 	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
-	assert.Equal(t, "OTelReceiver", receivers[0].Type)
+	assert.Equal(t, "OTelReceiver", receivers[0].Kind)
 	assert.Equal(t, 4317, receivers[0].Properties["GRPCPort"])
 	assert.Equal(t, 4318, receivers[0].Properties["HTTPPort"])
 	assert.Equal(t, "Another Receiver", receivers[1].Name)
-	assert.Equal(t, "NopReceiver", receivers[1].Type)
+	assert.Equal(t, "NopReceiver", receivers[1].Kind)
 
 	// Verify processors
 	processors := result.Processors()
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Memory Limiter", processors[0].Name)
-	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Type)
+	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
 	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
 	assert.Equal(t, 512, processors[0].Properties["MemoryLimitMiB"])
 
@@ -510,9 +510,9 @@ components:
 	exporters := result.Exporters()
 	require.Len(t, exporters, 2)
 	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
-	assert.Equal(t, "HoneycombExporter", exporters[0].Type)
+	assert.Equal(t, "HoneycombExporter", exporters[0].Kind)
 	assert.Equal(t, "S3 Archive", exporters[1].Name)
-	assert.Equal(t, "S3ArchiveExporter", exporters[1].Type)
+	assert.Equal(t, "S3ArchiveExporter", exporters[1].Kind)
 	assert.Equal(t, "us-west-2", exporters[1].Properties["Region"])
 	assert.Equal(t, "my-bucket", exporters[1].Properties["Bucket"])
 }
@@ -593,10 +593,10 @@ components:
 	require.Len(t, exporters, 2)
 	assert.Equal(t, "Honeycomb Export", exporters[0].Name)
 	assert.Equal(t, "exporter", exporters[0].Style)
-	assert.Equal(t, "HoneycombExporter", exporters[0].Type)
+	assert.Equal(t, "HoneycombExporter", exporters[0].Kind)
 	assert.Equal(t, "S3 Archive", exporters[1].Name)
 	assert.Equal(t, "exporter", exporters[1].Style)
-	assert.Equal(t, "S3ArchiveExporter", exporters[1].Type)
+	assert.Equal(t, "S3ArchiveExporter", exporters[1].Kind)
 }
 
 func TestInspectionResult_Receivers(t *testing.T) {
@@ -633,11 +633,11 @@ components:
 	require.Len(t, receivers, 2)
 	assert.Equal(t, "OTLP Receiver", receivers[0].Name)
 	assert.Equal(t, "receiver", receivers[0].Style)
-	assert.Equal(t, "OTelReceiver", receivers[0].Type)
+	assert.Equal(t, "OTelReceiver", receivers[0].Kind)
 	assert.Equal(t, 4317, receivers[0].Properties["GRPCPort"])
 	assert.Equal(t, "Nop Receiver", receivers[1].Name)
 	assert.Equal(t, "receiver", receivers[1].Style)
-	assert.Equal(t, "NopReceiver", receivers[1].Type)
+	assert.Equal(t, "NopReceiver", receivers[1].Kind)
 }
 
 func TestInspectionResult_Processors(t *testing.T) {
@@ -669,7 +669,7 @@ components:
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Memory Limiter", processors[0].Name)
 	assert.Equal(t, "processor", processors[0].Style)
-	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Type)
+	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
 	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
 }
 
