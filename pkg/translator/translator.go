@@ -828,16 +828,16 @@ func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 func getProperties(c *hpsf.Component, tc config.TemplateComponent) map[string]any {
 	properties := make(map[string]any)
 
-	// Start with template defaults for all properties
-	for _, templateProp := range tc.Properties {
-		if templateProp.Default != nil {
-			properties[templateProp.Name] = templateProp.Default
+	// Iterate through template properties to ensure all defaults are considered
+	for _, templateProperty := range tc.Properties {
+		// Use the component's property value if set, otherwise use the template default
+		var value any
+		if componentProp := c.GetProperty(templateProperty.Name); componentProp != nil {
+			value = componentProp.Value
+		} else {
+			value = templateProperty.Default
 		}
-	}
-
-	// Override with actual component values
-	for _, prop := range c.Properties {
-		properties[prop.Name] = prop.Value
+		properties[templateProperty.Name] = value
 	}
 
 	return properties
