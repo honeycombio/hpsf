@@ -1,5 +1,5 @@
 kind: EnhanceIndexingS3Exporter
-name: Send to S3 with Enhanced Indexing
+name: Send to Enhance S3 Archive
 type: base
 style: exporter
 logo: awss3
