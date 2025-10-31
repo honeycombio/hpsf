@@ -20,6 +20,9 @@ components:
         value: 100
   - name: Honeycomb Exporter 1
     kind: HoneycombExporter
+    properties:
+      - name: Environment
+        value: ${HONEYCOMB_ENVIRONMENT}
 connections:
   - source:
       component: OTel Receiver 1

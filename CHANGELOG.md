@@ -8,18 +8,20 @@
   - The `APIKey` property has been removed and replaced with an `Environment` property (required, no default)
   - The `Environment` property accepts a Honeycomb environment ID (opaque string with `hny_` prefix, e.g., `hny_abc123xyz`)
   - The `Mode` property has been removed as it was tied to APIKey usage
-  - Added `APIKeyPlaceholder` advanced property (default: `${HONEYCOMB_API_KEY}`) for configurable API key placeholder in generated configs
-  - The `x-honeycomb-team` header in collector configs uses the `APIKeyPlaceholder` value
-  - An external service derives the API key from the Environment ID and replaces the placeholder at runtime
+  - The `x-honeycomb-team` header in collector configs now uses format `__ENV:<environment_id>__` (e.g., `__ENV:hny_abc123__`)
+  - An external service reads the environment ID from this placeholder and replaces it with the actual API key at runtime
+  - Each environment automatically gets a unique placeholder based on its ID, preventing API key misuse across environments
   - Templates use `${HONEYCOMB_ENVIRONMENT}` variable for the Environment property
   - Users must update their HPSF configurations to specify the `Environment` property instead of `APIKey`
 
-- **SamplingSequencer**: Replace Headers property with APIKeyPlaceholder property
+- **SamplingSequencer**: Replace Headers property with automatic environment-aware API key placeholder (component version unchanged at v0.1.0)
   - The `Headers` property has been removed
-  - Added `APIKeyPlaceholder` advanced property (default: `${HONEYCOMB_API_KEY}`) matching HoneycombExporter behavior
-  - The `x-honeycomb-team` header in generated Refinery exporter configs uses the `APIKeyPlaceholder` value
-  - This ensures consistent API key injection pattern for both Honeycomb and Refinery exporters
+  - The `x-honeycomb-team` header now automatically uses the same environment ID as the HoneycombExporter in the configuration
+  - In single-environment mode (current), all components share the same environment ID from any HoneycombExporter in the configuration
+  - Both components use the same `__ENV:<environment_id>__` placeholder format (e.g., `__ENV:hny_abc123__`), ensuring data flows to the correct environment
+  - Users only need to define the Environment ID once in the HoneycombExporter - SamplingSequencer inherits it automatically
   - Users no longer need to manually configure headers for Refinery connections
+  - Future multi-environment mode with Router will determine environment ID per-pipeline
 
 ## 0.21.0 2025-10-23
 

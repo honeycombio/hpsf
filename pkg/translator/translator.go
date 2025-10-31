@@ -606,6 +606,37 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
+// findEnvironmentID looks for a HoneycombExporter component in the configuration
+// and returns its Environment ID. In single-environment mode (current), all components
+// share the same environment. In future multi-environment mode with Router, this will
+// be determined per-pipeline.
+func (t *Translator) findEnvironmentID(h *hpsf.HPSF, comps *OrderedComponentMap) string {
+	// Iterate through all components in the configuration
+	for _, comp := range h.Components {
+		// Check if this is a HoneycombExporter
+		tc, ok := comps.Get(comp.GetSafeName())
+		if !ok {
+			continue
+		}
+
+		templateComp, ok := tc.(*config.TemplateComponent)
+		if !ok || templateComp.Kind != "HoneycombExporter" {
+			continue
+		}
+
+		// Found a HoneycombExporter, extract its Environment property
+		for _, prop := range comp.Properties {
+			if prop.Name == "Environment" {
+				if envID, ok := prop.Value.(string); ok {
+					return envID
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, features hpsftypes.Features, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
@@ -626,6 +657,19 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 
 	if err := h.VisitComponents(visitFunc); err != nil {
 		return nil, fmt.Errorf("failed to create components: %w", err)
+	}
+
+	// Prepare userdata
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+
+	// Find the environment ID from any HoneycombExporter in the configuration
+	// In single-environment mode, all components share the same environment
+	// In future multi-environment mode with Router, this will be determined per-pipeline
+	envID := t.findEnvironmentID(h, comps)
+	if envID != "" {
+		userdata["EnvironmentID"] = envID
 	}
 
 	// now add the connections
