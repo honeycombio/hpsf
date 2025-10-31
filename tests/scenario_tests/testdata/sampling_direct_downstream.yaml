@@ -9,6 +9,9 @@ components:
     kind: DeterministicSampler
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
+    properties:
+      - name: Environment
+        value: hny_env123abc456
   - name: Sample by Events per Second_1
     kind: EMAThroughputSampler
     properties:

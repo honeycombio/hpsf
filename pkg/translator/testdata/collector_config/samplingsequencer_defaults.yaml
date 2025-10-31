@@ -11,7 +11,7 @@ exporters:
     otlphttp/Start_Sampling_1:
         endpoint: http://${HTP_REFINERY_SERVICE}:80
         headers:
-            x-honeycomb-team: ${HONEYCOMB_API_KEY}
+            x-honeycomb-team: __ENV:hny_env123abc456__
         sending_queue:
             batch:
                 flush_timeout: 200ms
