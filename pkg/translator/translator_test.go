@@ -1986,8 +1986,8 @@ components:
     properties:
       - name: CheckInterval
         value: 1s
-      - name: MemoryLimitMiB
-        value: 512
+      - name: LimitPercentage
+        value: 50
   - name: Honeycomb Export
     kind: HoneycombExporter
     properties:
@@ -2025,7 +2025,8 @@ components:
 	assert.Equal(t, "Memory Limiter", processors[0].Name)
 	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
 	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
-	assert.Equal(t, 512, processors[0].Properties["MemoryLimitMiB"])
+	assert.Equal(t, 50, processors[0].Properties["LimitPercentage"])
+	assert.Equal(t, 20, processors[0].Properties["SpikeLimitPercentage"])
 
 	// Verify exporters
 	exporters := result.Filter(Exporters).Components
