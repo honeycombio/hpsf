@@ -744,6 +744,8 @@ type InspectionResult struct {
 
 // Filter returns a new InspectionResult containing only components that match any of the given predicates.
 // This is useful if you need multiple filtering passes on an existing InspectionResult.
+// Predicates are ORed together, not ANDed.
+// Several common predicates are provided (Exporters, Receivers, Processors, Samplers).
 func (r InspectionResult) Filter(predicates ...Predicate) InspectionResult {
 	filtered := InspectionResult{
 		Components: []ComponentInfo{},
@@ -792,11 +794,10 @@ func Samplers(c ComponentInfo) bool {
 	}
 }
 
-// Inspect extracts all components from the HPSF document, optionally filtering them.
-// It returns an InspectionResult containing all components that return true for any predicate.
-// Predicates are ORed together, not ANDed.
-// Several common predicates are provided (Exporters, Receivers, Processors, Samplers).
-func (t *Translator) Inspect(h hpsf.HPSF, predicates ...Predicate) InspectionResult {
+// Inspect extracts all components from the HPSF document.
+// It returns an InspectionResult containing all components.
+// InspectionResult provides filtering methods to get sub sets of components by style.
+func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 	result := InspectionResult{
 		Components: []ComponentInfo{},
 	}
@@ -816,19 +817,6 @@ func (t *Translator) Inspect(h hpsf.HPSF, predicates ...Predicate) InspectionRes
 			Properties: getProperties(c, tc),
 		}
 
-		// Apply predicates (if any)
-		if len(predicates) > 0 {
-			matched := false
-			for _, p := range predicates {
-				if p(comp) {
-					matched = true
-					break
-				}
-			}
-			if !matched {
-				continue // Skip this component
-			}
-		}
 		// Add component to result
 		result.Components = append(result.Components, comp)
 	}

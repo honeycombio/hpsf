@@ -1449,7 +1449,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1494,7 +1494,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1549,7 +1549,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1596,7 +1596,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1636,7 +1636,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1672,7 +1672,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1705,7 +1705,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1759,7 +1759,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 3, "should extract only the 3 exporters")
 
 	// Check that we have all the expected exporter types
@@ -1808,7 +1808,7 @@ components: []
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	assert.Empty(t, exporters, "should return empty slice for config with no components")
 }
 
@@ -1838,7 +1838,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	assert.Empty(t, exporters, "should skip unknown component kinds")
 }
 
@@ -1868,7 +1868,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1904,7 +1904,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -1946,7 +1946,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
@@ -2068,7 +2068,7 @@ components:
 	h, err := hpsf.FromYAML(hpsfConfig)
 	require.NoError(t, err)
 
-	exporters := tlater.Inspect(h, Exporters).Components
+	exporters := tlater.Inspect(h).Filter(Exporters).Components
 	require.Len(t, exporters, 1)
 
 	exp := exporters[0]
