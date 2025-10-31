@@ -784,10 +784,10 @@ func Receivers(c ComponentInfo) bool {
 	return c.Style == "receiver"
 }
 
-// Samplers returns true if the component is a sampler, startsampling, or condition.
+// Samplers returns true if the component is a dropper, condition, sampler, startsampling.
 func Samplers(c ComponentInfo) bool {
 	switch c.Style {
-	case "sampler", "startsampling", "condition":
+	case "condition", "dropper", "sampler", "startsampling":
 		return true
 	default:
 		return false

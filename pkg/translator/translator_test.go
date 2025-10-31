@@ -2089,6 +2089,358 @@ components:
 	assert.Nil(t, exp.Properties["NonExistentKey"])
 }
 
+func TestInspect_DeterministicSampler(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Sample at Fixed Rate
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 10
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 2) // SamplingSequencer + DeterministicSampler
+
+	// Find the DeterministicSampler
+	var sampler ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "DeterministicSampler" {
+			sampler = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Sample at Fixed Rate", sampler.Name)
+	assert.Equal(t, "DeterministicSampler", sampler.Kind)
+	assert.Equal(t, "sampler", sampler.Style)
+	assert.NotNil(t, sampler.Properties)
+	assert.Equal(t, 10, sampler.Properties["SampleRate"])
+}
+
+func TestInspect_EMAThroughputSampler(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Throughput Sampler
+    kind: EMAThroughputSampler
+    properties:
+      - name: GoalThroughputPerSec
+        value: 100
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 2)
+
+	var sampler ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "EMAThroughputSampler" {
+			sampler = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Throughput Sampler", sampler.Name)
+	assert.Equal(t, "EMAThroughputSampler", sampler.Kind)
+	assert.Equal(t, "sampler", sampler.Style)
+	assert.NotNil(t, sampler.Properties)
+	assert.Equal(t, 100, sampler.Properties["GoalThroughputPerSec"])
+}
+
+func TestInspect_Dropper(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Drop These
+    kind: Dropper
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 2) // SamplingSequencer + Dropper
+
+	var dropper ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "Dropper" {
+			dropper = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Drop These", dropper.Name)
+	assert.Equal(t, "Dropper", dropper.Kind)
+	assert.Equal(t, "dropper", dropper.Style)
+	assert.NotNil(t, dropper.Properties)
+}
+
+func TestInspect_ErrorExistsCondition(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check for Errors
+    kind: ErrorExistsCondition
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 3) // SamplingSequencer + ErrorExistsCondition + KeepAllSampler
+
+	var condition ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "ErrorExistsCondition" {
+			condition = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Check for Errors", condition.Name)
+	assert.Equal(t, "ErrorExistsCondition", condition.Kind)
+	assert.Equal(t, "condition", condition.Style)
+	assert.NotNil(t, condition.Properties)
+}
+
+func TestInspect_CompareIntegerFieldCondition(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check Status Code
+    kind: CompareIntegerFieldCondition
+    properties:
+      - name: Fields
+        value: ["http.status_code"]
+      - name: Operator
+        value: "=="
+      - name: Value
+        value: 500
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 3)
+
+	var condition ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "CompareIntegerFieldCondition" {
+			condition = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Check Status Code", condition.Name)
+	assert.Equal(t, "CompareIntegerFieldCondition", condition.Kind)
+	assert.Equal(t, "condition", condition.Style)
+	assert.NotNil(t, condition.Properties)
+	assert.Equal(t, "==", condition.Properties["Operator"])
+	assert.Equal(t, 500, condition.Properties["Value"])
+}
+
+func TestInspect_SamplingSequencer(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling Here
+    kind: SamplingSequencer
+  - name: Sample_1
+    kind: DeterministicSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 2)
+
+	var sequencer ComponentInfo
+	for _, s := range samplers {
+		if s.Kind == "SamplingSequencer" {
+			sequencer = s
+			break
+		}
+	}
+
+	assert.Equal(t, "Start Sampling Here", sequencer.Name)
+	assert.Equal(t, "SamplingSequencer", sequencer.Kind)
+	assert.Equal(t, "startsampling", sequencer.Style)
+	assert.NotNil(t, sequencer.Properties)
+}
+
+func TestInspect_MultipleSamplingComponents(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: Check Errors
+    kind: ErrorExistsCondition
+  - name: Drop Bad Traffic
+    kind: Dropper
+  - name: Sample Good Traffic
+    kind: DeterministicSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	// Test getting all sampling-related components
+	samplers := tlater.Inspect(h).Filter(Samplers).Components
+	require.Len(t, samplers, 4, "should have SamplingSequencer + ErrorExistsCondition + Dropper + DeterministicSampler")
+
+	// Verify we have all the expected types
+	styles := make(map[string]int)
+	kinds := make(map[string]bool)
+	for _, s := range samplers {
+		styles[s.Style]++
+		kinds[s.Kind] = true
+	}
+
+	assert.Equal(t, 1, styles["startsampling"])
+	assert.Equal(t, 1, styles["condition"])
+	assert.Equal(t, 1, styles["dropper"])
+	assert.Equal(t, 1, styles["sampler"])
+
+	assert.True(t, kinds["SamplingSequencer"])
+	assert.True(t, kinds["ErrorExistsCondition"])
+	assert.True(t, kinds["Dropper"])
+	assert.True(t, kinds["DeterministicSampler"])
+}
+
 func TestInspectionResult_Exporters(t *testing.T) {
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
@@ -2316,4 +2668,80 @@ components:
 	assert.Len(t, result.Filter(Exporters).Components, 1)
 	assert.Len(t, result.Filter(Receivers).Components, 0)
 	assert.Len(t, result.Filter(Processors).Components, 0)
+}
+
+func TestInspectionResult_Samplers(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: OTLP Receiver
+    kind: OTelReceiver
+  - name: Memory Limiter
+    kind: MemoryLimiterProcessor
+  - name: Start Sampling
+    kind: SamplingSequencer
+  - name: Check Errors
+    kind: ErrorExistsCondition
+  - name: Drop Errors
+    kind: Dropper
+  - name: Sample Traffic
+    kind: DeterministicSampler
+  - name: Honeycomb Export
+    kind: HoneycombExporter
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	result := tlater.Inspect(h)
+
+	// Samplers() should return only sampling-related components (condition, dropper, sampler, startsampling)
+	samplers := result.Filter(Samplers).Components
+	require.Len(t, samplers, 4)
+
+	// Verify each has the correct style
+	for _, sampler := range samplers {
+		assert.Contains(t, []string{"condition", "dropper", "sampler", "startsampling"}, sampler.Style)
+
+		switch sampler.Kind {
+		case "SamplingSequencer":
+			assert.Equal(t, "startsampling", sampler.Style)
+			assert.Equal(t, "Start Sampling", sampler.Name)
+		case "ErrorExistsCondition":
+			assert.Equal(t, "condition", sampler.Style)
+			assert.Equal(t, "Check Errors", sampler.Name)
+		case "Dropper":
+			assert.Equal(t, "dropper", sampler.Style)
+			assert.Equal(t, "Drop Errors", sampler.Name)
+		case "DeterministicSampler":
+			assert.Equal(t, "sampler", sampler.Style)
+			assert.Equal(t, "Sample Traffic", sampler.Name)
+		}
+	}
+
+	// Verify non-sampling components are excluded
+	allComponents := result.Components
+	assert.Len(t, allComponents, 7)
+
+	// Count styles to ensure all 4 sampling styles are represented
+	styleCount := make(map[string]int)
+	for _, s := range samplers {
+		styleCount[s.Style]++
+	}
+	assert.Equal(t, 1, styleCount["startsampling"])
+	assert.Equal(t, 1, styleCount["condition"])
+	assert.Equal(t, 1, styleCount["dropper"])
+	assert.Equal(t, 1, styleCount["sampler"])
 }
