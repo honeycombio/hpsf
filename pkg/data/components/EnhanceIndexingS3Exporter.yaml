@@ -11,7 +11,7 @@ description: |
   field-based indexes that enable efficient querying of unsampled data. 
   Automatically indexes trace.trace_id, service.name, and session.id, with 
   support for additional custom fields. The default configuration expects
-  your pipeline installation to includes the
+  your pipeline installation includes the
   HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY and
   HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET environment variables.
 tags:
