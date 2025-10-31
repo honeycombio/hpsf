@@ -767,19 +767,22 @@ func (r InspectionResult) Filter(predicates ...Predicate) InspectionResult {
 
 type Predicate func(ComponentInfo) bool
 
-// Define some common predicates for filtering components.
+// Exporters returns true if the component is an exporter.
 func Exporters(c ComponentInfo) bool {
 	return c.Style == "exporter"
 }
 
+// Processors returns true if the component is a processor.
 func Processors(c ComponentInfo) bool {
 	return c.Style == "processor"
 }
 
+// Receivers returns true if the component is a receiver.
 func Receivers(c ComponentInfo) bool {
 	return c.Style == "receiver"
 }
 
+// Samplers returns true if the component is a sampler, startsampling, or condition.
 func Samplers(c ComponentInfo) bool {
 	switch c.Style {
 	case "sampler", "startsampling", "condition":
