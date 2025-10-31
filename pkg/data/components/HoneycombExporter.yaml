@@ -4,7 +4,7 @@ style: exporter
 logo: honeycomb
 type: base
 status: alpha
-version: v0.1.0
+version: v0.2.0
 summary: Sends telemetry to Honeycomb's data store for real-time analysis.
 description: |-
   This component sends traces, logs, metrics, and Honeycomb-formatted events to the Honeycomb's data
@@ -33,14 +33,26 @@ ports:
     direction: input
     type: OTelMetrics
 properties:
-  - name: APIKey
-    summary: The API key to use to authenticate with Honeycomb.
+  - name: Environment
+    summary: The Honeycomb environment ID to send data to.
     description: |
-      The API key to use to authenticate with Honeycomb.
+      The Honeycomb environment ID to send data to. This is an opaque string identifier
+      with a hny_ prefix (e.g., hny_abc123xyz) that identifies which environment within
+      your Honeycomb account will receive the telemetry data.
     type: string
     validations:
       - noblanks
-    default: ${HTP_EXPORTER_APIKEY}
+  - name: APIKeyPlaceholder
+    summary: The placeholder string for the API key in generated configurations.
+    description: |
+      A placeholder string that will be used in the x-honeycomb-team header in generated
+      collector configurations. An external service will replace this placeholder with the
+      actual API key derived from the Environment ID. This allows the generated configuration
+      to remain valid while deferring the actual API key injection to runtime.
+    type: string
+    validations:
+      - noblanks
+    default: ${HONEYCOMB_API_KEY}
     advanced: true
   - name: MetricsDataset
     summary: The Honeycomb dataset metrics will be sent to.
@@ -72,20 +84,6 @@ properties:
     validations:
       - inrange(1, 65535)
     default: 443
-    advanced: true
-  - name: Mode
-    summary: Configures when to use the the APIKey.
-    description: |
-      Allows configuring when the exporter uses the APIKey.
-      Valid values are 'all' and 'none'.
-      The value 'none' means that the APIKey will
-      not be used. Defaults to 'all', which means all
-      the traffic will be exported using the configured APIKey.
-    type: string
-    subtype: oneof(all, none)
-    validations:
-      - oneof(all, none)
-    default: all
     advanced: true
   - name: Insecure
     summary: Provide a way to disable TLS export.
@@ -132,11 +130,6 @@ templates:
     data:
       - key: Network.HoneycombAPI
         value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
-      - key: AccessKeys.SendKey
-        value: "{{ .Values.APIKey }}"
-        suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
-      - key: AccessKeys.SendKeyMode
-        value: "{{ .Values.Mode }}"
   - kind: collector_config
     name: honeycombexporter_collector
     format: collector
@@ -151,7 +144,7 @@ templates:
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
-        value: "{{ .Values.APIKey }}"
+        value: "{{ .Values.APIKeyPlaceholder }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-dataset"
         value: "{{ .Values.MetricsDataset }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"

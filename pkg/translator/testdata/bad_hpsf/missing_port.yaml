@@ -3,6 +3,9 @@ components:
     kind: SamplingSequencer
   - name: honeycomb_out
     kind: HoneycombExporter
+    properties:
+      - name: Environment
+        value: hny_env123abc456
   - name: EMAThroughput_1
     kind: EMAThroughputSampler
     properties:
