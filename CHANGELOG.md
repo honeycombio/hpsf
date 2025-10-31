@@ -1,5 +1,26 @@
 # hpsf library changelog
 
+## Unreleased
+
+### Breaking Changes
+
+- **HoneycombExporter**: Replace APIKey property with Environment property (component version bumped to v0.2.0)
+  - The `APIKey` property has been removed and replaced with an `Environment` property (required, no default)
+  - The `Environment` property accepts a Honeycomb environment ID (opaque string with `hny_` prefix, e.g., `hny_abc123xyz`)
+  - The `Mode` property has been removed as it was tied to APIKey usage
+  - Added `APIKeyPlaceholder` advanced property (default: `${HONEYCOMB_API_KEY}`) for configurable API key placeholder in generated configs
+  - The `x-honeycomb-team` header in collector configs uses the `APIKeyPlaceholder` value
+  - An external service derives the API key from the Environment ID and replaces the placeholder at runtime
+  - Templates use `${HONEYCOMB_ENVIRONMENT}` variable for the Environment property
+  - Users must update their HPSF configurations to specify the `Environment` property instead of `APIKey`
+
+- **SamplingSequencer**: Replace Headers property with APIKeyPlaceholder property
+  - The `Headers` property has been removed
+  - Added `APIKeyPlaceholder` advanced property (default: `${HONEYCOMB_API_KEY}`) matching HoneycombExporter behavior
+  - The `x-honeycomb-team` header in generated Refinery exporter configs uses the `APIKeyPlaceholder` value
+  - This ensures consistent API key injection pattern for both Honeycomb and Refinery exporters
+  - Users no longer need to manually configure headers for Refinery connections
+
 ## 0.21.0 2025-10-23
 
 ### Features

@@ -1,6 +1,3 @@
-AccessKeys:
-    SendKey: abcdef1234567890abcdef1
-    SendKeyMode: none
 General:
     ConfigurationVersion: 2
     MinRefineryVersion: v2.0
