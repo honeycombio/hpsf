@@ -19,6 +19,9 @@ components:
           x-honeycomb-team: ${HONEYCOMB_API_KEY}
   - name: Honeycomb Exporter_1
     kind: HoneycombExporter
+    properties:
+      - name: Environment
+        value: ${HONEYCOMB_ENVIRONMENT}
   - name: EMA Throughput Sampler_1
     kind: EMAThroughputSampler
     properties:
