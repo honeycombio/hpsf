@@ -3,9 +3,6 @@ components:
     kind: SamplingSequencer
   - name: honeycomb_out
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
   - name: sampler1
     kind: DeterministicSampler
   - name: sampler2

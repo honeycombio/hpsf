@@ -14,9 +14,6 @@ components:
     version: v0.1.0
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
     version: v999999.1.0
 connections:
   - source:

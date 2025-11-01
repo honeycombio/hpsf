@@ -10,9 +10,6 @@ components:
         value: 120
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
 connections:
   - source:
       component: OTel Receiver_1

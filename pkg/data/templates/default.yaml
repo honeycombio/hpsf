@@ -20,9 +20,6 @@ components:
         value: 100
   - name: Honeycomb Exporter 1
     kind: HoneycombExporter
-    properties:
-      - name: APIKey
-        value: ${HONEYCOMB_API_KEY}
 connections:
   - source:
       component: OTel Receiver 1
