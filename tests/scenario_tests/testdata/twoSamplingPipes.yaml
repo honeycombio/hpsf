@@ -11,9 +11,6 @@ components:
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
   - name: HTTP Status_1
     kind: HTTPStatusCondition
   - name: Deterministic Sampler_1

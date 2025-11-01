@@ -5,9 +5,6 @@ components:
     kind: SamplingSequencer
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
   - name: Sample at a Fixed Rate_1
     kind: DeterministicSampler
 connections:
