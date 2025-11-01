@@ -4,7 +4,7 @@ style: exporter
 logo: honeycomb
 type: base
 status: alpha
-version: v0.1.0
+version: v0.2.0
 summary: Sends telemetry to Honeycomb's data store for real-time analysis.
 description: |-
   This component sends traces, logs, metrics, and Honeycomb-formatted events to the Honeycomb's data
@@ -34,16 +34,14 @@ ports:
     type: OTelMetrics
 properties:
   - name: APIKey
-    summary: The Honeycomb API key or environment variable to authenticate to the ingest API.
+    summary: The API key to use to authenticate with Honeycomb.
     description: |
-      The Honeycomb API key or environment variable to authenticate to the ingest API.
-      For example, when sending to the US instance of Honeycomb, use a Team API key
-      (starts with hcaik_). When sending to Honeycomb EU, use an Ingest key (starts with hcxik_).
-      When sending to Honeycomb EU via Refinery, use a Configuration key (starts with hccik_).
-
-      This property is deprecated in favor of the Environment property. If both are set,
-      Environment takes precedence.
+      The API key to use to authenticate with Honeycomb.
     type: string
+    validations:	
+      - noblanks	
+    default: ${HTP_EXPORTER_APIKEY}	
+    advanced: true
   - name: Environment
     summary: The Honeycomb environment ID to send data to.
     description: |
