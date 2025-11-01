@@ -3,9 +3,6 @@ components:
     kind: OTelReceiver
   - name: Honeycomb Exporter_1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
   - name: Send to S3 Archive_1
     kind: S3ArchiveExporter
   - name: Filter Logs by Severity_1
