@@ -122,8 +122,6 @@ properties:
     validations:
       - nonempty
     advanced: true
-validations:
-  - at_least_one_of(APIKey, Environment)
 templates:
   - kind: refinery_config
     name: HoneycombExporter_RefineryConfig
