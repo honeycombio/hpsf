@@ -38,9 +38,9 @@ properties:
     description: |
       The API key to use to authenticate with Honeycomb.
     type: string
-    validations:	
-      - noblanks	
-    default: ${HTP_EXPORTER_APIKEY}	
+    validations:
+      - noblanks
+    default: ${HTP_EXPORTER_APIKEY}
     advanced: true
   - name: Environment
     summary: The Honeycomb environment ID to send data to.
