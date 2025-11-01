@@ -1,0 +1,42 @@
+components:
+  - name: Receive OTel_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+    properties:
+      - name: Headers
+        value:
+          x-honeycomb-team: deprecated-api-key
+          x-custom-header: custom-value
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+    properties:
+      - name: Mode
+        value: all
+  - name: Keep Everything_1
+    kind: KeepAllSampler
+connections:
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Keep Everything_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep Everything_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
