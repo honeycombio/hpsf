@@ -626,7 +626,10 @@ func (t *Translator) findTeamHeaderValue(h *hpsf.HPSF, comps *OrderedComponentMa
 			continue
 		}
 
-		// Found a HoneycombExporter, look for Environment first, then APIKey
+		// Found a HoneycombExporter, look for Environment first, then APIKey, then APIKey default
+		// Priority: user-defined Environment > user-defined APIKey > default APIKey
+
+		// 1. Check for user-defined Environment
 		if envProp := comp.GetProperty("Environment"); envProp != nil {
 			if envID, ok := envProp.Value.(string); ok && envID != "" {
 				// Wrap environment IDs in __ENV:...__  format
@@ -634,11 +637,21 @@ func (t *Translator) findTeamHeaderValue(h *hpsf.HPSF, comps *OrderedComponentMa
 			}
 		}
 
-		// Fall back to APIKey if Environment is not set
+		// 2. Check for user-defined APIKey
 		if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
-			if apiKey, ok := apiKeyProp.Value.(string); ok {
-				// Return APIKey as-is (e.g., ${HONEYCOMB_API_KEY})
+			if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
+				// Return user-defined APIKey as-is (e.g., ${HONEYCOMB_API_KEY})
 				return apiKey
+			}
+		}
+
+		// 3. Fall back to APIKey default value from template
+		for _, prop := range templateComp.Properties {
+			if prop.Name == "APIKey" && prop.Default != nil {
+				if defaultAPIKey, ok := prop.Default.(string); ok {
+					// Return default APIKey as-is (e.g., ${HTP_EXPORTER_APIKEY})
+					return defaultAPIKey
+				}
 			}
 		}
 	}

@@ -22,9 +22,6 @@ components:
           - http.status_code
   - name: Honeycomb Exporter 1
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: ""
 connections:
   - source:
       component: OTel Receiver 1

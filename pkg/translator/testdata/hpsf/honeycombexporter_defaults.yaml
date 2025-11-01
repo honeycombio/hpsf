@@ -7,9 +7,6 @@ components:
     kind: DeterministicSampler
   - name: honeycomb
     kind: HoneycombExporter
-    properties:
-      - name: Environment
-        value: hny_env123abc456
 connections:
   # traces: otel -> trace_converter -> refinery -> honeycomb
   - source:

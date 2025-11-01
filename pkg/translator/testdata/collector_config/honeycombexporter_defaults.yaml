@@ -12,7 +12,7 @@ exporters:
         endpoint: https://api.honeycomb.io:443
         headers:
             x-honeycomb-dataset: metrics
-            x-honeycomb-team: __ENV:hny_env123abc456__
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
         sending_queue:
             batch:
                 flush_timeout: 200ms
@@ -24,7 +24,7 @@ exporters:
     otlphttp/refinery:
         endpoint: http://${HTP_REFINERY_SERVICE}:80
         headers:
-            x-honeycomb-team: __ENV:hny_env123abc456__
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
         sending_queue:
             batch:
                 flush_timeout: 200ms
