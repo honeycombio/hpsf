@@ -23,6 +23,8 @@ exporters:
             sizer: items
     otlphttp/Start_Sampling_1:
         endpoint: http://${HTP_REFINERY_SERVICE}:80
+        headers:
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY}
         sending_queue:
             batch:
                 flush_timeout: 200ms

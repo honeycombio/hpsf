@@ -20,6 +20,8 @@ components:
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
     properties:
+      - name: Environment
+        value: hny_smoke_test_env
       - name: Insecure
         value: true
   - name: Send to S3 Archive_1
@@ -62,9 +64,6 @@ components:
   - name: Start Sampling_1
     kind: SamplingSequencer
     properties:
-      - name: Headers
-        value:
-          test: header
       - name: UseTLS
         value: true
   - name: Parse Attribute As JSON_1

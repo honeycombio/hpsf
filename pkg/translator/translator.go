@@ -606,6 +606,59 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
+// findTeamHeaderValue looks for a HoneycombExporter component in the configuration
+// and returns the value to use for the x-honeycomb-team header.
+// Environment takes precedence if both are set. Environment IDs are wrapped in __ENV:...__
+// format, while API keys are returned as-is.
+// In single-environment mode (current), all components share the same value.
+// In future multi-environment mode with Router, this will be determined per-pipeline.
+func (t *Translator) findTeamHeaderValue(h *hpsf.HPSF, comps *OrderedComponentMap) string {
+	// Iterate through all components in the configuration
+	for _, comp := range h.Components {
+		// Check if this is a HoneycombExporter
+		tc, ok := comps.Get(comp.GetSafeName())
+		if !ok {
+			continue
+		}
+
+		templateComp, ok := tc.(*config.TemplateComponent)
+		if !ok || templateComp.Kind != "HoneycombExporter" {
+			continue
+		}
+
+		// Found a HoneycombExporter, look for Environment first, then APIKey, then APIKey default
+		// Priority: user-defined Environment > user-defined APIKey > default APIKey
+
+		// 1. Check for user-defined Environment
+		if envProp := comp.GetProperty("Environment"); envProp != nil {
+			if envID, ok := envProp.Value.(string); ok && envID != "" {
+				// Wrap environment IDs in __ENV:...__  format
+				return "__ENV:" + envID + "__"
+			}
+		}
+
+		// 2. Check for user-defined APIKey
+		if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
+			if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
+				// Return user-defined APIKey as-is (e.g., ${HONEYCOMB_API_KEY})
+				return apiKey
+			}
+		}
+
+		// 3. Fall back to APIKey default value from template
+		for _, prop := range templateComp.Properties {
+			if prop.Name == "APIKey" && prop.Default != nil {
+				if defaultAPIKey, ok := prop.Default.(string); ok {
+					// Return default APIKey as-is (e.g., ${HTP_EXPORTER_APIKEY})
+					return defaultAPIKey
+				}
+			}
+		}
+	}
+
+	return ""
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
@@ -626,6 +679,19 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 
 	if err := h.VisitComponents(visitFunc); err != nil {
 		return nil, fmt.Errorf("failed to create components: %w", err)
+	}
+
+	// Prepare userdata
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+
+	// Find the team header value (Environment or APIKey) from any HoneycombExporter in the configuration
+	// In single-environment mode, all components share the same value
+	// In future multi-environment mode with Router, this will be determined per-pipeline
+	teamHeaderValue := t.findTeamHeaderValue(h, comps)
+	if teamHeaderValue != "" {
+		userdata["TeamHeaderValue"] = teamHeaderValue
 	}
 
 	// now add the connections
