@@ -58,14 +58,14 @@ func GetParsedConfigs(t *testing.T, hpsfConfig string) (refineryRules *refineryC
 
 	errors := make(map[hpsftypes.Type]ErrorDetails)
 
-	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.RefineryRules, translator.LatestVersion, nil, nil)
+	refineryRulesTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.RefineryRules, translator.LatestVersion, nil)
 	if err != nil {
 		errors[hpsftypes.RefineryConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
 		refineryRules = refineryConfigProvider.GetParsedRulesConfig(t, refineryRulesTmpl.(*tmpl.RulesConfig))
 	}
 
-	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.CollectorConfig, translator.LatestVersion, nil, nil)
+	collectorConfigTmpl, err := hpsfTranslator.GenerateConfig(&h, hpsftypes.CollectorConfig, translator.LatestVersion, nil)
 	if err != nil {
 		errors[hpsftypes.CollectorConfig] = ErrorDetails{Config: hpsfConfig, Error: err}
 	} else {
