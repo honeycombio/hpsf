@@ -4,6 +4,10 @@ import (
 	"testing"
 
 	"github.com/honeycombio/hpsf/pkg/hpsf"
+	"github.com/honeycombio/hpsf/pkg/hpsftypes"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	y "gopkg.in/yaml.v3"
 )
 
 // TestValidateAtLeastOneOf tests the at_least_one_of validation type
@@ -360,13 +364,13 @@ func TestNonExistentProperty(t *testing.T) {
 // TestParseComponentValidation tests the validation string parsing
 func TestParseComponentValidation(t *testing.T) {
 	tests := []struct {
-		name            string
-		validationStr   string
-		expectType      string
-		expectProps     []string
-		expectCondProp  string
-		expectCondVal   any
-		expectError     bool
+		name           string
+		validationStr  string
+		expectType     string
+		expectProps    []string
+		expectCondProp string
+		expectCondVal  any
+		expectError    bool
 	}{
 		{
 			name:          "simple at_least_one_of",
@@ -406,23 +410,23 @@ func TestParseComponentValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			validationType, properties, conditionProperty, conditionValue, err := parseComponentValidation(tt.validationStr)
-			
+
 			if tt.expectError {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if validationType != tt.expectType {
 				t.Errorf("Expected type %s, got %s", tt.expectType, validationType)
 			}
-			
+
 			if len(properties) != len(tt.expectProps) {
 				t.Errorf("Expected %d properties, got %d", len(tt.expectProps), len(properties))
 			} else {
@@ -432,14 +436,131 @@ func TestParseComponentValidation(t *testing.T) {
 					}
 				}
 			}
-			
+
 			if conditionProperty != tt.expectCondProp {
 				t.Errorf("Expected condition property %s, got %s", tt.expectCondProp, conditionProperty)
 			}
-			
+
 			if conditionValue != tt.expectCondVal {
 				t.Errorf("Expected condition value %v, got %v", tt.expectCondVal, conditionValue)
 			}
 		})
 	}
+}
+
+func TestTemplateComponentUnmarshal(t *testing.T) {
+	templateData := `
+kind: TestExporter
+version: v0.1.0
+minimum:
+  collector_config: v0.120.0
+  refinery_config: v2.0.0
+maximum:
+  collector_config: v0.1.0.0
+  refinery_config: v4.0.0
+name: test name
+logo: honeycomb
+summary: testing.
+description: |-
+  testing component config unmarshalling
+comment: test comment
+tags:
+  - category:output
+  - service:refinery
+type: base
+style: exporter
+status: alpha
+metadata:
+  foo: bar
+ports:
+  # inputs
+  - name: Events
+    direction: input
+    type: HoneycombEvents
+properties:
+  - name: APIKey
+    summary: The API key to use to authenticate with Honeycomb.
+    description: |
+      The API key to use to authenticate with Honeycomb.
+    type: string
+    validations:
+      - noblanks
+    default: ${HTP_EXPORTER_APIKEY}
+    advanced: true
+validations:
+  - "test_validation"
+templates:
+  - kind: refinery_config
+    name: HoneycombExporter_RefineryConfig
+    format: dotted
+    data:
+      - key: AccessKeys.SendKey
+        value: "{{ .Values.APIKey }}"
+        suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
+  - kind: collector_config
+    name: honeycombexporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlphttp
+    data:
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
+        value: "{{ .Values.APIKey }}"
+`
+	var component TemplateComponent
+	err := y.Unmarshal([]byte(templateData), &component)
+	require.NoError(t, err)
+
+	assert.Equal(t, "TestExporter", component.Kind)
+	assert.Equal(t, "v0.1.0", component.Version)
+	require.NotNil(t, component.Minimum)
+	assert.Equal(t, "v0.120.0", component.Minimum["collector_config"])
+	assert.Equal(t, "v2.0.0", component.Minimum["refinery_config"])
+	require.NotNil(t, component.Maximum)
+	assert.Equal(t, "v0.1.0.0", component.Maximum["collector_config"])
+	assert.Equal(t, "v4.0.0", component.Maximum["refinery_config"])
+	assert.Equal(t, "test name", component.Name)
+	assert.Equal(t, "honeycomb", component.Logo)
+	assert.Equal(t, "testing.", component.Summary)
+	assert.Equal(t, "testing component config unmarshalling", component.Description)
+	assert.Equal(t, "test comment", component.Comment)
+	assert.Equal(t, []string{"category:output", "service:refinery"}, component.Tags)
+	assert.Equal(t, ComponentTypeBase, component.Type)
+	assert.Equal(t, "exporter", component.Style)
+	assert.Equal(t, ComponentStatusAlpha, component.Status)
+	require.NotNil(t, component.Metadata)
+	assert.Equal(t, "bar", component.Metadata["foo"])
+	require.Len(t, component.Ports, 1)
+	port := component.Ports[0]
+	assert.Equal(t, "Events", port.Name)
+	assert.Equal(t, "input", port.Direction)
+	assert.Equal(t, hpsf.CTYPE_HONEY, port.Type)
+	require.Len(t, component.Properties, 1)
+	property := component.Properties[0]
+	assert.Equal(t, "APIKey", property.Name)
+	assert.Equal(t, "The API key to use to authenticate with Honeycomb.", property.Summary)
+	assert.Equal(t, "The API key to use to authenticate with Honeycomb.\n", property.Description)
+	assert.Equal(t, hpsf.PTYPE_STRING, property.Type)
+	assert.Equal(t, []string{"noblanks"}, property.Validations)
+	assert.Equal(t, "${HTP_EXPORTER_APIKEY}", property.Default)
+	assert.Equal(t, true, property.Advanced)
+	require.Len(t, component.Validations, 1)
+	assert.Equal(t, "test_validation", component.Validations[0])
+	require.Len(t, component.Templates, 2)
+	rt := component.Templates[0]
+	assert.Equal(t, hpsftypes.RefineryConfig, rt.Kind)
+	assert.Equal(t, "HoneycombExporter_RefineryConfig", rt.Name)
+	assert.Equal(t, "dotted", rt.Format)
+	require.Nil(t, rt.Meta)
+	require.Len(t, rt.Data, 1)
+	ct := component.Templates[1]
+	assert.Equal(t, hpsftypes.CollectorConfig, ct.Kind)
+	assert.Equal(t, "honeycombexporter_collector", ct.Name)
+	assert.Equal(t, "collector", ct.Format)
+	require.NotNil(t, ct.Meta)
+	assert.Equal(t, "exporters", ct.Meta["componentSection"])
+	assert.Equal(t, []any{"traces", "metrics", "logs"}, ct.Meta["signalTypes"])
+	assert.Equal(t, "otlphttp", ct.Meta["collectorComponentName"])
+	require.Len(t, ct.Data, 1)
 }
