@@ -1200,8 +1200,12 @@ func TestArtifactVersionSupported(t *testing.T) {
 			wantSupported:   true,
 			artifactVersion: LatestVersion,
 			component: config.TemplateComponent{
-				Minimum: "v0.100.0",
-				Maximum: "v0.200.0",
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.100.0",
+				},
+				Maximum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.200.0",
+				},
 			},
 		},
 		{
@@ -1209,7 +1213,9 @@ func TestArtifactVersionSupported(t *testing.T) {
 			wantSupported:   true,
 			artifactVersion: "v0.1.0",
 			component: config.TemplateComponent{
-				Maximum: "v0.200.0",
+				Maximum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.200.0",
+				},
 			},
 		},
 		{
@@ -1217,7 +1223,9 @@ func TestArtifactVersionSupported(t *testing.T) {
 			wantSupported:   true,
 			artifactVersion: "v0.101.0",
 			component: config.TemplateComponent{
-				Minimum: "v0.100.0",
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.100.0",
+				},
 			},
 		},
 		{
@@ -1225,7 +1233,9 @@ func TestArtifactVersionSupported(t *testing.T) {
 			wantSupported:   false,
 			artifactVersion: "v0.100.0",
 			component: config.TemplateComponent{
-				Minimum: "v0.101.0",
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.101.0",
+				},
 			},
 		},
 		{
@@ -1233,13 +1243,45 @@ func TestArtifactVersionSupported(t *testing.T) {
 			wantSupported:   false,
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
-				Minimum: "v0.100.0",
-				Maximum: "v0.120.0",
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.100.0",
+				},
+				Maximum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.120.0",
+				},
+			},
+		},
+		{
+			name:            "specific agent type supported",
+			wantSupported:   true,
+			artifactVersion: "v0.150.0",
+			component: config.TemplateComponent{
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.100.0",
+					hpsftypes.RefineryRules:   "v0.200.0",
+				},
+				Maximum: map[hpsftypes.Type]string{
+					hpsftypes.CollectorConfig: "v0.151.0",
+					hpsftypes.RefineryRules:   "v0.300.0",
+				},
+			},
+		},
+		{
+			name:            "expected agent type not specified",
+			wantSupported:   true,
+			artifactVersion: "v0.150.0",
+			component: config.TemplateComponent{
+				Minimum: map[hpsftypes.Type]string{
+					hpsftypes.RefineryRules:   "v0.151.0",
+				},
+				Maximum: map[hpsftypes.Type]string{
+					hpsftypes.RefineryRules:   "v0.152.0",
+				},
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.wantSupported, artifactVersionSupported(tc.component, tc.artifactVersion))
+			require.Equal(t, tc.wantSupported, artifactVersionSupported(tc.component, hpsftypes.CollectorConfig, tc.artifactVersion))
 		})
 	}
 }
