@@ -219,7 +219,7 @@ func main() {
 		case "cConfig":
 			ct = hpsftypes.CollectorConfig
 		}
-		cfg, err := tr.GenerateConfig(&hpsf, ct, translator.LatestVersion, userdata)
+		cfg, err := tr.GenerateConfig(&hpsf, ct, translator.LatestVersion, nil, userdata)
 		if err != nil {
 			log.Fatalf("error translating config: %v", err)
 		}

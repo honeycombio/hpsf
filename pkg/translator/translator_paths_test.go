@@ -240,7 +240,7 @@ connections:
     }
 
     _ = tr.ValidateConfig(&h)
-    _, _ = tr.GenerateConfig(&h, hpsftypes.CollectorConfig, "latest", nil)
+    _, _ = tr.GenerateConfig(&h, hpsftypes.CollectorConfig, "latest", nil, nil)
 
     paths := h.FindAllPaths(map[string]bool{})
     comps := NewOrderedComponentMap()

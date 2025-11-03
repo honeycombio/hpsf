@@ -606,7 +606,7 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
-func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
+func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, features hpsftypes.Features, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
