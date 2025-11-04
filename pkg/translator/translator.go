@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"iter"
 	"maps"
+	"regexp"
 	"sort"
+	"strconv"
+	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -17,6 +20,530 @@ import (
 )
 
 const LatestVersion = "latest"
+
+var (
+	// Honeycomb environment name validation pattern
+	// Matches the Honeycomb slugification process: only allows a-z, 0-9, _, ~, ., and -
+	validEnvironmentNamePattern = regexp.MustCompile(`^[a-z0-9_~.\-]+$`)
+
+	// Maximum length for Honeycomb environment names
+	maxEnvironmentNameLength = 175
+)
+
+// validateEnvironmentName validates that an environment name conforms to Honeycomb's
+// slugification requirements: only lowercase letters, digits, and _~.- characters,
+// with a maximum length of 175 characters.
+func validateEnvironmentName(name string) error {
+	if name == "" {
+		return nil // Empty is allowed (will use default)
+	}
+
+	if len(name) > maxEnvironmentNameLength {
+		return fmt.Errorf("environment name exceeds maximum length of %d characters: %q", maxEnvironmentNameLength, name)
+	}
+
+	if !validEnvironmentNamePattern.MatchString(name) {
+		return fmt.Errorf("environment name contains invalid characters (only a-z, 0-9, _, ~, ., - are allowed): %q", name)
+	}
+
+	return nil
+}
+
+// extractExpectedPipelines extracts pipeline names referenced in routing connector configuration.
+// Returns a map of pipeline names (e.g., "traces/production", "logs/staging") to true.
+func extractExpectedPipelines(connectorSection map[string]any) map[string]bool {
+	expectedPipelines := make(map[string]bool)
+
+	for key, value := range connectorSection {
+		// Check for routing/{signaltype}.default_pipelines
+		if strings.HasPrefix(key, "routing/") && strings.HasSuffix(key, ".default_pipelines") {
+			if pipelines, ok := value.([]any); ok {
+				for _, p := range pipelines {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelines, ok := value.([]string); ok {
+				for _, pName := range pipelines {
+					expectedPipelines[pName] = true
+				}
+			}
+		}
+
+		// Check for routing/{signaltype}.table[N].pipelines
+		if strings.HasPrefix(key, "routing/") && strings.Contains(key, ".table[") && strings.HasSuffix(key, ".pipelines") {
+			if pipelineList, ok := value.([]any); ok {
+				for _, p := range pipelineList {
+					if pName, ok := p.(string); ok {
+						expectedPipelines[pName] = true
+					}
+				}
+			} else if pipelineList, ok := value.([]string); ok {
+				for _, pName := range pipelineList {
+					expectedPipelines[pName] = true
+				}
+			}
+		}
+	}
+
+	return expectedPipelines
+}
+
+// collectPipelineNames extracts all unique pipeline names from the service section.
+// Returns a map of pipeline names to true.
+func collectPipelineNames(serviceSection map[string]any) map[string]bool {
+	pipelineNames := make(map[string]bool)
+
+	for key := range serviceSection {
+		if !strings.HasPrefix(key, "pipelines.") {
+			continue
+		}
+		pipelinePath := key[len("pipelines."):]
+		parts := strings.SplitN(pipelinePath, ".", 2)
+		if len(parts) < 2 {
+			continue
+		}
+		pipelineNames[parts[0]] = true
+	}
+
+	return pipelineNames
+}
+
+// buildExporterEnvironmentMap creates a mapping from exporter safe names to environment names.
+// Reads environment directly from HoneycombExporter components' EnvironmentName property.
+// Validates that environment names conform to Honeycomb's slugification requirements.
+func buildExporterEnvironmentMap(h *hpsf.HPSF) (map[string]string, error) {
+	exporterToEnvironment := make(map[string]string)
+
+	if h == nil {
+		return exporterToEnvironment, nil
+	}
+
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			safeName := hcomp.GetSafeName()
+			// Get EnvironmentName property from exporter
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						// Validate environment name format
+						if err := validateEnvironmentName(envName); err != nil {
+							return nil, fmt.Errorf("invalid EnvironmentName on component %q: %w", hcomp.Name, err)
+						}
+						exporterToEnvironment[safeName] = envName
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return exporterToEnvironment, nil
+}
+
+// getStringListFromAny converts []any or []string to []string, filtering out empty strings.
+// Returns nil if the value is not a supported type.
+func getStringListFromAny(value any) []string {
+	if value == nil {
+		return nil
+	}
+
+	var result []string
+	switch v := value.(type) {
+	case []any:
+		for _, item := range v {
+			if s, ok := item.(string); ok && s != "" {
+				result = append(result, s)
+			}
+		}
+	case []string:
+		for _, s := range v {
+			if s != "" {
+				result = append(result, s)
+			}
+		}
+	default:
+		return nil
+	}
+
+	return result
+}
+
+// normalizeRoutingConnector normalizes routing connector names to "routing/{signaltype}" format.
+func normalizeRoutingConnector(connectorName, signalType string) string {
+	if connectorName == "routing" || strings.HasPrefix(connectorName, "routing_") || strings.HasPrefix(connectorName, "routing/") {
+		if signalType != "" {
+			return "routing/" + signalType
+		}
+		return "routing"
+	}
+	return connectorName
+}
+
+// transformIntakePipeline transforms an intake pipeline by moving routing connector from connectors to exporters.
+// Returns the new name for the pipeline (e.g., "traces/intake") or empty string if no rename needed.
+func transformIntakePipeline(serviceSection map[string]any, pipelineName, signalType string, connectorsList []string) string {
+	connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+	exportersKey := fmt.Sprintf("pipelines.%s.exporters", pipelineName)
+
+	// Move connectors to exporters, normalizing routing connector names
+	normalizedConnectors := make([]string, len(connectorsList))
+	for i, conn := range connectorsList {
+		normalizedConnectors[i] = normalizeRoutingConnector(conn, signalType)
+	}
+	serviceSection[exportersKey] = normalizedConnectors
+	delete(serviceSection, connectorsKey)
+
+	// Generate intake pipeline name
+	if signalType != "" {
+		intakeName := signalType + "/intake"
+		if pipelineName != intakeName {
+			return intakeName
+		}
+	}
+	return ""
+}
+
+// inferEnvironmentFromExporters attempts to infer environment name from exporter components.
+func inferEnvironmentFromExporters(exportersList []string, exporterToEnvironment map[string]string, pipelineName string) string {
+	// First, check if any exporters have an environment set
+	for _, exp := range exportersList {
+		// Remove the exporter type prefix (e.g., "otlphttp/") to get the component name
+		expParts := strings.SplitN(exp, "/", 2)
+		expCompName := exp
+		if len(expParts) == 2 {
+			expCompName = expParts[1]
+		}
+		if env, ok := exporterToEnvironment[expCompName]; ok {
+			return env
+		}
+	}
+
+	// Try to extract from pipeline name (e.g., "traces/dev" -> "dev")
+	parts := strings.SplitN(pipelineName, "/", 2)
+	if len(parts) == 2 && parts[1] != "intake" {
+		return parts[1]
+	}
+
+	return ""
+}
+
+// injectEnvironmentAPIKey injects environment-specific API key for exporters in a pipeline.
+func injectEnvironmentAPIKey(exportersSection map[string]any, exportersList []string, envName string) {
+	if envName == "" {
+		return
+	}
+
+	for _, exp := range exportersList {
+		headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
+		existingValue, hasHeader := exportersSection[headerKey]
+		// Inject if header doesn't exist or if it's set to the default value
+		if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+			envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+			exportersSection[headerKey] = envVarName
+		}
+	}
+}
+
+// transformOutputPipeline transforms an output pipeline by moving routing connector from connectors to receivers
+// and injecting environment-specific API keys.
+func transformOutputPipeline(serviceSection map[string]any, cc *tmpl.CollectorConfig, pipelineName, signalType string, connectors any, exportersList []string, exporterToEnvironment map[string]string) {
+	receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineName)
+	connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+
+	// Move connectors to receivers
+	serviceSection[receiversKey] = connectors
+	delete(serviceSection, connectorsKey)
+
+	// Infer environment and inject API keys
+	if signalType != "" {
+		envName := inferEnvironmentFromExporters(exportersList, exporterToEnvironment, pipelineName)
+		if envName != "" {
+			exportersSection, hasExportersSection := cc.Sections["exporters"]
+			if hasExportersSection {
+				injectEnvironmentAPIKey(exportersSection, exportersList, envName)
+			}
+		}
+	}
+}
+
+// applyPipelineRenames renames pipelines in the service section, merging duplicates if multiple pipelines
+// are renamed to the same target name.
+func applyPipelineRenames(serviceSection map[string]any, pipelineRenames map[string]string) {
+	// Group renames by target name to handle merges
+	renamesByTarget := make(map[string][]string) // target name -> list of source names
+	for oldName, newName := range pipelineRenames {
+		renamesByTarget[newName] = append(renamesByTarget[newName], oldName)
+	}
+
+	// Apply pipeline renames, merging duplicates
+	for newName, oldNames := range renamesByTarget {
+		if len(oldNames) == 1 {
+			// Simple rename, no merge needed
+			oldName := oldNames[0]
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+oldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+oldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+		} else {
+			// Multiple pipelines renaming to same name - merge them
+			// Take the first one as the canonical pipeline
+			firstOldName := oldNames[0]
+
+			// Rename the first one
+			keysToRename := make([]string, 0)
+			for key := range serviceSection {
+				if strings.HasPrefix(key, "pipelines."+firstOldName+".") {
+					keysToRename = append(keysToRename, key)
+				}
+			}
+
+			for _, oldKey := range keysToRename {
+				newKey := strings.Replace(oldKey, "pipelines."+firstOldName+".", "pipelines."+newName+".", 1)
+				serviceSection[newKey] = serviceSection[oldKey]
+				delete(serviceSection, oldKey)
+			}
+
+			// Delete the duplicate pipelines
+			for _, oldName := range oldNames[1:] {
+				keysToDelete := make([]string, 0)
+				for key := range serviceSection {
+					if strings.HasPrefix(key, "pipelines."+oldName+".") {
+						keysToDelete = append(keysToDelete, key)
+					}
+				}
+				for _, key := range keysToDelete {
+					delete(serviceSection, key)
+				}
+			}
+		}
+	}
+}
+
+// findExportersForEnvironment finds all exporters in the exporters section that match the given environment.
+func findExportersForEnvironment(exportersSection map[string]any, exporterToEnvironment map[string]string, envName string) []string {
+	exportersForEnv := make([]string, 0)
+
+	for exporterSafeName, exporterEnv := range exporterToEnvironment {
+		if exporterEnv == envName {
+			// Find the exporter key in the exporters section
+			for exporterKey := range exportersSection {
+				exporterName := exporterKey
+				if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
+					exporterName = exporterKey[:dotIdx]
+				}
+				// Exporter names have format: {type}/{componentSafeName}
+				if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
+					exporterCompName := exporterName[slashIdx+1:]
+					if exporterCompName == exporterSafeName {
+						if !sliceContains(exportersForEnv, exporterName) {
+							exportersForEnv = append(exportersForEnv, exporterName)
+						}
+						break
+					}
+				}
+			}
+		}
+	}
+
+	return exportersForEnv
+}
+
+// createMissingOutputPipelines creates output pipelines that are referenced in routing connector config
+// but don't exist yet (this happens when output paths weren't generated).
+func createMissingOutputPipelines(serviceSection map[string]any, cc *tmpl.CollectorConfig, expectedPipelines map[string]bool, exporterToEnvironment map[string]string) {
+	exportersSection, hasExportersSection := cc.Sections["exporters"]
+	if !hasExportersSection {
+		return
+	}
+
+	for expectedPipeline := range expectedPipelines {
+		// Check if this pipeline already exists
+		pipelineExists := false
+		for key := range serviceSection {
+			if strings.HasPrefix(key, "pipelines."+expectedPipeline+".") {
+				pipelineExists = true
+				break
+			}
+		}
+
+		if !pipelineExists {
+			// Create the pipeline with routing connector as receiver
+			// Extract signal type from pipeline name (e.g., "traces/dev" -> "traces")
+			parts := strings.SplitN(expectedPipeline, "/", 2)
+			if len(parts) == 2 {
+				signalType := parts[0]
+				envName := parts[1]
+
+				// Set receivers to routing connector
+				receiversKey := fmt.Sprintf("pipelines.%s.receivers", expectedPipeline)
+				serviceSection[receiversKey] = []string{"routing/" + signalType}
+
+				// Find exporters for this environment
+				exportersForEnv := findExportersForEnvironment(exportersSection, exporterToEnvironment, envName)
+
+				if len(exportersForEnv) > 0 {
+					exportersKey := fmt.Sprintf("pipelines.%s.exporters", expectedPipeline)
+					serviceSection[exportersKey] = exportersForEnv
+				}
+			}
+		}
+	}
+}
+
+var (
+	// Regex patterns for parsing routing connector keys
+	// Format: routing/logs.default_pipelines
+	defaultPipelinesPattern = regexp.MustCompile(`^routing/(\w+)\.default_pipelines$`)
+
+	// Format: routing/logs.table_router_staging[0].condition
+	tableEntryPattern = regexp.MustCompile(`^routing/(\w+)\.table_(\w+)\[(\d+)\]\.(\w+)$`)
+)
+
+// routingTableKey represents a parsed routing table entry key
+type routingTableKey struct {
+	signalType    string // e.g., "logs", "traces", "metrics"
+	componentName string // e.g., "router_staging"
+	index         int    // e.g., 0, 1, 2
+	fieldName     string // e.g., "condition", "pipelines", "statement"
+}
+
+// parseDefaultPipelinesKey parses keys like "routing/logs.default_pipelines"
+// Returns (signalType, true) if valid, ("", false) otherwise
+func parseDefaultPipelinesKey(key string) (string, bool) {
+	matches := defaultPipelinesPattern.FindStringSubmatch(key)
+	if len(matches) != 2 {
+		return "", false
+	}
+	return matches[1], true
+}
+
+// parseTableEntryKey parses keys like "routing/logs.table_router_staging[0].condition"
+// Returns (routingTableKey, true) if valid, (zero, false) otherwise
+func parseTableEntryKey(key string) (routingTableKey, bool) {
+	matches := tableEntryPattern.FindStringSubmatch(key)
+	if len(matches) != 5 {
+		return routingTableKey{}, false
+	}
+
+	index, err := strconv.Atoi(matches[3])
+	if err != nil {
+		return routingTableKey{}, false
+	}
+
+	return routingTableKey{
+		signalType:    matches[1],
+		componentName: matches[2],
+		index:         index,
+		fieldName:     matches[4],
+	}, true
+}
+
+// mergeRoutingConnectors finds routing connector entries and merges them per signal type
+// Creates separate routing connectors: routing/logs, routing/traces, routing/metrics
+func mergeRoutingConnectors(cc *tmpl.CollectorConfig) error {
+	connectorSection, ok := cc.Sections["connectors"]
+	if !ok {
+		return nil // no connectors, nothing to do
+	}
+
+	// Track entries by signal type and component: routing/logs, routing/traces, routing/metrics
+	// signalType -> component -> entries
+	tableEntriesBySignalType := make(map[string]map[string][]map[string]any)
+	defaultPipelinesBySignalType := make(map[string][]string) // signalType -> pipelines
+
+	for key, value := range connectorSection {
+		// Check for routing/{signaltype}.default_pipelines using regex
+		if signalType, ok := parseDefaultPipelinesKey(key); ok {
+			if pipelines, ok := value.([]string); ok {
+				defaultPipelinesBySignalType[signalType] = append(defaultPipelinesBySignalType[signalType], pipelines...)
+			}
+			continue
+		}
+
+		// Check for routing/{signaltype}.table_{component}[N].{field} entries using regex
+		if parsed, ok := parseTableEntryKey(key); ok {
+			// Initialize nested maps if needed
+			if tableEntriesBySignalType[parsed.signalType] == nil {
+				tableEntriesBySignalType[parsed.signalType] = make(map[string][]map[string]any)
+			}
+			if tableEntriesBySignalType[parsed.signalType][parsed.componentName] == nil {
+				tableEntriesBySignalType[parsed.signalType][parsed.componentName] = make([]map[string]any, 0)
+			}
+
+			// Ensure we have enough entries for this index
+			for len(tableEntriesBySignalType[parsed.signalType][parsed.componentName]) <= parsed.index {
+				tableEntriesBySignalType[parsed.signalType][parsed.componentName] = append(
+					tableEntriesBySignalType[parsed.signalType][parsed.componentName],
+					make(map[string]any),
+				)
+			}
+
+			// Store the field in the entry
+			tableEntriesBySignalType[parsed.signalType][parsed.componentName][parsed.index][parsed.fieldName] = value
+		}
+	}
+
+	// Delete old routing/* keys
+	for key := range connectorSection {
+		if strings.HasPrefix(key, "routing/") {
+			delete(connectorSection, key)
+		}
+	}
+
+	// For each signal type, merge table entries and create routing/{signaltype} connector
+	for signalType, componentEntries := range tableEntriesBySignalType {
+		// Sort component names for deterministic output
+		componentNames := make([]string, 0, len(componentEntries))
+		for componentName := range componentEntries {
+			componentNames = append(componentNames, componentName)
+		}
+		sort.Strings(componentNames)
+
+		// Merge all table entries for this signal type
+		allTableEntries := make([]map[string]any, 0)
+		for _, componentName := range componentNames {
+			entries := componentEntries[componentName]
+			allTableEntries = append(allTableEntries, entries...)
+		}
+
+		// Create merged table entries for routing/{signaltype}
+		for i, entry := range allTableEntries {
+			if context, ok := entry["context"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].context", signalType, i)
+				connectorSection[key] = context
+			}
+			if condition, ok := entry["condition"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].condition", signalType, i)
+				connectorSection[key] = condition
+			}
+			if statement, ok := entry["statement"].(string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].statement", signalType, i)
+				connectorSection[key] = statement
+			}
+			if pipelines, ok := entry["pipelines"].([]string); ok {
+				key := fmt.Sprintf("routing/%s.table[%d].pipelines", signalType, i)
+				connectorSection[key] = pipelines
+			}
+		}
+
+		// Add default_pipelines if present for this signal type
+		if len(defaultPipelinesBySignalType[signalType]) > 0 {
+			key := fmt.Sprintf("routing/%s.default_pipelines", signalType)
+			connectorSection[key] = defaultPipelinesBySignalType[signalType]
+		}
+	}
+
+	return nil
+}
 
 // A Translator is responsible for translating an HPSF document into a
 // collection of components, and then further rendering those into configuration
@@ -98,38 +625,10 @@ func artifactVersionSupported(component config.TemplateComponent, v string) bool
 	return true
 }
 
-// componentVersionSupported checks if the requested version is compatible with the template version using semver.
-// It allows patch and minor version upgrades but prevents major version mismatches.
-func componentVersionSupported(templateVersion, requestedVersion string) bool {
-	// If no version specified, accept any template version
-	if requestedVersion == "" {
-		return true
-	}
-
-	// If template has no version, only accept empty requested version
-	if templateVersion == "" {
-		return requestedVersion == ""
-	}
-
-	// Check if both versions are valid semver
-	if !semver.IsValid(templateVersion) || !semver.IsValid(requestedVersion) {
-		// Fall back to string equality for invalid semver
-		return templateVersion == requestedVersion
-	}
-
-	// Check major version compatibility - must match
-	if semver.Major(templateVersion) != semver.Major(requestedVersion) {
-		return false
-	}
-
-	// Template version must be >= requested version (allows upgrades)
-	return semver.Compare(templateVersion, requestedVersion) >= 0
-}
-
 func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && componentVersionSupported(tc.Version, component.Version) && artifactVersionSupported(tc, artifactVersion) {
+	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
 		// found it, manufacture a new instance of the component
 		tc.SetHPSF(component)
 		return &tc, nil
@@ -150,9 +649,8 @@ func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]con
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
 			continue
 		}
-		tc, ok := t.components[c.Kind]
-		if ok && componentVersionSupported(tc.Version, c.Version) {
-			templateComps[c.GetSafeName()] = tc
+		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
+			templateComps[c.GetSafeName()] = comp
 		} else {
 			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
 		}
@@ -339,11 +837,6 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 		if tmpl.Style == "startsampling" {
 			startSamplingCount++
 			startSamplingComp = c.GetSafeName()
-			if startSamplingCount > 1 {
-				err := hpsf.NewError("only one StartSampling component is allowed").
-					WithComponent(c.Name)
-				result.Add(err)
-			}
 		}
 	}
 	if startSamplingCount == 0 {
@@ -445,6 +938,32 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 	return result
 }
 
+// validateRouterUsage validates that at most one Router component is used in the workflow.
+// Multiple Router components in a single workflow can cause ambiguous routing behavior and cycles.
+func (t *Translator) validateRouterUsage(h *hpsf.HPSF) validator.Result {
+	result := validator.NewResult("HPSF router validation errors")
+	routerCount := 0
+	var routerComponents []string
+
+	for _, c := range h.Components {
+		// Check for Router kind specifically (not just router style, which includes SetEnvironment)
+		if c.Kind == "Router" {
+			routerCount++
+			routerComponents = append(routerComponents, c.Name)
+		}
+	}
+
+	if routerCount > 1 {
+		err := hpsf.NewError(fmt.Sprintf("only one Router component is allowed per workflow, found %d", routerCount))
+		for _, name := range routerComponents {
+			err = err.WithComponent(name)
+		}
+		result.Add(err)
+	}
+
+	return result
+}
+
 // ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
 // components and templates installed in the translator.
 // Note that it returns a validation.Result so that the errors can be collected and reported in a
@@ -476,6 +995,7 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 
 	result.Add(t.validateProperties(h, templateComps))
 	result.Add(t.validateConnectionPorts(h, templateComps))
+	result.Add(t.validateRouterUsage(h))
 	result.Add(t.validateStartSampling(h, templateComps))
 	result.Add(t.validateSamplerConnections(h, templateComps))
 
@@ -606,74 +1126,727 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
-// findTeamHeaderValueForPath looks for a HoneycombExporter component in a specific path
-// and returns the value to use for the x-honeycomb-team header for that path.
-// If an Environment ID is set and a corresponding API key exists in userdata["APIKeys"],
-// the API key is returned. Otherwise falls back to the APIKey property.
-func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, comps *OrderedComponentMap, userdata map[string]any) string {
-	// Extract APIKeys map from userdata if present
-	var apiKeysMap map[string]string
-	if userdata != nil {
-		if apiKeys, ok := userdata["APIKeys"]; ok {
-			if keysMap, ok := apiKeys.(map[string]string); ok {
-				apiKeysMap = keysMap
+// transformRouterPipelines transforms pipelines that use routing connectors to follow OTel conventions:
+// - Intake pipelines (with receivers and connectors but no exporters) move connector to exporters
+// - Output pipelines (with exporters but empty receivers and connectors) move connector to receivers
+// - Renames output pipelines to match environment names in routing connector config
+// - Extracts environment information from SetEnvironment components for API key injection
+func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *OrderedComponentMap) error {
+	serviceSection, exists := cc.Sections["service"]
+	if !exists {
+		return nil
+	}
+
+	connectorSection, hasConnectors := cc.Sections["connectors"]
+	if !hasConnectors {
+		return nil
+	}
+
+	// Extract configuration from routing connectors and existing pipelines
+	expectedPipelines := extractExpectedPipelines(connectorSection)
+	pipelineNames := collectPipelineNames(serviceSection)
+	exporterToEnvironment, err := buildExporterEnvironmentMap(h)
+	if err != nil {
+		return err
+	}
+
+	// Track pipeline renames for output pipelines
+	pipelineRenames := make(map[string]string) // old name -> new name
+
+	// Process each pipeline once
+	for pipelineName := range pipelineNames {
+		receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineName)
+		connectorsKey := fmt.Sprintf("pipelines.%s.connectors", pipelineName)
+		exportersKey := fmt.Sprintf("pipelines.%s.exporters", pipelineName)
+
+		receivers := serviceSection[receiversKey]
+		connectors := serviceSection[connectorsKey]
+		exporters := serviceSection[exportersKey]
+
+		// Convert pipeline components to string lists
+		connectorsList := getStringListFromAny(connectors)
+		receiversFiltered := getStringListFromAny(receivers)
+		exportersFiltered := getStringListFromAny(exporters)
+
+		// Check if this pipeline has a routing connector
+		hasRouting := false
+		for _, conn := range connectorsList {
+			if conn == "routing" || strings.HasPrefix(conn, "routing_") || strings.HasPrefix(conn, "routing/") {
+				hasRouting = true
+				break
+			}
+		}
+
+		// Skip if this pipeline has connectors but no routing connector
+		if len(connectorsList) > 0 && !hasRouting {
+			continue
+		}
+
+		// Determine signal type from pipeline name
+		parts := strings.SplitN(pipelineName, "/", 2)
+		var signalType string
+		if len(parts) == 2 {
+			signalType = parts[0] // e.g., "traces", "logs", "metrics"
+		}
+
+		// Check if routing connector is in exporters (and normalize the name to routing/{signaltype})
+		var hasRoutingInExporters bool
+		for i, exp := range exportersFiltered {
+			if exp == "routing" || strings.HasPrefix(exp, "routing_") || strings.HasPrefix(exp, "routing/") {
+				// Normalize to "routing/{signaltype}" if we know the signal type
+				if signalType != "" {
+					exportersFiltered[i] = "routing/" + signalType
+				} else {
+					exportersFiltered[i] = "routing"
+				}
+				hasRoutingInExporters = true
+			}
+		}
+		if hasRoutingInExporters {
+			serviceSection[exportersKey] = exportersFiltered
+		}
+
+		// Case 1: Intake pipeline - has receivers and routing connector, no other exporters
+		if hasRouting && len(receiversFiltered) > 0 && len(exportersFiltered) == 0 {
+			if newName := transformIntakePipeline(serviceSection, pipelineName, signalType, connectorsList); newName != "" {
+				pipelineRenames[pipelineName] = newName
+			}
+		} else if hasRoutingInExporters && len(receiversFiltered) > 0 {
+			// Case 1b: Intake pipeline - has receivers and routing connector already in exporters
+			// Just rename the pipeline
+			if signalType != "" {
+				intakeName := signalType + "/intake"
+				if pipelineName != intakeName {
+					pipelineRenames[pipelineName] = intakeName
+				}
+			}
+		} else if hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
+			// Case 2: Output pipeline - has routing connector, no receivers, has exporters
+			transformOutputPipeline(serviceSection, cc, pipelineName, signalType, connectors, exportersFiltered, exporterToEnvironment)
+		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
+			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
+			// Use signal-type-specific routing connector name
+			if signalType != "" {
+				routingConnectorName := "routing/" + signalType
+				serviceSection[receiversKey] = []string{routingConnectorName}
+
+				// Try to infer environment from pipeline name first, then exporter name
+				var envName string
+
+				// For Case 3, the pipeline name might not be renamed yet, so we need to find which
+				// environment this pipeline should belong to by matching exporter names first
+				for _, exp := range exportersFiltered {
+					// Extract potential environment name from exporter
+					// Look for common patterns like "_staging", "_production", "Staging", "Production"
+					expLower := strings.ToLower(exp)
+					for expectedName := range expectedPipelines {
+						if strings.HasPrefix(expectedName, signalType+"/") {
+							envPart := strings.TrimPrefix(expectedName, signalType+"/")
+							if strings.Contains(expLower, strings.ToLower(envPart)) {
+								envName = envPart
+								break
+							}
+						}
+					}
+					if envName != "" {
+						break
+					}
+				}
+
+				// If we found an environment name, use it
+				if envName != "" {
+					targetName := signalType + "/" + envName
+					if expectedPipelines[targetName] {
+						pipelineRenames[pipelineName] = targetName
+
+						// Inject environment-specific API key header into otlphttp exporters
+						exportersSection, hasExportersSection := cc.Sections["exporters"]
+						if hasExportersSection {
+							for _, exp := range exportersFiltered {
+								headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exp)
+								existingValue, hasHeader := exportersSection[headerKey]
+								// Inject if header doesn't exist or if it's set to the default value
+								if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+									envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+									exportersSection[headerKey] = envVarName
+								}
+							}
+						}
+					}
+				} else {
+					// Fall back to finding any unused expected pipeline name for this signal type
+					for expectedName := range expectedPipelines {
+						if strings.HasPrefix(expectedName, signalType+"/") {
+							// Check if this expected pipeline name is already assigned to another pipeline
+							alreadyAssigned := false
+							for _, assignedName := range pipelineRenames {
+								if assignedName == expectedName {
+									alreadyAssigned = true
+									break
+								}
+							}
+							if !alreadyAssigned {
+								// Use this environment name for renaming
+								pipelineRenames[pipelineName] = expectedName
+								break
+							}
+						}
+					}
+				}
 			}
 		}
 	}
 
-	// Helper function to extract API key from a HoneycombExporter component
-	extractAPIKey := func(comp *hpsf.Component) string {
-		// 1. Check for user-defined Environment and look it up in APIKeys map
-		if envProp := comp.GetProperty("Environment"); envProp != nil {
-			if envID, ok := envProp.Value.(string); ok && envID != "" {
-				// Look up the environment ID in the APIKeys map
-				if apiKeysMap != nil {
-					if apiKey, found := apiKeysMap[envID]; found && apiKey != "" {
-						return apiKey
+	// Apply pipeline renames and create missing pipelines
+	applyPipelineRenames(serviceSection, pipelineRenames)
+	createMissingOutputPipelines(serviceSection, cc, expectedPipelines, exporterToEnvironment)
+
+	return nil
+}
+
+// sliceContains checks if a string slice contains a specific string
+func sliceContains(slice []string, item string) bool {
+	for _, s := range slice {
+		if s == item {
+			return true
+		}
+	}
+	return false
+}
+
+// injectEnvironmentAPIKeys injects environment-specific API keys into exporters
+// based on their EnvironmentName property. This ensures ${HTP_EXPORTER_APIKEY_ENV}
+// variables are set correctly for each environment.
+func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, exporterToEnvironment map[string]string) error {
+	if cc == nil {
+		return nil
+	}
+
+	exportersSection, hasExportersSection := cc.Sections["exporters"]
+	if !hasExportersSection {
+		return nil
+	}
+
+	// For each exporter, inject environment-specific API key based on its environment property
+	for exporterSafeName, envName := range exporterToEnvironment {
+		// Find the exporter key in the exporters section
+		// Exporter keys have format: {type}/{componentSafeName}.headers.x-honeycomb-team
+		for exporterKey := range exportersSection {
+			exporterName := exporterKey
+			if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
+				exporterName = exporterKey[:dotIdx]
+			}
+
+			// Exporter names have format: {type}/{componentSafeName}
+			if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
+				exporterCompName := exporterName[slashIdx+1:]
+				if exporterCompName == exporterSafeName {
+					// Check if this is the API key header
+					headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exporterName)
+					existingValue, hasHeader := exportersSection[headerKey]
+
+					// Inject if header doesn't exist or if it's set to the default value
+					if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
+						envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
+						exportersSection[headerKey] = envVarName
+					}
+					break
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+// generateRefineryRulesWithRouter handles refinery rules generation for multi-environment routing.
+// It processes sampling paths and sets the environment context from HoneycombExporter components.
+func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+
+	// Build exporter to environment mapping
+	exporterToEnvironment := make(map[string]string)
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						exporterToEnvironment[hcomp.Name] = envName
+					}
+					break
+				}
+			}
+		}
+	}
+
+	// Generate configs for each sampling path with environment context
+	composites := make([]tmpl.TemplateConfig, 0)
+	for _, path := range paths {
+		// Only process sampling paths
+		if path.ConnType != hpsf.CTYPE_SAMPLE {
+			continue
+		}
+
+		// Create a copy of userdata for this path
+		pathUserdata := make(map[string]any)
+		for k, v := range userdata {
+			pathUserdata[k] = v
+		}
+
+		// Find environment by looking for HoneycombExporter downstream from the SamplingSequencer
+		// Sampling paths follow SampleData connections, so we need to traverse OTel signal connections
+		// forward to find exporters
+		var samplingSequencer *hpsf.Component
+		for _, comp := range path.Path {
+			if comp.Kind == "SamplingSequencer" {
+				samplingSequencer = comp
+				break
+			}
+		}
+
+		if samplingSequencer != nil {
+			// Traverse forward from SamplingSequencer to find HoneycombExporter
+			visited := make(map[string]bool)
+			var findExporterEnv func(compName string) string
+			findExporterEnv = func(compName string) string {
+				if visited[compName] {
+					return ""
+				}
+				visited[compName] = true
+
+				// Check if this is an exporter
+				if envName, ok := exporterToEnvironment[compName]; ok {
+					return envName
+				}
+
+				// Follow OTel signal connections downstream
+				for _, conn := range h.Connections {
+					if conn.Source.Component == compName &&
+						(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+						if env := findExporterEnv(conn.Destination.Component); env != "" {
+							return env
+						}
+					}
+				}
+				return ""
+			}
+
+			if env := findExporterEnv(samplingSequencer.Name); env != "" {
+				pathUserdata["environment"] = env
+			}
+		}
+
+		// Generate config for this path
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, path, pathUserdata)
+		if err != nil {
+			return nil, err
+		}
+
+		mergedSomething := false
+		for _, comp := range path.Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in sampling path", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, path, pathUserdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
+		}
+
+		if mergedSomething {
+			composites = append(composites, composite)
+		}
+	}
+
+	if len(composites) == 0 {
+		unconfigured := config.UnconfiguredComponent{Component: dummy}
+		return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	}
+
+	// Merge all composites
+	finalConfig := composites[0]
+	for _, comp := range composites[1:] {
+		if err := finalConfig.Merge(comp); err != nil {
+			return nil, fmt.Errorf("failed to merge refinery rules configs: %w", err)
+		}
+	}
+
+	// For refinery rules, set the default environment from Router if present
+	if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+		if defaultEnv, exists := userdata["router_default_env"]; exists {
+			if defaultEnvStr, ok := defaultEnv.(string); ok {
+				rulesConfig.SetDefaultEnv(defaultEnvStr)
+			}
+		}
+	}
+
+	return finalConfig, nil
+}
+
+// generateConfigWithRouters handles special pipeline generation when Router components are present.
+// It creates intake pipelines (receiver → router) and environment-specific pipelines (router → exporter).
+func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
+
+	// Add the HPSF document to userdata so components can access it during generation
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+	userdata["hpsf"] = h
+
+	// For refinery rules, we need to handle sampling paths with environment context
+	if ct == hpsftypes.RefineryRules {
+		return t.generateRefineryRulesWithRouter(h, comps, paths, ct, userdata)
+	}
+
+	// Separate paths into those before and after routers
+	// We'll build intake pipelines (receiver → router) and output pipelines (router → exporter)
+	intakePaths := make([]hpsf.PathWithConnections, 0)
+	outputPaths := make([]hpsf.PathWithConnections, 0)
+
+	for _, path := range paths {
+		// Find if this path contains a router
+		routerIndex := -1
+		for i, comp := range path.Path {
+			if c, ok := comps.Get(comp.GetSafeName()); ok {
+				if tc, ok := c.(*config.TemplateComponent); ok {
+					if tc.Style == "router" {
+						routerIndex = i
+						break
 					}
 				}
 			}
 		}
 
-		// 2. Check for user-defined APIKey
-		if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
-			if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
-				return apiKey
+		if routerIndex >= 0 {
+			// Split the path at the router
+			// Intake path: receiver → ... → router (router is last component in intake)
+			if routerIndex >= 0 {
+				intakePath := hpsf.PathWithConnections{
+					Path:        path.Path[:routerIndex+1],
+					Connections: path.Connections[:routerIndex], // Connections up to (but not including) the one leading to router
+					ConnType:    path.ConnType,
+				}
+				intakePaths = append(intakePaths, intakePath)
 			}
+
+			// Output path: router → ... → exporter (router is first component in output)
+			if routerIndex < len(path.Path)-1 {
+				outputPath := hpsf.PathWithConnections{
+					Path:        path.Path[routerIndex:],
+					Connections: path.Connections[routerIndex:], // Connections from router onwards
+					ConnType:    path.ConnType,
+				}
+				outputPaths = append(outputPaths, outputPath)
+			}
+		} else {
+			// No router in this path, treat as regular path
+			intakePaths = append(intakePaths, path)
+		}
+	}
+
+	// Generate configs for intake paths (these will have routing connector as exporter)
+	intakeComposites := make([]tmpl.TemplateConfig, 0)
+	for i := range intakePaths {
+		// Set custom pipeline name for intake paths: intake (signal type is prepended by template)
+		intakePaths[i].PipelineName = "intake"
+
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, intakePaths[i], userdata)
+		if err != nil {
+			return nil, err
 		}
 
-		// 3. Fall back to APIKey default value from template
-		tc, ok := comps.Get(comp.GetSafeName())
-		if !ok {
-			return ""
+		mergedSomething := false
+		for _, comp := range intakePaths[i].Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in intake path", comp.GetSafeName())
+			}
+
+			compConfig, err := c.GenerateConfig(ct, intakePaths[i], userdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
 		}
-		templateComp, ok := tc.(*config.TemplateComponent)
-		if !ok {
-			return ""
+		if mergedSomething {
+			// Add routing connector to the intake pipeline's connectors field
+			// This is needed because the Router component no longer has a template that generates this
+			if collectorConfig, ok := composite.(*tmpl.CollectorConfig); ok {
+				signalType := intakePaths[i].ConnType.AsCollectorSignalType()
+				pipelineName := intakePaths[i].GetID() // This will return "intake" because we set PipelineName
+				connectorKey := fmt.Sprintf("pipelines.%s/%s.connectors", signalType, pipelineName)
+				routingConnector := "routing/" + signalType
+
+				if serviceSection, exists := collectorConfig.Sections["service"]; exists {
+					// Check if connectors already exist and append, otherwise create new list
+					if existing, ok := serviceSection[connectorKey]; ok {
+						if existingList, ok := existing.([]string); ok {
+							serviceSection[connectorKey] = append(existingList, routingConnector)
+						}
+					} else {
+						serviceSection[connectorKey] = []string{routingConnector}
+					}
+				}
+			}
+			intakeComposites = append(intakeComposites, composite)
 		}
-		for _, prop := range templateComp.Properties {
-			if prop.Name == "APIKey" && prop.Default != nil {
-				if defaultAPIKey, ok := prop.Default.(string); ok {
-					return defaultAPIKey
+	}
+
+	// Build exporter to environment mapping for this generation
+	// Get environment names from HoneycombExporter components' EnvironmentName property
+	exporterToEnvironment := make(map[string]string)
+	for _, hcomp := range h.Components {
+		if hcomp.Kind == "HoneycombExporter" {
+			safeName := hcomp.GetSafeName()
+			// Get EnvironmentName property from exporter
+			for _, prop := range hcomp.Properties {
+				if prop.Name == "EnvironmentName" {
+					if envName, ok := prop.Value.(string); ok && envName != "" {
+						exporterToEnvironment[safeName] = envName
+					}
+					break
 				}
 			}
 		}
-		return ""
 	}
 
-	// Look for HoneycombExporter in this path
-	for _, comp := range path.Path {
-		if comp.Kind == "HoneycombExporter" {
-			if apiKey := extractAPIKey(comp); apiKey != "" {
-				return apiKey
+	// Generate configs for output paths (these will have routing connector as receiver)
+	outputComposites := make([]tmpl.TemplateConfig, 0)
+	for i, path := range outputPaths {
+		// Check if this path contains a HoneycombExporter component and get its environment
+		pathEnv := ""
+		for _, comp := range path.Path {
+			safeName := comp.GetSafeName()
+			if env, ok := exporterToEnvironment[safeName]; ok {
+				pathEnv = env
+				break
+			}
+		}
+
+		// Set custom pipeline name for output paths: env-name (signal type is prepended by template)
+		if pathEnv != "" {
+			outputPaths[i].PipelineName = pathEnv
+		}
+
+		// Create a copy of userdata for this path with environment context
+		pathUserdata := make(map[string]any)
+		for k, v := range userdata {
+			pathUserdata[k] = v
+		}
+		if pathEnv != "" {
+			pathUserdata["environment"] = pathEnv
+		}
+
+		base := config.GenericBaseComponent{Component: dummy}
+		composite, err := base.GenerateConfig(ct, outputPaths[i], pathUserdata)
+		if err != nil {
+			return nil, err
+		}
+
+		mergedSomething := false
+		// Skip the router component itself when generating output pipeline components
+		// (we only want processors and exporters after the router)
+		for j, comp := range outputPaths[i].Path {
+			c, ok := comps.Get(comp.GetSafeName())
+			if !ok {
+				return nil, fmt.Errorf("unknown component %s in output path", comp.GetSafeName())
+			}
+
+			// Skip router component config generation for output paths
+			if tc, ok := c.(*config.TemplateComponent); ok && tc.Style == "router" {
+				continue
+			}
+
+			// For the first non-router component, we need to note that it comes from routing connector
+			// This is handled by the path connection type
+			if j == 0 {
+				// This is the router itself, skip it
+				continue
+			}
+
+			compConfig, err := c.GenerateConfig(ct, outputPaths[i], pathUserdata)
+			if err != nil {
+				return nil, err
+			}
+			if compConfig != nil {
+				if err := composite.Merge(compConfig); err != nil {
+					return nil, fmt.Errorf("failed to merge component config: %w", err)
+				}
+				mergedSomething = true
+			}
+		}
+		if mergedSomething {
+			outputComposites = append(outputComposites, composite)
+		}
+	}
+
+	// Merge all composites
+	allComposites := append(intakeComposites, outputComposites...)
+
+	if len(allComposites) == 0 {
+		unconfigured := config.UnconfiguredComponent{Component: dummy}
+		return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	}
+
+	finalConfig := allComposites[0]
+	for _, comp := range allComposites[1:] {
+		if err := finalConfig.Merge(comp); err != nil {
+			return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
+		}
+	}
+
+	// Dynamically generate routing connector configuration
+	// This replaces the static template that was in Router.yaml
+	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok && len(exporterToEnvironment) > 0 {
+		// Get unique environment names
+		environments := make([]string, 0, len(exporterToEnvironment))
+		envSet := make(map[string]bool)
+		for _, envName := range exporterToEnvironment {
+			if !envSet[envName] {
+				environments = append(environments, envName)
+				envSet[envName] = true
+			}
+		}
+
+		// Determine which signal types are actually used in the paths
+		usedSignalTypes := make(map[hpsf.ConnectionType]bool)
+		for _, path := range paths {
+			usedSignalTypes[path.ConnType] = true
+		}
+
+		// Get Router component properties
+		var routingAttribute string
+		var defaultEnvironment string
+		for _, comp := range h.Components {
+			if comp.Kind == "Router" {
+				for _, prop := range comp.Properties {
+					if prop.Name == "RoutingAttribute" {
+						if val, ok := prop.Value.(string); ok {
+							routingAttribute = val
+						}
+					} else if prop.Name == "DefaultEnvironment" {
+						if val, ok := prop.Value.(string); ok {
+							defaultEnvironment = val
+						}
+					}
+				}
+				// If RoutingAttribute wasn't specified, use the default from the Router component definition
+				if routingAttribute == "" {
+					// Get the Router component definition to check for default value
+					if routerComp, ok := comps.Get(comp.GetSafeName()); ok {
+						if tc, ok := routerComp.(*config.TemplateComponent); ok {
+							for _, prop := range tc.Properties {
+								if prop.Name == "RoutingAttribute" && prop.Default != nil {
+									if defaultVal, ok := prop.Default.(string); ok {
+										routingAttribute = defaultVal
+									}
+								}
+							}
+						}
+					}
+				}
+				break
+			}
+		}
+
+		// Create or get connectors section
+		connectorsSection := collectorConfig.Sections["connectors"]
+		if connectorsSection == nil {
+			connectorsSection = make(map[string]any)
+			collectorConfig.Sections["connectors"] = connectorsSection
+		}
+
+		// Generate routing connector config only for signal types that are actually used
+		for _, connType := range hpsf.CollectorSignalTypes {
+			// Skip signal types that aren't used in any paths
+			if !usedSignalTypes[connType] {
+				continue
+			}
+
+			signalType := connType.AsCollectorSignalType()
+			routingKey := "routing/" + signalType
+
+			// Set default_pipelines if DefaultEnvironment is specified
+			if defaultEnvironment != "" {
+				defaultPipelines := []string{signalType + "/" + defaultEnvironment}
+				connectorsSection[routingKey+".default_pipelines"] = defaultPipelines
+			}
+
+			// Generate table entries for non-default environments
+			tableIdx := 0
+			for _, envName := range environments {
+				if envName == defaultEnvironment {
+					continue // Skip default environment
+				}
+
+				tableKey := fmt.Sprintf("%s.table[%d]", routingKey, tableIdx)
+				connectorsSection[tableKey+".context"] = "resource"
+				connectorsSection[tableKey+".condition"] = fmt.Sprintf("attributes[\"%s\"] == \"%s\"", routingAttribute, envName)
+				connectorsSection[tableKey+".pipelines"] = []string{signalType + "/" + envName}
+				tableIdx++
 			}
 		}
 	}
 
-	return ""
+	// Merge routing connectors and transform pipelines
+	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
+		// Only merge routing connectors if we didn't dynamically generate them
+		// (dynamically generated connectors are already in the final merged format)
+		if len(exporterToEnvironment) == 0 {
+			if err := mergeRoutingConnectors(collectorConfig); err != nil {
+				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
+		// Transform pipelines to use routing connector properly
+		// Intake pipelines (receiver → router) should have routing in exporters
+		// Output pipelines (router → exporter) should have routing in receivers
+		if err := transformRouterPipelines(collectorConfig, h, comps); err != nil {
+			return nil, fmt.Errorf("failed to transform router pipelines: %w", err)
+		}
+
+		// Inject environment-specific API keys for all environment pipelines
+		// This ensures exporters get the correct ${HTP_EXPORTER_APIKEY_ENV} variables
+		if err := injectEnvironmentAPIKeys(collectorConfig, exporterToEnvironment); err != nil {
+			return nil, fmt.Errorf("failed to inject environment API keys: %w", err)
+		}
+	}
+
+	// For refinery rules, set the default environment from Router if present
+	if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+		if defaultEnv, exists := userdata["router_default_env"]; exists {
+			if defaultEnvStr, ok := defaultEnv.(string); ok {
+				rulesConfig.SetDefaultEnv(defaultEnvStr)
+			}
+		}
+	}
+
+	return finalConfig, nil
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	// Add the HPSF document to userdata so components can access it during generation
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+	userdata["hpsf"] = h
+
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
@@ -693,11 +1866,6 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 
 	if err := h.VisitComponents(visitFunc); err != nil {
 		return nil, fmt.Errorf("failed to create components: %w", err)
-	}
-
-	// Prepare userdata
-	if userdata == nil {
-		userdata = make(map[string]any)
 	}
 
 	// now add the connections
@@ -740,6 +1908,22 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 	composites := make([]tmpl.TemplateConfig, 0, len(paths))
 
+	// Check if any paths contain Router components - if so, we need special handling
+	hasRouter := false
+	for comp := range comps.Items() {
+		if tc, ok := comp.(*config.TemplateComponent); ok {
+			if tc.Style == "router" {
+				hasRouter = true
+				break
+			}
+		}
+	}
+
+	// If we have routers, use special pipeline generation
+	if hasRouter {
+		return t.generateConfigWithRouters(h, comps, paths, ct, userdata)
+	}
+
 	// now we can iterate over the paths and generate a configuration for each
 	for _, path := range paths {
 		// Create a copy of userdata for this path
@@ -748,11 +1932,19 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 			pathUserdata[k] = v
 		}
 
-		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
-		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
-		teamHeaderValue := t.findTeamHeaderValueForPath(path, comps, userdata)
-		if teamHeaderValue != "" {
-			pathUserdata["TeamHeaderValue"] = teamHeaderValue
+		// For sampling paths, check if there's a SetEnvironment component and extract environment
+		if path.ConnType == hpsf.CTYPE_SAMPLE {
+			for _, comp := range path.Path {
+				if comp.Kind == "SetEnvironment" {
+					envNameProp := comp.GetProperty("EnvironmentName")
+					if envNameProp != nil && envNameProp.Value != nil {
+						if envName, ok := envNameProp.Value.(string); ok && envName != "" {
+							pathUserdata["environment"] = envName
+							break
+						}
+					}
+				}
+			}
 		}
 
 		// Start with a base component so we always have a valid config
@@ -794,136 +1986,48 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
 			}
 		}
+
+		// Post-process: merge multiple routing connectors into a single one
+		if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
+			if err := mergeRoutingConnectors(collectorConfig); err != nil {
+				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
+		// For refinery rules, set the default environment from Router if present
+		if rulesConfig, ok := finalConfig.(*tmpl.RulesConfig); ok {
+			if defaultEnv, exists := userdata["router_default_env"]; exists {
+				if defaultEnvStr, ok := defaultEnv.(string); ok {
+					rulesConfig.SetDefaultEnv(defaultEnvStr)
+				}
+			}
+		}
+
 		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
-		return composites[0], nil
+		config := composites[0]
+
+		// Post-process: merge multiple routing connectors into a single one
+		if collectorConfig, ok := config.(*tmpl.CollectorConfig); ok {
+			if err := mergeRoutingConnectors(collectorConfig); err != nil {
+				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
+			}
+		}
+
+		// For refinery rules, set the default environment from Router if present
+		if rulesConfig, ok := config.(*tmpl.RulesConfig); ok {
+			if defaultEnv, exists := userdata["router_default_env"]; exists {
+				if defaultEnvStr, ok := defaultEnv.(string); ok {
+					rulesConfig.SetDefaultEnv(defaultEnvStr)
+				}
+			}
+		}
+
+		return config, nil
 	}
 
 	// Start with a base component so we always have a valid config
 	unconfigured := config.UnconfiguredComponent{Component: dummy}
 	return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
-}
-
-// ComponentInfo represents a component extracted from an HPSF configuration.
-// It contains the component's identifying information (name, style, kind) and all
-// of its properties, including both explicitly set values and template defaults.
-type ComponentInfo struct {
-	// Name is the user-defined name of the component instance (e.g., "My S3 Archive")
-	Name string
-	// Style categorizes the component type: "receiver", "processor", or "exporter"
-	Style string
-	// Kind identifies the specific component template (e.g., "HoneycombExporter", "OTelReceiver")
-	Kind string
-	// Properties contains all component properties, merging explicit values with template defaults.
-	// Access values directly without type casting: properties["Region"]
-	Properties map[string]any
-}
-
-// InspectionResult holds all components extracted from an HPSF configuration.
-// Access components directly via the Components field, or use the filter methods
-// (Exporters, Receivers, Processors) to get components by style.
-type InspectionResult struct {
-	Components []ComponentInfo
-}
-
-// Filter returns a new InspectionResult containing only components that match any of the given predicates.
-// This is useful if you need multiple filtering passes on an existing InspectionResult.
-// Predicates are ORed together, not ANDed.
-// Several common predicates are provided (Exporters, Receivers, Processors, Samplers).
-func (r InspectionResult) Filter(predicates ...Predicate) InspectionResult {
-	filtered := InspectionResult{
-		Components: []ComponentInfo{},
-	}
-
-	for _, c := range r.Components {
-		matched := false
-		for _, p := range predicates {
-			if p(c) {
-				matched = true
-				break
-			}
-		}
-		if matched {
-			filtered.Components = append(filtered.Components, c)
-		}
-	}
-
-	return filtered
-}
-
-type Predicate func(ComponentInfo) bool
-
-// Exporters returns true if the component is an exporter.
-func Exporters(c ComponentInfo) bool {
-	return c.Style == "exporter"
-}
-
-// Processors returns true if the component is a processor.
-func Processors(c ComponentInfo) bool {
-	return c.Style == "processor"
-}
-
-// Receivers returns true if the component is a receiver.
-func Receivers(c ComponentInfo) bool {
-	return c.Style == "receiver"
-}
-
-// Samplers returns true if the component is a dropper, condition, sampler, startsampling.
-func Samplers(c ComponentInfo) bool {
-	switch c.Style {
-	case "condition", "dropper", "sampler", "startsampling":
-		return true
-	default:
-		return false
-	}
-}
-
-// Inspect extracts all components from the HPSF document.
-// It returns an InspectionResult containing all components.
-// InspectionResult provides filtering methods to get sub sets of components by style.
-func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
-	result := InspectionResult{
-		Components: []ComponentInfo{},
-	}
-
-	// Iterate through all components
-	for _, c := range h.Components {
-		// Look up the template for this component
-		tc, ok := t.components[c.Kind]
-		if !ok {
-			continue
-		}
-
-		comp := ComponentInfo{
-			Name:       c.Name,
-			Style:      tc.Style,
-			Kind:       c.Kind,
-			Properties: getProperties(c, tc),
-		}
-
-		// Add component to result
-		result.Components = append(result.Components, comp)
-	}
-
-	return result
-}
-
-// getProperties extracts all properties from a component, using template defaults as fallback
-func getProperties(c *hpsf.Component, tc config.TemplateComponent) map[string]any {
-	properties := make(map[string]any)
-
-	// Iterate through template properties to ensure all defaults are considered
-	for _, templateProperty := range tc.Properties {
-		// Use the component's property value if set, otherwise use the template default
-		var value any
-		if componentProp := c.GetProperty(templateProperty.Name); componentProp != nil {
-			value = componentProp.Value
-		} else {
-			value = templateProperty.Default
-		}
-		properties[templateProperty.Name] = value
-	}
-
-	return properties
 }

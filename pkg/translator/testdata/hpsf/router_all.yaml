@@ -1,0 +1,93 @@
+components:
+  - name: receiver
+    kind: OTelReceiver
+  - name: router
+    kind: Router
+    properties:
+      - name: RoutingAttribute
+        value: deployment.environment
+      - name: DefaultEnvironment
+        value: development
+  # SetEnvironment components
+  - name: SetEnvironment_development
+    kind: SetEnvironment
+  - name: SetEnvironment_staging
+    kind: SetEnvironment
+  - name: SetEnvironment_production
+    kind: SetEnvironment
+  # Exporters
+  - name: exporter_production
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: production
+  - name: exporter_staging
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: staging
+  - name: exporter_development
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: development
+connections:
+  # Receiver to router
+  - source:
+      component: receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: router
+      port: Traces
+      type: OTelTraces
+  # Router Environment connections
+  - source:
+      component: router
+      port: Environment 1
+      type: Environment
+    destination:
+      component: SetEnvironment_development
+      port: Environment
+      type: Environment
+  - source:
+      component: router
+      port: Environment 2
+      type: Environment
+    destination:
+      component: SetEnvironment_staging
+      port: Environment
+      type: Environment
+  - source:
+      component: router
+      port: Environment 3
+      type: Environment
+    destination:
+      component: SetEnvironment_production
+      port: Environment
+      type: Environment
+  # SetEnvironment to exporters
+  - source:
+      component: SetEnvironment_development
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: exporter_development
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_staging
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: exporter_staging
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_production
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: exporter_production
+      port: Traces
+      type: OTelTraces

@@ -33,6 +33,14 @@ ports:
     direction: input
     type: OTelMetrics
 properties:
+  - name: EnvironmentName
+    summary: The name of the environment (e.g., dev, staging, production).
+    description: |
+      The name of the environment this exporter sends data to. This value is used to determine
+      environment-specific configuration like API keys. If not specified, defaults to "default".
+    type: string
+    default: default
+    advanced: false
   - name: APIKey
     summary: The API key to use to authenticate with Honeycomb.
     description: |

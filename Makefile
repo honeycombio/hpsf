@@ -159,7 +159,11 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		-v ./tmp/collector-config.yaml:/config.yaml \
 		-e HTP_COLLECTOR_POD_IP=localhost \
 		-e HTP_REFINERY_POD_IP=localhost \
-		honeycombio/supervised-collector:v0.1.0 \
+		-e HTP_EXPORTER_APIKEY=test \
+		-e HTP_EXPORTER_APIKEY_DEV=test-dev \
+		-e HTP_EXPORTER_APIKEY_STAGING=test-staging \
+		-e HTP_EXPORTER_APIKEY_PRODUCTION=test-production \
+		honeycombio/supervised-collector:local \
 		--config /config.yaml || exit 1
 	sleep 1
 

@@ -165,6 +165,7 @@ type TemplateComponent struct {
 	Validations []string           `yaml:"validations,omitempty"`
 	Templates   []TemplateData     `yaml:"templates,omitempty"`
 	User        map[string]any     `yaml:"-"`
+	SignalType  string             `yaml:"-"` // current signal type being processed
 	hpsf        *hpsf.Component    // the component from the hpsf document
 	connections []*hpsf.Connection
 	collName    string
@@ -338,11 +339,86 @@ func (t *TemplateComponent) GenerateConfig(cfgType hpsftypes.Type, pipeline hpsf
 					return nil, fmt.Errorf("error %w getting RulesComponentType from style %s for %s",
 						err, t.Style, t.Kind)
 				}
-				tmpl, err := t.generateRulesConfig(rt, rmt, index, userdata)
+
+				// Determine environment for rules config
+				// This applies to all sampling components (startsampling and regular samplers/conditions)
+				if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
+					// Find Router component and get DefaultEnvironment for __default__ handling
+					var routerDefaultEnv string
+					for _, comp := range hpsfDoc.Components {
+						if comp.Kind == "Router" {
+							defaultEnvProp := comp.GetProperty("DefaultEnvironment")
+							if defaultEnvProp != nil && defaultEnvProp.Value != nil {
+								if defaultEnv, ok := defaultEnvProp.Value.(string); ok && defaultEnv != "" {
+									routerDefaultEnv = defaultEnv
+									userdata["router_default_env"] = defaultEnv
+								}
+							}
+							break
+						}
+					}
+
+					if t.Style == "startsampling" {
+						// For Start Sampling components, find the HoneycombExporter component downstream
+						// Traverse connections forward to find exporters
+						visited := make(map[string]bool)
+						var findExporter func(compName string) string
+						findExporter = func(compName string) string {
+							if visited[compName] {
+								return ""
+							}
+							visited[compName] = true
+
+							// Check if this component is a HoneycombExporter
+							for _, comp := range hpsfDoc.Components {
+								if comp.Name == compName && comp.Kind == "HoneycombExporter" {
+									// Get EnvironmentName from this exporter
+									envProp := comp.GetProperty("EnvironmentName")
+									if envProp != nil && envProp.Value != nil {
+										if envName, ok := envProp.Value.(string); ok && envName != "" {
+											return envName
+										}
+									}
+									return ""
+								}
+							}
+
+							// Follow OTel signal connections downstream
+							for _, conn := range hpsfDoc.Connections {
+								if conn.Source.Component == compName &&
+									(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
+									if env := findExporter(conn.Destination.Component); env != "" {
+										return env
+									}
+								}
+							}
+							return ""
+						}
+
+						rt.env = findExporter(t.hpsf.Name)
+
+						// If this environment matches the router's default environment, use "__default__" instead
+						if rt.env != "" && rt.env == routerDefaultEnv {
+							rt.env = "__default__"
+						}
+					} else {
+						// For non-startsampling components (regular samplers, conditions)
+						// Check if environment was passed in userdata (from generateConfigWithRouters)
+						if env, ok := userdata["environment"].(string); ok && env != "" {
+							rt.env = env
+							// If this environment matches the router's default environment, use "__default__" instead
+							if rt.env == routerDefaultEnv {
+								rt.env = "__default__"
+							}
+						}
+					}
+				}
+
+				cfg, err := t.generateRulesConfig(rt, rmt, index, userdata)
 				if err != nil {
 					return nil, err
 				}
-				generatedTemplates = append(generatedTemplates, tmpl)
+				generatedTemplates = append(generatedTemplates, cfg)
 			default:
 				return nil, fmt.Errorf("unknown template format %s", template.Format)
 			}
@@ -485,7 +561,7 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 	// and the values from the properties
 	t.collName = ct.collectorComponentName
 	config := tmpl.NewCollectorConfig()
-	sectionOrder := []string{"receivers", "processors", "exporters", "extensions"}
+	sectionOrder := []string{"receivers", "processors", "connectors", "exporters", "extensions"}
 	for _, section := range sectionOrder {
 		for _, signalType := range hpsf.CollectorSignalTypes {
 			if pipeline.ConnType != signalType {
@@ -495,6 +571,8 @@ func (t *TemplateComponent) generateCollectorConfig(ct collectorTemplate, pipeli
 			if !t.ConnectsUsingAppropriateType(signalType) {
 				continue
 			}
+			// Set the signal type for template expansion
+			t.SignalType = signalType.AsCollectorSignalType()
 			svcKey := fmt.Sprintf("pipelines.%s/%s.%s", signalType.AsCollectorSignalType(), pipeline.GetID(), section)
 			for _, kv := range ct.kvs[section] {
 				if kv.suppressIf != "" {

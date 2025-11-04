@@ -1,0 +1,275 @@
+components:
+  # Receiver
+  - name: Receive OTel
+    kind: OTelReceiver
+
+  # Router for dev, staging, and production environments
+  - name: router
+    kind: Router
+    properties:
+      - name: RoutingAttribute
+        value: deployment.environment
+      - name: DefaultEnvironment
+        value: dev
+
+  # SetEnvironment components for each environment
+  - name: SetEnvironment_dev
+    kind: SetEnvironment
+
+  - name: SetEnvironment_staging
+    kind: SetEnvironment
+
+  - name: SetEnvironment_production
+    kind: SetEnvironment
+
+  # Sampling sequencers for each environment (traces and logs)
+  - name: SamplingSequencer_dev
+    kind: SamplingSequencer
+
+  - name: SamplingSequencer_staging
+    kind: SamplingSequencer
+
+  - name: SamplingSequencer_production
+    kind: SamplingSequencer
+
+  # Samplers for each environment with different sample rates
+  - name: DeterministicSampler_dev
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 1
+
+  - name: DeterministicSampler_staging
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 10
+
+  - name: DeterministicSampler_production
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 100
+
+  # Exporters for each environment
+  - name: HoneycombExporter_dev
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: dev
+
+  - name: HoneycombExporter_staging
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: staging
+
+  - name: HoneycombExporter_production
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: production
+
+connections:
+  # Receiver to router for all signals
+  # Traces
+  - source:
+      component: Receive OTel
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: router
+      port: Traces
+      type: OTelTraces
+
+  # Logs
+  - source:
+      component: Receive OTel
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: router
+      port: Logs
+      type: OTelLogs
+
+  # Metrics
+  - source:
+      component: Receive OTel
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: router
+      port: Metrics
+      type: OTelMetrics
+
+  # Router Environment connections to SetEnvironment components
+  - source:
+      component: router
+      port: Environment 1
+      type: Environment
+    destination:
+      component: SetEnvironment_dev
+      port: Environment
+      type: Environment
+
+  - source:
+      component: router
+      port: Environment 2
+      type: Environment
+    destination:
+      component: SetEnvironment_staging
+      port: Environment
+      type: Environment
+
+  - source:
+      component: router
+      port: Environment 3
+      type: Environment
+    destination:
+      component: SetEnvironment_production
+      port: Environment
+      type: Environment
+
+  # Dev environment: SetEnvironment to sampling sequencer
+  - source:
+      component: SetEnvironment_dev
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: SamplingSequencer_dev
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_dev
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: SamplingSequencer_dev
+      port: Logs
+      type: OTelLogs
+
+  # Dev: sampling to sampler
+  - source:
+      component: SamplingSequencer_dev
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: DeterministicSampler_dev
+      port: Sample
+      type: SampleData
+
+  # Dev: sampler output to exporter
+  - source:
+      component: DeterministicSampler_dev
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: HoneycombExporter_dev
+      port: Events
+      type: HoneycombEvents
+
+  # Dev: metrics from SetEnvironment bypass sampling and go directly to exporter
+  - source:
+      component: SetEnvironment_dev
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: HoneycombExporter_dev
+      port: Metrics
+      type: OTelMetrics
+
+  # Staging environment: SetEnvironment to sampling sequencer
+  - source:
+      component: SetEnvironment_staging
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: SamplingSequencer_staging
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_staging
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: SamplingSequencer_staging
+      port: Logs
+      type: OTelLogs
+
+  # Staging: sampling to sampler
+  - source:
+      component: SamplingSequencer_staging
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: DeterministicSampler_staging
+      port: Sample
+      type: SampleData
+
+  # Staging: sampler output to exporter
+  - source:
+      component: SamplingSequencer_staging
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: HoneycombExporter_staging
+      port: Events
+      type: HoneycombEvents
+
+  # Staging: metrics from SetEnvironment bypass sampling and go directly to exporter
+  - source:
+      component: SetEnvironment_staging
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: HoneycombExporter_staging
+      port: Metrics
+      type: OTelMetrics
+
+  # Production environment: SetEnvironment to sampling sequencer
+  - source:
+      component: SetEnvironment_production
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: SamplingSequencer_production
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_production
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: SamplingSequencer_production
+      port: Logs
+      type: OTelLogs
+
+  # Production: sampling to sampler
+  - source:
+      component: SamplingSequencer_production
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: DeterministicSampler_production
+      port: Sample
+      type: SampleData
+
+  # Production: sampler output to exporter
+  - source:
+      component: DeterministicSampler_production
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: HoneycombExporter_production
+      port: Events
+      type: HoneycombEvents
+
+  # Production: metrics from SetEnvironment bypass sampling and go directly to exporter
+  - source:
+      component: SetEnvironment_production
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: HoneycombExporter_production
+      port: Metrics
+      type: OTelMetrics

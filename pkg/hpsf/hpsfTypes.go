@@ -18,16 +18,17 @@ import (
 type ConnectionType string
 
 const (
-	CTYPE_UNKNOWN ConnectionType = "unknown"
-	CTYPE_LOGS    ConnectionType = "OTelLogs"
-	CTYPE_METRICS ConnectionType = "OTelMetrics"
-	CTYPE_TRACES  ConnectionType = "OTelTraces"
-	CTYPE_EVENTS  ConnectionType = "OTelEvents"
-	CTYPE_HONEY   ConnectionType = "HoneycombEvents"
-	CTYPE_SAMPLE  ConnectionType = "SampleData"
-	CTYPE_NUMBER  ConnectionType = "number"
-	CTYPE_STRING  ConnectionType = "string"
-	CTYPE_BOOL    ConnectionType = "bool"
+	CTYPE_UNKNOWN     ConnectionType = "unknown"
+	CTYPE_LOGS        ConnectionType = "OTelLogs"
+	CTYPE_METRICS     ConnectionType = "OTelMetrics"
+	CTYPE_TRACES      ConnectionType = "OTelTraces"
+	CTYPE_EVENTS      ConnectionType = "OTelEvents"
+	CTYPE_HONEY       ConnectionType = "HoneycombEvents"
+	CTYPE_SAMPLE      ConnectionType = "SampleData"
+	CTYPE_ENVIRONMENT ConnectionType = "Environment"
+	CTYPE_NUMBER      ConnectionType = "number"
+	CTYPE_STRING      ConnectionType = "string"
+	CTYPE_BOOL        ConnectionType = "bool"
 )
 
 // These are the possible connection types that can be used in the HPSF pipelines.
@@ -645,9 +646,10 @@ func (h *HPSF) isSourceComponent(c *Component, connType ConnectionType) bool {
 // sets of connections used. We generate all possible paths
 // and store them in a slice of these.
 type PathWithConnections struct {
-	ConnType    ConnectionType
-	Path        []*Component
-	Connections []*Connection
+	ConnType     ConnectionType
+	Path         []*Component
+	Connections  []*Connection
+	PipelineName string // Optional custom pipeline name; if empty, GetID() is used
 }
 
 func (p PathWithConnections) GetConnectionLeadingTo(componentName string) *Connection {
@@ -661,6 +663,11 @@ func (p PathWithConnections) GetConnectionLeadingTo(componentName string) *Conne
 }
 
 func (p PathWithConnections) GetID() string {
+	// If a custom pipeline name is set, use that instead of generating a hash
+	if p.PipelineName != "" {
+		return p.PipelineName
+	}
+
 	// return the ID of the path, which is a hash of the names of components in its path
 	// and the connection type, truncated to 6 characters.
 	buf := bytes.Buffer{}
@@ -689,13 +696,39 @@ func (h *HPSF) FindAllPaths(_ map[string]bool) []PathWithConnections {
 	findPaths = func(connType ConnectionType, c *Component, conns []*Connection) {
 		path = append(path, c)
 		if !h.isSourceComponent(c, connType) {
-			// we reached an end component, create a path
-			path := PathWithConnections{
-				ConnType:    connType,
-				Path:        slices.Clone(path),
-				Connections: slices.Clone(conns),
+			// Check if this component has Environment output connections
+			// If so, we need to follow those and continue with the original signal type
+			hasEnvironmentOutput := false
+			for _, conn := range h.Connections {
+				if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT {
+					hasEnvironmentOutput = true
+					break
+				}
 			}
-			paths = append(paths, path)
+
+			if hasEnvironmentOutput {
+				// Follow Environment connections to SetEnvironment components
+				visited := make(map[string]bool)
+				for _, conn := range h.Connections {
+					if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT && !visited[conn.Destination.Component] {
+						destComp := h.getComponent(conn.Destination.Component)
+						visited[conn.Destination.Component] = true
+						if destComp != nil {
+							// Add the Environment connection and continue following the original signal type
+							newConns := append(conns, conn)
+							findPaths(connType, destComp, newConns)
+						}
+					}
+				}
+			} else {
+				// we reached an end component, create a path
+				path := PathWithConnections{
+					ConnType:    connType,
+					Path:        slices.Clone(path),
+					Connections: slices.Clone(conns),
+				}
+				paths = append(paths, path)
+			}
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
 			visited := make(map[string]bool)

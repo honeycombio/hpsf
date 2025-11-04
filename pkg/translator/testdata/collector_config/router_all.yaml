@@ -1,0 +1,83 @@
+receivers:
+    otlp/receiver:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    usage: {}
+connectors:
+    routing/traces:
+        default_pipelines:
+            - traces/development
+        table:
+            - condition: attributes["deployment.environment"] == "staging"
+              context: resource
+              pipelines:
+                - traces/staging
+            - condition: attributes["deployment.environment"] == "production"
+              context: resource
+              pipelines:
+                - traces/production
+exporters:
+    otlphttp/exporter_development:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_DEVELOPMENT}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+    otlphttp/exporter_production:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_PRODUCTION}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+    otlphttp/exporter_staging:
+        endpoint: https://api.honeycomb.io:443
+        headers:
+            x-honeycomb-dataset: metrics
+            x-honeycomb-team: ${HTP_EXPORTER_APIKEY_STAGING}
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/development:
+            receivers: [routing/traces]
+            processors: [usage]
+            exporters: [otlphttp/exporter_development]
+        traces/intake:
+            receivers: [otlp/receiver]
+            processors: [usage]
+            exporters: [routing/traces]
+        traces/production:
+            receivers: [routing/traces]
+            processors: [usage]
+            exporters: [otlphttp/exporter_production]
+        traces/staging:
+            receivers: [routing/traces]
+            processors: [usage]
+            exporters: [otlphttp/exporter_staging]

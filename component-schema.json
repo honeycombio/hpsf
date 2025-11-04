@@ -154,7 +154,8 @@
             "SampleData",
             "number",
             "string",
-            "bool"
+            "bool",
+            "Environment"
           ]
         },
         "note": {
@@ -277,7 +278,7 @@
             "componentSection": {
               "type": "string",
               "description": "For collectors: exporters, receivers, processors etc",
-              "enum": ["exporters", "receivers", "processors", "extensions"]
+              "enum": ["exporters", "receivers", "processors", "extensions", "connectors"]
             },
             "signalTypes": {
               "type": "array",

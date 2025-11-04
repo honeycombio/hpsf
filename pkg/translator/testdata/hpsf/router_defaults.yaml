@@ -1,0 +1,77 @@
+components:
+  - name: receiver
+    kind: OTelReceiver
+  - name: router
+    kind: Router
+    properties:
+      - name: RoutingAttribute
+        value: deployment.environment
+      - name: DefaultEnvironment
+        value: production
+  - name: SetEnvironment_production
+    kind: SetEnvironment
+  - name: exporter
+    kind: HoneycombExporter
+    properties:
+      - name: EnvironmentName
+        value: production
+connections:
+  # Receiver to router
+  - source:
+      component: receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: router
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: receiver
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: router
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: receiver
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: router
+      port: Metrics
+      type: OTelMetrics
+  # Router Environment connection
+  - source:
+      component: router
+      port: Environment 1
+      type: Environment
+    destination:
+      component: SetEnvironment_production
+      port: Environment
+      type: Environment
+  # SetEnvironment to exporter
+  - source:
+      component: SetEnvironment_production
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: exporter
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: SetEnvironment_production
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: exporter
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: SetEnvironment_production
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: exporter
+      port: Metrics
+      type: OTelMetrics

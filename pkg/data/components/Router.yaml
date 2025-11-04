@@ -1,0 +1,87 @@
+kind: Router
+name: Route to Environment
+style: router
+logo: honeycomb
+type: base
+status: alpha
+version: v0.1.0
+summary: Routes traces, logs, and metrics to different Honeycomb environments
+description: |-
+  Routes telemetry data (traces, logs, and metrics) to different Honeycomb environments
+  within the same pipeline deployment. The Router defines multiple environments and uses
+  a telemetry attribute to determine which environment each span/log/metric should be
+  routed to. A default environment handles any unmatched telemetry.
+tags:
+  - category:routing
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - input:Traces
+  - input:Metrics
+  - input:Logs
+  - output:Environment
+  - vendor:Honeycomb
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+  # outputs - environment connections
+  - name: Environment 1
+    direction: output
+    type: Environment
+    index: 1
+  - name: Environment 2
+    direction: output
+    type: Environment
+    index: 2
+  - name: Environment 3
+    direction: output
+    type: Environment
+    index: 3
+  - name: Environment 4
+    direction: output
+    type: Environment
+    index: 4
+  - name: Environment 5
+    direction: output
+    type: Environment
+    index: 5
+properties:
+  - name: RoutingAttribute
+    summary: The telemetry attribute name to use for routing decisions
+    description: |
+      The name of the resource attribute that will be checked to determine which
+      environment the telemetry should be routed to. For example, "deployment.environment"
+      or "service.namespace". The router will generate OTTL conditions like:
+      attributes["deployment.environment"] == "staging"
+    type: string
+    validations:
+      - noblanks
+    default: deployment.environment
+    advanced: true
+  - name: DefaultEnvironment
+    summary: Which environment handles unmatched telemetry
+    description: |
+      The name of the environment that should handle telemetry that doesn't match
+      any of the defined environments. This is used for the OTel routing connector's
+      default_pipelines and for Refinery's __default__ sampler. Must be one of the
+      environments defined in the Environments list.
+    type: string
+    validations:
+      - noblanks
+    advanced: false
+templates:
+  - kind: refinery_rules
+    name: router_default_env
+    format: rules
+    meta:
+      default_env: "{{ .Values.DefaultEnvironment }}"
+      sampler: unknown
