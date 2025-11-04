@@ -10,8 +10,8 @@ processors:
 exporters:
     enhance_indexing_s3_exporter/s3_out:
         api_endpoint: https://api.honeycomb.io
-        api_key: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
-        api_secret: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
+        api_key: ${HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
+        api_secret: ${HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
         marshaler: otlp_proto
         s3uploader:
             compression: gzip
