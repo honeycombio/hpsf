@@ -18,19 +18,10 @@ components:
   # Exporters
   - name: exporter_production
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: production
   - name: exporter_staging
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: staging
   - name: exporter_development
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: development
 connections:
   # Receiver to router
   - source:

@@ -12,9 +12,6 @@ components:
     kind: SetEnvironment
   - name: exporter
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: production
 connections:
   # Receiver to router
   - source:

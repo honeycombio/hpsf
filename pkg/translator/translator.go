@@ -1557,9 +1557,6 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 	// Generate configs for intake paths (these will have routing connector as exporter)
 	intakeComposites := make([]tmpl.TemplateConfig, 0)
 	for i := range intakePaths {
-		// Set custom pipeline name for intake paths: intake (signal type is prepended by template)
-		intakePaths[i].PipelineName = "intake"
-
 		base := config.GenericBaseComponent{Component: dummy}
 		composite, err := base.GenerateConfig(ct, intakePaths[i], userdata)
 		if err != nil {
@@ -1589,7 +1586,7 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 			// This is needed because the Router component no longer has a template that generates this
 			if collectorConfig, ok := composite.(*tmpl.CollectorConfig); ok {
 				signalType := intakePaths[i].ConnType.AsCollectorSignalType()
-				pipelineName := intakePaths[i].GetID() // This will return "intake" because we set PipelineName
+				pipelineName := intakePaths[i].GetID()
 				connectorKey := fmt.Sprintf("pipelines.%s/%s.connectors", signalType, pipelineName)
 				routingConnector := "routing/" + signalType
 
@@ -1637,11 +1634,6 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 				pathEnv = env
 				break
 			}
-		}
-
-		// Set custom pipeline name for output paths: env-name (signal type is prepended by template)
-		if pathEnv != "" {
-			outputPaths[i].PipelineName = pathEnv
 		}
 
 		// Create a copy of userdata for this path with environment context
