@@ -30,7 +30,7 @@ connections:
   - source:
       component: Deterministic 1
       port: Events
-      type: Honeycomb
+      type: HoneycombEvents
     destination:
       component: honeycomb
       port: Events

@@ -610,11 +610,7 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 // and returns the value to use for the x-honeycomb-team header for that path.
 // If an Environment ID is set and a corresponding API key exists in userdata["APIKeys"],
 // the API key is returned. Otherwise falls back to the APIKey property.
-//
-// For single-environment configurations (current branch), this looks at HoneycombExporter
-// components in the path first, then falls back to any HoneycombExporter in the entire
-// configuration. This ensures all components use the same API key.
-func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, comps *OrderedComponentMap, userdata map[string]any, h *hpsf.HPSF) string {
+func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, comps *OrderedComponentMap, userdata map[string]any) string {
 	// Extract APIKeys map from userdata if present
 	var apiKeysMap map[string]string
 	if userdata != nil {
@@ -665,19 +661,8 @@ func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, c
 		return ""
 	}
 
-	// Look for HoneycombExporter in this path first
+	// Look for HoneycombExporter in this path
 	for _, comp := range path.Path {
-		if comp.Kind == "HoneycombExporter" {
-			if apiKey := extractAPIKey(comp); apiKey != "" {
-				return apiKey
-			}
-		}
-	}
-
-	// If no HoneycombExporter in this path, fall back to any HoneycombExporter in the configuration
-	// This handles cases where SamplingSequencer is in one path and HoneycombExporter in another
-	// (which is valid in single-environment setups where all components share the same API key)
-	for _, comp := range h.Components {
 		if comp.Kind == "HoneycombExporter" {
 			if apiKey := extractAPIKey(comp); apiKey != "" {
 				return apiKey
@@ -765,7 +750,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 
 		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
 		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
-		teamHeaderValue := t.findTeamHeaderValueForPath(path, comps, userdata, h)
+		teamHeaderValue := t.findTeamHeaderValueForPath(path, comps, userdata)
 		if teamHeaderValue != "" {
 			pathUserdata["TeamHeaderValue"] = teamHeaderValue
 		}
