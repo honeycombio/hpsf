@@ -54,21 +54,12 @@ components:
   # Exporters for each environment
   - name: HoneycombExporter_dev
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: dev
 
   - name: HoneycombExporter_staging
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: staging
 
   - name: HoneycombExporter_production
     kind: HoneycombExporter
-    properties:
-      - name: EnvironmentName
-        value: production
 
 connections:
   # Receiver to router for all signals

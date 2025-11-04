@@ -21,34 +21,6 @@ import (
 
 const LatestVersion = "latest"
 
-var (
-	// Honeycomb environment name validation pattern
-	// Matches the Honeycomb slugification process: only allows a-z, 0-9, _, ~, ., and -
-	validEnvironmentNamePattern = regexp.MustCompile(`^[a-z0-9_~.\-]+$`)
-
-	// Maximum length for Honeycomb environment names
-	maxEnvironmentNameLength = 175
-)
-
-// validateEnvironmentName validates that an environment name conforms to Honeycomb's
-// slugification requirements: only lowercase letters, digits, and _~.- characters,
-// with a maximum length of 175 characters.
-func validateEnvironmentName(name string) error {
-	if name == "" {
-		return nil // Empty is allowed (will use default)
-	}
-
-	if len(name) > maxEnvironmentNameLength {
-		return fmt.Errorf("environment name exceeds maximum length of %d characters: %q", maxEnvironmentNameLength, name)
-	}
-
-	if !validEnvironmentNamePattern.MatchString(name) {
-		return fmt.Errorf("environment name contains invalid characters (only a-z, 0-9, _, ~, ., - are allowed): %q", name)
-	}
-
-	return nil
-}
-
 // extractExpectedPipelines extracts pipeline names referenced in routing connector configuration.
 // Returns a map of pipeline names (e.g., "traces/production", "logs/staging") to true.
 func extractExpectedPipelines(connectorSection map[string]any) map[string]bool {
@@ -107,38 +79,6 @@ func collectPipelineNames(serviceSection map[string]any) map[string]bool {
 	}
 
 	return pipelineNames
-}
-
-// buildExporterEnvironmentMap creates a mapping from exporter safe names to environment names.
-// Reads environment directly from HoneycombExporter components' EnvironmentName property.
-// Validates that environment names conform to Honeycomb's slugification requirements.
-func buildExporterEnvironmentMap(h *hpsf.HPSF) (map[string]string, error) {
-	exporterToEnvironment := make(map[string]string)
-
-	if h == nil {
-		return exporterToEnvironment, nil
-	}
-
-	for _, hcomp := range h.Components {
-		if hcomp.Kind == "HoneycombExporter" {
-			safeName := hcomp.GetSafeName()
-			// Get EnvironmentName property from exporter
-			for _, prop := range hcomp.Properties {
-				if prop.Name == "EnvironmentName" {
-					if envName, ok := prop.Value.(string); ok && envName != "" {
-						// Validate environment name format
-						if err := validateEnvironmentName(envName); err != nil {
-							return nil, fmt.Errorf("invalid EnvironmentName on component %q: %w", hcomp.Name, err)
-						}
-						exporterToEnvironment[safeName] = envName
-					}
-					break
-				}
-			}
-		}
-	}
-
-	return exporterToEnvironment, nil
 }
 
 // getStringListFromAny converts []any or []string to []string, filtering out empty strings.
@@ -1145,10 +1085,6 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 	// Extract configuration from routing connectors and existing pipelines
 	expectedPipelines := extractExpectedPipelines(connectorSection)
 	pipelineNames := collectPipelineNames(serviceSection)
-	exporterToEnvironment, err := buildExporterEnvironmentMap(h)
-	if err != nil {
-		return err
-	}
 
 	// Track pipeline renames for output pipelines
 	pipelineRenames := make(map[string]string) // old name -> new name
@@ -1222,7 +1158,7 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 			}
 		} else if hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 2: Output pipeline - has routing connector, no receivers, has exporters
-			transformOutputPipeline(serviceSection, cc, pipelineName, signalType, connectors, exportersFiltered, exporterToEnvironment)
+			transformOutputPipeline(serviceSection, cc, pipelineName, signalType, connectors, exportersFiltered, make(map[string]string))
 		} else if !hasRouting && len(receiversFiltered) == 0 && len(exportersFiltered) > 0 {
 			// Case 3: Output pipeline without routing connector - no receivers, has exporters → add routing to receivers
 			// Use signal-type-specific routing connector name
@@ -1299,7 +1235,7 @@ func transformRouterPipelines(cc *tmpl.CollectorConfig, h *hpsf.HPSF, comps *Ord
 
 	// Apply pipeline renames and create missing pipelines
 	applyPipelineRenames(serviceSection, pipelineRenames)
-	createMissingOutputPipelines(serviceSection, cc, expectedPipelines, exporterToEnvironment)
+	createMissingOutputPipelines(serviceSection, cc, expectedPipelines, make(map[string]string))
 
 	return nil
 }
@@ -1314,70 +1250,11 @@ func sliceContains(slice []string, item string) bool {
 	return false
 }
 
-// injectEnvironmentAPIKeys injects environment-specific API keys into exporters
-// based on their EnvironmentName property. This ensures ${HTP_EXPORTER_APIKEY_ENV}
-// variables are set correctly for each environment.
-func injectEnvironmentAPIKeys(cc *tmpl.CollectorConfig, exporterToEnvironment map[string]string) error {
-	if cc == nil {
-		return nil
-	}
-
-	exportersSection, hasExportersSection := cc.Sections["exporters"]
-	if !hasExportersSection {
-		return nil
-	}
-
-	// For each exporter, inject environment-specific API key based on its environment property
-	for exporterSafeName, envName := range exporterToEnvironment {
-		// Find the exporter key in the exporters section
-		// Exporter keys have format: {type}/{componentSafeName}.headers.x-honeycomb-team
-		for exporterKey := range exportersSection {
-			exporterName := exporterKey
-			if dotIdx := strings.Index(exporterKey, "."); dotIdx > 0 {
-				exporterName = exporterKey[:dotIdx]
-			}
-
-			// Exporter names have format: {type}/{componentSafeName}
-			if slashIdx := strings.Index(exporterName, "/"); slashIdx >= 0 {
-				exporterCompName := exporterName[slashIdx+1:]
-				if exporterCompName == exporterSafeName {
-					// Check if this is the API key header
-					headerKey := fmt.Sprintf("%s.headers.x-honeycomb-team", exporterName)
-					existingValue, hasHeader := exportersSection[headerKey]
-
-					// Inject if header doesn't exist or if it's set to the default value
-					if !hasHeader || existingValue == "${HTP_EXPORTER_APIKEY}" {
-						envVarName := fmt.Sprintf("${HTP_EXPORTER_APIKEY_%s}", strings.ToUpper(envName))
-						exportersSection[headerKey] = envVarName
-					}
-					break
-				}
-			}
-		}
-	}
-
-	return nil
-}
-
 // generateRefineryRulesWithRouter handles refinery rules generation for multi-environment routing.
 // It processes sampling paths and sets the environment context from HoneycombExporter components.
 func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 
-	// Build exporter to environment mapping
-	exporterToEnvironment := make(map[string]string)
-	for _, hcomp := range h.Components {
-		if hcomp.Kind == "HoneycombExporter" {
-			for _, prop := range hcomp.Properties {
-				if prop.Name == "EnvironmentName" {
-					if envName, ok := prop.Value.(string); ok && envName != "" {
-						exporterToEnvironment[hcomp.Name] = envName
-					}
-					break
-				}
-			}
-		}
-	}
 
 	// Generate configs for each sampling path with environment context
 	composites := make([]tmpl.TemplateConfig, 0)
@@ -1393,48 +1270,6 @@ func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *Ordere
 			pathUserdata[k] = v
 		}
 
-		// Find environment by looking for HoneycombExporter downstream from the SamplingSequencer
-		// Sampling paths follow SampleData connections, so we need to traverse OTel signal connections
-		// forward to find exporters
-		var samplingSequencer *hpsf.Component
-		for _, comp := range path.Path {
-			if comp.Kind == "SamplingSequencer" {
-				samplingSequencer = comp
-				break
-			}
-		}
-
-		if samplingSequencer != nil {
-			// Traverse forward from SamplingSequencer to find HoneycombExporter
-			visited := make(map[string]bool)
-			var findExporterEnv func(compName string) string
-			findExporterEnv = func(compName string) string {
-				if visited[compName] {
-					return ""
-				}
-				visited[compName] = true
-
-				// Check if this is an exporter
-				if envName, ok := exporterToEnvironment[compName]; ok {
-					return envName
-				}
-
-				// Follow OTel signal connections downstream
-				for _, conn := range h.Connections {
-					if conn.Source.Component == compName &&
-						(conn.Source.Type == hpsf.CTYPE_TRACES || conn.Source.Type == hpsf.CTYPE_LOGS || conn.Source.Type == hpsf.CTYPE_METRICS) {
-						if env := findExporterEnv(conn.Destination.Component); env != "" {
-							return env
-						}
-					}
-				}
-				return ""
-			}
-
-			if env := findExporterEnv(samplingSequencer.Name); env != "" {
-				pathUserdata["environment"] = env
-			}
-		}
 
 		// Generate config for this path
 		base := config.GenericBaseComponent{Component: dummy}
@@ -1605,44 +1440,13 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		}
 	}
 
-	// Build exporter to environment mapping for this generation
-	// Get environment names from HoneycombExporter components' EnvironmentName property
-	exporterToEnvironment := make(map[string]string)
-	for _, hcomp := range h.Components {
-		if hcomp.Kind == "HoneycombExporter" {
-			safeName := hcomp.GetSafeName()
-			// Get EnvironmentName property from exporter
-			for _, prop := range hcomp.Properties {
-				if prop.Name == "EnvironmentName" {
-					if envName, ok := prop.Value.(string); ok && envName != "" {
-						exporterToEnvironment[safeName] = envName
-					}
-					break
-				}
-			}
-		}
-	}
-
 	// Generate configs for output paths (these will have routing connector as receiver)
 	outputComposites := make([]tmpl.TemplateConfig, 0)
-	for i, path := range outputPaths {
-		// Check if this path contains a HoneycombExporter component and get its environment
-		pathEnv := ""
-		for _, comp := range path.Path {
-			safeName := comp.GetSafeName()
-			if env, ok := exporterToEnvironment[safeName]; ok {
-				pathEnv = env
-				break
-			}
-		}
-
-		// Create a copy of userdata for this path with environment context
+	for i := range outputPaths {
+		// Create a copy of userdata for this path
 		pathUserdata := make(map[string]any)
 		for k, v := range userdata {
 			pathUserdata[k] = v
-		}
-		if pathEnv != "" {
-			pathUserdata["environment"] = pathEnv
 		}
 
 		base := config.GenericBaseComponent{Component: dummy}
@@ -1703,107 +1507,10 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 		}
 	}
 
-	// Dynamically generate routing connector configuration
-	// This replaces the static template that was in Router.yaml
-	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok && len(exporterToEnvironment) > 0 {
-		// Get unique environment names
-		environments := make([]string, 0, len(exporterToEnvironment))
-		envSet := make(map[string]bool)
-		for _, envName := range exporterToEnvironment {
-			if !envSet[envName] {
-				environments = append(environments, envName)
-				envSet[envName] = true
-			}
-		}
-
-		// Determine which signal types are actually used in the paths
-		usedSignalTypes := make(map[hpsf.ConnectionType]bool)
-		for _, path := range paths {
-			usedSignalTypes[path.ConnType] = true
-		}
-
-		// Get Router component properties
-		var routingAttribute string
-		var defaultEnvironment string
-		for _, comp := range h.Components {
-			if comp.Kind == "Router" {
-				for _, prop := range comp.Properties {
-					if prop.Name == "RoutingAttribute" {
-						if val, ok := prop.Value.(string); ok {
-							routingAttribute = val
-						}
-					} else if prop.Name == "DefaultEnvironment" {
-						if val, ok := prop.Value.(string); ok {
-							defaultEnvironment = val
-						}
-					}
-				}
-				// If RoutingAttribute wasn't specified, use the default from the Router component definition
-				if routingAttribute == "" {
-					// Get the Router component definition to check for default value
-					if routerComp, ok := comps.Get(comp.GetSafeName()); ok {
-						if tc, ok := routerComp.(*config.TemplateComponent); ok {
-							for _, prop := range tc.Properties {
-								if prop.Name == "RoutingAttribute" && prop.Default != nil {
-									if defaultVal, ok := prop.Default.(string); ok {
-										routingAttribute = defaultVal
-									}
-								}
-							}
-						}
-					}
-				}
-				break
-			}
-		}
-
-		// Create or get connectors section
-		connectorsSection := collectorConfig.Sections["connectors"]
-		if connectorsSection == nil {
-			connectorsSection = make(map[string]any)
-			collectorConfig.Sections["connectors"] = connectorsSection
-		}
-
-		// Generate routing connector config only for signal types that are actually used
-		for _, connType := range hpsf.CollectorSignalTypes {
-			// Skip signal types that aren't used in any paths
-			if !usedSignalTypes[connType] {
-				continue
-			}
-
-			signalType := connType.AsCollectorSignalType()
-			routingKey := "routing/" + signalType
-
-			// Set default_pipelines if DefaultEnvironment is specified
-			if defaultEnvironment != "" {
-				defaultPipelines := []string{signalType + "/" + defaultEnvironment}
-				connectorsSection[routingKey+".default_pipelines"] = defaultPipelines
-			}
-
-			// Generate table entries for non-default environments
-			tableIdx := 0
-			for _, envName := range environments {
-				if envName == defaultEnvironment {
-					continue // Skip default environment
-				}
-
-				tableKey := fmt.Sprintf("%s.table[%d]", routingKey, tableIdx)
-				connectorsSection[tableKey+".context"] = "resource"
-				connectorsSection[tableKey+".condition"] = fmt.Sprintf("attributes[\"%s\"] == \"%s\"", routingAttribute, envName)
-				connectorsSection[tableKey+".pipelines"] = []string{signalType + "/" + envName}
-				tableIdx++
-			}
-		}
-	}
-
 	// Merge routing connectors and transform pipelines
 	if collectorConfig, ok := finalConfig.(*tmpl.CollectorConfig); ok {
-		// Only merge routing connectors if we didn't dynamically generate them
-		// (dynamically generated connectors are already in the final merged format)
-		if len(exporterToEnvironment) == 0 {
-			if err := mergeRoutingConnectors(collectorConfig); err != nil {
-				return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
-			}
+		if err := mergeRoutingConnectors(collectorConfig); err != nil {
+			return nil, fmt.Errorf("failed to merge routing connectors: %w", err)
 		}
 
 		// Transform pipelines to use routing connector properly
@@ -1813,11 +1520,6 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 			return nil, fmt.Errorf("failed to transform router pipelines: %w", err)
 		}
 
-		// Inject environment-specific API keys for all environment pipelines
-		// This ensures exporters get the correct ${HTP_EXPORTER_APIKEY_ENV} variables
-		if err := injectEnvironmentAPIKeys(collectorConfig, exporterToEnvironment); err != nil {
-			return nil, fmt.Errorf("failed to inject environment API keys: %w", err)
-		}
 	}
 
 	// For refinery rules, set the default environment from Router if present
@@ -1991,20 +1693,6 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 			pathUserdata[k] = v
 		}
 
-		// For sampling paths, check if there's a SetEnvironment component and extract environment
-		if path.ConnType == hpsf.CTYPE_SAMPLE {
-			for _, comp := range path.Path {
-				if comp.Kind == "SetEnvironment" {
-					envNameProp := comp.GetProperty("EnvironmentName")
-					if envNameProp != nil && envNameProp.Value != nil {
-						if envName, ok := envNameProp.Value.(string); ok && envName != "" {
-							pathUserdata["environment"] = envName
-							break
-						}
-					}
-				}
-			}
-		}
 
 		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
 		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
