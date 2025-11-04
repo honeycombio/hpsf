@@ -25,7 +25,7 @@ components:
       - name: QueueSize
         value: 2_000_000
 connections:
-  # traces: otel -> startsampling -> honeycomb
+  # traces: otel -> startsampling -> sampler -> honeycomb
   - source:
       component: otlp
       port: Traces
@@ -37,7 +37,7 @@ connections:
   - source:
       component: refinery
       port: Rule 1
-      type: Honeycomb
+      type: SampleData
     destination:
       component: sampler
       port: Sample
