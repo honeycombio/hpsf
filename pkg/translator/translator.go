@@ -610,8 +610,13 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 // and returns the value to use for the x-honeycomb-team header.
 // If an Environment ID is set and a corresponding API key exists in userdata["APIKeys"],
 // the API key is returned. Otherwise falls back to the APIKey property.
-// In single-environment mode (current), all components share the same value.
-// In future multi-environment mode with Router, this will be determined per-pipeline.
+//
+// Current limitation: Returns a single value for all components. This assumes single-environment
+// configurations where all components (including SamplingSequencer) send to the same environment.
+//
+// Future: To support multiple environments, SamplingSequencer should have its own Environment
+// property to explicitly couple it with its paired HoneycombExporter, and this function would
+// be replaced with per-component or per-pipeline lookups.
 func (t *Translator) findTeamHeaderValue(h *hpsf.HPSF, comps *OrderedComponentMap, userdata map[string]any) string {
 	// Extract APIKeys map from userdata if present
 	var apiKeysMap map[string]string
@@ -702,9 +707,13 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 		userdata = make(map[string]any)
 	}
 
-	// Find the team header value (Environment or APIKey) from any HoneycombExporter in the configuration
-	// In single-environment mode, all components share the same value
-	// In future multi-environment mode with Router, this will be determined per-pipeline
+	// Find the team header value (Environment or APIKey) from any HoneycombExporter in the configuration.
+	// Current limitation: This assumes a single-environment setup where all components (including
+	// SamplingSequencer) send to the same Honeycomb environment. All components share this value.
+	// Future: To support multiple environments, SamplingSequencer should have its own Environment
+	// property to explicitly couple it with its paired HoneycombExporter. This would allow different
+	// pipelines to send to different environments while maintaining the requirement that a
+	// SamplingSequencer must use the same Environment as its downstream HoneycombExporter.
 	teamHeaderValue := t.findTeamHeaderValue(h, comps, userdata)
 	if teamHeaderValue != "" {
 		userdata["TeamHeaderValue"] = teamHeaderValue
