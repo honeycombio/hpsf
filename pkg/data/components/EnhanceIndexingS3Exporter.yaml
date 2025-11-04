@@ -67,7 +67,7 @@ properties:
     validations:
       - noblanks
     advanced: true
-    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
+    default: ${HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
   - name: APISecret
     summary: Honeycomb Management API Secret for authentication.
     description: |
@@ -77,7 +77,7 @@ properties:
     validations:
       - noblanks
     advanced: true
-    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
+    default: ${HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
   - name: PartitionFormat
     summary: The partition format to use when writing files to S3.
     description: |
