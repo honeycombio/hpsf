@@ -2031,3 +2031,142 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 	unconfigured := config.UnconfiguredComponent{Component: dummy}
 	return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 }
+
+// ComponentInfo provides information about a component extracted during inspection
+type ComponentInfo struct {
+	Name       string
+	Style      string
+	Kind       string
+	Properties map[string]any
+}
+
+// InspectionResult contains information about components in an HPSF document
+type InspectionResult struct {
+	Components []ComponentInfo
+}
+
+// Filter filters the inspection result using the provided predicates
+func (r InspectionResult) Filter(predicates ...Predicate) InspectionResult {
+	filtered := InspectionResult{
+		Components: []ComponentInfo{},
+	}
+
+	for _, c := range r.Components {
+		matched := false
+		for _, p := range predicates {
+			if p(c) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			filtered.Components = append(filtered.Components, c)
+		}
+	}
+
+	return filtered
+}
+
+// Predicate is a function that tests a component
+type Predicate func(ComponentInfo) bool
+
+// Exporters returns true if the component is an exporter.
+func Exporters(c ComponentInfo) bool {
+	return c.Style == "exporter"
+}
+
+// Processors returns true if the component is a processor.
+func Processors(c ComponentInfo) bool {
+	return c.Style == "processor"
+}
+
+// Receivers returns true if the component is a receiver.
+func Receivers(c ComponentInfo) bool {
+	return c.Style == "receiver"
+}
+
+// Samplers returns true if the component is a dropper, condition, sampler, startsampling.
+func Samplers(c ComponentInfo) bool {
+	switch c.Style {
+	case "condition", "dropper", "sampler", "startsampling":
+		return true
+	default:
+		return false
+	}
+}
+
+// Inspect extracts all components from the HPSF document.
+// It returns an InspectionResult containing all components.
+// InspectionResult provides filtering methods to get sub sets of components by style.
+func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
+	result := InspectionResult{
+		Components: []ComponentInfo{},
+	}
+
+	// Iterate through all components
+	for _, c := range h.Components {
+		// Look up the template for this component
+		tc, ok := t.components[c.Kind]
+		if !ok {
+			continue
+		}
+
+		comp := ComponentInfo{
+			Name:       c.Name,
+			Style:      tc.Style,
+			Kind:       c.Kind,
+			Properties: getProperties(c, tc),
+		}
+
+		// Add component to result
+		result.Components = append(result.Components, comp)
+	}
+
+	return result
+}
+
+// getProperties extracts all properties from a component, using template defaults as fallback
+func getProperties(c *hpsf.Component, tc config.TemplateComponent) map[string]any {
+	properties := make(map[string]any)
+
+	// Iterate through template properties to ensure all defaults are considered
+	for _, templateProperty := range tc.Properties {
+		// Use the component's property value if set, otherwise use the template default
+		var value any
+		if componentProp := c.GetProperty(templateProperty.Name); componentProp != nil {
+			value = componentProp.Value
+		} else {
+			value = templateProperty.Default
+		}
+		properties[templateProperty.Name] = value
+	}
+
+	return properties
+}
+
+// componentVersionSupported checks if a template component version is compatible with the requested version
+func componentVersionSupported(templateVersion, requestedVersion string) bool {
+	// If no version specified, accept any template version
+	if requestedVersion == "" {
+		return true
+	}
+
+	// If template has no version, only accept empty requested version
+	if templateVersion == "" {
+		return requestedVersion == ""
+	}
+
+	// Check if both versions are valid semver
+	if !semver.IsValid(templateVersion) || !semver.IsValid(requestedVersion) {
+		// Fall back to string equality for invalid semver
+		return templateVersion == requestedVersion
+	}
+
+	// Check major version compatibility - must match
+	if semver.Major(templateVersion) != semver.Major(requestedVersion) {
+		return false
+	}
+
+	// Template version must be >= requested version (allows upgrades)
+	return semver.Compare(templateVersion, requestedVersion) >= 0
+}
