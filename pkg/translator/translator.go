@@ -1840,6 +1840,73 @@ func (t *Translator) generateConfigWithRouters(h *hpsf.HPSF, comps *OrderedCompo
 	return finalConfig, nil
 }
 
+// findTeamHeaderValueForPath looks for a HoneycombExporter component in a specific path
+// and returns the value to use for the x-honeycomb-team header for that path.
+// If an Environment ID is set and a corresponding API key exists in userdata["APIKeys"],
+// the API key is returned. Otherwise falls back to the APIKey property.
+func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, comps *OrderedComponentMap, userdata map[string]any) string {
+	// Extract APIKeys map from userdata if present
+	var apiKeysMap map[string]string
+	if userdata != nil {
+		if apiKeys, ok := userdata["APIKeys"]; ok {
+			if keysMap, ok := apiKeys.(map[string]string); ok {
+				apiKeysMap = keysMap
+			}
+		}
+	}
+
+	// Helper function to extract API key from a HoneycombExporter component
+	extractAPIKey := func(comp *hpsf.Component) string {
+		// 1. Check for user-defined Environment and look it up in APIKeys map
+		if envProp := comp.GetProperty("Environment"); envProp != nil {
+			if envID, ok := envProp.Value.(string); ok && envID != "" {
+				// Look up the environment ID in the APIKeys map
+				if apiKeysMap != nil {
+					if apiKey, found := apiKeysMap[envID]; found && apiKey != "" {
+						return apiKey
+					}
+				}
+			}
+		}
+
+		// 2. Check for user-defined APIKey
+		if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
+			if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
+				return apiKey
+			}
+		}
+
+		// 3. Fall back to APIKey default value from template
+		tc, ok := comps.Get(comp.GetSafeName())
+		if !ok {
+			return ""
+		}
+		templateComp, ok := tc.(*config.TemplateComponent)
+		if !ok {
+			return ""
+		}
+		for _, prop := range templateComp.Properties {
+			if prop.Name == "APIKey" && prop.Default != nil {
+				if defaultAPIKey, ok := prop.Default.(string); ok {
+					return defaultAPIKey
+				}
+			}
+		}
+		return ""
+	}
+
+	// Look for HoneycombExporter in this path
+	for _, comp := range path.Path {
+		if comp.Kind == "HoneycombExporter" {
+			if apiKey := extractAPIKey(comp); apiKey != "" {
+				return apiKey
+			}
+		}
+	}
+
+	return ""
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	// Add the HPSF document to userdata so components can access it during generation
 	if userdata == nil {
@@ -1945,6 +2012,13 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 					}
 				}
 			}
+		}
+
+		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
+		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
+		teamHeaderValue := t.findTeamHeaderValueForPath(path, comps, userdata)
+		if teamHeaderValue != "" {
+			pathUserdata["TeamHeaderValue"] = teamHeaderValue
 		}
 
 		// Start with a base component so we always have a valid config
