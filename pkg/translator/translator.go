@@ -1675,7 +1675,75 @@ func (t *Translator) findTeamHeaderValueForPath(path hpsf.PathWithConnections, c
 		}
 	}
 
+	// If no HoneycombExporter found in the current path, look for one downstream
+	// This handles the case where SamplingSequencer is in a traces path, but the
+	// HoneycombExporter is in a downstream sampling/events path
+	// Only use explicit APIKey properties, not Environment-based lookups
+	if userdata != nil {
+		if hpsfDoc, ok := userdata["hpsf"].(*hpsf.HPSF); ok {
+			// Find any SamplingSequencer in the current path
+			for _, comp := range path.Path {
+				if comp.Kind == "SamplingSequencer" {
+					// Create a simpler extraction function that only checks for explicit APIKey property
+					extractExplicitAPIKey := func(comp *hpsf.Component) string {
+						if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
+							if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
+								return apiKey
+							}
+						}
+						return ""
+					}
+					// Search for HoneycombExporter components downstream from this SamplingSequencer
+					if apiKey := t.findDownstreamHoneycombExporter(hpsfDoc, comp, extractExplicitAPIKey); apiKey != "" {
+						return apiKey
+					}
+				}
+			}
+		}
+	}
+
 	return ""
+}
+
+// findDownstreamHoneycombExporter searches for a HoneycombExporter downstream from the given component
+func (t *Translator) findDownstreamHoneycombExporter(h *hpsf.HPSF, startComp *hpsf.Component, extractAPIKey func(*hpsf.Component) string) string {
+	visited := make(map[string]bool)
+	var search func(*hpsf.Component) string
+
+	search = func(comp *hpsf.Component) string {
+		if visited[comp.Name] {
+			return ""
+		}
+		visited[comp.Name] = true
+
+		// If this is a HoneycombExporter, extract and return its API key
+		if comp.Kind == "HoneycombExporter" {
+			return extractAPIKey(comp)
+		}
+
+		// Otherwise, search downstream components
+		for _, conn := range h.Connections {
+			if conn.Source.Component == comp.Name {
+				// Find the destination component
+				var destComp *hpsf.Component
+				for _, c := range h.Components {
+					if c.Name == conn.Destination.Component {
+						destComp = c
+						break
+					}
+				}
+				if destComp != nil {
+					if apiKey := search(destComp); apiKey != "" {
+						return apiKey
+					}
+				}
+			}
+		}
+
+		return ""
+	}
+
+	return search(startComp)
 }
 
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
