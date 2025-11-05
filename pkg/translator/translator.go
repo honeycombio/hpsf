@@ -579,24 +579,56 @@ func artifactVersionSupported(component config.TemplateComponent, v string) bool
 		v = "v" + v
 	}
 
+	// If minimum is explicitly set, use it
 	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {
 		return false
 	}
 
+	// If maximum is explicitly set, use it
 	if component.Maximum != "" && semver.Compare(v, component.Maximum) > 0 {
 		return false
+	}
+
+	// If neither minimum nor maximum is set, infer compatibility based on semantic versioning:
+	// Accept any version with same major version that is <= component version
+	if component.Minimum == "" && component.Maximum == "" {
+		templateMajor := semver.Major(component.Version)
+		vMajor := semver.Major(v)
+
+		// Different major version = not compatible
+		if templateMajor != vMajor {
+			return false
+		}
+
+		// Same major but requested version is newer than template = not compatible
+		if semver.Compare(v, component.Version) > 0 {
+			return false
+		}
 	}
 
 	return true
 }
 
+// isComponentVersionCompatible checks if a component's requested version is compatible with the template component
+func isComponentVersionCompatible(templateComponent config.TemplateComponent, requestedVersion string) bool {
+	// No version specified means use any version
+	if len(requestedVersion) == 0 {
+		return true
+	}
+
+	// Use artifactVersionSupported which handles exact matches, version ranges, and intelligent inference
+	return artifactVersionSupported(templateComponent, requestedVersion)
+}
+
 func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && (len(component.Version) <= 0 || tc.Version == component.Version) && artifactVersionSupported(tc, artifactVersion) {
-		// found it, manufacture a new instance of the component
-		tc.SetHPSF(component)
-		return &tc, nil
+	if ok {
+		if isComponentVersionCompatible(tc, component.Version) && artifactVersionSupported(tc, artifactVersion) {
+			// found it, manufacture a new instance of the component
+			tc.SetHPSF(component)
+			return &tc, nil
+		}
 	}
 
 	// nothing found so we're done
@@ -614,8 +646,12 @@ func (t *Translator) getMatchingTemplateComponents(h *hpsf.HPSF) (map[string]con
 			result.Add(fmt.Errorf("failed to validate component %s: %w", c.Name, err))
 			continue
 		}
-		if comp, ok := t.components[c.Kind]; ok && (len(c.Version) <= 0 || c.Version == comp.Version) {
-			templateComps[c.GetSafeName()] = comp
+		if comp, ok := t.components[c.Kind]; ok {
+			if isComponentVersionCompatible(comp, c.Version) {
+				templateComps[c.GetSafeName()] = comp
+			} else {
+				result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
+			}
 		} else {
 			result.Add(fmt.Errorf("failed to locate corresponding template component for %s@%s: %w", c.Kind, c.Version, err))
 		}
