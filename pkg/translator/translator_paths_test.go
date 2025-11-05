@@ -373,6 +373,11 @@ connections:
 		t.Fatalf("failed to load embedded components: %v", err)
 	}
 
+	// Populate component ports from templates before path traversal
+	if err := tr.PopulateComponentPorts(&h); err != nil {
+		t.Fatalf("failed to populate component ports: %v", err)
+	}
+
 	_ = tr.ValidateConfig(&h)
 	_, _ = tr.GenerateConfig(&h, hpsftypes.CollectorConfig, "latest", nil)
 

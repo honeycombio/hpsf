@@ -542,6 +542,31 @@ func (t *Translator) LoadEmbeddedComponents() error {
 	return nil
 }
 
+// PopulateComponentPorts populates the Ports field of each component in the HPSF
+// document with port metadata from the component templates. This is needed for
+// path traversal ordering logic that relies on port indices.
+func (t *Translator) PopulateComponentPorts(h *hpsf.HPSF) error {
+	for i := range h.Components {
+		comp := h.Components[i]
+		template, ok := t.components[comp.Kind]
+		if !ok {
+			continue // Skip components without templates
+		}
+
+		// Convert TemplatePorts to Ports
+		h.Components[i].Ports = make([]hpsf.Port, len(template.Ports))
+		for j, tPort := range template.Ports {
+			h.Components[i].Ports[j] = hpsf.Port{
+				Name:      tPort.Name,
+				Direction: hpsf.Direction(tPort.Direction),
+				Type:      tPort.Type,
+				Index:     tPort.Index,
+			}
+		}
+	}
+	return nil
+}
+
 // artifactVersionSupported checks if the component supports the artifact version requested
 func artifactVersionSupported(component config.TemplateComponent, v string) bool {
 	if v == "" || v == LatestVersion {
@@ -995,7 +1020,25 @@ func getFirstConnectionPortIndex(path hpsf.PathWithConnections, comps *OrderedCo
 		return 0, false
 	}
 	first := path.Connections[0]
-	comp, ok := comps.Get(first.Source.GetSafeName())
+
+	// First, try to get the index from the path's component (which has ports populated from templates)
+	if len(path.Path) > 0 {
+		// Find the component in the path that matches the source component
+		for _, comp := range path.Path {
+			if comp.Name == first.Source.Component {
+				// Look for the port in this component
+				for _, port := range comp.Ports {
+					if port.Name == first.Source.PortName && port.Index > 0 {
+						return port.Index, true
+					}
+				}
+			}
+		}
+	}
+
+	// Fall back to looking in comps map (for backwards compatibility)
+	safeName := first.Source.GetSafeName()
+	comp, ok := comps.Get(safeName)
 	if !ok {
 		return 0, false
 	}
@@ -1255,7 +1298,6 @@ func sliceContains(slice []string, item string) bool {
 func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *OrderedComponentMap, paths []hpsf.PathWithConnections, ct hpsftypes.Type, userdata map[string]any) (tmpl.TemplateConfig, error) {
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 
-
 	// Generate configs for each sampling path with environment context
 	composites := make([]tmpl.TemplateConfig, 0)
 	for _, path := range paths {
@@ -1269,7 +1311,6 @@ func (t *Translator) generateRefineryRulesWithRouter(h *hpsf.HPSF, comps *Ordere
 		for k, v := range userdata {
 			pathUserdata[k] = v
 		}
-
 
 		// Generate config for this path
 		base := config.GenericBaseComponent{Component: dummy}
@@ -1692,7 +1733,6 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 		for k, v := range userdata {
 			pathUserdata[k] = v
 		}
-
 
 		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
 		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key

@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -252,6 +253,7 @@ type Port struct {
 	Name      string         `yaml:"name"`
 	Direction Direction      `yaml:"direction"`
 	Type      ConnectionType `yaml:"type"`
+	Index     int            `yaml:"index,omitempty"`
 }
 
 type Property struct {
@@ -675,6 +677,29 @@ func (p PathWithConnections) GetID() string {
 	return shash[ix-6:ix-3] + "-" + shash[ix-3:] // return something like "1a2-b3c"
 }
 
+// getPortIndex returns the index of a port by name from a component.
+// Returns -1 if the port doesn't have an index or component doesn't exist.
+func (h *HPSF) getPortIndex(componentName, portName string) int {
+	comp := h.getComponent(componentName)
+	if comp == nil {
+		return -1
+	}
+
+	// Look for the port by name and return its explicit index
+	for _, port := range comp.Ports {
+		if port.Name == portName {
+			// Return the explicit index from the port definition
+			// If index is 0 (not set), fall back to -1
+			if port.Index > 0 {
+				return port.Index
+			}
+			return -1
+		}
+	}
+
+	return -1
+}
+
 // FindAllPaths generates all paths for a given connection type, from the
 // start components (not a destination of that connection type) to the end components
 // (not sources of that connection type). It
@@ -702,9 +727,28 @@ func (h *HPSF) FindAllPaths(_ map[string]bool) []PathWithConnections {
 
 			if hasEnvironmentOutput {
 				// Follow Environment connections to SetEnvironment components
-				visited := make(map[string]bool)
+				// Collect all Environment connections from this component
+				var envConns []*Connection
 				for _, conn := range h.Connections {
-					if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT && !visited[conn.Destination.Component] {
+					if conn.Source.Component == c.Name && conn.Source.Type == CTYPE_ENVIRONMENT {
+						envConns = append(envConns, conn)
+					}
+				}
+
+				// Sort Environment connections by port index
+				sort.Slice(envConns, func(i, j int) bool {
+					idxI := h.getPortIndex(envConns[i].Source.Component, envConns[i].Source.PortName)
+					idxJ := h.getPortIndex(envConns[j].Source.Component, envConns[j].Source.PortName)
+					if idxI != -1 && idxJ != -1 {
+						return idxI < idxJ
+					}
+					// Fall back to port name comparison if indices not available
+					return envConns[i].Source.PortName < envConns[j].Source.PortName
+				})
+
+				visited := make(map[string]bool)
+				for _, conn := range envConns {
+					if !visited[conn.Destination.Component] {
 						destComp := h.getComponent(conn.Destination.Component)
 						visited[conn.Destination.Component] = true
 						if destComp != nil {
@@ -725,9 +769,29 @@ func (h *HPSF) FindAllPaths(_ map[string]bool) []PathWithConnections {
 			}
 		} else {
 			// for each of these sources, we don't want to visit the same component again,
-			visited := make(map[string]bool)
+			// Collect matching connections
+			var matchingConns []*Connection
 			for _, conn := range h.Connections {
-				if conn.Source.Component == c.Name && conn.Source.Type == connType && !visited[conn.Destination.Component] {
+				if conn.Source.Component == c.Name && conn.Source.Type == connType {
+					matchingConns = append(matchingConns, conn)
+				}
+			}
+
+			// Sort connections by port index from component definition
+			// This ensures ports are ordered by their defined index (e.g., Rule 2 before Rule 10)
+			sort.Slice(matchingConns, func(i, j int) bool {
+				idxI := h.getPortIndex(matchingConns[i].Source.Component, matchingConns[i].Source.PortName)
+				idxJ := h.getPortIndex(matchingConns[j].Source.Component, matchingConns[j].Source.PortName)
+				if idxI != -1 && idxJ != -1 {
+					return idxI < idxJ
+				}
+				// Fall back to port name comparison if indices not available
+				return matchingConns[i].Source.PortName < matchingConns[j].Source.PortName
+			})
+
+			visited := make(map[string]bool)
+			for _, conn := range matchingConns {
+				if !visited[conn.Destination.Component] {
 					destComp := h.getComponent(conn.Destination.Component)
 					visited[conn.Destination.Component] = true // mark as visited
 					if destComp != nil {
