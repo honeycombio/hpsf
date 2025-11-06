@@ -44,6 +44,11 @@ properties:
     default: us-east-1
     validations:
       - noblanks
+  - name: Prefix
+    summary: The prefix to use when writing files to S3.
+    description: |
+      The prefix to use when writing files to S3.
+    type: string
   # Optional Configuration
   - name: IndexedFields
     summary: Additional fields to index beyond the defaults.
@@ -146,6 +151,9 @@ templates:
         value: "{{ .Values.PartitionFormat }}"
       - key: "{{ .ComponentName }}.s3uploader.compression"
         value: "gzip"
+      - key: "{{ .ComponentName }}.s3uploader.s3_prefix"
+        value: "{{ .Values.Prefix }}"
+        suppress_if: "{{ not .HProps.Prefix }}"
       # Data Format
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"

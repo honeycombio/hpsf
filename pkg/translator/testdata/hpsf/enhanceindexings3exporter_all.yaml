@@ -8,6 +8,8 @@ components:
         value: 'my-bucket'
       - name: Region
         value: 'my-region'
+      - name: Prefix
+        value: 'my-prefix'
       - name: IndexedFields
         value: ["agent.id", "rollout.id"]
       - name: PartitionFormat
