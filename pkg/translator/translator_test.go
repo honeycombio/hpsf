@@ -106,7 +106,28 @@ func TestGenerateConfigForAllComponents(t *testing.T) {
 					h, err := hpsf.FromYAML(inputData)
 					require.NoError(t, err)
 
-					cfg, err := tlater.GenerateConfig(&h, configType, LatestVersion, nil)
+					// Build userdata with APIKeys mapping if any component has Environment set
+					var userdata map[string]any
+					for _, comp := range h.Components {
+						if comp.Kind == "HoneycombExporter" {
+							if envProp := comp.GetProperty("Environment"); envProp != nil {
+								if envID, ok := envProp.Value.(string); ok && envID != "" {
+									if userdata == nil {
+										userdata = make(map[string]any)
+									}
+									apiKeys, ok := userdata["APIKeys"].(map[string]any)
+									if !ok {
+										apiKeys = make(map[string]any)
+										userdata["APIKeys"] = apiKeys
+									}
+									// Map the environment ID to a test API key
+									apiKeys[envID] = "test_api_key_for_" + envID
+								}
+							}
+						}
+					}
+
+					cfg, err := tlater.GenerateConfig(&h, configType, LatestVersion, userdata)
 					require.NoError(t, err)
 					if cfg == nil {
 						continue // skip if no config is generated for this component

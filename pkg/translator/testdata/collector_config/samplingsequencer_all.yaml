@@ -10,6 +10,8 @@ processors:
 exporters:
     otlphttp/Start_Sampling_1:
         endpoint: http://${HTP_REFINERY_SERVICE}:80
+        headers:
+            x-honeycomb-team: test_api_key_for_hny_env123abc456
         sending_queue:
             batch:
                 flush_timeout: 200ms

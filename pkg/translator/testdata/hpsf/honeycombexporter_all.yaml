@@ -12,10 +12,8 @@ components:
         value: alternative.honeycomb.io
       - name: APIPort
         value: 8080
-      - name: APIKey
-        value: abcdef1234567890abcdef1 # a validly-formatted key
-      - name: Mode
-        value: none
+      - name: Environment
+        value: hny_test123abc456
       - name: MetricsDataset
         value: custom
       - name: Insecure

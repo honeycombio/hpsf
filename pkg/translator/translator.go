@@ -18,6 +18,17 @@ import (
 
 const LatestVersion = "latest"
 
+// Userdata keys used for passing configuration data through the translation pipeline
+const (
+	// UserdataAPIKeysKey is the key used in userdata to pass environment ID to API key mappings.
+	// The value should be a map[string]string where keys are environment IDs and values are API keys.
+	UserdataAPIKeysKey = "APIKeys"
+
+	// UserdataTeamHeaderKey is the key used in path-specific userdata to pass the computed
+	// x-honeycomb-team header value to components in that path.
+	UserdataTeamHeaderKey = "TeamHeaderValue"
+)
+
 // A Translator is responsible for translating an HPSF document into a
 // collection of components, and then further rendering those into configuration
 // files.
@@ -606,7 +617,171 @@ func orderPaths(paths []hpsf.PathWithConnections, comps *OrderedComponentMap) {
 	})
 }
 
+// extractAPIKeysMap extracts the APIKeys map from userdata.
+// Returns a map[string]string where keys are environment IDs and values are API keys.
+// If the APIKeys key is not present in userdata or is not the correct type, returns an empty map.
+func extractAPIKeysMap(userdata map[string]any) map[string]string {
+	apiKeysMap := make(map[string]string)
+	if userdata != nil {
+		if apiKeys, ok := userdata[UserdataAPIKeysKey]; ok {
+			if keysMapAny, ok := apiKeys.(map[string]any); ok {
+				for k, v := range keysMapAny {
+					if strVal, ok := v.(string); ok {
+						apiKeysMap[k] = strVal
+					}
+				}
+			}
+		}
+	}
+	return apiKeysMap
+}
+
+// extractAPIKeyFromComponent extracts the API key from a HoneycombExporter component
+// using the following priority order:
+//
+//  1. Environment property (via apiKeysMap lookup) - if resolvable, use it
+//  2. APIKey property value (if explicitly set)
+//  3. APIKey default value from component template
+//
+// Returns empty string if no API key is found through any method.
+// If Environment property is set but cannot be resolved, falls through to other methods.
+// This allows graceful migration before APIKeys are provided in userdata.
+func extractAPIKeyFromComponent(comp *hpsf.Component, apiKeysMap map[string]string, comps *OrderedComponentMap) (string, error) {
+	// 1. Check for user-defined Environment - if set and resolvable, use it
+	if envProp := comp.GetProperty("Environment"); envProp != nil {
+		if envID, ok := envProp.Value.(string); ok && envID != "" {
+			// Look up the environment ID in the APIKeys map
+			if apiKey, found := apiKeysMap[envID]; found && apiKey != "" {
+				return apiKey, nil
+			}
+			// If Environment is set but can't be resolved, fall through to other methods
+			// This allows graceful migration before userdata is updated to pass in the APIKeys map
+		}
+	}
+
+	// 2. Check for user-defined APIKey property
+	if apiKeyProp := comp.GetProperty("APIKey"); apiKeyProp != nil {
+		if apiKey, ok := apiKeyProp.Value.(string); ok && apiKey != "" {
+			return apiKey, nil
+		}
+	}
+
+	// 3. Fall back to APIKey default value from template
+	tc, ok := comps.Get(comp.GetSafeName())
+	if !ok {
+		return "", nil
+	}
+	templateComp, ok := tc.(*config.TemplateComponent)
+	if !ok {
+		return "", nil
+	}
+	for _, prop := range templateComp.Properties {
+		if prop.Name == "APIKey" && prop.Default != nil {
+			if defaultAPIKey, ok := prop.Default.(string); ok {
+				return defaultAPIKey, nil
+			}
+		}
+	}
+	return "", nil
+}
+
+// findTeamHeaderValueForPath determines the API key (x-honeycomb-team header value) for a given path.
+//
+// It searches for a HoneycombExporter component in the path and extracts its API key using the
+// priority defined in extractAPIKeyFromComponent. If no HoneycombExporter is found in the path,
+// it looks for a SamplingSequencer and searches downstream for a HoneycombExporter.
+//
+// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
+// for the path, which is critical for multi-environment support where Refinery uses the
+// x-honeycomb-team header to determine which ruleset to apply.
+//
+// Returns empty string if no HoneycombExporter is found or no API key can be determined.
+func (t *Translator) findTeamHeaderValueForPath(h *hpsf.HPSF, path hpsf.PathWithConnections, comps *OrderedComponentMap, apiKeysMap map[string]string) (string, error) {
+	// Look for HoneycombExporter in this path
+	for _, comp := range path.Path {
+		if comp.Kind == "HoneycombExporter" {
+			apiKey, err := extractAPIKeyFromComponent(comp, apiKeysMap, comps)
+			if err != nil {
+				return "", err
+			}
+			if apiKey != "" {
+				return apiKey, nil
+			}
+		}
+	}
+
+	// If no HoneycombExporter found in the current path, look for one downstream
+	// This handles the case where SamplingSequencer is in a traces path, but the
+	// HoneycombExporter is in a downstream sampling/events path
+	for _, comp := range path.Path {
+		if comp.Kind == "SamplingSequencer" {
+			// Search for HoneycombExporter components downstream from this SamplingSequencer
+			apiKey, err := t.findDownstreamHoneycombExporter(h, comp, apiKeysMap, comps)
+			if err != nil {
+				return "", err
+			}
+			if apiKey != "" {
+				return apiKey, nil
+			}
+		}
+	}
+
+	return "", nil
+}
+
+// findDownstreamHoneycombExporter recursively searches downstream from the given component
+// for a HoneycombExporter and returns its API key.
+//
+// The visited map prevents infinite loops in circular connection graphs.
+// Returns empty string if no HoneycombExporter is found downstream.
+func (t *Translator) findDownstreamHoneycombExporter(h *hpsf.HPSF, startComp *hpsf.Component, apiKeysMap map[string]string, comps *OrderedComponentMap) (string, error) {
+	visited := make(map[string]bool)
+	return t.searchDownstream(h, startComp, apiKeysMap, comps, visited)
+}
+
+// searchDownstream is the recursive helper for findDownstreamHoneycombExporter
+func (t *Translator) searchDownstream(h *hpsf.HPSF, comp *hpsf.Component, apiKeysMap map[string]string, comps *OrderedComponentMap, visited map[string]bool) (string, error) {
+	if visited[comp.Name] {
+		return "", nil
+	}
+	visited[comp.Name] = true
+
+	// If this is a HoneycombExporter, extract and return its API key
+	if comp.Kind == "HoneycombExporter" {
+		return extractAPIKeyFromComponent(comp, apiKeysMap, comps)
+	}
+
+	// Otherwise, search downstream components
+	for _, conn := range h.Connections {
+		if conn.Source.Component == comp.Name {
+			// Find the destination component
+			var destComp *hpsf.Component
+			for _, c := range h.Components {
+				if c.Name == conn.Destination.Component {
+					destComp = c
+					break
+				}
+			}
+			if destComp != nil {
+				apiKey, err := t.searchDownstream(h, destComp, apiKeysMap, comps, visited)
+				if err != nil {
+					return "", err
+				}
+				if apiKey != "" {
+					return apiKey, nil
+				}
+			}
+		}
+	}
+
+	return "", nil
+}
+
 func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVersion string, userdata map[string]any) (tmpl.TemplateConfig, error) {
+	if userdata == nil {
+		userdata = make(map[string]any)
+	}
+
 	comps := NewOrderedComponentMap()
 	receiverNames := make(map[string]bool)
 	// make all the components
@@ -668,11 +843,28 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 	dummy := hpsf.Component{Name: "dummy", Kind: "dummy"}
 	composites := make([]tmpl.TemplateConfig, 0, len(paths))
 
+	// Extract APIKeys map once for all paths to avoid redundant extraction
+	apiKeysMap := extractAPIKeysMap(userdata)
+
 	// now we can iterate over the paths and generate a configuration for each
 	for _, path := range paths {
+		// Create path-specific userdata with TeamHeaderValue
+		pathUserdata := make(map[string]any)
+		maps.Copy(pathUserdata, userdata)
+
+		// Compute TeamHeaderValue for this path based on the HoneycombExporter's Environment
+		// This ensures all components in the pipeline (including SamplingSequencer) use the same API key
+		teamHeaderValue, err := t.findTeamHeaderValueForPath(h, path, comps, apiKeysMap)
+		if err != nil {
+			return nil, fmt.Errorf("failed to determine API key for path %s: %w", path.GetID(), err)
+		}
+		if teamHeaderValue != "" {
+			pathUserdata[UserdataTeamHeaderKey] = teamHeaderValue
+		}
+
 		// Start with a base component so we always have a valid config
 		base := config.GenericBaseComponent{Component: dummy}
-		composite, err := base.GenerateConfig(ct, path, userdata)
+		composite, err := base.GenerateConfig(ct, path, pathUserdata)
 		if err != nil {
 			return nil, err
 		}
@@ -685,7 +877,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 				return nil, fmt.Errorf("unknown component %s in path", comp.GetSafeName())
 			}
 
-			compConfig, err := c.GenerateConfig(ct, path, userdata)
+			compConfig, err := c.GenerateConfig(ct, path, pathUserdata)
 			if err != nil {
 				return nil, err
 			}

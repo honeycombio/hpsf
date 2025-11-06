@@ -3,7 +3,7 @@ name: Start Sampling
 style: startsampling
 type: base
 status: alpha
-version: v0.1.0
+version: v0.2.0
 summary: Converts traces and logs to a format for sampling
 description: |-
   Converts traces and logs to a format for advanced tail-based sampling with Refinery. Also contains
@@ -151,14 +151,6 @@ properties:
       - inrange(1, 65535)
     default: 80
     advanced: true
-  - name: Headers
-    summary: Headers to emit when sending HTTP traffic.
-    description: |
-      Sending data to a backend may require additional headers to be
-      configured. This properties supports sending a map of header keys and
-      values.
-    type: map
-    advanced: true
   - name: UseTLS
     summary: Provide a way to enable TLS export.
     description: |
@@ -212,9 +204,8 @@ templates:
       - key: "{{ .ComponentName }}.tls.insecure"
         value: "{{ not .Values.UseTLS | encodeAsBool }}"
         suppress_if: "{{ .Values.UseTLS }}"
-      - key: "{{ .ComponentName }}.headers"
-        value: "{{ .HProps.Headers | encodeAsMap }}"
-        suppress_if: "{{ not .HProps.Headers }}"
+      - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
+        value: "{{ .User.TeamHeaderValue }}"
       - key: "{{ .ComponentName }}.sending_queue.queue_size"
         value: "{{ .Values.QueueSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"

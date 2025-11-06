@@ -108,8 +108,8 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	mkdir -p tmp
 
 	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-rules.yaml rRules || exit 1
-	go run ./cmd/hpsf -i ${FILE} -o tmp/refinery-config.yaml rConfig || exit 1
+	go run ./cmd/hpsf -i ${FILE} -d '{"APIKeys":{"hny_smoke_test_env":"test_api_key"}}' -o tmp/refinery-rules.yaml rRules || exit 1
+	go run ./cmd/hpsf -i ${FILE} -d '{"APIKeys":{"hny_smoke_test_env":"test_api_key"}}' -o tmp/refinery-config.yaml rConfig || exit 1
 
 	# run refinery with the generated configs
 	docker run -d --name smoke-refinery \
@@ -146,7 +146,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	mkdir -p tmp
 
 	# generate the configs from the provided file
-	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
+	go run ./cmd/hpsf -i ${FILE} -d '{"APIKeys":{"hny_smoke_test_env":"test_api_key"}}' -o tmp/collector-config.yaml cConfig || exit 1
 
 	# use yq to remove the usage processor and honeycomb extension from collector config
 	yq -i e \

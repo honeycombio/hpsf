@@ -54,14 +54,14 @@ func main() {
 		log.Fatalf("error reading input file: %v", err)
 	}
 
-	// Process the data
+	// Process the data (must be valid JSON object)
 	userdata := make(map[string]any)
 	for _, d := range cmdopts.Data {
-		splits := strings.Split(d, "=")
-		if len(splits) != 2 {
-			log.Fatalf("invalid data: %s", d)
+		var data map[string]any
+		if err := y.Unmarshal([]byte(d), &data); err != nil {
+			log.Fatalf("invalid JSON for -d flag: %v", err)
 		}
-		userdata[splits[0]] = splits[1]
+		userdata = data
 	}
 
 	// Process the substitutions
