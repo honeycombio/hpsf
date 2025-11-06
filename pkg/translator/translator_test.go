@@ -2745,3 +2745,101 @@ components:
 	assert.Equal(t, 1, styleCount["dropper"])
 	assert.Equal(t, 1, styleCount["sampler"])
 }
+
+
+func TestUserDataLookup(t *testing.T) {
+	c := `
+components:
+  - name: otlp
+    kind: OTelReceiver
+  - name: refinery
+    kind: SamplingSequencer
+  - name: sampler
+    kind: DeterministicSampler
+  - name: honeycomb
+    kind: HoneycombExporter
+    properties:
+      - name: Environment
+        value: "hny_abc1234"
+      - name: APIEndpoint
+        value: alternative.honeycomb.io
+      - name: APIPort
+        value: 8080
+      - name: APIKey
+        value: abcdef1234567890abcdef1 # a validly-formatted key
+      - name: Mode
+        value: none
+      - name: MetricsDataset
+        value: custom
+      - name: Insecure
+        value: true
+      - name: BatchTimeout
+        value: 30s
+      - name: BatchSize
+        value: 200_000
+      - name: QueueSize
+        value: 2_000_000
+connections:
+  # traces: otel -> startsampling -> honeycomb
+  - source:
+      component: otlp
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: refinery
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: refinery
+      port: Rule 1
+      type: Honeycomb
+    destination:
+      component: sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: sampler
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: honeycomb
+      port: Events
+      type: HoneycombEvents
+  # metrics: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: honeycomb
+      port: Metrics
+      type: OTelMetrics
+  # logs: otel -> honeycomb
+  - source:
+      component: otlp
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: honeycomb
+      port: Logs
+      type: OTelLogs
+`
+
+	h, err := hpsf.FromYAML(c)
+	require.NoError(t, err)
+
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+
+	userdata := map[string]any {
+		"api_keys": map[string]string {
+			"hny_abc1234": "lkj1h234089ausdflkj",
+		},
+	}
+
+	x, err := tlater.GenerateConfig(&h, hpsftypes.CollectorConfig, LatestVersion, userdata)
+	require.NoError(t, err)
+	require.NotNil(t, x)
+}

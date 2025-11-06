@@ -33,6 +33,13 @@ ports:
     direction: input
     type: OTelMetrics
 properties:
+  - name: Environment
+    summary: The Honeycomb environment ID to send data to.
+    description: |
+      The Honeycomb environment ID to send data to. This is an opaque string identifier
+      with a hny_ prefix (e.g., hny_abc123xyz) that identifies which environment within
+      your Honeycomb account will receive the telemetry data.
+    type: string
   - name: APIKey
     summary: The API key to use to authenticate with Honeycomb.
     description: |
@@ -132,11 +139,6 @@ templates:
     data:
       - key: Network.HoneycombAPI
         value: "{{ buildurl .Values.Insecure .Values.APIEndpoint .Values.APIPort }}"
-      - key: AccessKeys.SendKey
-        value: "{{ .Values.APIKey }}"
-        suppress_if: '{{ eq "none" (or .Values.APIKey .User.APIKey) }}'
-      - key: AccessKeys.SendKeyMode
-        value: "{{ .Values.Mode }}"
   - kind: collector_config
     name: honeycombexporter_collector
     format: collector
@@ -151,7 +153,7 @@ templates:
         value: "{{ .Values.Insecure | encodeAsBool }}"
         suppress_if: "{{ not .Values.Insecure }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-team"
-        value: "{{ .Values.APIKey }}"
+        value: "{{ getAPIKey . .Values.Environment }}"
       - key: "{{ .ComponentName }}.headers.x-honeycomb-dataset"
         value: "{{ .Values.MetricsDataset }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"

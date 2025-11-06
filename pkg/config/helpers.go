@@ -45,6 +45,7 @@ func helpers() template.FuncMap {
 		"encodeAsInt":   encodeAsInt,
 		"encodeAsFloat": encodeAsFloat,
 		"encodeAsMap":   encodeAsMap,
+		"getAPIKey":     getAPIKey,
 		"indent":        indent,
 		"join":          join,
 		"makeSlice":     makeSlice,
@@ -55,6 +56,19 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+func getAPIKey(tc TemplateComponent, environment any) any {
+	if e, ok := environment.(string); ok {
+		if v, ok := tc.User["api_keys"]; ok {
+			if keys, ok := v.(map[string]string); ok {
+				if key, ok := keys[e]; ok {
+					return key
+				}
+			}
+		}
+	}
+	return tc.Values()["APIKey"]
 }
 
 // buildurl constructs a URL based on the provided parameters. A path is optional.
