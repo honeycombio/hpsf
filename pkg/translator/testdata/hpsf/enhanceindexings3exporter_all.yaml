@@ -8,10 +8,6 @@ components:
         value: 'my-bucket'
       - name: Region
         value: 'my-region'
-      - name: APIKey
-        value: 'key'
-      - name: APISecret
-        value: 'secret'
       - name: IndexedFields
         value: ["agent.id", "rollout.id"]
       - name: PartitionFormat
@@ -26,8 +22,6 @@ components:
         value: 200_000
       - name: QueueSize
         value: 2_000_000
-      - name: APIEndpoint
-        value: https://api-dogfood.honeycomb.io
 connections:
   - source:
       component: otlp_in

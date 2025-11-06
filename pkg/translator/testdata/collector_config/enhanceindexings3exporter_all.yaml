@@ -9,9 +9,6 @@ processors:
     usage: {}
 exporters:
     enhance_indexing_s3_exporter/s3_out:
-        api_endpoint: https://api-dogfood.honeycomb.io
-        api_key: key
-        api_secret: secret
         indexed_fields:
             - agent.id
             - rollout.id
