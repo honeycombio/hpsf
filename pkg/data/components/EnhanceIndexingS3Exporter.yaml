@@ -44,12 +44,12 @@ properties:
     default: us-east-1
     validations:
       - noblanks
+  # Optional Configuration
   - name: Prefix
     summary: The prefix to use when writing files to S3.
     description: |
       The prefix to use when writing files to S3.
     type: string
-  # Optional Configuration
   - name: IndexedFields
     summary: Additional fields to index beyond the defaults.
     description: |
