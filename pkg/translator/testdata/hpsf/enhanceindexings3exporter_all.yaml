@@ -13,7 +13,7 @@ components:
       - name: IndexedFields
         value: ["agent.id", "rollout.id"]
       - name: PartitionFormat
-        value: 'my-partition-format'
+        value: 'minute=%M/year=%Y/month=%m/day=%d/hour=%H'
       - name: Timeout
         value: 30s
       - name: Marshaler

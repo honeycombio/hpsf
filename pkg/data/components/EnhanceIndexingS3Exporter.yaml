@@ -69,6 +69,7 @@ properties:
     default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
     validations:
       - noblanks
+      - enhancepartitionformat
     advanced: true
   - name: Timeout
     summary: The timeout to use when writing files to S3.

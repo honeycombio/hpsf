@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/honeycombio/hpsf/pkg/hpsf"
@@ -93,6 +94,9 @@ func getValidationRule(validation string) func(val any) bool {
 	case "regex":
 		// regex will check if the value is a valid regular expression
 		return isValidRegex
+	case "enhancepartitionformat":
+		// enhancepartitionformat will check if the value is a valid enhance partition format string
+		return enhancePartitionFormat
 	default:
 		// If no match, always return false
 		return alwaysFail
@@ -360,4 +364,53 @@ func isValidRegex(val any) bool {
 
 	_, err := regexp.Compile(s)
 	return err == nil
+}
+
+// enhancePartitionFormat validates that a value is a string representing a valid date format.
+// The string must not start or end with '/' and must contain either:
+// - All Go time format tokens: "2006", "01", "02", "15", "04" 
+// - All C-style format tokens: "%Y", "%m", "%d", "%H", "%M"
+func enhancePartitionFormat(val any) bool {
+	// Check if value is a string
+	str, ok := val.(string)
+	if !ok {
+		return false
+	}
+
+	// Check that string does not start with /
+	if strings.HasPrefix(str, "/") {
+		return false
+	}
+
+	// Check that string does not end with /
+	if strings.HasSuffix(str, "/") {
+		return false
+	}
+
+	// Check for Go time format tokens
+	goTokens := []string{"2006", "01", "02", "15", "04"}
+	hasAllGoTokens := true
+	for _, token := range goTokens {
+		if !strings.Contains(str, token) {
+			hasAllGoTokens = false
+			break
+		}
+	}
+
+	// Check for C-style format tokens
+	cTokens := []string{"%Y", "%m", "%d", "%H", "%M"}
+	hasAllCTokens := true
+	for _, token := range cTokens {
+		if !strings.Contains(str, token) {
+			hasAllCTokens = false
+			break
+		}
+	}
+
+	// Must have either all Go tokens or all C tokens
+	if !hasAllGoTokens && !hasAllCTokens {
+		return false
+	}
+
+	return true
 }
