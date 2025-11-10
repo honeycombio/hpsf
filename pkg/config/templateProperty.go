@@ -408,7 +408,7 @@ func enhancePartitionFormat(val any) bool {
 	}
 
 	// Must have either all Go tokens or all C tokens
-	if !hasAllGoTokens && !hasAllCTokens {
+	if (!hasAllGoTokens && !hasAllCTokens) || (hasAllGoTokens && hasAllCTokens) {
 		return false
 	}
 
