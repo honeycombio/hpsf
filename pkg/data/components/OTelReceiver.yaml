@@ -43,7 +43,7 @@ properties:
     default: ${HTP_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
-    display: GRPC Port
+    display: gRPC Port
     summary: The port on which to listen for gRPC traffic.
     description: |
       The port on which to listen for incoming gRPC traffic.
