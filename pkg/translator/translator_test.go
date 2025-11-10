@@ -1455,6 +1455,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Kind)
+	// Verify version falls back to template version when not specified in HPSF
+	assert.NotEmpty(t, exp.Version, "Version should be populated from template component")
 
 	// Verify properties contain actual component values
 	assert.NotNil(t, exp.Properties)
@@ -2280,6 +2282,65 @@ components:
 	assert.Equal(t, "ErrorExistsCondition", condition.Kind)
 	assert.Equal(t, "condition", condition.Style)
 	assert.NotNil(t, condition.Properties)
+}
+
+func TestInspect_VersionHandling(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: Receiver with Version
+    kind: OTelReceiver
+    version: v0.1.0
+  - name: Exporter without Version
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: Receiver with Version
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Exporter without Version
+      port: Traces
+      type: OTelTraces
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	result := tlater.Inspect(h)
+	require.Len(t, result.Components, 2)
+
+	// Find the receiver with specified version
+	var receiver ComponentInfo
+	var exporter ComponentInfo
+	for _, comp := range result.Components {
+		if comp.Name == "Receiver with Version" {
+			receiver = comp
+		} else if comp.Name == "Exporter without Version" {
+			exporter = comp
+		}
+	}
+
+	// Verify receiver returns the HPSF-specified version
+	assert.Equal(t, "v0.1.0", receiver.Version, "Should return version specified in HPSF")
+
+	// Verify exporter returns the template version when not specified in HPSF
+	assert.NotEmpty(t, exporter.Version, "Should fallback to template version")
+	// Get the actual template component to verify it matches
+	tc := tlater.GetComponents()["HoneycombExporter"]
+	assert.Equal(t, tc.Version, exporter.Version, "Should match template component version")
 }
 
 func TestInspect_CompareIntegerFieldCondition(t *testing.T) {
