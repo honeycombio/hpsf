@@ -730,6 +730,9 @@ type ComponentInfo struct {
 	Style string
 	// Kind identifies the specific component template (e.g., "HoneycombExporter", "OTelReceiver")
 	Kind string
+	// Version is the component version. If specified in the HPSF document, that version is returned.
+	// Otherwise, falls back to the template component's version.
+	Version string
 	// Properties contains all component properties, merging explicit values with template defaults.
 	// Access values directly without type casting: properties["Region"]
 	Properties map[string]any
@@ -810,10 +813,17 @@ func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 			continue
 		}
 
+		// Determine version: use HPSF component version if specified, otherwise use template version
+		version := c.Version
+		if version == "" {
+			version = tc.Version
+		}
+
 		comp := ComponentInfo{
 			Name:       c.Name,
 			Style:      tc.Style,
 			Kind:       c.Kind,
+			Version:    version,
 			Properties: getProperties(c, tc),
 		}
 
