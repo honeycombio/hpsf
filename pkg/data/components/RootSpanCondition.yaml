@@ -27,6 +27,7 @@ ports:
     type: SampleData
 properties:
   - name: HasRootSpan
+    display: Has Root Span
     type: bool
     default: false
     description: |

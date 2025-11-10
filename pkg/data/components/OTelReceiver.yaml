@@ -31,6 +31,7 @@ ports:
     type: OTelMetrics
 properties:
   - name: Host
+    display: Host
     summary: The hostname or IP address on which to listen
     description: |
       Hostname or IP address on which to listen for incoming traffic.
@@ -43,6 +44,7 @@ properties:
     default: ${HTP_COLLECTOR_POD_IP}
     advanced: true
   - name: GRPCPort
+    display: GRPC Port
     summary: The port on which to listen for gRPC traffic.
     description: |
       The port on which to listen for incoming gRPC traffic.
@@ -53,6 +55,7 @@ properties:
     default: 4317
     advanced: true
   - name: HTTPPort
+    display: HTTP Port
     summary: The port on which to listen for HTTP traffic.
     description: |
       The port on which to listen for incoming HTTP traffic.

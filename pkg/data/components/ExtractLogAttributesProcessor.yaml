@@ -23,6 +23,7 @@ ports:
     type: OTelLogs
 properties:
   - name: Field
+    display: Field
     type: string
 templates:
   - kind: collector_config

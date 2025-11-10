@@ -32,10 +32,12 @@ ports:
     type: OTelLogs
 properties:
   - name: Attribute
+    display: Attribute
     type: string
     validations:
       - noblanks
   - name: Signal
+    display: Signal
     type: string
     subtype: oneof(span, log)
     default: log

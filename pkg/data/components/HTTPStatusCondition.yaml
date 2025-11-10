@@ -28,6 +28,7 @@ ports:
     type: SampleData
 properties:
   - name: Operator
+    display: Operator
     summary: The comparison operator to use when evaluating status codes.
     description: |
       The comparison operator to use when evaluating status codes.
@@ -38,6 +39,7 @@ properties:
     validations:
       - oneof(=, !=, <, <=, >, >=)
   - name: Value
+    display: Value
     summary: The Value to compare status codes against.
     description: |
       The Value to compare status codes against. This is typically 400 or 500.

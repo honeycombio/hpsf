@@ -26,6 +26,7 @@ ports:
     note: "The traces that are sampled"
 properties:
   - name: SampleRate
+    display: Sample Rate
     summary: The target SampleRate.
     description: |
       The target SampleRate. One of every SampleRate traces will be sampled. In other

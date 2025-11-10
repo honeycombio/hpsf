@@ -26,6 +26,7 @@ ports:
     type: SampleData
 properties:
   - name: Duration
+    display: Duration
     summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
     description: |
       The duration (in milliseconds) that the root span must exceed for the trace

@@ -43,6 +43,7 @@ ports:
     type: OTelMetrics
 properties:
   - name: AttributeNamePatternsToRedact
+    display: Attribute Name Patterns To Redact
     summary: Regular expression patterns of attribute names to redact.
     description: |
       A list of regular expression patterns that match attribute names to be redacted.
@@ -52,6 +53,7 @@ properties:
       - noblanks
     default: []
   - name: AttributeValuePatternsToRedact
+    display: Attribute Value Patterns To Redact
     summary: Regular expression patterns of attribute values to redact.
     description: |
       A list of regular expression patterns that match attribute values to be redacted.
@@ -63,6 +65,7 @@ properties:
       - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
       - (5[1-5][0-9]{14}) ## MasterCard number
   - name: AttributeNamesToNotRedact
+    display: Attribute Names To Not Redact
     summary: A list of attribute names that will skip redaction.
     description: |
       A list of attribute names that will not be redacted, even if they match the patterns

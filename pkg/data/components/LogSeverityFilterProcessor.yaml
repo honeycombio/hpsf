@@ -23,6 +23,7 @@ ports:
     type: OTelLogs
 properties:
   - name: Severity
+    display: Severity
     type: string
     summary: The minimum severity level to keep.
     subtype: oneof(Trace,Debug,Info,Warn,Error)

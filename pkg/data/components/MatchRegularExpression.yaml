@@ -25,6 +25,7 @@ ports:
     type: SampleData
 properties:
   - name: Field
+    display: Field
     summary: The name of the field to check.
     description: |
       The field name to check for the regular expression match. If this field exists in any span of a trace,
@@ -33,6 +34,7 @@ properties:
     validations:
       - noblanks
   - name: RegularExpression
+    display: Regular Expression
     summary: The regular expression to match against the field value.
     description: |
       The regular expression pattern that the field value should match. The regular expression must be a valid Go regular expression.

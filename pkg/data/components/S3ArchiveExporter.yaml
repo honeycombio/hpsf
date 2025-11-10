@@ -29,6 +29,7 @@ ports:
     type: OTelMetrics
 properties:
   - name: Bucket
+    display: Bucket
     summary: The S3 bucket in which to store the data.
     description: |
       The name of the S3 bucket in which to store the data. This is a required field.
@@ -36,18 +37,21 @@ properties:
     validations:
       - noblanks
   - name: Region
+    display: Region
     summary: The AWS region in which to store the data.
     description: |
       The region in which to store the data.
     type: string
     default: us-east-1
   - name: Prefix
+    display: Prefix
     summary: The prefix to use when writing files to S3.
     description: |
       The prefix to use when writing files to S3.
     type: string
   # advanced properties
   - name: PartitionFormat
+    display: Partition Format
     summary: The partition format to use when writing files to S3.
     description: |
       The partition format to use when writing files to S3. The default value is `year=%Y/month=%m/day=%d/hour=%H/minute=%M`.
@@ -55,6 +59,7 @@ properties:
     default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
     advanced: true
   - name: Timeout
+    display: Timeout
     summary: The timeout to use when writing files to S3.
     description: |
       The timeout to use when writing files to S3. The default value is `5s`.
@@ -64,6 +69,7 @@ properties:
       - duration
     advanced: true
   - name: Marshaler
+    display: Marshaler
     summary: The marshaler to use when writing files to S3.
     description: |
       The marshaler to use when writing files to S3. The default value is `otlp_json`.
@@ -74,6 +80,7 @@ properties:
       - oneof(otlp_json, otlp_proto)
     advanced: true
   - name: BatchTimeout
+    display: Batch Timeout
     summary: How long to wait to before sending a batch, regardless of size.
     description: |
       Configure how long to wait before sending a batch. The batch will be sent after
@@ -85,6 +92,7 @@ properties:
       - nonempty
     advanced: true
   - name: BatchSize
+    display: Batch Size
     summary: The size of a batch.
     description: |
       The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
@@ -94,6 +102,7 @@ properties:
       - nonempty
     advanced: true
   - name: QueueSize
+    display: Queue Size
     summary: The size of a exporting queue.
     description: |
       The size of the exporting queue, measured by span/datapoint/log record count.

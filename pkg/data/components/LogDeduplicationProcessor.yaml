@@ -25,12 +25,14 @@ ports:
     type: OTelLogs
 properties:
   - name: Interval
+    display: Interval
     type: duration
     validations:
       - duration
     default: 60s
     advanced: true
   - name: CountAttribute
+    display: Count Attribute
     type: string
     default: sampleRate
     advanced: true

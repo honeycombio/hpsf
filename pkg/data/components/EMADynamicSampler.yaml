@@ -29,6 +29,7 @@ ports:
     note: "The traces that are sampled (retained for further processing)"
 properties:
   - name: GoalSampleRate
+    display: Goal Sample Rate
     summary: The target sample rate to achieve.
     description: |
       The desired sample rate to achieve. Note that this is a target, and the
@@ -41,6 +42,7 @@ properties:
       - positive
     default: 100
   - name: AdjustmentInterval
+    display: Adjustment Interval
     summary: The interval (in seconds) between adjustments of the sampling rate
     description: |
       The interval (in seconds) at which to adjust the sampling rate. This
@@ -54,6 +56,7 @@ properties:
     default: 60
     advanced: true
   - name: FieldList
+    display: Field List
     summary: The field names of the keys to use for controlling sampling
     description: |
       The field names of keys to use for sampling. These should be chosen
@@ -68,6 +71,7 @@ properties:
       - nonempty
     default: []
   - name: MaxKeys
+    display: Max Keys
     summary: The maximum number of distinct keys the sampler tracks
     description: |
       The maximum number of distinct keys the sampler tracks. This is used to limit
@@ -80,6 +84,7 @@ properties:
     default: 500
     advanced: true
   - name: Weight
+    display: Weight
     summary: The weight to apply to the sampling rate adjustment
     description: |
       The weight to apply to the sampling rate adjustment. This controls how
@@ -94,6 +99,7 @@ properties:
     default: 0.5
     advanced: true
   - name: AgeOutValue
+    display: Age Out Value
     summary: The value to use for aging out old keys
     description: |
       The value to use for aging out old keys. This controls how aggressively
@@ -107,6 +113,7 @@ properties:
     default: 0.5
     advanced: true
   - name: BurstMultiple
+    display: Burst Multiple
     summary: The burst multiple to use for sampling
     description: |
       The burst multiple to use for sampling. This controls how much the
@@ -121,6 +128,7 @@ properties:
     default: 2.0
     advanced: true
   - name: BurstDetectionDelay
+    display: Burst Detection Delay
     summary: the number of `AdjustmentIntervals` to wait before detecting bursts.
     description: |
       Indicates the number of intervals to run before burst detection kicks in.

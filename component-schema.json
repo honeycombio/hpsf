@@ -172,12 +172,17 @@
     "TemplateProperty": {
       "type": "object",
       "description": "A user-settable value that can be used to configure the component",
-      "required": ["name", "type"],
+      "required": ["name", "type", "display"],
       "properties": {
         "name": {
           "type": "string",
           "description": "The name of the property; this is used by the templates so the name should be a valid Go identifier",
           "pattern": "^[A-Za-z][A-Za-z0-9_]*$"
+        },
+        "display": {
+          "type": "string",
+          "description": "Human-readable label for the property shown in the UI",
+          "minLength": 1
         },
         "summary": {
           "type": "string",
