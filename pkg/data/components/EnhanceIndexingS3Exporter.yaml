@@ -30,7 +30,6 @@ ports:
 properties:
   # Required S3 Configuration
   - name: Bucket
-    display: Bucket
     summary: The S3 bucket in which to store the data.
     description: |
       The name of the S3 bucket in which to store the telemetry data and indexes. This is a required field.
@@ -38,7 +37,6 @@ properties:
     validations:
       - noblanks
   - name: Region
-    display: Region
     summary: The AWS region in which to store the data.
     description: |
       The AWS region where the S3 bucket is located.
@@ -48,7 +46,6 @@ properties:
       - noblanks
   # Optional Configuration
   - name: Prefix
-    display: Prefix
     summary: The prefix to use when writing files to S3.
     description: |
       The prefix to use when writing files to S3.
@@ -76,7 +73,6 @@ properties:
       - noblanks
     advanced: true
   - name: Timeout
-    display: Timeout
     summary: The timeout to use when writing files to S3.
     description: |
       The timeout to use when writing files to S3 and making API calls.
@@ -86,7 +82,6 @@ properties:
       - duration
     advanced: true
   - name: Marshaler
-    display: Marshaler
     summary: The marshaler to use when writing files to S3.
     description: |
       The data format for files written to S3. 'otlp_proto' creates smaller, more 

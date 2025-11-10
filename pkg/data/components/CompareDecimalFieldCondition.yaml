@@ -26,7 +26,6 @@ ports:
     type: SampleData
 properties:
   - name: Fields
-    display: Fields
     summary: The name(s) of the field(s) to check. If any of these fields exist in any span of a trace, and its value matches the specified numeric value using the operator, the condition will match.
     description: |
       The field names to check for the numeric value.
@@ -35,7 +34,6 @@ properties:
       - nonempty
       - noblanks
   - name: Operator
-    display: Operator
     summary: The comparison operator to use when comparing the field value to the specified numeric value.
     description: |
       The comparison operator to use when comparing the field value to the specified numeric value.
@@ -45,7 +43,6 @@ properties:
       - oneof(=, !=, >, >=, <, <=)
     default: =
   - name: Value
-    display: Value
     summary: The numeric value to compare against the field value.
     description: |
       The numeric value that the field should be compared against using the specified operator.

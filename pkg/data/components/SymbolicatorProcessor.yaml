@@ -35,7 +35,6 @@ properties:
     validations:
       - oneof(AWSS3, GoogleCloudStorage)
   - name: Bucket
-    display: Bucket
     summary: The bucket name where the source maps are stored.
     description: |
       The bucket to use for the source map store. This is required.
@@ -47,7 +46,6 @@ properties:
       - noblanks
       - nonempty
   - name: Region
-    display: Region
     summary: The AWS S3 region where the bucket is located.
     description: |
       The region to use for the source map store. This is required if the source map store is `AWSS3`.
@@ -57,7 +55,6 @@ properties:
       - noblanks
       - nonempty
   - name: Prefix
-    display: Prefix
     summary: The prefix to use for the source map store.
     description: |
       The prefix to use for the source map store. This is optional and can be used to specify a subdirectory within the bucket.

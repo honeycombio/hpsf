@@ -25,7 +25,6 @@ ports:
     type: SampleData
 properties:
   - name: Field
-    display: Field
     summary: The name of the field to check.
     description: |
       The field name to check for the regular expression match. If this field exists in any span of a trace,

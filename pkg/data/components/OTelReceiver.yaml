@@ -31,7 +31,6 @@ ports:
     type: OTelMetrics
 properties:
   - name: Host
-    display: Host
     summary: The hostname or IP address on which to listen
     description: |
       Hostname or IP address on which to listen for incoming traffic.

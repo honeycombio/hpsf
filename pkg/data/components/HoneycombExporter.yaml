@@ -78,7 +78,6 @@ properties:
     default: 443
     advanced: true
   - name: Mode
-    display: Mode
     summary: Configures when to use the the APIKey.
     description: |
       Allows configuring when the exporter uses the APIKey.
@@ -93,7 +92,6 @@ properties:
     default: all
     advanced: true
   - name: Insecure
-    display: Insecure
     summary: Provide a way to disable TLS export.
     description: |
       Can be used to send data without TLS.

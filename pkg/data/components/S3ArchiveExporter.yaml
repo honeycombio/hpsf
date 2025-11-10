@@ -29,7 +29,6 @@ ports:
     type: OTelMetrics
 properties:
   - name: Bucket
-    display: Bucket
     summary: The S3 bucket in which to store the data.
     description: |
       The name of the S3 bucket in which to store the data. This is a required field.
@@ -37,14 +36,12 @@ properties:
     validations:
       - noblanks
   - name: Region
-    display: Region
     summary: The AWS region in which to store the data.
     description: |
       The region in which to store the data.
     type: string
     default: us-east-1
   - name: Prefix
-    display: Prefix
     summary: The prefix to use when writing files to S3.
     description: |
       The prefix to use when writing files to S3.
@@ -59,7 +56,6 @@ properties:
     default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
     advanced: true
   - name: Timeout
-    display: Timeout
     summary: The timeout to use when writing files to S3.
     description: |
       The timeout to use when writing files to S3. The default value is `5s`.
@@ -69,7 +65,6 @@ properties:
       - duration
     advanced: true
   - name: Marshaler
-    display: Marshaler
     summary: The marshaler to use when writing files to S3.
     description: |
       The marshaler to use when writing files to S3. The default value is `otlp_json`.

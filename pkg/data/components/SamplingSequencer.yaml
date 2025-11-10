@@ -130,7 +130,6 @@ ports:
     index: 25
 properties:
   - name: Host
-    display: Host
     summary: The hostname or IP address on which to listen.
     description: |
       Hostname or IP address on which to listen for incoming traffic.
@@ -142,7 +141,6 @@ properties:
     default: ${HTP_REFINERY_SERVICE}
     advanced: true
   - name: Port
-    display: Port
     summary: The port on which Refinery is listening for HTTP traffic.
     description: |
       The port on which Refinery listens for incoming HTTP traffic.
@@ -154,7 +152,6 @@ properties:
     default: 80
     advanced: true
   - name: Headers
-    display: Headers
     summary: Headers to emit when sending HTTP traffic.
     description: |
       Sending data to a backend may require additional headers to be

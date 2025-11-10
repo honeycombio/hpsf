@@ -41,10 +41,8 @@ ports:
     type: OTelMetrics
 properties:
   - name: Rules
-    display: Rules
     type: rule
   - name: Signal
-    display: Signal
     type: string
     subtype: oneof(traces, metrics, logs)
     validations:

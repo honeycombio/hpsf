@@ -25,7 +25,6 @@ ports:
     type: OTelLogs
 properties:
   - name: Interval
-    display: Interval
     type: duration
     validations:
       - duration
