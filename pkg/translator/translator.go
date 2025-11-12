@@ -76,9 +76,9 @@ func (t *Translator) LoadEmbeddedComponents() error {
 }
 
 // artifactVersionSupported checks if the component supports the artifact version requested
-func artifactVersionSupported(component config.TemplateComponent, v string) bool {
+func artifactVersionSupported(component config.TemplateComponent, v string) error {
 	if v == "" || v == LatestVersion {
-		return true
+		return nil
 	}
 
 	// ensure the version string is prefixed with v otherwise semver.Compare fails
@@ -88,14 +88,14 @@ func artifactVersionSupported(component config.TemplateComponent, v string) bool
 	}
 
 	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {
-		return false
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement minimum version of %s", v, component.Kind, component.Minimum))
 	}
 
 	if component.Maximum != "" && semver.Compare(v, component.Maximum) > 0 {
-		return false
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement maximum version of %s", v, component.Kind, component.Maximum))
 	}
 
-	return true
+	return nil
 }
 
 // componentVersionSupported checks if the requested version is compatible with the template version using semver.
@@ -126,17 +126,50 @@ func componentVersionSupported(templateVersion, requestedVersion string) bool {
 	return semver.Compare(templateVersion, requestedVersion) >= 0
 }
 
+var _ error = &VersionError{}
+
+type VersionError struct {
+	msg string
+}
+
+func (e *VersionError) Error() string {
+	return e.msg
+}
+
+func (e *VersionError) Is(target error) bool {
+	_, ok := target.(*VersionError)
+	return ok
+}
+
+func (e *VersionError) As(target interface{}) bool {
+	if t, ok := target.(**VersionError); ok {
+		*t = e
+		return true
+	}
+	return false
+}
+
+func NewVersionError(msg string) *VersionError {
+	return &VersionError{msg: msg}
+}
+
 func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && componentVersionSupported(tc.Version, component.Version) && artifactVersionSupported(tc, artifactVersion) {
-		// found it, manufacture a new instance of the component
-		tc.SetHPSF(component)
-		return &tc, nil
+	if !ok {
+		return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
 	}
 
-	// nothing found so we're done
-	return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
+	if !componentVersionSupported(tc.Version, component.Version) {
+		return nil, NewVersionError(fmt.Sprintf("component %s at version %s is unsupported by agent version %s", component.Kind, tc.Version, artifactVersion))
+	}
+	if err := artifactVersionSupported(tc, artifactVersion); err != nil {
+		return nil, err
+	}
+
+	// found it, manufacture a new instance of the component
+	tc.SetHPSF(component)
+	return &tc, nil
 }
 
 // getMatchingTemplateComponents returns the template components that match the components in the HPSF document.
