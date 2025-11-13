@@ -379,7 +379,7 @@ connections:
 	paths := h.FindAllPaths(map[string]bool{})
 	comps := NewOrderedComponentMap()
 	for _, c := range h.Components {
-		cc, err2 := tr.MakeConfigComponent(c, "latest")
+		cc, err2 := tr.makeConfigComponent(c, hpsftypes.CollectorConfig, "latest")
 		if err2 != nil {
 			continue
 		}
@@ -399,7 +399,7 @@ connections:
 	}
 
 	if len(rulePorts) != 25 {
-		t.Fatalf("expected %d rule paths, got %d (%v)", 25, len(rulePorts), rulePorts)
+		t.Fatalf("expected %d rule paths, got %d (%v)", 12, len(rulePorts), rulePorts)
 	}
 	for i, rp := range rulePorts {
 		expected := fmt.Sprintf("Rule %d", i+1)

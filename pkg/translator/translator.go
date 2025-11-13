@@ -76,7 +76,7 @@ func (t *Translator) LoadEmbeddedComponents() error {
 }
 
 // artifactVersionSupported checks if the component supports the artifact version requested
-func artifactVersionSupported(component config.TemplateComponent, v string) error {
+func artifactVersionSupported(component config.TemplateComponent, ct hpsftypes.Type, v string) error {
 	if v == "" || v == LatestVersion {
 		return nil
 	}
@@ -87,12 +87,14 @@ func artifactVersionSupported(component config.TemplateComponent, v string) erro
 		v = "v" + v
 	}
 
-	if component.Minimum != "" && semver.Compare(v, component.Minimum) < 0 {
-		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement minimum version of %s", v, component.Kind, component.Minimum))
+	minimum, ok := component.Minimum[ct]
+	if ok && minimum != "" && semver.Compare(v, minimum) < 0 {
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement minimum version of %s", v, component.Kind, minimum))
 	}
 
-	if component.Maximum != "" && semver.Compare(v, component.Maximum) > 0 {
-		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement maximum version of %s", v, component.Kind, component.Maximum))
+	maximum, ok := component.Maximum[ct]
+	if ok && maximum != "" && semver.Compare(v, maximum) > 0 {
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement maximum version of %s", v, component.Kind, maximum))
 	}
 
 	return nil
@@ -153,7 +155,7 @@ func NewVersionError(msg string) *VersionError {
 	return &VersionError{msg: msg}
 }
 
-func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVersion string) (config.Component, error) {
+func (t *Translator) makeConfigComponent(component *hpsf.Component, ct hpsftypes.Type, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
 	if !ok {
@@ -163,7 +165,7 @@ func (t *Translator) MakeConfigComponent(component *hpsf.Component, artifactVers
 	if !componentVersionSupported(tc.Version, component.Version) {
 		return nil, NewVersionError(fmt.Sprintf("component %s at version %s is unsupported by agent version %s", component.Kind, tc.Version, artifactVersion))
 	}
-	if err := artifactVersionSupported(tc, artifactVersion); err != nil {
+	if err := artifactVersionSupported(tc, ct, artifactVersion); err != nil {
 		return nil, err
 	}
 
@@ -644,7 +646,7 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 	receiverNames := make(map[string]bool)
 	// make all the components
 	visitFunc := func(c *hpsf.Component) error {
-		comp, err := t.MakeConfigComponent(c, artifactVersion)
+		comp, err := t.makeConfigComponent(c, ct, artifactVersion)
 		if err != nil {
 			return err
 		}
