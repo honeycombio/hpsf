@@ -9,9 +9,6 @@ processors:
     usage: {}
 exporters:
     enhance_indexing_s3_exporter/s3_out:
-        api_endpoint: https://api-dogfood.honeycomb.io
-        api_key: key
-        api_secret: secret
         indexed_fields:
             - agent.id
             - rollout.id
@@ -20,7 +17,8 @@ exporters:
             compression: gzip
             region: my-region
             s3_bucket: my-bucket
-            s3_partition_format: my-partition-format
+            s3_partition_format: minute=%M/year=%Y/month=%m/day=%d/hour=%H
+            s3_prefix: my-prefix
         sending_queue:
             batch:
                 flush_timeout: 30s

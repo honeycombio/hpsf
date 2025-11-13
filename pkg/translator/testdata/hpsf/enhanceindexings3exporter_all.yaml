@@ -8,14 +8,12 @@ components:
         value: 'my-bucket'
       - name: Region
         value: 'my-region'
-      - name: APIKey
-        value: 'key'
-      - name: APISecret
-        value: 'secret'
+      - name: Prefix
+        value: 'my-prefix'
       - name: IndexedFields
         value: ["agent.id", "rollout.id"]
       - name: PartitionFormat
-        value: 'my-partition-format'
+        value: 'minute=%M/year=%Y/month=%m/day=%d/hour=%H'
       - name: Timeout
         value: 30s
       - name: Marshaler
@@ -26,8 +24,6 @@ components:
         value: 200_000
       - name: QueueSize
         value: 2_000_000
-      - name: APIEndpoint
-        value: https://api-dogfood.honeycomb.io
 connections:
   - source:
       component: otlp_in

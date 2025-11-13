@@ -10,10 +10,7 @@ description: |
   This component writes telemetry data to S3 while simultaneously generating 
   field-based indexes that enable efficient querying of unsampled data. 
   Automatically indexes trace.trace_id, service.name, and session.id, with 
-  support for additional custom fields. The default configuration expects
-  your pipeline installation includes the
-  HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY and
-  HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET environment variables.
+  support for additional custom fields.
 tags:
   - category:output
   - service:collector
@@ -48,6 +45,11 @@ properties:
     validations:
       - noblanks
   # Optional Configuration
+  - name: Prefix
+    summary: The prefix to use when writing files to S3.
+    description: |
+      The prefix to use when writing files to S3.
+    type: string
   - name: IndexedFields
     summary: Additional fields to index beyond the defaults.
     description: |
@@ -57,27 +59,6 @@ properties:
     type: stringarray
     default: []
   # Advanced properties
-  # Required Honeycomb API Configuration
-  - name: APIKey
-    summary: Honeycomb Management API Key for authentication.
-    description: |
-      The Management API Key for your Honeycomb account. This is required for 
-      API validation and usage tracking. Should be set via environment variable.
-    type: string
-    validations:
-      - noblanks
-    advanced: true
-    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_KEY}
-  - name: APISecret
-    summary: Honeycomb Management API Secret for authentication.
-    description: |
-      The Management API Secret for your Honeycomb account. This is required 
-      for API validation and usage tracking. Should be set via environment variable.
-    type: string
-    validations:
-      - noblanks
-    advanced: true
-    default: ${env:HONEYCOMB_ENHANCE_INDEXER_MANAGEMENT_API_SECRET}
   - name: PartitionFormat
     summary: The partition format to use when writing files to S3.
     description: |
@@ -88,6 +69,7 @@ properties:
     default: year=%Y/month=%m/day=%d/hour=%H/minute=%M
     validations:
       - noblanks
+      - enhancepartitionformat
     advanced: true
   - name: Timeout
     summary: The timeout to use when writing files to S3.
@@ -170,13 +152,9 @@ templates:
         value: "{{ .Values.PartitionFormat }}"
       - key: "{{ .ComponentName }}.s3uploader.compression"
         value: "gzip"
-      # Honeycomb API Configuration
-      - key: "{{ .ComponentName }}.api_key"
-        value: "{{ .Values.APIKey }}"
-      - key: "{{ .ComponentName }}.api_secret"
-        value: "{{ .Values.APISecret }}"
-      - key: "{{ .ComponentName }}.api_endpoint"
-        value: "{{ .Values.APIEndpoint }}"
+      - key: "{{ .ComponentName }}.s3uploader.s3_prefix"
+        value: "{{ .Values.Prefix }}"
+        suppress_if: "{{ not .HProps.Prefix }}"
       # Data Format
       - key: "{{ .ComponentName }}.marshaler"
         value: "{{ .Values.Marshaler }}"

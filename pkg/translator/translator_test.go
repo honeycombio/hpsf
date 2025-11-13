@@ -1189,15 +1189,15 @@ func TestArtifactVersionSupported(t *testing.T) {
 		name            string
 		artifactVersion string
 		component       config.TemplateComponent
-		wantSupported   bool
+		wantErr         string
 	}{
 		{
-			name:          "no artifact version",
-			wantSupported: true,
+			name:    "no artifact version",
+			wantErr: "",
 		},
 		{
 			name:            "latest artifact version",
-			wantSupported:   true,
+			wantErr:         "",
 			artifactVersion: LatestVersion,
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1210,7 +1210,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "no minimum version",
-			wantSupported:   true,
+			wantErr:         "",
 			artifactVersion: "v0.1.0",
 			component: config.TemplateComponent{
 				Maximum: map[hpsftypes.Type]string{
@@ -1220,7 +1220,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "no maximum version",
-			wantSupported:   true,
+			wantErr:         "",
 			artifactVersion: "v0.101.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1230,7 +1230,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "not supported below min",
-			wantSupported:   false,
+			wantErr:         "requirement minimum version of v0.101.0",
 			artifactVersion: "v0.100.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1240,7 +1240,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "not supported beyond max",
-			wantSupported:   false,
+			wantErr:         "requirement maximum version of v0.120.0",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1253,7 +1253,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "specific agent type supported",
-			wantSupported:   true,
+			wantErr:   "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1268,7 +1268,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "expected agent type not specified",
-			wantSupported:   true,
+			wantErr:   "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1281,7 +1281,12 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			require.Equal(t, tc.wantSupported, artifactVersionSupported(tc.component, hpsftypes.CollectorConfig, tc.artifactVersion))
+			err := artifactVersionSupported(tc.component, hpsftypes.CollectorConfig, tc.artifactVersion)
+			if tc.wantErr != "" {
+				require.ErrorContains(t, err, tc.wantErr)
+			} else {
+				require.NoError(t, err)
+			}
 		})
 	}
 }
@@ -1497,6 +1502,8 @@ components:
 	exp := exporters[0]
 	assert.Equal(t, "My Honeycomb Exporter", exp.Name)
 	assert.Equal(t, "HoneycombExporter", exp.Kind)
+	// Verify version falls back to template version when not specified in HPSF
+	assert.NotEmpty(t, exp.Version, "Version should be populated from template component")
 
 	// Verify properties contain actual component values
 	assert.NotNil(t, exp.Properties)
@@ -2324,6 +2331,65 @@ components:
 	assert.NotNil(t, condition.Properties)
 }
 
+func TestInspect_VersionHandling(t *testing.T) {
+	tlater := NewEmptyTranslator()
+	comps, err := data.LoadEmbeddedComponents()
+	require.NoError(t, err)
+	tlater.InstallComponents(comps)
+	require.Equal(t, comps, tlater.GetComponents())
+
+	templates, err := data.LoadEmbeddedTemplates()
+	require.NoError(t, err)
+	tlater.InstallTemplates(templates)
+	require.Equal(t, templates, tlater.GetTemplates())
+
+	hpsfConfig := `
+kind: hpsf
+version: 1.0
+components:
+  - name: Receiver with Version
+    kind: OTelReceiver
+    version: v0.1.0
+  - name: Exporter without Version
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: Receiver with Version
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Exporter without Version
+      port: Traces
+      type: OTelTraces
+`
+
+	h, err := hpsf.FromYAML(hpsfConfig)
+	require.NoError(t, err)
+
+	result := tlater.Inspect(h)
+	require.Len(t, result.Components, 2)
+
+	// Find the receiver with specified version
+	var receiver ComponentInfo
+	var exporter ComponentInfo
+	for _, comp := range result.Components {
+		if comp.Name == "Receiver with Version" {
+			receiver = comp
+		} else if comp.Name == "Exporter without Version" {
+			exporter = comp
+		}
+	}
+
+	// Verify receiver returns the HPSF-specified version
+	assert.Equal(t, "v0.1.0", receiver.Version, "Should return version specified in HPSF")
+
+	// Verify exporter returns the template version when not specified in HPSF
+	assert.NotEmpty(t, exporter.Version, "Should fallback to template version")
+	// Get the actual template component to verify it matches
+	tc := tlater.GetComponents()["HoneycombExporter"]
+	assert.Equal(t, tc.Version, exporter.Version, "Should match template component version")
+}
+
 func TestInspect_CompareIntegerFieldCondition(t *testing.T) {
 	tlater := NewEmptyTranslator()
 	comps, err := data.LoadEmbeddedComponents()
@@ -2786,4 +2852,74 @@ components:
 	assert.Equal(t, 1, styleCount["condition"])
 	assert.Equal(t, 1, styleCount["dropper"])
 	assert.Equal(t, 1, styleCount["sampler"])
+}
+
+func TestVersionError_Error(t *testing.T) {
+	msg := "version mismatch error"
+	err := NewVersionError(msg)
+	assert.Equal(t, msg, err.Error())
+}
+
+func TestVersionError_Is(t *testing.T) {
+	versionErr := NewVersionError("test error")
+
+	// Test that errors.Is works with VersionError
+	assert.True(t, errors.Is(versionErr, &VersionError{}))
+
+	// Test with another VersionError instance
+	otherVersionErr := NewVersionError("other error")
+	assert.True(t, errors.Is(versionErr, otherVersionErr))
+
+	// Test with a different error type
+	genericErr := errors.New("generic error")
+	assert.False(t, errors.Is(versionErr, genericErr))
+
+	// Test with wrapped VersionError
+	wrappedErr := fmt.Errorf("wrapped: %w", versionErr)
+	assert.True(t, errors.Is(wrappedErr, &VersionError{}))
+}
+
+func TestVersionError_As(t *testing.T) {
+	originalMsg := "test version error"
+	versionErr := NewVersionError(originalMsg)
+
+	// Test that errors.As works with VersionError
+	var targetErr *VersionError
+	assert.True(t, errors.As(versionErr, &targetErr))
+	assert.Equal(t, originalMsg, targetErr.Error())
+	assert.Equal(t, versionErr, targetErr)
+
+	// Test with wrapped VersionError
+	wrappedErr := fmt.Errorf("wrapped: %w", versionErr)
+	var wrappedTargetErr *VersionError
+	assert.True(t, errors.As(wrappedErr, &wrappedTargetErr))
+	assert.Equal(t, originalMsg, wrappedTargetErr.Error())
+
+	// Test with incompatible error type
+	genericErr := errors.New("generic error")
+	var genericTargetErr *VersionError
+	assert.False(t, errors.As(genericErr, &genericTargetErr))
+	assert.Nil(t, genericTargetErr)
+}
+
+func TestVersionError_IsAndAs_Integration(t *testing.T) {
+	// Test integration of Is and As methods with real usage scenarios
+	originalErr := NewVersionError("component version v2.0.0 is not supported, minimum required v3.0.0")
+
+	// Simulate error being wrapped in the application
+	applicationErr := fmt.Errorf("failed to create component: %w", originalErr)
+
+	// Check if the error is a VersionError using errors.Is
+	if errors.Is(applicationErr, &VersionError{}) {
+		// Extract the VersionError using errors.As
+		var versionErr *VersionError
+		if errors.As(applicationErr, &versionErr) {
+			assert.Contains(t, versionErr.Error(), "component version")
+			assert.Contains(t, versionErr.Error(), "minimum required")
+		} else {
+			t.Fatal("errors.As should have succeeded for VersionError")
+		}
+	} else {
+		t.Fatal("errors.Is should have identified VersionError")
+	}
 }

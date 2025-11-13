@@ -72,6 +72,14 @@ func Test_getValidationRule(t *testing.T) {
 		{"valid regex with anchors", "regex", "^start.*end$", true},
 		{"invalid regex with bad quantifier", "regex", "*+", false},
 		{"environment variable", "regex", "$REGEX_PATTERN", true},
+		{"valid Go date format", "enhancepartitionformat", "2006-01-02 15:04", true},
+		{"valid C date format", "enhancepartitionformat", "%Y-%m-%d %H:%M", true},
+		{"invalid non-string", "enhancepartitionformat", 123, false},
+		{"invalid starts with slash", "enhancepartitionformat", "/2006-01-02", false},
+		{"invalid ends with slash", "enhancepartitionformat", "2006-01-02/", false},
+		{"invalid missing Go tokens", "enhancepartitionformat", "2006-01-02", false},
+		{"invalid missing C tokens", "enhancepartitionformat", "%Y-%m", false},
+		{"invalid mixed formats", "enhancepartitionformat", "2006-%m-%d", false},
 	}
 	for _, tt := range tests {
 		name := fmt.Sprintf("%s_%v", tt.validation, tt.name)

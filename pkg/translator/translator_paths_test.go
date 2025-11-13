@@ -178,6 +178,84 @@ components:
   - name: Drop_11
     kind: Dropper
     version: v0.1.0
+  - name: Check Duration_12
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_12
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_13
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_13
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_14
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_14
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_15
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_15
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_16
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_16
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_17
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_17
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_18
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_18
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_19
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_19
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_20
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_20
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_21
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_21
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_22
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_22
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_23
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_23
+    kind: Dropper
+    version: v0.1.0
+  - name: Check Duration_24
+    kind: LongDurationCondition
+    version: v0.1.0
+  - name: Drop_24
+    kind: Dropper
+    version: v0.1.0
 connections:
   - source: { component: Receive OTel, port: Traces, type: OTelTraces }
     destination: { component: Start Sampling, port: Traces, type: OTelTraces }
@@ -228,6 +306,58 @@ connections:
   - source: { component: Check Duration_11, port: And, type: SampleData }
     destination: { component: Drop_11, port: Sample, type: SampleData }
   - source: { component: Start Sampling, port: Rule 12, type: SampleData }
+    destination: { component: Check Duration_12, port: Match, type: SampleData }
+  - source: { component: Check Duration_12, port: And, type: SampleData }
+    destination: { component: Drop_12, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 13, type: SampleData }
+    destination: { component: Check Duration_13, port: Match, type: SampleData }
+  - source: { component: Check Duration_13, port: And, type: SampleData }
+    destination: { component: Drop_13, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 14, type: SampleData }
+    destination: { component: Check Duration_14, port: Match, type: SampleData }
+  - source: { component: Check Duration_14, port: And, type: SampleData }
+    destination: { component: Drop_14, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 15, type: SampleData }
+    destination: { component: Check Duration_15, port: Match, type: SampleData }
+  - source: { component: Check Duration_15, port: And, type: SampleData }
+    destination: { component: Drop_15, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 16, type: SampleData }
+    destination: { component: Check Duration_16, port: Match, type: SampleData }
+  - source: { component: Check Duration_16, port: And, type: SampleData }
+    destination: { component: Drop_16, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 17, type: SampleData }
+    destination: { component: Check Duration_17, port: Match, type: SampleData }
+  - source: { component: Check Duration_17, port: And, type: SampleData }
+    destination: { component: Drop_17, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 18, type: SampleData }
+    destination: { component: Check Duration_18, port: Match, type: SampleData }
+  - source: { component: Check Duration_18, port: And, type: SampleData }
+    destination: { component: Drop_18, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 19, type: SampleData }
+    destination: { component: Check Duration_19, port: Match, type: SampleData }
+  - source: { component: Check Duration_19, port: And, type: SampleData }
+    destination: { component: Drop_19, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 20, type: SampleData }
+    destination: { component: Check Duration_20, port: Match, type: SampleData }
+  - source: { component: Check Duration_20, port: And, type: SampleData }
+    destination: { component: Drop_20, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 21, type: SampleData }
+    destination: { component: Check Duration_21, port: Match, type: SampleData }
+  - source: { component: Check Duration_21, port: And, type: SampleData }
+    destination: { component: Drop_21, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 22, type: SampleData }
+    destination: { component: Check Duration_22, port: Match, type: SampleData }
+  - source: { component: Check Duration_22, port: And, type: SampleData }
+    destination: { component: Drop_22, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 23, type: SampleData }
+    destination: { component: Check Duration_23, port: Match, type: SampleData }
+  - source: { component: Check Duration_23, port: And, type: SampleData }
+    destination: { component: Drop_23, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 24, type: SampleData }
+    destination: { component: Check Duration_24, port: Match, type: SampleData }
+  - source: { component: Check Duration_24, port: And, type: SampleData }
+    destination: { component: Drop_24, port: Sample, type: SampleData }
+  - source: { component: Start Sampling, port: Rule 25, type: SampleData }
     destination: { component: Keep All, port: Sample, type: SampleData }
   - source: { component: Keep All, port: Events, type: HoneycombEvents }
     destination: { component: Send to Honeycomb, port: Events, type: HoneycombEvents }
@@ -244,12 +374,12 @@ connections:
 	}
 
 	_ = tr.ValidateConfig(&h)
-	_, _ = tr.GenerateConfig(&h, hpsftypes.RefineryRules, "latest", nil)
+	_, _ = tr.GenerateConfig(&h, hpsftypes.CollectorConfig, "latest", nil)
 
 	paths := h.FindAllPaths(map[string]bool{})
 	comps := NewOrderedComponentMap()
 	for _, c := range h.Components {
-		cc, err2 := tr.makeConfigComponent(c, hpsftypes.RefineryRules, "latest")
+		cc, err2 := tr.makeConfigComponent(c, hpsftypes.CollectorConfig, "latest")
 		if err2 != nil {
 			continue
 		}
@@ -257,7 +387,7 @@ connections:
 	}
 	orderPaths(paths, comps)
 
-	rulePorts := make([]string, 0, 12)
+	rulePorts := make([]string, 0, 25)
 	for _, p := range paths {
 		if p.ConnType != hpsf.CTYPE_SAMPLE || len(p.Connections) == 0 {
 			continue
@@ -268,7 +398,7 @@ connections:
 		}
 	}
 
-	if len(rulePorts) != 12 {
+	if len(rulePorts) != 25 {
 		t.Fatalf("expected %d rule paths, got %d (%v)", 12, len(rulePorts), rulePorts)
 	}
 	for i, rp := range rulePorts {

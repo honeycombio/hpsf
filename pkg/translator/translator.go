@@ -76,9 +76,9 @@ func (t *Translator) LoadEmbeddedComponents() error {
 }
 
 // artifactVersionSupported checks if the component supports the artifact version requested
-func artifactVersionSupported(component config.TemplateComponent, ct hpsftypes.Type, v string) bool {
+func artifactVersionSupported(component config.TemplateComponent, ct hpsftypes.Type, v string) error {
 	if v == "" || v == LatestVersion {
-		return true
+		return nil
 	}
 
 	// ensure the version string is prefixed with v otherwise semver.Compare fails
@@ -87,18 +87,17 @@ func artifactVersionSupported(component config.TemplateComponent, ct hpsftypes.T
 		v = "v" + v
 	}
 
-	// no minimum defined means any artifact version is supported
 	minimum, ok := component.Minimum[ct]
 	if ok && minimum != "" && semver.Compare(v, minimum) < 0 {
-		return false
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement minimum version of %s", v, component.Kind, minimum))
 	}
 
 	maximum, ok := component.Maximum[ct]
 	if ok && maximum != "" && semver.Compare(v, maximum) > 0 {
-		return false
+		return NewVersionError(fmt.Sprintf("agent version %s does not meet component %s requirement maximum version of %s", v, component.Kind, maximum))
 	}
 
-	return true
+	return nil
 }
 
 // componentVersionSupported checks if the requested version is compatible with the template version using semver.
@@ -129,17 +128,50 @@ func componentVersionSupported(templateVersion, requestedVersion string) bool {
 	return semver.Compare(templateVersion, requestedVersion) >= 0
 }
 
+var _ error = &VersionError{}
+
+type VersionError struct {
+	msg string
+}
+
+func (e *VersionError) Error() string {
+	return e.msg
+}
+
+func (e *VersionError) Is(target error) bool {
+	_, ok := target.(*VersionError)
+	return ok
+}
+
+func (e *VersionError) As(target interface{}) bool {
+	if t, ok := target.(**VersionError); ok {
+		*t = e
+		return true
+	}
+	return false
+}
+
+func NewVersionError(msg string) *VersionError {
+	return &VersionError{msg: msg}
+}
+
 func (t *Translator) makeConfigComponent(component *hpsf.Component, ct hpsftypes.Type, artifactVersion string) (config.Component, error) {
 	// first look in the template components
 	tc, ok := t.components[component.Kind]
-	if ok && componentVersionSupported(tc.Version, component.Version) && artifactVersionSupported(tc, ct, artifactVersion) {
-		// found it, manufacture a new instance of the component
-		tc.SetHPSF(component)
-		return &tc, nil
+	if !ok {
+		return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
 	}
 
-	// nothing found so we're done
-	return nil, fmt.Errorf("unknown component kind: %s@%s", component.Kind, component.Version)
+	if !componentVersionSupported(tc.Version, component.Version) {
+		return nil, NewVersionError(fmt.Sprintf("component %s at version %s is unsupported by agent version %s", component.Kind, tc.Version, artifactVersion))
+	}
+	if err := artifactVersionSupported(tc, ct, artifactVersion); err != nil {
+		return nil, err
+	}
+
+	// found it, manufacture a new instance of the component
+	tc.SetHPSF(component)
+	return &tc, nil
 }
 
 // getMatchingTemplateComponents returns the template components that match the components in the HPSF document.
@@ -733,6 +765,9 @@ type ComponentInfo struct {
 	Style string
 	// Kind identifies the specific component template (e.g., "HoneycombExporter", "OTelReceiver")
 	Kind string
+	// Version is the component version. If specified in the HPSF document, that version is returned.
+	// Otherwise, falls back to the template component's version.
+	Version string
 	// Properties contains all component properties, merging explicit values with template defaults.
 	// Access values directly without type casting: properties["Region"]
 	Properties map[string]any
@@ -813,10 +848,17 @@ func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 			continue
 		}
 
+		// Determine version: use HPSF component version if specified, otherwise use template version
+		version := c.Version
+		if version == "" {
+			version = tc.Version
+		}
+
 		comp := ComponentInfo{
 			Name:       c.Name,
 			Style:      tc.Style,
 			Kind:       c.Kind,
+			Version:    version,
 			Properties: getProperties(c, tc),
 		}
 
