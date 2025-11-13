@@ -162,6 +162,30 @@ components:
         value:
           - set(resource.attributes["custom.field"], "value")
           - delete_key(resource.attributes, "unwanted_field")
+  - name: Send to Enhance S3 Archive
+    kind: EnhanceIndexingS3Exporter
+    version: v0.1.0
+    properties:
+      - name: Bucket
+        value: otel-demo
+      - name: Region
+        value: us-east-1
+      - name: Prefix
+        value: otel-demo
+      - name: PartitionFormat
+        value: minute=%M/year=%Y/month=%m/day=%d/hour=%H
+      - name: Timeout
+        value: 15s
+      - name: Marshaler
+        value: otlp_json
+      - name: BatchTimeout
+        value: 15s
+      - name: BatchSize
+        value: 497
+      - name: QueueSize
+        value: 4997
+      - name: APIEndpoint
+        value: https://api-dogfood.honeycomb.io
 connections:
   - source:
       component: Receive OTel_1
@@ -465,6 +489,22 @@ connections:
       type: OTelLogs
     destination:
       component: Send to S3 Archive_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Send to Enhance S3 Archive
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Receive OTel_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to Enhance S3 Archive
       port: Logs
       type: OTelLogs
 layout:
