@@ -32,6 +32,7 @@ ports:
     note: "The traces that are sampled (retained for further processing)"
 properties:
   - name: GoalThroughputPerSec
+    display: Goal Throughput Per Sec
     summary: The target throughput to achieve (in events per second).
     description: |
       The desired throughput to achieve (in events per second, NOT traces
@@ -44,6 +45,7 @@ properties:
       - positive
     default: 100
   - name: AdjustmentInterval
+    display: Adjustment Interval
     summary: The interval (in seconds) between adjustments of the sampling rate
     description: |
       The interval (in seconds) at which to adjust the sampling rate. This
@@ -57,6 +59,7 @@ properties:
     default: 60
     advanced: true
   - name: FieldList
+    display: Field List
     summary: The field names of the keys to use for controlling sampling
     description: |
       The field names of keys to use for sampling. These should be chosen
@@ -71,6 +74,7 @@ properties:
       - nonempty
     default: []
   - name: InitialSampleRate
+    display: Initial Sample Rate
     summary: The initial sample rate to use when starting the sampler
     description: |
       The initial sample rate to use when starting the sampler. This is the
@@ -83,6 +87,7 @@ properties:
     default: 10
     advanced: true
   - name: MaxKeys
+    display: Max Keys
     summary: The maximum number of distinct keys the sampler tracks
     description: |
       The maximum number of distinct keys the sampler tracks. This is used to limit

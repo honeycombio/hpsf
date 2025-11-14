@@ -23,6 +23,7 @@ ports:
     type: OTelTraces
 properties:
   - name: SourceMapStore
+    display: Source Map Store
     summary: The storage type where source maps are stored to use for symbolication.
     description: |
       The storage type where source maps are stored to use for symbolication.

@@ -19,9 +19,13 @@ import (
 // suppressed by default in the UI (only shown if the user selects an "advanced"
 // option). We also allow for validations, which can be used to constrain the
 // value of the property. The property can also have a summary and a
-// description, which are used to document the property.
+// description, which are used to document the property. The display field
+// provides a human-readable label for the property in the UI.
+// It is explicitly intended that the value of the display field can change 
+// without affecting any existing use of the component (and without a version bump)
 type TemplateProperty struct {
 	Name        string        `yaml:"name"`
+	Display     string        `yaml:"display"`
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`

@@ -24,6 +24,7 @@ ports:
     type: SampleData
 properties:
   - name: ErrorFields
+    display: Error Fields
     summary: The name of the field(s) to check for errors. If any of these fields exist in any span of a trace, the test will pass.
     description: |
       The field names to check for errors.

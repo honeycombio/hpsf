@@ -160,6 +160,7 @@ properties:
     type: map
     advanced: true
   - name: UseTLS
+    display: Use TLS
     summary: Provide a way to enable TLS export.
     description: |
       Can be used to send data with TLS.
@@ -169,6 +170,7 @@ properties:
     default: false
     advanced: true
   - name: BatchTimeout
+    display: Batch Timeout
     summary: How long to wait to before sending a batch, regardless of size.
     description: |
       Configure how long to wait before sending a batch. The batch will be sent after
@@ -180,6 +182,7 @@ properties:
       - nonempty
     advanced: true
   - name: BatchSize
+    display: Batch Size
     summary: The size of a batch.
     description: |
       The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
@@ -189,6 +192,7 @@ properties:
       - nonempty
     advanced: true
   - name: QueueSize
+    display: Queue Size
     summary: The size of a exporting queue.
     description: |
       The size of the exporting queue, measured by span/datapoint/log record count.

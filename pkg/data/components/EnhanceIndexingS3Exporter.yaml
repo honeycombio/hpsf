@@ -51,6 +51,7 @@ properties:
       The prefix to use when writing files to S3.
     type: string
   - name: IndexedFields
+    display: Indexed Fields
     summary: Additional fields to index beyond the defaults.
     description: |
       A list of additional field names to create indexes for. The exporter automatically 
@@ -60,6 +61,7 @@ properties:
     default: []
   # Advanced properties
   - name: PartitionFormat
+    display: Partition Format
     summary: The partition format to use when writing files to S3.
     description: |
       The partition format to use when writing files to S3. Must contain placeholders 
@@ -92,6 +94,7 @@ properties:
       - oneof(otlp_json, otlp_proto)
     advanced: true
   - name: BatchTimeout
+    display: Batch Timeout
     summary: How long to wait before sending a batch, regardless of size.
     description: |
       Configure how long to wait before sending a batch. The batch will be sent after
@@ -102,6 +105,7 @@ properties:
       - duration
     advanced: true
   - name: BatchSize
+    display: Batch Size
     summary: The size of a batch.
     description: |
       The size of a batch, measured by span/log record count. Once a batch reaches 
@@ -113,6 +117,7 @@ properties:
       - atleast(0)
     advanced: true
   - name: QueueSize
+    display: Queue Size
     summary: The size of the exporting queue.
     description: |
       The size of the exporting queue, measured by span/log record count.
@@ -124,6 +129,7 @@ properties:
       - atleast(0)
     advanced: true
   - name: APIEndpoint
+    display: API Endpoint
     summary: The Honeycomb API endpoint URL.
     description: |
       The API endpoint for Honeycomb's management API. Defaults to the standard 

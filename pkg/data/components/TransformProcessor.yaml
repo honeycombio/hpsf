@@ -44,6 +44,7 @@ ports:
     type: OTelMetrics
 properties:
   - name: ErrorMode
+    display: Error Mode
     type: string
     subtype: oneof(ignore, silent, propagate)
     default: ignore
@@ -56,6 +57,7 @@ properties:
     validations:
       - oneof(ignore, silent, propagate)
   - name: TraceStatements
+    display: Trace Statements
     type: stringarray
     summary: Array of OTTL trace transform statements
     description: |
@@ -68,6 +70,7 @@ properties:
     default: []
     advanced: false
   - name: LogStatements
+    display: Log Statements
     type: stringarray
     summary: Array of OTTL log transform statements
     description: |
@@ -80,6 +83,7 @@ properties:
     default: []
     advanced: false
   - name: MetricStatements
+    display: Metric Statements
     type: stringarray
     summary: Array of OTTL metric transform statements
     description: |

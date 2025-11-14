@@ -34,6 +34,7 @@ ports:
     type: OTelMetrics
 properties:
   - name: APIKey
+    display: API Key
     summary: The API key to use to authenticate with Honeycomb.
     description: |
       The API key to use to authenticate with Honeycomb.
@@ -43,6 +44,7 @@ properties:
     default: ${HTP_EXPORTER_APIKEY}
     advanced: true
   - name: MetricsDataset
+    display: Metrics Dataset
     summary: The Honeycomb dataset metrics will be sent to.
     description: |
       The Honeycomb dataset metrics will be sent to.
@@ -53,6 +55,7 @@ properties:
     default: metrics
     advanced: true
   - name: APIEndpoint
+    display: API Endpoint
     summary: The hostname or IP of the Honeycomb API endpoint.
     description: |
       The hostname or IP of the Honeycomb API endpoint
@@ -64,6 +67,7 @@ properties:
     default: api.honeycomb.io
     advanced: true
   - name: APIPort
+    display: API Port
     summary: The port on which to send traffic.
     description: |
       The port on which to send outgoing traffic. Default is 443, which is
@@ -96,6 +100,7 @@ properties:
     default: false
     advanced: true
   - name: BatchTimeout
+    display: Batch Timeout
     summary: How long to wait to before sending a batch, regardless of size.
     description: |
       Configure how long to wait before sending a batch. The batch will be sent after
@@ -107,6 +112,7 @@ properties:
       - nonempty
     advanced: true
   - name: BatchSize
+    display: Batch Size
     summary: The size of a batch.
     description: |
       The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
@@ -116,6 +122,7 @@ properties:
       - nonempty
     advanced: true
   - name: QueueSize
+    display: Queue Size
     summary: The size of a exporting queue.
     description: |
       The size of the exporting queue, measured by span/datapoint/log record count.
