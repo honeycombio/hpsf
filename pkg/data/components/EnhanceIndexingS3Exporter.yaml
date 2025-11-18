@@ -5,7 +5,8 @@ style: exporter
 logo: awss3
 status: alpha
 version: v0.1.0
-minimum: v0.1.1
+minimum:
+  collector_config: v0.1.1
 summary: Sends telemetry to AWS S3 with automatic field indexing for efficient querying.
 description: |
   This component writes telemetry data to S3 while simultaneously generating 

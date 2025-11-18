@@ -41,6 +41,36 @@
       "description": "Version should be bumped when the component is updated",
       "pattern": "^v\\d+\\.\\d+\\.\\d+$"
     },
+    "minimum": {
+        "type": "object",
+        "properties": {
+            "refinery_config": {
+                "type": "string"
+            },
+            "refinery_rules": {
+                "type": "string"
+            },
+            "collector_config": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    },
+    "maximum": {
+        "type": "object",
+        "properties": {
+            "refinery_config": {
+                "type": "string"
+            },
+            "refinery_rules": {
+                "type": "string"
+            },
+            "collector_config": {
+                "type": "string"
+            }
+        },
+        "additionalProperties": false
+    },
     "summary": {
       "type": "string",
       "description": "The short description, easily visible in the UI and the sidebar",
@@ -215,7 +245,7 @@
             "type": "string",
             "oneOf": [
               {
-                "enum": ["positive", "noblanks", "nonempty", "url", "duration", "hostorip", "regex"]
+                "enum": ["positive", "noblanks", "nonempty", "url", "duration", "hostorip", "regex", "enhancepartitionformat"]
               },
               {
                 "pattern": "^oneof\\(.+\\)$",
