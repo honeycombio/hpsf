@@ -148,10 +148,9 @@ validate_all: examples/hpsf* pkg/data/templates/*
 	# generate the configs from the provided file
 	go run ./cmd/hpsf -i ${FILE} -o tmp/collector-config.yaml cConfig || exit 1
 
-	# use yq to remove the usage processor and honeycomb extension from collector config
-	yq -i e \
-		'del(.processors.usage) | del(.extensions.honeycomb) | del(.service.extensions[] | select(. == "honeycomb")) | del(.service.pipelines.traces*.processors[] | select(. == "usage")) | del(.service.pipelines.metrics*.processors[] | select(. == "usage")) | del(.service.pipelines.logs*.processors[] | select(. == "usage"))' \
-		tmp/collector-config.yaml || exit 1
+	# add opampextension to the generated collector config
+	yq eval '.extensions.opamp = {"server": {"ws": {"endpoint": "ws://localhost:4320/v1/opamp"}}}' -i tmp/collector-config.yaml
+	yq eval '.service.extensions += ["opamp"]' -i tmp/collector-config.yaml
 
 	# run collector with the generated config
 	docker run -d --name smoke-collector \
@@ -159,7 +158,7 @@ validate_all: examples/hpsf* pkg/data/templates/*
 		-v ./tmp/collector-config.yaml:/config.yaml \
 		-e HTP_COLLECTOR_POD_IP=localhost \
 		-e HTP_REFINERY_POD_IP=localhost \
-		honeycombio/supervised-collector:v0.1.0 \
+		honeycombio/supervised-collector:v0.1.1 \
 		--config /config.yaml || exit 1
 	sleep 1
 
