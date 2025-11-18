@@ -4,9 +4,9 @@ style: processor
 type: base
 status: development
 version: v0.0.1
-summary: A processor that can be used to redact attribute values in telemetry.
+summary: A component that can be used to redact attribute values in telemetry.
 description: |-
-  This processor allows you to redact attribute values from traces, metrics, and logs based on
+  This component allows you to redact attribute values from traces, metrics, and logs based on
   specified rules.
 tags:
   - category:processor

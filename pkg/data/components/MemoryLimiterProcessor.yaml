@@ -6,10 +6,10 @@ status: development
 version: v0.1.0
 summary: Prevents out of memory situations on the collector
 description: |
-  A processor that prevents out-of-memory situations on the collector by monitoring
+  A component that prevents out-of-memory situations on the collector by monitoring
   memory usage and applying backpressure when memory limits are approached. Uses soft 
   and hard memory limits to manage memory consumption effectively. Should be placed as 
-  the first processor in a pipeline for best results.
+  the first component in a pipeline for best results.
 tags:
   - category:processor
   - service:collector

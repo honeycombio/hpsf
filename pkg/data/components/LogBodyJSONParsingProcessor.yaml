@@ -7,7 +7,7 @@ version: v0.0.1
 summary: Parses log.body as JSON and flattens it into individual log attributes
 description: |-
   Specifically designed to parse the log.body field as JSON and flatten the parsed JSON into
-  individual log attributes. This processor has no configuration parameters and only works with logs.
+  individual log attributes. This component has no configuration parameters and only works with logs.
 tags:
   - category:processor
   - service:collector

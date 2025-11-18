@@ -6,7 +6,7 @@ status: development
 version: v0.1.0
 summary: Apply custom transform statements to traces, metrics, and logs
 description: |
-  An advanced processor that allows you to apply custom OpenTelemetry transform statements (OTTL)
+  An advanced component that allows you to apply custom OpenTelemetry transform statements (OTTL)
   to traces, metrics, and logs. You can provide arrays of trace statements, metric statements, 
   and log statements to perform complex data transformations, filtering, and enrichment operations.
 tags:
@@ -50,7 +50,7 @@ properties:
     default: ignore
     summary: How to handle errors during transformation
     description: |
-      Controls how the processor handles errors during transformation:
+      Controls how the component handles errors during transformation:
       - ignore: Log errors but continue processing
       - silent: Ignore errors silently
       - propagate: Stop processing and return the error
