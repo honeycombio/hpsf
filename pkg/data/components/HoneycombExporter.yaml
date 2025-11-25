@@ -5,7 +5,7 @@ logo: honeycomb
 type: base
 status: alpha
 version: v0.1.0
-summary: Sends telemetry to Honeycomb's data store for real-time analysis.
+summary: Send telemetry to the Honeycomb Environment set during pipeline creation for real-time analysis.
 description: |-
   This component sends traces, logs, metrics, and Honeycomb-formatted events to the Honeycomb's data
   store for real-time analysis.
