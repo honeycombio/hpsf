@@ -72,6 +72,9 @@ const (
 	PTYPE_ARRSTR PropType = "stringarray" // []string
 	PTYPE_MAPSTR PropType = "map"         // map[string]any
 	PTYPE_COND   PropType = "conditions"  // for refinery conditions
+	PTYPE_DUR    PropType = "duration"    // has affordances for duration strings
+	PTYPE_CHECK  PropType = "checklist"   // for checklist properties
+	PTYPE_RULE   PropType = "rule"        // for refinery sampling rules (experimental!)
 )
 
 func (p PropType) Validate() error {
@@ -83,6 +86,9 @@ func (p PropType) Validate() error {
 	case PTYPE_ARRSTR:
 	case PTYPE_MAPSTR:
 	case PTYPE_COND:
+	case PTYPE_DUR:
+	case PTYPE_CHECK:
+	case PTYPE_RULE:
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
