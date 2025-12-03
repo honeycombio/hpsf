@@ -4,7 +4,13 @@
   "title": "HPSF Component Template",
   "description": "JSON Schema for HPSF (Honeycomb Pipeline Specification Format) component YAML templates",
   "type": "object",
-  "required": ["kind", "name", "type", "status", "version"],
+  "required": [
+    "kind",
+    "name",
+    "type",
+    "status",
+    "version"
+  ],
   "properties": {
     "kind": {
       "type": "string",
@@ -19,22 +25,43 @@
     "style": {
       "type": "string",
       "description": "Used to control UI rendering",
-      "enum": ["receiver", "processor", "exporter", "sampler", "condition", "dropper", "startsampling"]
+      "enum": [
+        "receiver",
+        "processor",
+        "exporter",
+        "sampler",
+        "condition",
+        "dropper",
+        "startsampling"
+      ]
     },
     "logo": {
       "type": "string",
       "description": "Used to define the logo used for receivers and exporters. Valid logos are listed in hound NodeComponentLogo.tsx",
-      "examples": ["opentelemetry", "honeycomb"]
+      "examples": [
+        "opentelemetry",
+        "honeycomb"
+      ]
     },
     "type": {
       "type": "string",
       "description": "The generalized type of component for broad classification",
-      "enum": ["base", "meta", "template"]
+      "enum": [
+        "base",
+        "meta",
+        "template"
+      ]
     },
     "status": {
       "type": "string",
       "description": "The development status of the component. alpha, stable, and archived are public; use development if you don't want people to see it without a feature flag",
-      "enum": ["alpha", "stable", "archived", "development", "deprecated"]
+      "enum": [
+        "alpha",
+        "stable",
+        "archived",
+        "development",
+        "deprecated"
+      ]
     },
     "version": {
       "type": "string",
@@ -42,34 +69,34 @@
       "pattern": "^v\\d+\\.\\d+\\.\\d+$"
     },
     "minimum": {
-        "type": "object",
-        "properties": {
-            "refinery_config": {
-                "type": "string"
-            },
-            "refinery_rules": {
-                "type": "string"
-            },
-            "collector_config": {
-                "type": "string"
-            }
+      "type": "object",
+      "properties": {
+        "refinery_config": {
+          "type": "string"
         },
-        "additionalProperties": false
+        "refinery_rules": {
+          "type": "string"
+        },
+        "collector_config": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "maximum": {
-        "type": "object",
-        "properties": {
-            "refinery_config": {
-                "type": "string"
-            },
-            "refinery_rules": {
-                "type": "string"
-            },
-            "collector_config": {
-                "type": "string"
-            }
+      "type": "object",
+      "properties": {
+        "refinery_config": {
+          "type": "string"
         },
-        "additionalProperties": false
+        "refinery_rules": {
+          "type": "string"
+        },
+        "collector_config": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
     },
     "summary": {
       "type": "string",
@@ -90,7 +117,12 @@
       "items": {
         "type": "string",
         "pattern": "^[a-zA-Z0-9_-]+:[a-zA-Z0-9_-]+$",
-        "examples": ["category:exporter", "service:collector", "signal:OTelTraces", "vendor:Honeycomb"]
+        "examples": [
+          "category:exporter",
+          "service:collector",
+          "signal:OTelTraces",
+          "vendor:Honeycomb"
+        ]
       },
       "uniqueItems": true
     },
@@ -158,7 +190,11 @@
     "TemplatePort": {
       "type": "object",
       "description": "A port on a component where data flows in or out",
-      "required": ["name", "direction", "type"],
+      "required": [
+        "name",
+        "direction",
+        "type"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -168,7 +204,10 @@
         "direction": {
           "type": "string",
           "description": "Note that receivers have output ports and exporters have input ports",
-          "enum": ["input", "output"]
+          "enum": [
+            "input",
+            "output"
+          ]
         },
         "type": {
           "type": "string",
@@ -202,7 +241,10 @@
     "TemplateProperty": {
       "type": "object",
       "description": "A user-settable value that can be used to configure the component",
-      "required": ["name", "type"],
+      "required": [
+        "name",
+        "type"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -226,12 +268,26 @@
         "type": {
           "type": "string",
           "description": "The datatype of the value and partly controls the property editor that will be used for this value",
-          "enum": ["int", "float", "string", "bool", "stringarray", "map", "conditions", "duration", "rule"]
+          "enum": [
+            "int",
+            "float",
+            "string",
+            "bool",
+            "stringarray",
+            "map",
+            "conditions",
+            "duration",
+            "rule",
+            "checklist"
+          ]
         },
         "subtype": {
           "type": "string",
           "description": "Can further constrain the property editor; e.g., a oneof() subtype will cause a dropdown to be used instead of a text box",
-          "examples": ["oneof(basic, normal, detailed)", "oneof(all, none)"]
+          "examples": [
+            "oneof(basic, normal, detailed)",
+            "oneof(all, none)"
+          ]
         },
         "advanced": {
           "type": "boolean",
@@ -245,7 +301,16 @@
             "type": "string",
             "oneOf": [
               {
-                "enum": ["positive", "noblanks", "nonempty", "url", "duration", "hostorip", "regex", "enhancepartitionformat"]
+                "enum": [
+                  "positive",
+                  "noblanks",
+                  "nonempty",
+                  "url",
+                  "duration",
+                  "hostorip",
+                  "regex",
+                  "enhancepartitionformat"
+                ]
               },
               {
                 "pattern": "^oneof\\(.+\\)$",
@@ -268,7 +333,13 @@
         },
         "default": {
           "description": "The default value for the property. Type depends on the property type",
-          "examples": ["basic", 100, true, "https://api.honeycomb.io:443", "${HONEYCOMB_EXPORTER_APIKEY}"]
+          "examples": [
+            "basic",
+            100,
+            true,
+            "https://api.honeycomb.io:443",
+            "${HONEYCOMB_EXPORTER_APIKEY}"
+          ]
         }
       },
       "additionalProperties": false
@@ -276,7 +347,11 @@
     "TemplateData": {
       "type": "object",
       "description": "A template for generating configuration data",
-      "required": ["kind", "name", "format"],
+      "required": [
+        "kind",
+        "name",
+        "format"
+      ],
       "if": {
         "properties": {
           "kind": {
@@ -287,13 +362,19 @@
         }
       },
       "then": {
-        "required": ["data"]
+        "required": [
+          "data"
+        ]
       },
       "properties": {
         "kind": {
           "type": "string",
           "description": "The type of configuration data it generates",
-          "enum": ["collector_config", "refinery_config", "refinery_rules"]
+          "enum": [
+            "collector_config",
+            "refinery_config",
+            "refinery_rules"
+          ]
         },
         "name": {
           "type": "string",
@@ -303,7 +384,12 @@
         "format": {
           "type": "string",
           "description": "The format of the data. This is an escape hatch for specialized components",
-          "enum": ["collector", "dotted", "dottedConfig", "rules"]
+          "enum": [
+            "collector",
+            "dotted",
+            "dottedConfig",
+            "rules"
+          ]
         },
         "meta": {
           "type": "object",
@@ -312,14 +398,23 @@
             "componentSection": {
               "type": "string",
               "description": "For collectors: exporters, receivers, processors etc",
-              "enum": ["exporters", "receivers", "processors", "extensions"]
+              "enum": [
+                "exporters",
+                "receivers",
+                "processors",
+                "extensions"
+              ]
             },
             "signalTypes": {
               "type": "array",
               "description": "For collectors: array of which signal types this component handles",
               "items": {
                 "type": "string",
-                "enum": ["traces", "metrics", "logs"]
+                "enum": [
+                  "traces",
+                  "metrics",
+                  "logs"
+                ]
               }
             },
             "collectorComponentName": {
@@ -359,7 +454,10 @@
     "TemplateDataItem": {
       "type": "object",
       "description": "A single key-value pair in template data",
-      "required": ["key", "value"],
+      "required": [
+        "key",
+        "value"
+      ],
       "properties": {
         "key": {
           "type": "string",
