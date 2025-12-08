@@ -5,6 +5,11 @@ components:
     kind: OTelHTTPExporter
   - name: redaction_processor_1
     kind: RedactionProcessor
+    properties:
+      - name: Patterns
+        value: []
+      - name: ReplacementStrategy
+        value: Fixed
 connections:
   - source:
       component: otlp_in
