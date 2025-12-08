@@ -38,6 +38,7 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"appendSlices":  appendSlices,
 		"buildurl":      buildurl,
 		"comment":       comment,
 		"encodeAsArray": encodeAsArray,
@@ -47,6 +48,7 @@ func helpers() template.FuncMap {
 		"encodeAsMap":   encodeAsMap,
 		"indent":        indent,
 		"join":          join,
+		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
 		"meta":          meta,
 		"nonempty":      nonempty,
@@ -55,6 +57,11 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// appendSlices combines two slices into one.
+func appendSlices(slice1 []any, slice2 []any) []any {
+	return append(slice1, slice2...)
 }
 
 // buildurl constructs a URL based on the provided parameters. A path is optional.
