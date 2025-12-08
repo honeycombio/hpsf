@@ -1,19 +1,22 @@
 kind: RedactionProcessor
-name: Redact Attribute Values
+name: Mask sensitive values
 style: processor
 type: base
-status: development
-version: v0.0.1
-summary: A processor that can be used to redact attribute values in telemetry.
+status: alpha
+version: v0.1.0
+summary: Redacts (masks) sensitive values in trace and log attributes.
 description: |-
-  This processor allows you to redact attribute values from traces, metrics, and logs based on
-  specified rules.
+  This processor is used to redact (mask) sensitive values in trace and log
+  attributes based on predefined patterns or custom regular expressions. It
+  helps ensure that sensitive information such as phone numbers, credit card
+  numbers, and other personally identifiable information is not sent with telemetry.
+  Note that it masks only the matching parts within values, not the entire attribute.
 tags:
   - category:processor
   - service:collector
   - signal:OTelTraces
-  - signal:OTelMetrics
   - signal:OTelLogs
+  - signal:OTelMetrics
   - input:Traces
   - input:Logs
   - input:Metrics
@@ -42,57 +45,118 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: AttributeNamePatternsToRedact
-    display: Attribute Name Patterns To Redact
-    summary: Regular expression patterns of attribute names to redact.
+  - name: Patterns
+    type: checklist
+    summary: Predefined patterns to redact from fields.
     description: |
-      A list of regular expression patterns that match attribute names to be redacted.
-      If an attribute name matches any of these patterns, its value will be redacted.
-    type: stringarray
-    validations:
-      - noblanks
-    default: []
-  - name: AttributeValuePatternsToRedact
-    display: Attribute Value Patterns To Redact
-    summary: Regular expression patterns of attribute values to redact.
-    description: |
-      A list of regular expression patterns that match attribute values to be redacted.
-      If an attribute value matches any of these patterns, it will be redacted.
-    type: stringarray
-    validations:
-      - noblanks
+      The predefined patterns to redact from fields.
+      You can select multiple patterns to redact.
     default:
-      - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
-      - (5[1-5][0-9]{14}) ## MasterCard number
-  - name: AttributeNamesToNotRedact
-    display: Attribute Names To Not Redact
-    summary: A list of attribute names that will skip redaction.
+      - id: us_phone
+        displayName: 'US Phone number'
+        value: '\b\(?[0-9]{3}\)?[. -]?[0-9]{3}[. -]?[0-9]{4}\b'
+        tooltipText: 'Matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567'
+      - id: intl_phone
+        displayName: 'International Phone Number'
+        value: '\b\+[1-9][0-9]{0,2}(?:[-.\s]?(?:\([0-9]+\))?(?:[-.\s]?[0-9]+)*)\b'
+        tooltipText: 'Matches international phone numbers like +1 555-123-4567 or +44 20 1234 5678'
+      - id: ssn
+        displayName: 'Social Security number'
+        value: '\b[0-9]{3}[.-]?[0-9]{2}[.-]?[0-9]{4}\b'
+        tooltipText: 'Matches US Social Security numbers in formats like 123-45-6789 or 123.45.6789'
+      - id: credit_card
+        displayName: 'Credit card number'
+        value: '\b(?:[0-9][ -]*?){13,16}\b'
+        tooltipText: 'Matches credit card numbers with optional spaces or dashes, supporting 13-16 digit cards'
+      - id: email
+        displayName: 'Email'
+        value: '\b[a-zA-Z0-9._+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,6}\b'
+        tooltipText: 'Matches email addresses in standard format like user@domain.com'
+      - id: iban
+        displayName: 'International Bank Account Number (IBAN)'
+        value: '\b[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]){11,31}(?:\s[A-Z0-9])*\b'
+        tooltipText: 'Matches IBAN numbers like GB82 WEST 1234 5698 7654 32'
+      - id: ipv4
+        displayName: 'IPv4 Address'
+        value: '\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b'
+        tooltipText: 'Matches IPv4 addresses like 192.168.1.1 or 10.0.0.255'
+      - id: ipv6
+        displayName: 'IPv6 Address'
+        value: '\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b'
+        tooltipText: 'Matches IPv6 addresses like 2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+      - id: mac_address
+        displayName: 'MAC Address'
+        value: '\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b'
+        tooltipText: 'Matches MAC addresses like AA:BB:CC:DD:EE:FF or AA-BB-CC-DD-EE-FF'
+      - id: us_city_state
+        displayName: 'US City, State'
+        value: '\b[A-Z][A-Za-z\s\.]+,\s{0,1}[A-Z]{2}\b'
+        tooltipText: 'Matches US city and state combinations like New York, NY'
+      - id: us_zip_code
+        displayName: 'US Zip Code'
+        value: '\b[0-9]{5}(?:[-\s][0-9]{4})?\b'
+        tooltipText: 'Matches US 5-digit and 9-digit zip codes'
+      - id: uuid
+        displayName: 'UUID/GUID'
+        value: '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
+        tooltipText: 'Matches UUIDs/GUIDs in the 8-444-12 pattern, like 123e4567-e89b-12d3-a456-426614174000'
+    validations:
+      - regex
+  - name: OtherPatterns
+    display: Other Patterns
+    summary: Additional regular expression patterns to redact from fields.
     description: |
-      A list of attribute names that will not be redacted, even if they match the patterns
-      specified in `AttributeNamePatternsToRedact` or `AttributeValuePatternsToRedact`.
-      This can be used to ensure that certain attributes are always preserved.
+      A list of additional patterns to redact from fields. These patterns
+      must conform to the regular expression syntax of the Go programming
+      language. To avoid matching too broadly, patterns should usually
+      include word boundary markers (`\b`) where appropriate.
+    type: stringarray
+    default: []
+    validations:
+      - regex
+  - name: ReplacementStrategy
+    display: Replacement Strategy
+    summary: The strategy to use when replacing redacted values.
+    description: |
+      The strategy to use when replacing redacted values. Fixed replaces the
+      redacted value with '****'; the other options use the specified hash
+      function to consistently hash the redacted value.
+    type: string
+    subtype: oneof(Fixed, MD5, SHA1, SHA3)
+    default: fixed
+    validations:
+      - oneof(Fixed, MD5, SHA1, SHA3)
+    advanced: true
+  - name: IgnoredAttributes
+    display: Ignored Attributes
+    summary: A list of attribute names that will always skip redaction.
+    description: |
+      A list of attribute names that will not be redacted, even if they match
+      the patterns specified. This can be used to ensure that certain attributes
+      are always preserved.
     type: stringarray
     validations:
       - noblanks
     default: []
     advanced: true
+
 templates:
   - kind: collector_config
-    name: otel_redaction_processor
+    name: otel_fieldredaction
     format: collector
     meta:
       componentSection: processors
-      signalTypes: [traces, metrics, logs]
+      signalTypes: [traces, logs, metrics]
       collectorComponentName: redaction
     data:
       - key: "{{ .ComponentName }}.allow_all_keys"
         value: "{{ true | encodeAsBool }}"
-      - key: "{{ .ComponentName }}.blocked_key_patterns"
-        value: "{{ .Values.AttributeNamePatternsToRedact | encodeAsArray  }}"
-        suppress_if: "{{ not .Values.AttributeNamePatternsToRedact }}"
       - key: "{{ .ComponentName }}.blocked_value_patterns"
-        value: "{{ .Values.AttributeValuePatternsToRedact | encodeAsArray }}"
-        suppress_if: "{{ not .Values.AttributeValuePatternsToRedact }}"
+        value: "{{ appendSlices .Values.Patterns .Values.OtherPatterns | encodeAsArray }}"
+        suppress_if: "{{ not .Values.Patterns }}"
+      - key: "{{ .ComponentName }}.hash_function"
+        value: "{{ .Values.ReplacementStrategy | lower }}"
+        suppress_if: "{{ eq .Values.ReplacementStrategy \"Fixed\" }}"
       - key: "{{ .ComponentName }}.ignored_keys"
-        value: "{{ .Values.AttributeNamesToNotRedact | encodeAsArray }}"
-        suppress_if: "{{ not .Values.AttributeNamesToNotRedact }}"
+        value: "{{ .Values.IgnoredAttributes | encodeAsArray }}"
+        suppress_if: "{{ not .Values.IgnoredAttributes }}"
