@@ -11,7 +11,7 @@ import (
 )
 
 func TestTransformProcessorDefaults(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/transformprocessor_defaults.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/customtransformprocessor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
@@ -52,7 +52,7 @@ func TestTransformProcessorDefaults(t *testing.T) {
 }
 
 func TestTransformProcessorWithStatements(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/transformprocessor_with_statements.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/customtransformprocessor_with_statements.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
@@ -86,7 +86,7 @@ func TestTransformProcessorWithStatements(t *testing.T) {
 }
 
 func TestTransformProcessorSingleSignal(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/transformprocessor_single_signal.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/customtransformprocessor_single_signal.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
@@ -135,7 +135,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
       - name: ErrorMode
         value: ` + errorMode + `

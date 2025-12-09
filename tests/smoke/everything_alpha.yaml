@@ -148,7 +148,7 @@ components:
       - name: SampleRate
         value: 456
   - name: Transform some attributes
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
       - name: TraceStatements
         value:

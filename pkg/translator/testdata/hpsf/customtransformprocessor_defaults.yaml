@@ -4,23 +4,13 @@ components:
   - name: otlp_out
     kind: OTelHTTPExporter
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
-      - name: ErrorMode
-        value: propagate
       - name: TraceStatements
         value:
-          - 'set(span.attributes["processed"], "true")'
-          - 'set(span.attributes["processor"], "transform")'
-          - 'delete_key(span.attributes, "temp_field")'
-      - name: LogStatements
-        value:
-          - 'set(log.attributes["processed"], "true")'
-          - 'set(log.severity_text, "INFO")'
-      - name: MetricStatements
-        value:
-          - 'set(datapoint.attributes["processed"], "true")'
-          - 'set(metric.description, Concat([metric.description, " (processed)"], ""))'
+          - set(span.attributes["custom.field"], "value")
+          - delete_key(span.attributes, "unwanted_field")
+          - set(span.name, Concat([span.name, " - processed"], ""))
 connections:
   - source:
       component: otlp_in
