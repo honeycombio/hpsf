@@ -38,9 +38,9 @@ properties:
     description: |
       The comparison operator to use when comparing the field value to the specified string.
     type: string
-    subtype: oneof(=, !=, >, >=, <, <=, contains, does-not-contain, starts-with)
+    subtype: oneof(=, !=, contains, does-not-contain, starts-with)
     validations:
-      - oneof(=, !=, >, >=, <, <=, contains, does-not-contain, starts-with)
+      - oneof(=, !=, contains, does-not-contain, starts-with)
     default: =
   - name: Value
     summary: The string value to compare against the field value.
