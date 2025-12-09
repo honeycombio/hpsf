@@ -15,6 +15,13 @@ processors:
                 - set(log.cache, ParseJSON(log.attributes["json_data"]))
                 - flatten(log.cache, "")
                 - merge_maps(log.attributes, log.cache, "upsert")
+        trace_statements:
+            - conditions:
+                - span.attributes["json_data"] != nil and HasPrefix(span.attributes["json_data"], "{")
+              statements:
+                - set(span.cache, ParseJSON(span.attributes["json_data"]))
+                - flatten(span.cache, "")
+                - merge_maps(span.attributes, span.cache, "upsert")
     usage: {}
 exporters:
     otlphttp/otlp_out:

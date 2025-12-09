@@ -35,12 +35,6 @@ properties:
     type: string
     validations:
       - noblanks
-  - name: Signal
-    type: string
-    subtype: oneof(span, log)
-    default: log
-    validations:
-      - oneof(span, log)
 templates:
   - kind: collector_config
     name: otel_filter
@@ -52,16 +46,19 @@ templates:
     data:
       - key: "{{ .ComponentName }}.error_mode"
         value: "ignore"
-        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].conditions[0]"
-        value: "{{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix({{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
-        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[0]"
-        value: "set({{ .Values.Signal }}.cache, ParseJSON({{ .Values.Signal }}.attributes[\"{{ .Values.Attribute }}\"]))"
-        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[1]"
-        value: "flatten({{ .Values.Signal }}.cache, \"\")"
-        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
-      - key: "{{ .ComponentName }}.{{ if eq .Values.Signal \"span\" }}trace_statements{{ else if eq .Values.Signal \"log\" }}log_statements{{ end }}[0].statements[2]"
-        value: "merge_maps({{ .Values.Signal }}.attributes, {{ .Values.Signal }}.cache, \"upsert\")"
-        suppress_if: "{{ or (not .Values.Signal) (not .Values.Attribute) }}"
+      - key: "{{ .ComponentName }}.trace_statements[0].conditions[0]"
+        value: "span.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(span.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[0]"
+        value: "set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Attribute }}\"]))"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[1]"
+        value: "flatten(span.cache, \"\")"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[2]"
+        value: "merge_maps(span.attributes, span.cache, \"upsert\")"
+      - key: "{{ .ComponentName }}.log_statements[0].conditions[0]"
+        value: "log.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(log.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+      - key: "{{ .ComponentName }}.log_statements[0].statements[0]"
+        value: "set(log.cache, ParseJSON(log.attributes[\"{{ .Values.Attribute }}\"]))"
+      - key: "{{ .ComponentName }}.log_statements[0].statements[1]"
+        value: "flatten(log.cache, \"\")"
+      - key: "{{ .ComponentName }}.log_statements[0].statements[2]"
+        value: "merge_maps(log.attributes, log.cache, \"upsert\")"
