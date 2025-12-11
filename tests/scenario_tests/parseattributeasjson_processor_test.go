@@ -71,3 +71,51 @@ func TestAttributeJSONParsingProcessorSpanSignal(t *testing.T) {
 	assert.Len(t, traceStatement.Conditions, 1)
 	assert.Len(t, traceStatement.Statements, 3)
 }
+
+func TestAttributeJSONParsingProcessorTracesOnly(t *testing.T) {
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_traces_only.yaml")
+
+	assert.Len(t, rulesConfig.Samplers, 1)
+
+	// Should only have traces pipeline
+	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline")
+
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 0, "Expected 0 logs pipelines")
+
+	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/json_parser_1")
+	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
+
+	// Should have trace_statements but NOT log_statements
+	require.Len(t, transformConfig.TraceStatements, 1, "Expected 1 trace statement")
+	assert.Len(t, transformConfig.LogStatements, 0, "Expected 0 log statements (should be suppressed)")
+
+	traceStatement := transformConfig.TraceStatements[0]
+	assert.Len(t, traceStatement.Conditions, 1)
+	assert.Len(t, traceStatement.Statements, 3)
+}
+
+func TestAttributeJSONParsingProcessorLogsOnly(t *testing.T) {
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_logs_only.yaml")
+
+	assert.Len(t, rulesConfig.Samplers, 1)
+
+	// Should only have logs pipeline
+	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline")
+
+	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
+	assert.Len(t, tracesPipelineNames, 0, "Expected 0 traces pipelines")
+
+	transformConfig, findResult := collectorprovider.GetProcessorConfig[transformprocessor.Config](collectorConfig, "transform/json_parser_1")
+	require.True(t, findResult.Found, "Expected transform processor to be found, found (%v)", findResult.Components)
+
+	// Should have log_statements but NOT trace_statements
+	require.Len(t, transformConfig.LogStatements, 1, "Expected 1 log statement")
+	assert.Len(t, transformConfig.TraceStatements, 0, "Expected 0 trace statements (should be suppressed)")
+
+	logStatement := transformConfig.LogStatements[0]
+	assert.Len(t, logStatement.Conditions, 1)
+	assert.Len(t, logStatement.Statements, 3)
+}

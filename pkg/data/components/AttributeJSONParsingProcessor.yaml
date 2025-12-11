@@ -48,17 +48,25 @@ templates:
         value: "ignore"
       - key: "{{ .ComponentName }}.trace_statements[0].conditions[0]"
         value: "span.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(span.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+        suppress_if: '{{ not .HasTracesConnection }}'
       - key: "{{ .ComponentName }}.trace_statements[0].statements[0]"
         value: "set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Attribute }}\"]))"
+        suppress_if: '{{ not .HasTracesConnection }}'
       - key: "{{ .ComponentName }}.trace_statements[0].statements[1]"
         value: "flatten(span.cache, \"\")"
+        suppress_if: '{{ not .HasTracesConnection }}'
       - key: "{{ .ComponentName }}.trace_statements[0].statements[2]"
         value: "merge_maps(span.attributes, span.cache, \"upsert\")"
+        suppress_if: '{{ not .HasTracesConnection }}'
       - key: "{{ .ComponentName }}.log_statements[0].conditions[0]"
         value: "log.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(log.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+        suppress_if: '{{ not .HasLogsConnection }}'
       - key: "{{ .ComponentName }}.log_statements[0].statements[0]"
         value: "set(log.cache, ParseJSON(log.attributes[\"{{ .Values.Attribute }}\"]))"
+        suppress_if: '{{ not .HasLogsConnection }}'
       - key: "{{ .ComponentName }}.log_statements[0].statements[1]"
         value: "flatten(log.cache, \"\")"
+        suppress_if: '{{ not .HasLogsConnection }}'
       - key: "{{ .ComponentName }}.log_statements[0].statements[2]"
         value: "merge_maps(log.attributes, log.cache, \"upsert\")"
+        suppress_if: '{{ not .HasLogsConnection }}'

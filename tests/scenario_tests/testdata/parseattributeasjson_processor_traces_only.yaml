@@ -1,0 +1,35 @@
+name: parseattributeasjson_traces_only_test
+version: v0.1.0
+summary: Test for ParseAttributeAsJSON with only traces connection
+description: |
+  Test configuration with only traces connected to verify that log_statements
+  are suppressed when no log connections exist.
+
+components:
+  - name: OTel Receiver 1
+    kind: OTelReceiver
+  - name: json_parser_1
+    kind: AttributeJSONParsingProcessor
+    properties:
+      - name: Attribute
+        value: "body"
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
+connections:
+  - source:
+      component: OTel Receiver 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: json_parser_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: json_parser_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: OTel HTTP Exporter 1
+      port: Traces
+      type: OTelTraces
