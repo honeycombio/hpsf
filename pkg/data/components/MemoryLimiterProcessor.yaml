@@ -4,12 +4,11 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Prevents out of memory situations on the collector
+summary: Prevents your pipeline infrastructure from running out of memory.
 description: |
-  A processor that prevents out-of-memory situations on the collector by monitoring
-  memory usage and applying backpressure when memory limits are approached. Uses soft 
-  and hard memory limits to manage memory consumption effectively. Should be placed as 
-  the first processor in a pipeline for best results.
+  This processor checks memory usage at a specified interval and applies
+  backpressure when memory limits are approached. Place this as the first
+  processor in your pipeline for best results.
 tags:
   - category:processor
   - service:collector
