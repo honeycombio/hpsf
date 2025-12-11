@@ -2,7 +2,7 @@ kind: ErrorExistsCondition
 name: Check for Errors
 style: condition
 type: base
-status: alpha
+status: deprecated
 version: v0.1.0
 summary: Checks if an error exists in any span of a trace
 description: This checks if any span in a trace has an error.
