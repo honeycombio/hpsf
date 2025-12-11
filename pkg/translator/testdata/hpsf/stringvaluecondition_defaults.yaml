@@ -1,24 +1,22 @@
 components:
-  - name: Receive OTel_1
+  - name: OTel Receiver_1
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: SamplingSequencer
-  - name: Compare String Not Equals_1
-    kind: CompareStringFieldCondition
+  - name: String Value Condition_1
+    kind: StringValueCondition
     properties:
       - name: Fields
-        value: ["status"]
-      - name: Operator
-        value: "!="
+        value: ["status_message"]
       - name: Value
         value: "error"
-  - name: Sample All_1
+  - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
 connections:
   - source:
-      component: Receive OTel_1
+      component: OTel Receiver_1
       port: Traces
       type: OTelTraces
     destination:
@@ -30,19 +28,19 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Compare String Not Equals_1
+      component: String Value Condition_1
       port: Match
       type: SampleData
   - source:
-      component: Compare String Not Equals_1
+      component: String Value Condition_1
       port: And
       type: SampleData
     destination:
-      component: Sample All_1
+      component: Keep All_1
       port: Sample
       type: SampleData
   - source:
-      component: Sample All_1
+      component: Keep All_1
       port: Events
       type: HoneycombEvents
     destination:

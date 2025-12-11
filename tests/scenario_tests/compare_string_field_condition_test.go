@@ -10,7 +10,7 @@ import (
 )
 
 func TestCompareStringEquals(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/compare_string_equals.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/string_value_condition_equals.yaml")
 
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
 	assert.Len(t, tracesPipelineNames, 1)
@@ -44,7 +44,7 @@ func TestCompareStringEquals(t *testing.T) {
 }
 
 func TestCompareStringNotEquals(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/compare_string_not_equals.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/string_value_condition_not_equals.yaml")
 
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
 	assert.Len(t, tracesPipelineNames, 1)
@@ -78,7 +78,7 @@ func TestCompareStringNotEquals(t *testing.T) {
 }
 
 func TestCompareStringContains(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/compare_string_contains.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/string_value_condition_contains.yaml")
 
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
 	assert.Len(t, tracesPipelineNames, 1)
@@ -112,7 +112,7 @@ func TestCompareStringContains(t *testing.T) {
 }
 
 func TestCompareStringDoesNotContain(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/compare_string_does_not_contain.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/string_value_condition_does_not_contain.yaml")
 
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
 	assert.Len(t, tracesPipelineNames, 1)
@@ -146,7 +146,7 @@ func TestCompareStringDoesNotContain(t *testing.T) {
 }
 
 func TestCompareStringStartsWith(t *testing.T) {
-	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/compare_string_starts_with.yaml")
+	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/string_value_condition_starts_with.yaml")
 
 	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
 	assert.Len(t, tracesPipelineNames, 1)

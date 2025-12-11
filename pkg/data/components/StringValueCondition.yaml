@@ -1,4 +1,4 @@
-kind: CompareStringFieldCondition
+kind: StringValueCondition
 name: Check a String Value
 style: condition
 type: base
@@ -50,7 +50,7 @@ properties:
     default: ""
 templates:
   - kind: refinery_rules
-    name: CompareStringFieldCondition
+    name: StringValueCondition
     format: rules
     meta:
       condition: true

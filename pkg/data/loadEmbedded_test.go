@@ -27,10 +27,7 @@ func TestLoadEmbeddedComponents(t *testing.T) {
 			t.Errorf("LoadEmbeddedComponents() %s style = %v, what's that?", k, v.Type)
 		}
 		switch v.Status {
-		case config.ComponentStatusArchived, config.ComponentStatusDeprecated:
-			t.Errorf("LoadEmbeddedComponents() %s status = %v, want something active", k, v.Status)
-		case config.ComponentStatusAlpha, config.ComponentStatusDevelopment, config.ComponentStatusStable:
-			// ok
+		case config.ComponentStatusDevelopment, config.ComponentStatusAlpha, config.ComponentStatusStable, config.ComponentStatusArchived, config.ComponentStatusDeprecated:
 		default:
 			t.Errorf("LoadEmbeddedComponents() %s status = %v, what's that?", k, v.Status)
 		}

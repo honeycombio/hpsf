@@ -3,15 +3,15 @@ components:
     kind: OTelReceiver
   - name: Start Sampling_1
     kind: SamplingSequencer
-  - name: Compare String Contains_1
-    kind: CompareStringFieldCondition
+  - name: String Compare Not Equals_1
+    kind: StringValueCondition
     properties:
       - name: Fields
-        value: ["message"]
+        value: ["status"]
       - name: Operator
-        value: "contains"
+        value: "!="
       - name: Value
-        value: "timeout"
+        value: "error"
   - name: Sample All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1
@@ -30,11 +30,11 @@ connections:
       port: Rule 1
       type: SampleData
     destination:
-      component: Compare String Contains_1
+      component: String Compare Not Equals_1
       port: Match
       type: SampleData
   - source:
-      component: Compare String Contains_1
+      component: String Compare Not Equals_1
       port: And
       type: SampleData
     destination:
