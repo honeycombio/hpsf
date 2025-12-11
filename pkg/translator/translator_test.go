@@ -1253,7 +1253,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "specific agent type supported",
-			wantErr:   "",
+			wantErr:         "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1268,14 +1268,14 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "expected agent type not specified",
-			wantErr:   "",
+			wantErr:         "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
-					hpsftypes.RefineryRules:   "v0.151.0",
+					hpsftypes.RefineryRules: "v0.151.0",
 				},
 				Maximum: map[hpsftypes.Type]string{
-					hpsftypes.RefineryRules:   "v0.152.0",
+					hpsftypes.RefineryRules: "v0.152.0",
 				},
 			},
 		},

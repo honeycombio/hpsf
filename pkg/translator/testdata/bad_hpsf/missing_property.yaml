@@ -6,6 +6,10 @@ components:
   - name: redaction_processor_1
     kind: RedactionProcessor
     properties:
+      - name: Patterns
+        value: []
+      - name: ReplacementStrategy
+        value: Fixed
       - name: SomeDamnRegex
         value:
           - ".*api_key.*"
