@@ -1,19 +1,24 @@
+name: transformprocessor_defaults_test
+version: v0.1.0
+summary: Test for TransformProcessor with default configuration
+description: |
+  Test configuration with an OTel receiver, TransformProcessor with empty arrays (defaults),
+  and OTel HTTP exporter.
+
 components:
-  - name: otlp_in
+  - name: OTel Receiver 1
     kind: OTelReceiver
-  - name: otlp_out
-    kind: OTelHTTPExporter
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
-      - name: TraceStatements
-        value:
-          - set(span.attributes["custom.field"], "value")
-          - delete_key(span.attributes, "unwanted_field")
-          - set(span.name, Concat([span.name, " - processed"], ""))
+      - name: ErrorMode
+        value: ignore
+  - name: OTel HTTP Exporter 1
+    kind: OTelHTTPExporter
+
 connections:
   - source:
-      component: otlp_in
+      component: OTel Receiver 1
       port: Traces
       type: OTelTraces
     destination:
@@ -25,11 +30,11 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: otlp_out
+      component: OTel HTTP Exporter 1
       port: Traces
       type: OTelTraces
   - source:
-      component: otlp_in
+      component: OTel Receiver 1
       port: Logs
       type: OTelLogs
     destination:
@@ -41,11 +46,11 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: otlp_out
+      component: OTel HTTP Exporter 1
       port: Logs
       type: OTelLogs
   - source:
-      component: otlp_in
+      component: OTel Receiver 1
       port: Metrics
       type: OTelMetrics
     destination:
@@ -57,6 +62,6 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: otlp_out
+      component: OTel HTTP Exporter 1
       port: Metrics
       type: OTelMetrics

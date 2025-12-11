@@ -9,7 +9,7 @@ components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
       - name: ErrorMode
         value: propagate

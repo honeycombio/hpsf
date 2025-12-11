@@ -1,18 +1,31 @@
-name: transformprocessor_defaults_test
+name: transformprocessor_statements_test
 version: v0.1.0
-summary: Test for TransformProcessor with default configuration
+summary: Test for TransformProcessor with custom statements
 description: |
-  Test configuration with an OTel receiver, TransformProcessor with empty arrays (defaults),
+  Test configuration with an OTel receiver, TransformProcessor with custom trace, log, and metric statements,
   and OTel HTTP exporter.
 
 components:
   - name: OTel Receiver 1
     kind: OTelReceiver
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
       - name: ErrorMode
         value: ignore
+      - name: TraceStatements
+        value:
+          - 'set(span.attributes["processed"], "true")'
+          - 'set(span.attributes["processor"], "transform")'
+          - 'delete_key(span.attributes, "temp_field")'
+      - name: LogStatements
+        value:
+          - 'set(log.attributes["processed"], "true")'
+          - 'set(log.severity_text, "INFO")'
+      - name: MetricStatements
+        value:
+          - 'set(datapoint.attributes["processed"], "true")'
+          - 'set(metric.description, Concat([metric.description, " (processed)"], ""))'
   - name: OTel HTTP Exporter 1
     kind: OTelHTTPExporter
 

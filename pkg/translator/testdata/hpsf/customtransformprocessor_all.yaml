@@ -1,18 +1,13 @@
-name: transformprocessor_statements_test
-version: v0.1.0
-summary: Test for TransformProcessor with custom statements
-description: |
-  Test configuration with an OTel receiver, TransformProcessor with custom trace, log, and metric statements,
-  and OTel HTTP exporter.
-
 components:
-  - name: OTel Receiver 1
+  - name: otlp_in
     kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
   - name: transform_1
-    kind: TransformProcessor
+    kind: CustomTransformProcessor
     properties:
       - name: ErrorMode
-        value: ignore
+        value: propagate
       - name: TraceStatements
         value:
           - 'set(span.attributes["processed"], "true")'
@@ -26,12 +21,9 @@ components:
         value:
           - 'set(datapoint.attributes["processed"], "true")'
           - 'set(metric.description, Concat([metric.description, " (processed)"], ""))'
-  - name: OTel HTTP Exporter 1
-    kind: OTelHTTPExporter
-
 connections:
   - source:
-      component: OTel Receiver 1
+      component: otlp_in
       port: Traces
       type: OTelTraces
     destination:
@@ -43,11 +35,11 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: OTel HTTP Exporter 1
+      component: otlp_out
       port: Traces
       type: OTelTraces
   - source:
-      component: OTel Receiver 1
+      component: otlp_in
       port: Logs
       type: OTelLogs
     destination:
@@ -59,11 +51,11 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: OTel HTTP Exporter 1
+      component: otlp_out
       port: Logs
       type: OTelLogs
   - source:
-      component: OTel Receiver 1
+      component: otlp_in
       port: Metrics
       type: OTelMetrics
     destination:
@@ -75,6 +67,6 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: OTel HTTP Exporter 1
+      component: otlp_out
       port: Metrics
       type: OTelMetrics
