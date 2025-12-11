@@ -7,7 +7,7 @@ components:
     kind: StringValueCondition
     properties:
       - name: Fields
-        value: ["field"]
+        value: ["field1", "field2"]
       - name: Operator
         value: "contains"
       - name: Value

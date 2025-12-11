@@ -8,7 +8,8 @@ Samplers:
                   Scope: trace
                   Conditions:
                     - Fields:
-                        - field
+                        - field1
+                        - field2
                       Operator: contains
                       Value: test
                       Datatype: string
