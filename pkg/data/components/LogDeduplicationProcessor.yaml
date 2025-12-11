@@ -4,10 +4,10 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: A processor that removes duplicate log entries.
+summary: Removes duplicate log entries.
 description: |-
-  This processor is used to deduplicate logs by detecting identical logs over a range of time and
-  emitting a single log with the count of logs that were deduplicated.
+  This processor detects identical logs over a range of time (60 seconds by default) and emits
+  a single log with the count of logs that were deduplicated (reported as sampleRate by default).
 tags:
   - category:processor
   - service:collector
