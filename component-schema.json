@@ -282,11 +282,46 @@
           ]
         },
         "subtype": {
-          "type": "string",
-          "description": "Can further constrain the property editor; e.g., a oneof() subtype will cause a dropdown to be used instead of a text box",
-          "examples": [
-            "oneof(basic, normal, detailed)",
-            "oneof(all, none)"
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "String-based subtype for property editor constraints; e.g., oneof() for dropdowns",
+              "examples": [
+                "oneof(basic, normal, detailed)",
+                "oneof(all, none)"
+              ]
+            },
+            {
+              "type": "array",
+              "description": "Array-based subtype for checklist properties containing item definitions",
+              "items": {
+                "type": "object",
+                "required": [
+                  "id",
+                  "displayName",
+                  "value"
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "Unique identifier for the checklist item"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "description": "Human-readable name shown in the UI"
+                  },
+                  "value": {
+                    "type": "string",
+                    "description": "The actual value used when this item is selected"
+                  },
+                  "tooltipText": {
+                    "type": "string",
+                    "description": "Optional tooltip text providing more information about the item"
+                  }
+                },
+                "additionalProperties": false
+              }
+            }
           ]
         },
         "advanced": {

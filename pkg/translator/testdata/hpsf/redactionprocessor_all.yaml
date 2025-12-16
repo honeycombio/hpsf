@@ -7,7 +7,7 @@ components:
     kind: RedactionProcessor
     properties:
       - name: Patterns
-        value: []
+        value: ["ssn", "credit_card"]
       - name: OtherPatterns
         value:
           - ".*api_key.*"

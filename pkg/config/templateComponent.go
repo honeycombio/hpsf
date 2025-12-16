@@ -204,12 +204,24 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 // templates. You can still use them individually for special cases.
 func (t *TemplateComponent) Values() map[string]any {
 	result := make(map[string]any)
+
+	// Get all properties that are explicitly set in the HPSF document
+	// Create a map to track which properties are explicitly set (even with empty values)
+	explicitlySet := make(map[string]bool)
 	for k, v := range t.HProps() {
 		if !_isZeroValue(v) {
-			// we only want to include non-zero values in the result
+			// Non-zero values are always included
 			result[k] = v
+			explicitlySet[k] = true
+		} else {
+			// For checklist properties, include empty slices if they're explicitly set
+			if prop := t.getPropertyByName(k); prop != nil && prop.Type.String() == "checklist" {
+				result[k] = v
+				explicitlySet[k] = true
+			}
 		}
 	}
+
 	for k, v := range t.User {
 		if !_isZeroValue(v) {
 			// don't overwrite existing values
@@ -217,15 +229,17 @@ func (t *TemplateComponent) Values() map[string]any {
 				continue
 			}
 			result[k] = v
+			explicitlySet[k] = true
 		}
 	}
+
+	// Only use defaults for properties that were not explicitly set
 	for _, prop := range t.Properties {
-		// don't overwrite existing values
-		if _, exists := result[prop.Name]; exists {
-			continue
+		if !explicitlySet[prop.Name] {
+			result[prop.Name] = prop.Default
 		}
-		result[prop.Name] = prop.Default
 	}
+
 	return result
 }
 
@@ -265,6 +279,16 @@ func (t *TemplateComponent) GetPortIndex(name string) int {
 		}
 	}
 	return 0
+}
+
+// getPropertyByName returns the template property with the given name, or nil if it doesn't exist
+func (t *TemplateComponent) getPropertyByName(name string) *TemplateProperty {
+	for _, prop := range t.Properties {
+		if prop.Name == name {
+			return &prop
+		}
+	}
+	return nil
 }
 
 // // ensure that TemplateComponent implements Component

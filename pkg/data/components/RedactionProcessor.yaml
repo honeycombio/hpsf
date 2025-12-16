@@ -51,15 +51,7 @@ properties:
     description: |
       The predefined patterns to redact from fields.
       You can select multiple patterns to redact.
-    default:
-      - id: us_phone
-        displayName: 'US Phone number'
-        value: '\b\(?[0-9]{3}\)?[. -]?[0-9]{3}[. -]?[0-9]{4}\b'
-        tooltipText: 'Matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567'
-      - id: intl_phone
-        displayName: 'International Phone Number'
-        value: '\b\+[1-9][0-9]{0,2}(?:[-.\s]?(?:\([0-9]+\))?(?:[-.\s]?[0-9]+)*)\b'
-        tooltipText: 'Matches international phone numbers like +1 555-123-4567 or +44 20 1234 5678'
+    subtype:
       - id: ssn
         displayName: 'Social Security number'
         value: '\b[0-9]{3}[.-]?[0-9]{2}[.-]?[0-9]{4}\b'
@@ -72,6 +64,14 @@ properties:
         displayName: 'Email'
         value: '\b[a-zA-Z0-9._+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,6}\b'
         tooltipText: 'Matches email addresses in standard format like user@domain.com'
+      - id: us_phone
+        displayName: 'US Phone number'
+        value: '\b\(?[0-9]{3}\)?[. -]?[0-9]{3}[. -]?[0-9]{4}\b'
+        tooltipText: 'Matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567'
+      - id: intl_phone
+        displayName: 'International Phone Number'
+        value: '\b\+[1-9][0-9]{0,2}(?:[-.\s]?(?:\([0-9]+\))?(?:[-.\s]?[0-9]+)*)\b'
+        tooltipText: 'Matches international phone numbers like +1 555-123-4567 or +44 20 1234 5678'
       - id: iban
         displayName: 'International Bank Account Number (IBAN)'
         value: '\b[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]){11,31}(?:\s[A-Z0-9])*\b'
@@ -100,8 +100,7 @@ properties:
         displayName: 'UUID/GUID'
         value: '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
         tooltipText: 'Matches UUIDs/GUIDs in the 8-444-12 pattern, like 123e4567-e89b-12d3-a456-426614174000'
-    validations:
-      - regex
+    default: ["ssn", "credit_card", "email", "us_phone"]
   - name: OtherPatterns
     display: Other Patterns
     summary: Additional regular expression patterns to redact from fields.
@@ -123,7 +122,7 @@ properties:
       function to consistently hash the redacted value.
     type: string
     subtype: oneof(Fixed, MD5, SHA1, SHA3)
-    default: fixed
+    default: Fixed
     validations:
       - oneof(Fixed, MD5, SHA1, SHA3)
     advanced: true
@@ -152,8 +151,8 @@ templates:
       - key: "{{ .ComponentName }}.allow_all_keys"
         value: "{{ true | encodeAsBool }}"
       - key: "{{ .ComponentName }}.blocked_value_patterns"
-        value: "{{ appendSlices .Values.Patterns .Values.OtherPatterns | encodeAsArray }}"
-        suppress_if: "{{ not .Values.Patterns }}"
+        value: "{{ appendSlices (getChecked .Props.Patterns .Values.Patterns) .Values.OtherPatterns | encodeAsArray }}"
+        suppress_if: "{{ and (not .Values.Patterns) (not .Values.OtherPatterns) }}"
       - key: "{{ .ComponentName }}.hash_function"
         value: "{{ .Values.ReplacementStrategy | lower }}"
         suppress_if: "{{ eq .Values.ReplacementStrategy \"Fixed\" }}"

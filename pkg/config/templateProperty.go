@@ -29,7 +29,7 @@ type TemplateProperty struct {
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
-	Subtype     string        `yaml:"subtype,omitempty"`
+	Subtype     any           `yaml:"subtype,omitempty"`
 	Advanced    bool          `yaml:"advanced,omitempty"`
 	Validations []string      `yaml:"validations,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
@@ -363,10 +363,15 @@ func inRange(options ...string) func(val any) bool {
 func isValidRegex(val any) bool {
 	switch v := val.(type) {
 	case string:
-		return isValidRegexString(v)
+		b := isValidRegexString(v)
+		if !b {
+			fmt.Printf("isValidRegex: invalid regex string %q\n", v)
+		}
+		return b
 	case []string:
 		for _, s := range v {
 			if !isValidRegexString(s) {
+				fmt.Printf("isValidRegex: invalid regex string %q\n", s)
 				return false
 			}
 		}
@@ -375,14 +380,18 @@ func isValidRegex(val any) bool {
 		for _, a := range v {
 			s, ok := a.(string)
 			if !ok {
+				fmt.Printf("isValidRegex: invalid string %v\n", s)
+				fmt.Printf("2: invalid %T %#v\n", a, a)
 				return false // non-string in the slice
 			}
 			if !isValidRegexString(s) {
+				fmt.Printf("isValidRegex: invalid regex string %q\n", s)
 				return false
 			}
 		}
 		return true
 	default:
+		fmt.Printf("isValidRegex: unsupported type %T\n", val)
 		return false // unsupported type
 	}
 }
