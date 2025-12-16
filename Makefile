@@ -3,7 +3,7 @@ GOTESTCMD = $(if $(shell command -v gotestsum),gotestsum --junitfile ./test_resu
 
 .PHONY: test
 #: run all tests
-test: test_with_race test_all test_scenarios test-refinery-generation
+test: test_with_race test_all test_scenarios test_refinery_generation test_formatting
 
 .PHONY: test_with_race
 #: run only tests tagged with potential race conditions
@@ -44,24 +44,9 @@ test_template:
 	@echo
 	./testTemplate.sh $(TEMPLATE)
 
-CONFIG ?= examples/hpsf.yaml
-.PHONY: validate
-#: validate provided config (usage: make validate CONFIG=examples/hpsf2.yaml)
-validate:
-	@echo
-	@echo "+++ validating config $(CONFIG)"
-	@echo
-	go run ./cmd/hpsf -i $(CONFIG) validate
-	for format in rConfig rRules cConfig ; do \
-		echo; \
-		echo "+++ validating config generation for $${format} with config $(CONFIG)"; \
-		echo; \
-		go run ./cmd/hpsf -i $(CONFIG) $${format} || exit 1; \
-	done
-
-.PHONY: test-refinery-generation
+.PHONY: test_refinery_generation
 #: test Refinery to HPSF generation for all test Refinery rules files
-test-refinery-generation: tests/refinery2hpsf/*-refinery.yaml
+test_refinery_generation: tests/refinery2hpsf/*-refinery.yaml
 	@echo
 	@echo "+++ testing Refinery to HPSF generation for all test rules"
 	@echo
@@ -87,6 +72,29 @@ test-refinery-generation: tests/refinery2hpsf/*-refinery.yaml
 		else \
 			echo "SUCCESS: Generated output matches expected output"; \
 		fi; \
+	done
+
+.PHONY: test_formatting
+#: test formatting of all Go files
+test_formatting:
+	@echo
+	@echo "+++ testing formatting of Go files in" $(PWD)
+	@echo
+	@unformatted=$$(gofmt -l .); if [ -n "$$unformatted" ]; then echo "The following files are not properly formatted:"; echo "$$unformatted"; exit 1; else echo "All Go files are properly formatted."; fi
+
+CONFIG ?= examples/hpsf.yaml
+.PHONY: validate
+#: validate provided config (usage: make validate CONFIG=examples/hpsf2.yaml)
+validate:
+	@echo
+	@echo "+++ validating config $(CONFIG)"
+	@echo
+	go run ./cmd/hpsf -i $(CONFIG) validate
+	for format in rConfig rRules cConfig ; do \
+		echo; \
+		echo "+++ validating config generation for $${format} with config $(CONFIG)"; \
+		echo; \
+		go run ./cmd/hpsf -i $(CONFIG) $${format} || exit 1; \
 	done
 
 .PHONY: validate_all

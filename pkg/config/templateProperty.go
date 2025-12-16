@@ -21,7 +21,7 @@ import (
 // value of the property. The property can also have a summary and a
 // description, which are used to document the property. The display field
 // provides a human-readable label for the property in the UI.
-// It is explicitly intended that the value of the display field can change 
+// It is explicitly intended that the value of the display field can change
 // without affecting any existing use of the component (and without a version bump)
 type TemplateProperty struct {
 	Name        string        `yaml:"name"`
@@ -29,7 +29,7 @@ type TemplateProperty struct {
 	Summary     string        `yaml:"summary,omitempty"`
 	Description string        `yaml:"description,omitempty"`
 	Type        hpsf.PropType `yaml:"type"`
-	Subtype     string        `yaml:"subtype,omitempty"`
+	Subtype     any           `yaml:"subtype,omitempty"`
 	Advanced    bool          `yaml:"advanced,omitempty"`
 	Validations []string      `yaml:"validations,omitempty"`
 	Default     any           `yaml:"default,omitempty"`
@@ -358,21 +358,58 @@ func inRange(options ...string) func(val any) bool {
 	}
 }
 
-// isValidRegex checks if the value is a valid regular expression
+// isValidRegex checks if the value can be interpreted as a valid regular expression,
+// or a slice of valid regular expressions.
 func isValidRegex(val any) bool {
-	s := fmt.Sprint(val)
+	switch v := val.(type) {
+	case string:
+		b := isValidRegexString(v)
+		if !b {
+			fmt.Printf("isValidRegex: invalid regex string %q\n", v)
+		}
+		return b
+	case []string:
+		for _, s := range v {
+			if !isValidRegexString(s) {
+				fmt.Printf("isValidRegex: invalid regex string %q\n", s)
+				return false
+			}
+		}
+		return true
+	case []any:
+		for _, a := range v {
+			s, ok := a.(string)
+			if !ok {
+				fmt.Printf("isValidRegex: invalid string %v\n", s)
+				fmt.Printf("2: invalid %T %#v\n", a, a)
+				return false // non-string in the slice
+			}
+			if !isValidRegexString(s) {
+				fmt.Printf("isValidRegex: invalid regex string %q\n", s)
+				return false
+			}
+		}
+		return true
+	default:
+		fmt.Printf("isValidRegex: unsupported type %T\n", val)
+		return false // unsupported type
+	}
+}
+
+// isValidRegexString checks if a single string is a valid regular expression.
+func isValidRegexString(val string) bool {
 	// If the value is an environment variable, we don't validate it here
-	if len(s) > 0 && s[0] == '$' {
+	if len(val) > 0 && val[0] == '$' {
 		return true // environment variables are always valid
 	}
 
-	_, err := regexp.Compile(s)
+	_, err := regexp.Compile(val)
 	return err == nil
 }
 
 // enhancePartitionFormat validates that a value is a string representing a valid date format.
 // The string must not start or end with '/' and must contain either:
-// - All Go time format tokens: "2006", "01", "02", "15", "04" 
+// - All Go time format tokens: "2006", "01", "02", "15", "04"
 // - All C-style format tokens: "%Y", "%m", "%d", "%H", "%M"
 func enhancePartitionFormat(val any) bool {
 	// Check if value is a string

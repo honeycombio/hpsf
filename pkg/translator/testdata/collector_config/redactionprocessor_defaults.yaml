@@ -9,8 +9,10 @@ processors:
     redaction/redaction_processor_1:
         allow_all_keys: true
         blocked_value_patterns:
-            - 4[0-9]{12}(?:[0-9]{3})?
-            - (5[1-5][0-9]{14})
+            - \b[0-9]{3}[.-]?[0-9]{2}[.-]?[0-9]{4}\b
+            - \b(?:[0-9][ -]*?){13,16}\b
+            - \b[a-zA-Z0-9._+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,6}\b
+            - \b\(?[0-9]{3}\)?[. -]?[0-9]{3}[. -]?[0-9]{4}\b
     usage: {}
 exporters:
     otlphttp/otlp_out:

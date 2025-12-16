@@ -38,6 +38,7 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"appendSlices":  appendSlices,
 		"buildurl":      buildurl,
 		"comment":       comment,
 		"encodeAsArray": encodeAsArray,
@@ -45,8 +46,10 @@ func helpers() template.FuncMap {
 		"encodeAsInt":   encodeAsInt,
 		"encodeAsFloat": encodeAsFloat,
 		"encodeAsMap":   encodeAsMap,
+		"getChecked":    getChecked,
 		"indent":        indent,
 		"join":          join,
+		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
 		"meta":          meta,
 		"nonempty":      nonempty,
@@ -55,6 +58,11 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// appendSlices combines two slices into one.
+func appendSlices(slice1 []any, slice2 []any) []any {
+	return append(slice1, slice2...)
 }
 
 // buildurl constructs a URL based on the provided parameters. A path is optional.
@@ -326,4 +334,64 @@ func _asInt(a any) int {
 		}
 	}
 	return 0
+}
+
+// ChecklistItem represents an item in a checklist property definition
+type ChecklistItem struct {
+	ID          string `yaml:"id"`
+	DisplayName string `yaml:"displayName"`
+	Value       string `yaml:"value"`
+	TooltipText string `yaml:"tooltipText"`
+}
+
+// getChecked takes a TemplateProperty (checklist type) and a list of checked IDs,
+// and returns the values from the subtype definition for the checked items.
+// This is used in templates to get the actual regex patterns for selected checklist items.
+func getChecked(prop TemplateProperty, checkedIDs any) []any {
+	if prop.Type.String() != "checklist" {
+		return []any{}
+	}
+
+	// Handle subtype as []any containing checklist items
+	subtypeSlice, ok := prop.Subtype.([]any)
+	if !ok {
+		return []any{}
+	}
+
+	// Convert []any to []ChecklistItem
+	var items []ChecklistItem
+	for _, item := range subtypeSlice {
+		if itemMap, ok := item.(map[string]any); ok {
+			checklistItem := ChecklistItem{}
+			if id, ok := itemMap["id"].(string); ok {
+				checklistItem.ID = id
+			}
+			if displayName, ok := itemMap["displayName"].(string); ok {
+				checklistItem.DisplayName = displayName
+			}
+			if value, ok := itemMap["value"].(string); ok {
+				checklistItem.Value = value
+			}
+			if tooltipText, ok := itemMap["tooltipText"].(string); ok {
+				checklistItem.TooltipText = tooltipText
+			}
+			items = append(items, checklistItem)
+		}
+	}
+
+	// Convert checkedIDs to a map for quick lookup
+	checkedMap := make(map[string]bool)
+	for _, id := range _getStringsFrom(checkedIDs) {
+		checkedMap[id] = true
+	}
+
+	// Extract values for checked items
+	var result []any
+	for _, item := range items {
+		if checkedMap[item.ID] {
+			result = append(result, item.Value)
+		}
+	}
+
+	return result
 }
