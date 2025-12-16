@@ -2,7 +2,7 @@ kind: RedactionProcessor
 name: Mask sensitive values
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Redacts (masks) sensitive values in trace and log attributes.
 description: |-
