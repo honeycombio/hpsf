@@ -1,0 +1,27 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: dsym_symbolicator
+    kind: DsymSymbolicationProcessor
+    properties:
+      - name: BucketName
+        value: my-dsym-bucket
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: dsym_symbolicator
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: dsym_symbolicator
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
