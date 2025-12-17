@@ -38,7 +38,7 @@ properties:
       - oneof(=, !=, >, >=, <, <=)
     default: =
   - name: Value
-    summary: The integer value to compare against the field value.
+    summary: The value to compare against the field value.
     type: float
     default: 0
   - name: ForceIntegerCompare
