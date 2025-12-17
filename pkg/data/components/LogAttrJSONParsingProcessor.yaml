@@ -27,6 +27,7 @@ ports:
 properties:
   - name: Attribute
     type: string
+    summary: "The attribute to parse and convert to attributes"
     validations:
       - noblanks
 templates:
@@ -45,6 +46,6 @@ templates:
       - key: "{{ .ComponentName }}.log_statements[0].statements[0]"
         value: "set(log.cache, ParseJSON(log.attributes[\"{{ .Values.Attribute }}\"]))"
       - key: "{{ .ComponentName }}.log_statements[0].statements[1]"
-        value: "flatten(log.cache, \"\")"
+        value: "flatten(log.cache)"
       - key: "{{ .ComponentName }}.log_statements[0].statements[2]"
         value: "merge_maps(log.attributes, log.cache, \"upsert\")"
