@@ -38,6 +38,7 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"appendSlices":  appendSlices,
 		"buildurl":      buildurl,
 		"comment":       comment,
 		"encodeAsArray": encodeAsArray,
@@ -45,8 +46,10 @@ func helpers() template.FuncMap {
 		"encodeAsInt":   encodeAsInt,
 		"encodeAsFloat": encodeAsFloat,
 		"encodeAsMap":   encodeAsMap,
+		"getChecked":    getChecked,
 		"indent":        indent,
 		"join":          join,
+		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
 		"meta":          meta,
 		"nonempty":      nonempty,
@@ -55,6 +58,11 @@ func helpers() template.FuncMap {
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// appendSlices combines two slices into one.
+func appendSlices(slice1 []any, slice2 []any) []any {
+	return append(slice1, slice2...)
 }
 
 // buildurl constructs a URL based on the provided parameters. A path is optional.
@@ -134,8 +142,9 @@ func encodeAsBool(a any) string {
 	return BoolPrefix + value
 }
 
-// encodeAsFloat takes a string and returns a string with the appropriate marker
+// encodeAsFloat takes any value and returns a string with the appropriate marker
 // so that it will be expanded later into a float when it's rendered to YAML.
+// If the value cannot be parsed as a float, it returns a 0.
 func encodeAsFloat(a any) string {
 	value := "0"
 	switch v := a.(type) {
@@ -144,7 +153,12 @@ func encodeAsFloat(a any) string {
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
-		value = v
+		// find the first thing that looks like a (possibly signed) float in the string
+		pat := regexp.MustCompile(`[+-]?\d+(\.\d+)?`)
+		match := pat.FindString(v)
+		if match != "" {
+			value = match
+		}
 	case bool:
 		if v {
 			value = "1"
@@ -153,17 +167,27 @@ func encodeAsFloat(a any) string {
 	return FloatPrefix + value
 }
 
-// encodeAsInt takes a string and returns a string with the appropriate marker
-// so that it will be expanded later into an integer when it's rendered to YAML.
+// encodeAsInt takes an "any", tries to convert it to an integer, and then
+// returns a string with the appropriate marker so that it will be expanded
+// later into an integer when it's rendered to YAML.
+// Floats are truncated to integers (towards 0).
+// If the value cannot be parsed as an integer, it returns a 0.
 func encodeAsInt(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
 		value = strconv.Itoa(v)
 	case float64:
-		value = fmt.Sprintf("%f", v)
+		value = fmt.Sprintf("%d", int(v))
 	case string:
-		value = v
+		// find the first thing that looks like an integer (possibly signed) in the string
+		// This is specifically to cope with something like "1.50000", which won't parse
+		// when we use Atoi on it later -- we want to extract only the part that will parse.
+		pat := regexp.MustCompile(`[+-]?[\d]+`)
+		match := pat.FindString(v)
+		if match != "" {
+			value = match
+		}
 	case bool:
 		if v {
 			value = "1"
@@ -326,4 +350,64 @@ func _asInt(a any) int {
 		}
 	}
 	return 0
+}
+
+// ChecklistItem represents an item in a checklist property definition
+type ChecklistItem struct {
+	ID          string `yaml:"id"`
+	DisplayName string `yaml:"displayName"`
+	Value       string `yaml:"value"`
+	TooltipText string `yaml:"tooltipText"`
+}
+
+// getChecked takes a TemplateProperty (checklist type) and a list of checked IDs,
+// and returns the values from the subtype definition for the checked items.
+// This is used in templates to get the actual regex patterns for selected checklist items.
+func getChecked(prop TemplateProperty, checkedIDs any) []any {
+	if prop.Type.String() != "checklist" {
+		return []any{}
+	}
+
+	// Handle subtype as []any containing checklist items
+	subtypeSlice, ok := prop.Subtype.([]any)
+	if !ok {
+		return []any{}
+	}
+
+	// Convert []any to []ChecklistItem
+	var items []ChecklistItem
+	for _, item := range subtypeSlice {
+		if itemMap, ok := item.(map[string]any); ok {
+			checklistItem := ChecklistItem{}
+			if id, ok := itemMap["id"].(string); ok {
+				checklistItem.ID = id
+			}
+			if displayName, ok := itemMap["displayName"].(string); ok {
+				checklistItem.DisplayName = displayName
+			}
+			if value, ok := itemMap["value"].(string); ok {
+				checklistItem.Value = value
+			}
+			if tooltipText, ok := itemMap["tooltipText"].(string); ok {
+				checklistItem.TooltipText = tooltipText
+			}
+			items = append(items, checklistItem)
+		}
+	}
+
+	// Convert checkedIDs to a map for quick lookup
+	checkedMap := make(map[string]bool)
+	for _, id := range _getStringsFrom(checkedIDs) {
+		checkedMap[id] = true
+	}
+
+	// Extract values for checked items
+	var result []any
+	for _, item := range items {
+		if checkedMap[item.ID] {
+			result = append(result, item.Value)
+		}
+	}
+
+	return result
 }

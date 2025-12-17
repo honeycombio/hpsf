@@ -6,16 +6,16 @@ components:
   - name: redaction_processor_1
     kind: RedactionProcessor
     properties:
-      - name: AttributeNamePatternsToRedact
+      - name: Patterns
+        value: ["ssn", "credit_card"]
+      - name: OtherPatterns
         value:
           - ".*api_key.*"
           - ".*token.*"
-      - name: AttributeValuePatternsToRedact
+      - name: ReplacementStrategy
+        value: Fixed
+      - name: IgnoredAttributes
         value:
-          - 4[0-9]{12}(?:[0-9]{3})? ## Visa credit card number
-          - (5[1-5][0-9]{14})       ## MasterCard number
-      - name: AttributeNamesToNotRedact
-        value: 
           - "user_id"
           - "session_id"
 connections:
