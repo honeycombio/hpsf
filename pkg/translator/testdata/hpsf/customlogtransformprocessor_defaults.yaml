@@ -1,0 +1,30 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: CustomLogTransformProcessor
+    properties:
+      - name: LogStatements
+        value:
+          - 'set(log.attributes["processed"], "true")'
+          - 'set(log.body, Concat([log.body, " [processed]"], ""))'
+          - 'delete_key(log.attributes, "sensitive_field")'
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs
