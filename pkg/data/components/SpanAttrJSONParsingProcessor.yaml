@@ -2,10 +2,13 @@ kind: SpanAttrJSONParsingProcessor
 name: Parse Span Attribute as JSON
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.0.1
 summary: Converts a span attribute's JSON string value into individual attributes
-description: Specify a span attribute with a JSON string value to parse into individual attributes on the span. If the attribute is not found or cannot be parsed as JSON, the span will continue through the pipeline unchanged.
+description: |
+  Specify a span attribute with a JSON string value to parse into individual attributes
+  on the span. If the attribute is not found or cannot be parsed as JSON, the span will
+  continue through the pipeline unchanged.
 tags:
   - category:processor
   - service:collector
