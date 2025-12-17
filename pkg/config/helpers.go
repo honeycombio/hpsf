@@ -181,6 +181,8 @@ func encodeAsInt(a any) string {
 		value = fmt.Sprintf("%d", int(v))
 	case string:
 		// find the first thing that looks like an integer (possibly signed) in the string
+		// This is specifically to cope with something like "1.50000", which won't parse
+		// when we use Atoi on it later -- we want to extract only the part that will parse.
 		pat := regexp.MustCompile(`[+-]?[\d]+`)
 		match := pat.FindString(v)
 		if match != "" {
