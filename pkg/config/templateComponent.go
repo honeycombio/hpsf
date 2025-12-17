@@ -246,21 +246,6 @@ func (t *TemplateComponent) ConnectsUsingAppropriateType(connType hpsf.Connectio
 	return false
 }
 
-// HasTracesConnection returns true if this component has an OTelTraces connection
-func (t *TemplateComponent) HasTracesConnection() bool {
-	return t.ConnectsUsingAppropriateType(hpsf.CTYPE_TRACES)
-}
-
-// HasLogsConnection returns true if this component has an OTelLogs connection
-func (t *TemplateComponent) HasLogsConnection() bool {
-	return t.ConnectsUsingAppropriateType(hpsf.CTYPE_LOGS)
-}
-
-// HasMetricsConnection returns true if this component has an OTelMetrics connection
-func (t *TemplateComponent) HasMetricsConnection() bool {
-	return t.ConnectsUsingAppropriateType(hpsf.CTYPE_METRICS)
-}
-
 // GetPort returns the port with the given name, or nil if it doesn't exist
 func (t *TemplateComponent) GetPort(name string) *TemplatePort {
 	for _, port := range t.Ports {
