@@ -1,0 +1,28 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: filter_1
+    kind: CustomTraceFilterProcessor
+    properties:
+      - name: SpanStatements
+        value:
+          - 'attributes["container.name"] == "container_1"'
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: filter_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: filter_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces
