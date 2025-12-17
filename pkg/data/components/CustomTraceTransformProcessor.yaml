@@ -40,7 +40,7 @@ properties:
   - name: TraceStatements
     display: Trace Statements
     type: stringarray
-    summary: Array of OTTL trace transform statements
+    summary: Enter one OTTL statement per item. All paths must include a valid prefix.
     description: |
       Array of OpenTelemetry Transformation Language (OTTL) statements to apply to traces.
       Each statement can modify span attributes, perform filtering, or apply other transformations.

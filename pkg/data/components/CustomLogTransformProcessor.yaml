@@ -40,7 +40,7 @@ properties:
   - name: LogStatements
     display: Log Statements
     type: stringarray
-    summary: Array of OTTL log transform statements
+    summary: Enter one OTTL statement per item. All paths must include a valid prefix.
     description: |
       Array of OpenTelemetry Transformation Language (OTTL) statements to apply to log
       Each statement can modify log attributes, body, or perform other transformations.

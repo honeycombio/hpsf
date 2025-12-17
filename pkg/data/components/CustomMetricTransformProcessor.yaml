@@ -40,7 +40,7 @@ properties:
   - name: MetricStatements
     display: Metric Statements
     type: stringarray
-    summary: Array of OTTL metric transform statements
+    summary: Enter one OTTL statement per item. All paths must include a valid prefix.
     description: |
       Array of OpenTelemetry Transformation Language (OTTL) statements to apply to metrics.
       Each statement can modify metric attributes, name, description, or perform other transformations.
