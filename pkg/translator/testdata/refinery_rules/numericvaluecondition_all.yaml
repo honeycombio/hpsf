@@ -11,5 +11,5 @@ Samplers:
                         - response_time
                         - cpu_usage
                       Operator: '>='
-                      Value: "1.500000"
+                      Value: 1
                       Datatype: int

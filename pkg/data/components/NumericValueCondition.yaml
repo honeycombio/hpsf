@@ -60,6 +60,6 @@ templates:
       - key: Operator
         value: "{{ .Values.Operator }}"
       - key: Value
-        value: "{{ .Values.Value | encodeAsInt }}"
+        value: "{{ if .Values.ForceIntegerCompare }}{{ .Values.Value | encodeAsInt }}{{ else }}{{ .Values.Value | encodeAsFloat }}{{ end }}"
       - key: Datatype
         value: '{{ if .Values.ForceIntegerCompare }}int{{ else }}float{{ end }}'
