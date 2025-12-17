@@ -1,0 +1,47 @@
+kind: SpanAttrJSONParsingProcessor
+name: Parse Span Attribute as JSON
+style: processor
+type: base
+status: alpha
+version: v0.0.1
+summary: Converts a span attribute's JSON string value into individual attributes
+description: Specify a span attribute with a JSON string value to parse into individual attributes on the span. If the attribute is not found or cannot be parsed as JSON, the span will continue through the pipeline unchanged.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelTraces
+  - input:Traces
+  - output:Traces
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+properties:
+  - name: Attribute
+    type: string
+    validations:
+      - noblanks
+templates:
+  - kind: collector_config
+    name: otel_filter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "ignore"
+      - key: "{{ .ComponentName }}.trace_statements[0].conditions[0]"
+        value: "span.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(span.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[0]"
+        value: "set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Attribute }}\"]))"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[1]"
+        value: "flatten(span.cache, \"\")"
+      - key: "{{ .ComponentName }}.trace_statements[0].statements[2]"
+        value: "merge_maps(span.attributes, span.cache, \"upsert\")"

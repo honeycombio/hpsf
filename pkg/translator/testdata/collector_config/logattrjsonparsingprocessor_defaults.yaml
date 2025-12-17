@@ -36,7 +36,3 @@ service:
             receivers: [otlp/otlp_in]
             processors: [usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
-        traces/4ed-e32:
-            receivers: [otlp/otlp_in]
-            processors: [usage, transform/json_parser_1]
-            exporters: [otlphttp/otlp_out]
