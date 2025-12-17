@@ -142,8 +142,9 @@ func encodeAsBool(a any) string {
 	return BoolPrefix + value
 }
 
-// encodeAsFloat takes a string and returns a string with the appropriate marker
+// encodeAsFloat takes any value and returns a string with the appropriate marker
 // so that it will be expanded later into a float when it's rendered to YAML.
+// If the value cannot be parsed as a float, it returns a 0.
 func encodeAsFloat(a any) string {
 	value := "0"
 	switch v := a.(type) {
@@ -152,7 +153,12 @@ func encodeAsFloat(a any) string {
 	case float64:
 		value = fmt.Sprintf("%f", v)
 	case string:
-		value = v
+		// find the first thing that looks like a (possibly signed) float in the string
+		pat := regexp.MustCompile(`[+-]?\d+(\.\d+)?`)
+		match := pat.FindString(v)
+		if match != "" {
+			value = match
+		}
 	case bool:
 		if v {
 			value = "1"
@@ -161,17 +167,25 @@ func encodeAsFloat(a any) string {
 	return FloatPrefix + value
 }
 
-// encodeAsInt takes a string and returns a string with the appropriate marker
-// so that it will be expanded later into an integer when it's rendered to YAML.
+// encodeAsInt takes an "any", tries to convert it to an integer, and then
+// returns a string with the appropriate marker so that it will be expanded
+// later into an integer when it's rendered to YAML.
+// Floats are truncated to integers (towards 0).
+// If the value cannot be parsed as an integer, it returns a 0.
 func encodeAsInt(a any) string {
 	value := "0"
 	switch v := a.(type) {
 	case int:
 		value = strconv.Itoa(v)
 	case float64:
-		value = fmt.Sprintf("%f", v)
+		value = fmt.Sprintf("%d", int(v))
 	case string:
-		value = v
+		// find the first thing that looks like an integer (possibly signed) in the string
+		pat := regexp.MustCompile(`[+-]?[\d]+`)
+		match := pat.FindString(v)
+		if match != "" {
+			value = match
+		}
 	case bool:
 		if v {
 			value = "1"
