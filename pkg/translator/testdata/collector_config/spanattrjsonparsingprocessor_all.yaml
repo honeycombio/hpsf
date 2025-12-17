@@ -13,7 +13,7 @@ processors:
                 - span.attributes["json_data"] != nil and HasPrefix(span.attributes["json_data"], "{")
               statements:
                 - set(span.cache, ParseJSON(span.attributes["json_data"]))
-                - flatten(span.cache, "")
+                - flatten(span.cache)
                 - merge_maps(span.attributes, span.cache, "upsert")
     usage: {}
 exporters:

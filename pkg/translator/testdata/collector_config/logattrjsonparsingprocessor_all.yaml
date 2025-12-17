@@ -13,7 +13,7 @@ processors:
                 - log.attributes["json_data"] != nil and HasPrefix(log.attributes["json_data"], "{")
               statements:
                 - set(log.cache, ParseJSON(log.attributes["json_data"]))
-                - flatten(log.cache, "")
+                - flatten(log.cache)
                 - merge_maps(log.attributes, log.cache, "upsert")
     usage: {}
 exporters:
