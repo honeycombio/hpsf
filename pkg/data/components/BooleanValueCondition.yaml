@@ -1,13 +1,13 @@
-kind: CompareBoolFieldCondition
-name: Compare a bool field
+kind: BooleanValueCondition
+name: Check a boolean field
 style: condition
 type: base
-status: deprecated
+status: development
 version: v0.1.0
-summary: Compares a bool field to a specified value
+summary: Checks a boolean field for true or false
 description: |-
-  This checks if any span in a trace has a specific bool field that compares appropriately to the
-  specified value.
+  This checks if any span in a trace has a specific boolean-valued field and
+  tests it for true or false.
 tags:
   - category:condition
   - service:refinery
@@ -33,24 +33,15 @@ properties:
     validations:
       - nonempty
       - noblanks
-  - name: Operator
-    summary: The comparison operator to use when comparing the field value to the specified bool.
-    description: |
-      The comparison operator to use when comparing the field value to the specified bool.
-    type: string
-    subtype: oneof(=, !=)
-    validations:
-      - oneof(=, !=)
-    default: =
   - name: Value
-    summary: The bool value to compare against the field value.
+    summary: The boolean value to compare against the field value.
     description: |
-      The bool value that the field should be compared against using the specified operator.
-    type: bool
-    subtype: label("Value is 'true'")
+      The boolean value that the field should be compared against using the specified operator.
+    type: string
+    subtype: oneof(true, false)
 templates:
   - kind: refinery_rules
-    name: CompareBoolFieldCondition
+    name: BooleanValueCondition
     format: rules
     meta:
       condition: true
@@ -59,7 +50,7 @@ templates:
       - key: Fields
         value: "{{ .Values.Fields | encodeAsArray }}"
       - key: Operator
-        value: "{{ .Values.Operator }}"
+        value: "="
       - key: Value
         value: "{{ .Values.Value | encodeAsBool }}"
       - key: Datatype
