@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks traces for existence of specified field(s)
-description: This checks spans in a trace have (or do not have) specific fields
+description: When checking if a field exists, returns true if any span in the trace contains the field. When checking if a field does not exist, returns true if no spans in the trace contain the field.
 tags:
   - category:condition
   - service:refinery
