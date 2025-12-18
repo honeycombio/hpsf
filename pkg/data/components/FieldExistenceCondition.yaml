@@ -4,8 +4,8 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks if a field exists or does not exist in a trace
-description: This checks if any span in a trace has a specific field that exists or does not exist.
+summary: Checks if one or more fields exist or do not exist in a trace
+description: This checks spans in a trace have (or do not have) specific fields
 tags:
   - category:condition
   - service:refinery
@@ -24,9 +24,9 @@ ports:
     type: SampleData
 properties:
   - name: Fields
-    summary: The name(s) of the field(s) to check. If any of these fields exist in any span of a trace, and its value matches the specified bool using the operator, the condition will match.
+    summary: The name(s) of the field(s) to check.
     description: |
-      The field names to check for existence.
+      The field names to check for existence. If any of these fields exist in the trace, the condition will match.
     type: stringarray
     validations:
       - nonempty
