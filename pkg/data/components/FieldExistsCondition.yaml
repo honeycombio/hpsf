@@ -2,7 +2,7 @@ kind: FieldExistsCondition
 name: Check if field exists
 style: condition
 type: base
-status: deprecated
+status: alpha
 version: v0.1.0
 summary: Checks if a field exists or does not exist in a trace
 description: This checks if any span in a trace has a specific field that exists or does not exist.
