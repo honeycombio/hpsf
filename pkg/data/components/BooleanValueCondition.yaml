@@ -39,6 +39,7 @@ properties:
       The boolean value that the field should be compared against using the specified operator.
     type: string
     subtype: oneof(true, false)
+    default: "true"
 templates:
   - kind: refinery_rules
     name: BooleanValueCondition
