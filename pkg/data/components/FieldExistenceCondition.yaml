@@ -1,0 +1,54 @@
+kind: FieldExistenceCondition
+name: Check If Field Exists
+style: condition
+type: base
+status: alpha
+version: v0.1.0
+summary: Checks traces for existence of specified field(s)
+description: When checking if a field exists, returns true if any span in the trace contains the field. When checking if a field does not exist, returns true if no spans in the trace contain the field.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:field
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Fields
+    summary: The name(s) of the field(s) to check.
+    description: |
+      The field names to check for existence. If any of these fields exist in the trace, the condition will match.
+    type: stringarray
+    validations:
+      - nonempty
+      - noblanks
+  - name: Operator
+    summary: The operator to use when checking field existence.
+    description: |
+      The operator to use when checking if the field exists or does not exist.
+    type: string
+    subtype: oneof(exists, does-not-exist)
+    validations:
+      - oneof(exists, does-not-exist)
+    default: exists
+templates:
+  - kind: refinery_rules
+    name: FieldExistenceCondition
+    format: rules
+    meta:
+      condition: true
+      scope: '{{ if eq .Values.Operator "does-not-exist" }}span{{ else }}trace{{ end }}'
+    data:
+      - key: Fields
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator
+        value: "{{ .Values.Operator }}"
