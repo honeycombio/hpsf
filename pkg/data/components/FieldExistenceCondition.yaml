@@ -1,5 +1,5 @@
 kind: FieldExistenceCondition
-name: Check if field exists
+name: Check If Field Exists
 style: condition
 type: base
 status: alpha
