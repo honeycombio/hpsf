@@ -8,8 +8,6 @@ components:
     properties:
       - name: Fields
         value: ["is_valid"]
-      - name: Value
-        value: "false"
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Send to Honeycomb_1

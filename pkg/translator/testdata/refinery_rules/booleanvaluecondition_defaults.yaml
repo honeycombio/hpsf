@@ -10,5 +10,5 @@ Samplers:
                     - Fields:
                         - is_valid
                       Operator: =
-                      Value: false
+                      Value: true
                       Datatype: bool
