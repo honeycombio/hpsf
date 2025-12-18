@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks if one or more fields exist or do not exist in a trace
+summary: Checks traces for existence of specified field(s)
 description: This checks spans in a trace have (or do not have) specific fields
 tags:
   - category:condition
