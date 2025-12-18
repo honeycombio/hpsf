@@ -1,0 +1,32 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: CustomTraceTransformProcessor
+    properties:
+      - name: ErrorMode
+        value: propagate
+      - name: TraceStatements
+        value:
+          - 'set(span.attributes["processed"], "true")'
+          - 'set(span.attributes["processor"], "transform")'
+          - 'delete_key(span.attributes, "temp_field")'
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

@@ -1,0 +1,31 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: CustomLogTransformProcessor
+    properties:
+      - name: ErrorMode
+        value: propagate
+      - name: LogStatements
+        value:
+          - 'set(log.attributes["processed"], "true")'
+          - 'set(log.severity_text, "INFO")'
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: transform_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

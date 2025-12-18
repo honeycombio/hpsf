@@ -1,0 +1,66 @@
+kind: CustomLogTransformProcessor
+name: Transform Logs with Custom OTTL
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: Transforms logs using custom OTTL statements (advanced)
+description: |
+  Perform custom modifications to log records using configuration statements written in OpenTelemetry
+  Transformation Language (OTTL). This is an advanced component. No OTTL validation is provided.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelLogs
+  - input:Logs
+  - output:Logs
+ports:
+  # inputs
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  # outputs
+  - name: Logs
+    direction: output
+    type: OTelLogs
+properties:
+  - name: ErrorMode
+    display: Error Mode
+    type: string
+    subtype: oneof(ignore, silent, propagate)
+    default: ignore
+    summary: How to handle errors during transformation
+    description: |
+      Controls how the processor handles errors during transformation:
+      - ignore: Log errors but continue processing
+      - silent: Ignore errors silently
+      - propagate: Stop processing and return the error
+    validations:
+      - oneof(ignore, silent, propagate)
+  - name: LogStatements
+    display: Log Statements
+    type: stringarray
+    summary: Enter one OTTL statement per item. All paths must include a valid prefix.
+    description: |
+      Array of OpenTelemetry Transformation Language (OTTL) statements to apply to log
+      Each statement can modify log attributes, body, or perform other transformations.
+      Examples:
+      - set(log.attributes["processed"], "true")
+      - set(log.body, Concat([log.body, " [processed]"], ""))
+      - delete_key(log.attributes, "sensitive_field")
+    validations:
+      - noblanks
+      - nonempty
+templates:
+  - kind: collector_config
+    name: transform_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [logs]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "{{ .Values.ErrorMode }}"
+      - key: "{{ .ComponentName }}.log_statements"
+        value: "{{ .Values.LogStatements | encodeAsArray }}"

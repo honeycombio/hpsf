@@ -1,0 +1,34 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    transform/transform_1:
+        error_mode: propagate
+        log_statements:
+            - set(log.attributes["processed"], "true")
+            - set(log.severity_text, "INFO")
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/381-eb7:
+            receivers: [otlp/otlp_in]
+            processors: [usage, transform/transform_1]
+            exporters: [otlphttp/otlp_out]

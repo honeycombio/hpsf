@@ -1,0 +1,66 @@
+kind: CustomTraceTransformProcessor
+name: Transform Traces with Custom OTTL
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: Transforms traces using custom OTTL statements (advanced)
+description: |
+  Perform custom modifications to trace spans using configuration statements written in OpenTelemetry
+  Transformation Language (OTTL). This is an advanced component. No OTTL validation is provided.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelTraces
+  - input:Traces
+  - output:Traces
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+properties:
+  - name: ErrorMode
+    display: Error Mode
+    type: string
+    subtype: oneof(ignore, silent, propagate)
+    default: ignore
+    summary: How to handle errors during transformation
+    description: |
+      Controls how the processor handles errors during transformation:
+      - ignore: Log errors but continue processing
+      - silent: Ignore errors silently
+      - propagate: Stop processing and return the error
+    validations:
+      - oneof(ignore, silent, propagate)
+  - name: TraceStatements
+    display: Trace Statements
+    type: stringarray
+    summary: Enter one OTTL statement per item. All paths must include a valid prefix.
+    description: |
+      Array of OpenTelemetry Transformation Language (OTTL) statements to apply to traces.
+      Each statement can modify span attributes, perform filtering, or apply other transformations.
+      Examples:
+      - set(span.attributes["custom.field"], "value")
+      - delete_key(span.attributes, "unwanted_field")
+      - set(span.name, Concat([span.name, " - processed"], ""))
+    validations:
+      - noblanks
+      - nonempty
+templates:
+  - kind: collector_config
+    name: transform_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: transform
+    data:
+      - key: "{{ .ComponentName }}.error_mode"
+        value: "{{ .Values.ErrorMode }}"
+      - key: "{{ .ComponentName }}.trace_statements"
+        value: "{{ .Values.TraceStatements | encodeAsArray }}"
