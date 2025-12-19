@@ -1,13 +1,12 @@
 kind: LongDurationCondition
-name: Check Duration
+name: Check Trace Duration
 style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Makes a decision based on root span duration
+summary: Check if the root span duration of a trace exceeds a specified value.
 description: |-
-  This checks the duration of the root span in a trace. If the root span exceeds the specified
-  duration, the trace will be sampled at the specified rate (default 1).
+  Check the duration of the root span in a trace. If the root span exceeds the specified duration, the will condition evaluate to true.
 tags:
   - category:condition
   - service:refinery
