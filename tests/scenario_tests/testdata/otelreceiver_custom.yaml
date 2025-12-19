@@ -1,13 +1,18 @@
+name: otelreceiver_custom
+version: v0.1.0
+summary: Test OTelReceiver with custom settings
+description: |
+  Test OTelReceiver with custom receiver and memory limiter settings.
 components:
   - name: otlp_in
     kind: OTelReceiver
     properties:
       - name: Host
-        value: testtest
+        value: 0.0.0.0
       - name: GRPCPort
-        value: 9922
+        value: 5317
       - name: HTTPPort
-        value: 1234
+        value: 5318
       - name: MemoryCheckInterval
         value: 2s
       - name: MemoryLimitPercentage
@@ -15,7 +20,7 @@ components:
       - name: MemorySpikeLimitPercentage
         value: 25
   - name: otlp_out
-    kind: OTelGRPCExporter
+    kind: OTelHTTPExporter
 connections:
   - source:
       component: otlp_in

@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlphttp/honeycomb:
@@ -40,13 +44,13 @@ service:
     pipelines:
         logs/b34-d67:
             receivers: [otlp/otlp]
-            processors: [usage]
+            processors: [usage, memory_limiter/otlp]
             exporters: [otlphttp/honeycomb]
         metrics/c4b-9f0:
             receivers: [otlp/otlp]
-            processors: [usage]
+            processors: [usage, memory_limiter/otlp]
             exporters: [otlphttp/honeycomb]
         traces/abd-cdb:
             receivers: [otlp/otlp]
-            processors: [usage]
+            processors: [usage, memory_limiter/otlp]
             exporters: [otlphttp/refinery]
