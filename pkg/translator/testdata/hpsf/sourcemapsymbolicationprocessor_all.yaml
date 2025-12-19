@@ -7,7 +7,7 @@ components:
     kind: SourcemapSymbolicationProcessor
     properties:
       - name: SymbolStore
-        value: GoogleCloudStorage
+        value: Google Cloud Storage
       - name: BucketName
         value: my-sourcemaps-bucket
       - name: Region

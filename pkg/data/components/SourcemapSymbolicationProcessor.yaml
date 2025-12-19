@@ -29,13 +29,13 @@ properties:
     summary: Select the service where symbol files are stored
     description: |
       Select the service where symbol files are stored.
-      Options are `AWSS3` and `GoogleCloudStorage`.
-      The default is `AWSS3`.
+      Options are `AWS S3` and `Google Cloud Storage`.
+      The default is `AWS S3`.
     type: string
-    subtype: oneof(AWSS3, GoogleCloudStorage)
-    default: AWSS3
+    subtype: oneof(AWS S3, Google Cloud Storage)
+    default: AWS S3
     validations:
-      - oneof(AWSS3, GoogleCloudStorage)
+      - oneof(AWS S3, Google Cloud Storage)
   - name: BucketName
     display: Bucket Name
     summary: The bucket where symbol files are stored
@@ -75,26 +75,26 @@ templates:
       signalTypes: [traces]
       collectorComponentName: symbolicator
     data:
-      # AWSS3
+      # AWS S3
       - key: "{{ .ComponentName }}.source_map_store"
         value: "s3_store"
-        suppress_if: '{{ not (eq "AWSS3" .Values.SymbolStore) }}'
+        suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.region"
         value: "{{ .Values.Region }}"
-        suppress_if: '{{ or (not (eq "AWSS3" .Values.SymbolStore)) (eq .Values.Region "") }}'
+        suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Region "") }}'
       - key: "{{ .ComponentName }}.s3_source_maps.bucket"
         value: "{{ .Values.BucketName }}"
-        suppress_if: '{{ not (eq "AWSS3" .Values.SymbolStore) }}'
+        suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
       - key: "{{ .ComponentName }}.s3_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ or (not (eq "AWSS3" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
-      # GoogleCloudStorage
+        suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
+      # Google Cloud Storage
       - key: "{{ .ComponentName }}.source_map_store"
         value: "gcs_store"
-        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SymbolStore) }}'
+        suppress_if: '{{ not (eq "Google Cloud Storage" .Values.SymbolStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.bucket"
         value: "{{ .Values.BucketName }}"
-        suppress_if: '{{ not (eq "GoogleCloudStorage" .Values.SymbolStore) }}'
+        suppress_if: '{{ not (eq "Google Cloud Storage" .Values.SymbolStore) }}'
       - key: "{{ .ComponentName }}.gcs_source_maps.prefix"
         value: "{{ .Values.Prefix }}"
-        suppress_if: '{{ or (not (eq "GoogleCloudStorage" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
+        suppress_if: '{{ or (not (eq "Google Cloud Storage" .Values.SymbolStore)) (eq .Values.Prefix "") }}'

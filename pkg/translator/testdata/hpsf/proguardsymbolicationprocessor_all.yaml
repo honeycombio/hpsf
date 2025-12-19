@@ -7,7 +7,7 @@ components:
     kind: ProguardSymbolicationProcessor
     properties:
       - name: SymbolStore
-        value: GoogleCloudStorage
+        value: Google Cloud Storage
       - name: BucketName
         value: my-proguard-bucket
       - name: Region
