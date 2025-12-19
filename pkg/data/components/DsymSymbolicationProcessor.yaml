@@ -1,0 +1,100 @@
+kind: DsymSymbolicationProcessor
+name: Symbolicate Swift/iOS Errors
+style: processor
+type: base
+status: development
+version: v0.1.0
+summary: Symbolicate stack traces from iOS/Swift applications using dSYM symbol files
+description: |
+  Symbolicate iOS/Swift stack traces using dSYM symbol files.
+  Supports dSYM files stored in AWS S3 or Google Cloud Storage.
+tags:
+  - category:processor
+  - service:collector
+  - signal:OTelTraces
+  - input:Traces
+  - output:Traces
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+properties:
+  - name: SymbolStore
+    display: Symbol Store
+    summary: Select the service where symbol files are stored
+    description: |
+      Select the service where symbol files are stored.
+      Options are `AWS S3` and `Google Cloud Storage`.
+      The default is `AWS S3`.
+    type: string
+    subtype: oneof(AWS S3, Google Cloud Storage)
+    default: AWS S3
+    validations:
+      - oneof(AWS S3, Google Cloud Storage)
+  - name: BucketName
+    display: Bucket Name
+    summary: The bucket where symbol files are stored
+    description: |
+      The bucket where symbol files are stored. This is required.
+      For `AWS S3`, this is the name of the AWS S3 bucket.
+      For `Google Cloud Store`, this is the name of the Google Cloud Storage bucket.
+      Examples: `my-dsym-files`, `my-gcs-bucket`.
+    type: string
+    validations:
+      - noblanks
+  - name: Prefix
+    display: Prefix
+    summary: Prefix to use when searching for dSYMs
+    description: |
+      Prefix to use when searching for dSYMs. This is optional and can be used to specify a subdirectory within the bucket.
+      If not specified, the root of the bucket will be used.
+      Examples: `dsym-files/`, `my-project/dsym-files/`.
+    type: string
+    default: ""
+    advanced: true
+  - name: Region
+    display: Region (AWS)
+    summary: AWS S3 bucket region (optional)
+    description: |
+      AWS S3 bucket region. This is optional.
+      Examples: `us-east-1`, `us-west-2`, `eu-central-1`.
+    type: string
+    default: ""
+    advanced: true
+templates:
+  - kind: collector_config
+    name: dsym_symbolicator_processor
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces]
+      collectorComponentName: symbolicator
+    data:
+      # AWS S3
+      - key: "{{ .ComponentName }}.dsym_store"
+        value: "s3_store"
+        suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
+      - key: "{{ .ComponentName }}.s3_dsyms.region"
+        value: "{{ .Values.Region }}"
+        suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Region "") }}'
+      - key: "{{ .ComponentName }}.s3_dsyms.bucket"
+        value: "{{ .Values.BucketName }}"
+        suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
+      - key: "{{ .ComponentName }}.s3_dsyms.prefix"
+        value: "{{ .Values.Prefix }}"
+        suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
+      # Google Cloud Storage
+      - key: "{{ .ComponentName }}.dsym_store"
+        value: "gcs_store"
+        suppress_if: '{{ not (eq "Google Cloud Storage" .Values.SymbolStore) }}'
+      - key: "{{ .ComponentName }}.gcs_dsyms.bucket"
+        value: "{{ .Values.BucketName }}"
+        suppress_if: '{{ not (eq "Google Cloud Storage" .Values.SymbolStore) }}'
+      - key: "{{ .ComponentName }}.gcs_dsyms.prefix"
+        value: "{{ .Values.Prefix }}"
+        suppress_if: '{{ or (not (eq "Google Cloud Storage" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
