@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks for long-duration trace spans
+summary: Checks for long-duration spans
 description: |-
   This condition checks the duration of all spans in a trace. If any span exceeds the specified duration, the condition evaluates to true.
 tags:
