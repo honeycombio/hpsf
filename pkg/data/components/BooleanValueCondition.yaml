@@ -1,13 +1,13 @@
 kind: BooleanValueCondition
-name: Check a boolean field
+name: Check a Boolean Value
 style: condition
 type: base
 status: development
 version: v0.1.0
-summary: Checks a boolean field for true or false
+summary: Check a boolean field for a specified value
 description: |-
-  This checks if any span in a trace has a specific boolean-valued field and
-  tests it for true or false.
+  Check if any span in a trace has a specific boolean field.
+  If the boolean field matches the specified value the condition will evaluate to true.
 tags:
   - category:condition
   - service:refinery
@@ -26,7 +26,7 @@ ports:
     type: SampleData
 properties:
   - name: Fields
-    summary: The name(s) of the field(s) to check. If any of these fields exist in any span of a trace, and its value matches the specified bool using the operator, the condition will match.
+    summary: The field(s) to check. If any of the specified fields exist in any span of a trace, and its value matches the specified value, the condition will evaluate to true.
     description: |
       The field names to check for the bool value.
     type: stringarray
@@ -34,9 +34,6 @@ properties:
       - nonempty
       - noblanks
   - name: Value
-    summary: The boolean value to compare against the field value.
-    description: |
-      The boolean value that the field should be compared against using the specified operator.
     type: string
     subtype: oneof(true, false)
     default: "true"
