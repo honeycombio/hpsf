@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     debug/otlp_out:
@@ -17,5 +21,5 @@ service:
     pipelines:
         logs/d50-a95:
             receivers: [otlp/otlp_in]
-            processors: [usage]
+            processors: [usage, memory_limiter/otlp_in]
             exporters: [debug/otlp_out]

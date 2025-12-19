@@ -39,6 +39,7 @@ func TestMultiplePipelinesMultipleExporters(t *testing.T) {
 	_, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/multiple_pipelines_multiple_exporters.yaml")
 
 	usageProcessor := component.MustNewID("usage")
+	memoryLimiterProcessor := component.MustNewIDWithName("memory_limiter", "OTel_Receiver_1")
 	filterProcessor := component.MustNewIDWithName("filter", "Filter_Logs_by_Severity_1")
 	otelReceiver := component.MustNewIDWithName("otlp", "OTel_Receiver_1")
 	honeycombExporter := component.MustNewIDWithName("otlphttp", "Honeycomb_Exporter_1")
@@ -54,15 +55,17 @@ func TestMultiplePipelinesMultipleExporters(t *testing.T) {
 
 		for _, exporter := range pipeline.Exporters {
 			if exporter == honeycombExporter || exporter == otlpExporter {
-				assert.Len(t, pipeline.Processors, 2, "Expected 2 processors in the pipeline for %s but got %s", exporter.String(), pipeline.Processors)
+				assert.Len(t, pipeline.Processors, 3, "Expected 3 processors in the pipeline for %s but got %s", exporter.String(), pipeline.Processors)
 				assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+				assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 				assert.Contains(t, pipeline.Processors, filterProcessor, "Expected filter processor")
 
 				assert.Len(t, pipeline.Receivers, 1, "Expected 1 receiver  in the pipeline for %s but got %s", exporter.String(), pipeline.Receivers)
 				assert.Contains(t, pipeline.Receivers, otelReceiver, "Expected OTel receiver")
 			} else if exporter == s3Exporter {
-				assert.Len(t, pipeline.Processors, 1, "Expected 1 processor in pipeline got %s", pipeline.Processors)
+				assert.Len(t, pipeline.Processors, 2, "Expected 2 processors in pipeline got %s", pipeline.Processors)
 				assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+				assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 			} else {
 				t.Errorf("Unexpected exporter %s in pipeline %s", exporter.String(), pipelineName.String())
 			}
@@ -89,6 +92,7 @@ func TestMultiplePipelinesSubProcessors(t *testing.T) {
 	_, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/multiple_pipelines_sub_processors.yaml")
 
 	usageProcessor := component.MustNewID("usage")
+	memoryLimiterProcessor := component.MustNewIDWithName("memory_limiter", "OTel_Receiver_1")
 	filterProcessor := component.MustNewIDWithName("filter", "Filter_Logs_by_Severity_1")
 	transformProcessor := component.MustNewIDWithName("transform", "Parse_Log_Body_As_JSON_1")
 	otelReceiver := component.MustNewIDWithName("otlp", "OTel_Receiver_1")
@@ -104,8 +108,9 @@ func TestMultiplePipelinesSubProcessors(t *testing.T) {
 
 		for _, exporter := range pipeline.Exporters {
 			if exporter == otlpExporter {
-				assert.Len(t, pipeline.Processors, 3, "Expected 3 processors in pipeline got %s", pipeline.Processors)
+				assert.Len(t, pipeline.Processors, 4, "Expected 4 processors in pipeline got %s", pipeline.Processors)
 				assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+				assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 				assert.Contains(t, pipeline.Processors, filterProcessor, "Expected filter processor")
 				assert.Contains(t, pipeline.Processors, transformProcessor, "Expected transform processor")
 
@@ -113,15 +118,17 @@ func TestMultiplePipelinesSubProcessors(t *testing.T) {
 				assert.Contains(t, pipeline.Receivers, otelReceiver, "Expected OTel receiver")
 
 			} else if exporter == s3Exporter {
-				assert.Len(t, pipeline.Processors, 1, "Expected 1 processor in pipeline got %s", pipeline.Processors)
+				assert.Len(t, pipeline.Processors, 2, "Expected 2 processors in pipeline got %s", pipeline.Processors)
 				assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+				assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 
 				assert.Len(t, pipeline.Receivers, 1, "Expected 1 receiver in pipeline got %s", pipeline.Receivers)
 				assert.Contains(t, pipeline.Receivers, otelReceiver, "Expected OTel receiver")
 
 			} else if exporter == honeycombExporter {
-				assert.Len(t, pipeline.Processors, 2, "Expected 2 processors in pipeline got %s", pipeline.Processors)
+				assert.Len(t, pipeline.Processors, 3, "Expected 3 processors in pipeline got %s", pipeline.Processors)
 				assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+				assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 				assert.Contains(t, pipeline.Processors, filterProcessor, "Expected filter processor")
 
 				assert.Len(t, pipeline.Receivers, 1, "Expected 1 receiver in pipeline got %s", pipeline.Receivers)
@@ -152,6 +159,7 @@ func TestMultiplePipelinesSingleExporter(t *testing.T) {
 	_, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/multiple_pipelines_single_exporter.yaml")
 
 	usageProcessor := component.MustNewID("usage")
+	memoryLimiterProcessor := component.MustNewIDWithName("memory_limiter", "OTel_Receiver_1")
 	filterProcessor := component.MustNewIDWithName("filter", "Info_Logs_only")
 	otelReceiver := component.MustNewIDWithName("otlp", "OTel_Receiver_1")
 	honeycombExporter := component.MustNewIDWithName("otlphttp", "Honeycomb_Exporter_1")
@@ -173,12 +181,14 @@ func TestMultiplePipelinesSingleExporter(t *testing.T) {
 		assert.Len(t, pipeline.Receivers, 1, "Expected 1 receiver in pipeline got %s", pipeline.Receivers)
 		assert.Contains(t, pipeline.Receivers, otelReceiver, "Expected OTel receiver")
 
-		if len(pipeline.Processors) == 1 {
-			assert.Len(t, pipeline.Processors, 1, "Expected 1 processor in pipeline got %s", pipeline.Processors)
-			assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
-		} else {
+		if len(pipeline.Processors) == 2 {
 			assert.Len(t, pipeline.Processors, 2, "Expected 2 processors in pipeline got %s", pipeline.Processors)
 			assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+			assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
+		} else {
+			assert.Len(t, pipeline.Processors, 3, "Expected 3 processors in pipeline got %s", pipeline.Processors)
+			assert.Contains(t, pipeline.Processors, usageProcessor, "Expected usage processor")
+			assert.Contains(t, pipeline.Processors, memoryLimiterProcessor, "Expected memory_limiter processor")
 			assert.Contains(t, pipeline.Processors, filterProcessor, "Expected filter processor")
 		}
 	}

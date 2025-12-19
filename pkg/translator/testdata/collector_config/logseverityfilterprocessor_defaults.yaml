@@ -11,6 +11,10 @@ processors:
         logs:
             log_record:
                 - severity_number < SEVERITY_NUMBER_WARN
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlp/otlp_out:
@@ -30,5 +34,5 @@ service:
     pipelines:
         logs/884-7ec:
             receivers: [otlp/otlp_in]
-            processors: [usage, filter/FilterMyLogs]
+            processors: [usage, memory_limiter/otlp_in, filter/FilterMyLogs]
             exporters: [otlp/otlp_out]

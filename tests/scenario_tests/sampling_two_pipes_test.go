@@ -24,9 +24,9 @@ func TestTwoSamplingPipes(t *testing.T) {
 	assert.Contains(t, receivers, "otlp/OTel_Receiver_1", "Expected OTel receiver")
 
 	// Sampling components are translated to Refinery rules, not collector processors
-	assert.Len(t, processors, 1, "Expected 1 processor (usage)")
+	assert.Len(t, processors, 2, "Expected 2 processors (usage + memory_limiter)")
 	assert.Contains(t, processors, "usage", "Expected usage processor")
-
+	assert.Contains(t, processors, "memory_limiter/OTel_Receiver_1", "Expected memory_limiter processor")
 	assert.Len(t, exporters, 1, "Expected 1 exporter")
 	assert.Contains(t, exporters, "otlphttp/Start_Sampling_1", "Expected SamplingSequencer exporter")
 

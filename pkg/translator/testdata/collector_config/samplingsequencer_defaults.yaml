@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlphttp/Start_Sampling_1:
@@ -27,5 +31,5 @@ service:
     pipelines:
         traces/6f9-af2:
             receivers: [otlp/otlp_in]
-            processors: [usage]
+            processors: [usage, memory_limiter/otlp_in]
             exporters: [otlphttp/Start_Sampling_1]
