@@ -8,6 +8,10 @@ components:
     properties:
       - name: BucketName
         value: my-sourcemaps-bucket
+      - name: Region
+        value: us-west-2
+      - name: Prefix
+        value: source-maps/
 connections:
   - source:
       component: otlp_in

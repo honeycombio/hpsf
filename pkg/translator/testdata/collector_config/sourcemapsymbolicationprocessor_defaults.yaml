@@ -9,6 +9,8 @@ processors:
     symbolicator/sourcemap_symbolicator:
         s3_source_maps:
             bucket: my-sourcemaps-bucket
+            prefix: source-maps/
+            region: us-west-2
         source_map_store: s3_store
     usage: {}
 exporters:

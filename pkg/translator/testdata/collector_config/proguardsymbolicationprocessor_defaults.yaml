@@ -10,6 +10,8 @@ processors:
         proguard_store: s3_store
         s3_proguard_maps:
             bucket: my-proguard-bucket
+            prefix: proguard-maps/
+            region: us-west-2
     usage: {}
 exporters:
     otlphttp/otlp_out:

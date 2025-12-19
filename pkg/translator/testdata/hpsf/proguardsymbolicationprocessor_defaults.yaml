@@ -8,6 +8,10 @@ components:
     properties:
       - name: BucketName
         value: my-proguard-bucket
+      - name: Region
+        value: us-west-2
+      - name: Prefix
+        value: proguard-maps/
 connections:
   - source:
       component: otlp_in

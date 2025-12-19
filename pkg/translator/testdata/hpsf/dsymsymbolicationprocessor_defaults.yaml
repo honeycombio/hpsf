@@ -8,6 +8,10 @@ components:
     properties:
       - name: BucketName
         value: my-dsym-bucket
+      - name: Region
+        value: us-west-2
+      - name: Prefix
+        value: dsyms/
 connections:
   - source:
       component: otlp_in

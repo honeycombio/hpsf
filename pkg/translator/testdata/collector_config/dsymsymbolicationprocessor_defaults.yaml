@@ -10,6 +10,8 @@ processors:
         dsym_store: s3_store
         s3_dsyms:
             bucket: my-dsym-bucket
+            prefix: dsyms/
+            region: us-west-2
     usage: {}
 exporters:
     otlphttp/otlp_out:
