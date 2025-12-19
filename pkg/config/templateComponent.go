@@ -2,13 +2,12 @@ package config
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/honeycombio/hpsf/pkg/config/decorator"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/hpsftypes"
@@ -409,59 +408,6 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 	return b.String(), nil
 }
 
-// undecorate removes type decorations from strings and returns the desired type.
-// These decorations were placed there by the functions in helpers.go.
-// Since everything that comes out of a Go template is a string, for things that
-// needed to not be strings, we flagged them with a decoration indicating the
-// desired type. Now we need to do some extra work to make sure that we return
-// the indicated type. If it can't be converted to the desired type, we return
-// the string as is.
-func undecorate(s string) any {
-	switch {
-	case strings.HasPrefix(s, IntPrefix):
-		s = strings.TrimPrefix(s, IntPrefix)
-		i, err := strconv.Atoi(s)
-		if err == nil {
-			return i
-		}
-	case strings.HasPrefix(s, BoolPrefix):
-		s = strings.TrimPrefix(s, BoolPrefix)
-		b, err := strconv.ParseBool(s)
-		if err == nil {
-			return b
-		}
-	case strings.HasPrefix(s, FloatPrefix):
-		s = strings.TrimPrefix(s, FloatPrefix)
-		f, err := strconv.ParseFloat(s, 64)
-		if err == nil {
-			return f
-		}
-	case strings.HasPrefix(s, ArrPrefix):
-		s = strings.TrimPrefix(s, ArrPrefix)
-		items := strings.Split(s, FieldSeparator)
-		// we need to trim the spaces from the items and we don't want blanks
-		// in the array
-		var arr []string
-		for _, item := range items {
-			item = strings.TrimSpace(item)
-			if item != "" {
-				arr = append(arr, item)
-			}
-		}
-		return arr
-	case strings.HasPrefix(s, MapPrefix):
-		s = strings.TrimPrefix(s, MapPrefix)
-		// s is encoded as a JSON map, so we need to decode it
-		var m map[string]any
-		// we ignore the error here because the input string
-		// was marshaled by us and we know it's valid JSON,
-		// and there's nothing we can do with it anyway.
-		json.Unmarshal([]byte(s), &m)
-		return m
-	}
-	return s
-}
-
 func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
 	switch k := tmplVal.(type) {
 	case string:
@@ -476,7 +422,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 			return nil, err
 		}
 
-		result := undecorate(value)
+		result := decorator.Undecorate(value)
 		return result, nil
 	// right now this is dealing with nop receiver/exporter case
 	case map[string]string:

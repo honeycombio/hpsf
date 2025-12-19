@@ -1,33 +1,14 @@
 package config
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
-)
 
-// We use GroupSeparator, FieldSeparator, and RecordSeparator as delimiters so
-// that we are unlikely to see a false positive with user data. We probably
-// could have done this with a more sophisticated encoding/decoding but we don't
-// think it matters in the context of templated configuration files.
-const (
-	GroupSeparator  = "\x1d" // ASCII code 29, the group separator
-	RecordSeparator = "\x1e" // ASCII code 30, the record separator
-	FieldSeparator  = "\x1f" // ASCII code 31, the unit (field) separator
-)
-
-// Prefixes we support:
-const (
-	IntPrefix   = "int" + GroupSeparator
-	BoolPrefix  = "bool" + GroupSeparator
-	FloatPrefix = "float" + GroupSeparator
-	ArrPrefix   = "arr" + GroupSeparator
-	MapPrefix   = "map" + GroupSeparator
+	"github.com/honeycombio/hpsf/pkg/config/decorator"
 )
 
 // This file contains template helper functions, which must be listed in this
@@ -41,11 +22,11 @@ func helpers() template.FuncMap {
 		"appendSlices":  appendSlices,
 		"buildurl":      buildurl,
 		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
+		"encodeAsArray": decorator.EncodeAsArray,
+		"encodeAsBool":  decorator.EncodeAsBool,
+		"encodeAsInt":   decorator.EncodeAsInt,
+		"encodeAsFloat": decorator.EncodeAsFloat,
+		"encodeAsMap":   decorator.EncodeAsMap,
 		"getChecked":    getChecked,
 		"indent":        indent,
 		"join":          join,
@@ -100,114 +81,6 @@ func buildurl(args ...any) string {
 // places a comment in the output file, even if the specified comment has multiple lines
 func comment(s string) string {
 	return strings.TrimRight("## "+strings.Replace(s, "\n", "\n## ", -1), " ")
-}
-
-// encodeAsArray takes a slice and returns a string intended to be expanded
-// later into an array when it's rendered to YAML.
-// The result looks like "arr\x1dA:1\x1fB:2"
-func encodeAsArray(arr any) string {
-	switch a := arr.(type) {
-	case []string:
-		return ArrPrefix + strings.Join(a, FieldSeparator)
-	case []any:
-		return ArrPrefix + strings.Join(_getStringsFrom(arr), FieldSeparator)
-	default:
-		return ""
-	}
-}
-
-// encodeAsBool takes any value and returns a string with the appropriate marker
-// so that it will be expanded later into a bool when it's rendered to YAML.
-// Numbers are interpreted as true if they are not zero.
-func encodeAsBool(a any) string {
-	value := "false"
-	switch v := a.(type) {
-	case bool:
-		if v {
-			value = "true"
-		}
-	case int:
-		if v != 0 {
-			value = "true"
-		}
-	case float64:
-		if v != 0 {
-			value = "true"
-		}
-	case string:
-		if v == "true" {
-			value = "true"
-		}
-	}
-	return BoolPrefix + value
-}
-
-// encodeAsFloat takes any value and returns a string with the appropriate marker
-// so that it will be expanded later into a float when it's rendered to YAML.
-// If the value cannot be parsed as a float, it returns a 0.
-func encodeAsFloat(a any) string {
-	value := "0"
-	switch v := a.(type) {
-	case int:
-		value = strconv.Itoa(v)
-	case float64:
-		value = fmt.Sprintf("%f", v)
-	case string:
-		// find the first thing that looks like a (possibly signed) float in the string
-		pat := regexp.MustCompile(`[+-]?\d+(\.\d+)?`)
-		match := pat.FindString(v)
-		if match != "" {
-			value = match
-		}
-	case bool:
-		if v {
-			value = "1"
-		}
-	}
-	return FloatPrefix + value
-}
-
-// encodeAsInt takes an "any", tries to convert it to an integer, and then
-// returns a string with the appropriate marker so that it will be expanded
-// later into an integer when it's rendered to YAML.
-// Floats are truncated to integers (towards 0).
-// If the value cannot be parsed as an integer, it returns a 0.
-func encodeAsInt(a any) string {
-	value := "0"
-	switch v := a.(type) {
-	case int:
-		value = strconv.Itoa(v)
-	case float64:
-		value = fmt.Sprintf("%d", int(v))
-	case string:
-		// find the first thing that looks like an integer (possibly signed) in the string
-		// This is specifically to cope with something like "1.50000", which won't parse
-		// when we use Atoi on it later -- we want to extract only the part that will parse.
-		pat := regexp.MustCompile(`[+-]?[\d]+`)
-		match := pat.FindString(v)
-		if match != "" {
-			value = match
-		}
-	case bool:
-		if v {
-			value = "1"
-		}
-	}
-	return IntPrefix + value
-}
-
-// encodeAsMap takes a map (which may contain nested maps) and returns a string
-// intended to be expanded later into the same map when it's rendered to YAML.
-// We encode to JSON because it's fast and easy.
-func encodeAsMap(a map[string]any) string {
-	buf := bytes.Buffer{}
-	j := json.NewEncoder(&buf)
-	// There's no model for returning an error, but also...
-	// we know the data we're encoding was valid YAML and we're writing
-	// to a buffer, so there doesn't seem to be an error we
-	// could encounter that would be meaningful.
-	_ = j.Encode(a)
-	return MapPrefix + buf.String()
 }
 
 // indents a string by the specified number of spaces

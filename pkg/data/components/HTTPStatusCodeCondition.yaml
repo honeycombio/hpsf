@@ -1,0 +1,79 @@
+kind: HTTPStatusCodeCondition
+name: Check HTTP Status
+style: condition
+type: base
+status: development
+version: v0.1.0
+summary: Sets sampling rates based on HTTP status codes
+description: |-
+  Samples HTTP errors based on the http status of processes within the trace. Specify a range of
+  HTTP status codes to match against.
+tags:
+  - category:refinery_rule
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Minimum
+    display: Minimum
+    summary: The minimum HTTP status code to compare against.
+    description: |
+      The minimum HTTP status code to compare against. This is often 400 or 500.
+    type: int
+    default: 400
+    validations:
+      - positive
+  - name: Maximum
+    display: Maximum
+    summary: The maximum HTTP status code to compare against.
+    description: |
+      The maximum HTTP status code to compare against. This is often 499 or 599.
+    type: int
+    default: 599
+    validations:
+      - positive
+  - name: Fields
+    display: Fields
+    summary: The HTTP status code fields to check.
+    description: |
+      The HTTP status code fields to check. Typically these are "http.status_code" and "http.response.status_code".
+    type: stringarray
+    default: ["http.status_code", "http.response.status_code"]
+    validations:
+      - nonempty
+      - noblanks
+    advanced: true
+templates:
+  - kind: refinery_rules
+    name: HTTPStatusCodeCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Fields.1
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator.1
+        value: ">="
+      - key: Value.1
+        value: "{{ .Values.Minimum | encodeAsInt }}"
+      - key: Datatype.1
+        value: int
+      - key: Fields.2
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator.2
+        value: "<="
+      - key: Value.2
+        value: "{{ .Values.Maximum | encodeAsInt }}"
+      - key: Datatype.2
+        value: int

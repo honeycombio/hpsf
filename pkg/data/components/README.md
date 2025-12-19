@@ -46,9 +46,9 @@ tags:
   - signal:OTelLogs
 # ports are the things that allow connections to other components
 ports:
-    # name is the name that shows up in the UI next to the handle
-    # it's used in connections between components.
-    # changing name across versions is a BREAKING change and requires a major version bump.
+  # name is the name that shows up in the UI next to the handle
+  # it's used in connections between components.
+  # changing name across versions is a BREAKING change and requires a major version bump.
   - name: Traces
     # note that receivers have output ports and exporters have input ports.
     direction: input
@@ -62,8 +62,8 @@ ports:
     type: OTelLogs
 # properties are the user-editable values for this component
 properties:
-    # the name of the property; this is used by the templates
-    # so the name should be a valid Go identifier
+  # the name of the property; this is used by the templates
+  # so the name should be a valid Go identifier
   - name: Verbosity
     # summary shows up in the UI
     summary: The verbosity level of the debug output.
@@ -126,10 +126,11 @@ It's probably a good idea to make it unique in case we decide it's helpful somew
 
 This is an escape hatch in case there are specialized components that need to
 compose differently from the standard. Today,
-* `collector_config` uses `collector`
-* `refinery_config` uses `dottedConfig`
-* `refinery_rules` uses `rules`
-when composing samplers.
+
+- `collector_config` uses `collector`
+- `refinery_config` uses `dottedConfig`
+- `refinery_rules` uses `rules`
+  when composing samplers.
 
 ### meta
 
@@ -163,22 +164,23 @@ For now, `data` is an array of elements, each of which supports 3 fields:
 For refinery rules that are conditions, the data section contains structured key-value pairs that define the condition. These are the same keys used in normal Refinery rules.
 
 ```yaml
-    data:
-      - key: Fields
-        value: [http.status_code, http.response.status_code]
-      - key: Operator
-        value: ">="
-      - key: Value
-        value: "{{ .Values.Value | encodeAsInt }}"
-      - key: Datatype
-        value: int
+data:
+  - key: Fields
+    value: [http.status_code, http.response.status_code]
+  - key: Operator
+    value: ">="
+  - key: Value
+    value: "{{ .Values.Value | encodeAsInt }}"
+  - key: Datatype
+    value: int
 ```
 
 These are the standards:
-* `Fields` -- array of field names to check against (if there's only one, `Field` is supported without the array)
-* `Operator` -- Refinery operator (=, !=, <, <=, >, >=, etc., as well as things like "contains" and "matches")
-* `Value` -- the constant value being compared (often templated from properties, but sometimes hardcoded or unneeded, depending on the operator)
-* `Datatype` -- the data type for comparison when it's appropriate to force it (string, int, float, bool). It's usually a good idea to specify this and not to leave it in the user's hands.
+
+- `Fields` -- array of field names to check against (if there's only one, `Field` is supported without the array)
+- `Operator` -- Refinery operator (=, !=, <, <=, >, >=, etc., as well as things like "contains" and "matches")
+- `Value` -- the constant value being compared (often templated from properties, but sometimes hardcoded or unneeded, depending on the operator)
+- `Datatype` -- the data type for comparison when it's appropriate to force it (string, int, float, bool). It's usually a good idea to specify this and not to leave it in the user's hands.
 
 For both collector and refinery rules, the dottedconfig also supports fields
 with a number in square brackets. If at any level, the key ends with a number in
@@ -187,3 +189,14 @@ take the value of that key, determine its type T, and put it into a []T at the
 same level, but with the new key being the portion of the name before the `[`
 and `]`. The number in the brackets is the index of the slice.
 
+Note that this does NOT apply for conditions, because conditions need to be in an array at the condition level instead of the field level. To generate multiple conditions in a single template, add .1, .2, etc to the names of the fields. Example:
+
+```
+    data:
+      - key: Fields.1
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator.1
+        value: ">="
+```
+
+etc.
