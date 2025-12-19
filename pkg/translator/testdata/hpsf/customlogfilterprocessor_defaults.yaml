@@ -1,0 +1,29 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: filter_1
+    kind: CustomLogFilterProcessor
+    properties:
+      - name: LogStatements
+        value:
+          log_record:
+            - 'severity_number < SEVERITY_NUMBER_INFO'
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: filter_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: filter_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

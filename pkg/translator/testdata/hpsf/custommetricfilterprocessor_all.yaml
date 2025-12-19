@@ -1,0 +1,33 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: filter_1
+    kind: CustomMetricFilterProcessor
+    properties:
+      - name: ErrorMode
+        value: propagate
+      - name: MetricStatements
+        value:
+          - 'name == "http.server.duration"'
+      - name: DataPointStatements
+        value:
+          - 'attributes["service.name"] == "api"'
+connections:
+  - source:
+      component: otlp_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: filter_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: filter_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: otlp_out
+      port: Metrics
+      type: OTelMetrics
