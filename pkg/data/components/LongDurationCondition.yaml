@@ -25,11 +25,6 @@ ports:
     type: SampleData
 properties:
   - name: Duration
-    summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
-    description: |
-      The duration (in milliseconds) that the root span must exceed for the trace
-      to be sampled. If the root span's duration is greater than this value, the
-      trace will be sampled at the specified rate.
     type: int
     default: 1000
     validations:
