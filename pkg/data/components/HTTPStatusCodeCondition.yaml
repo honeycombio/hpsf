@@ -4,7 +4,7 @@ style: condition
 type: base
 status: development
 version: v0.1.0
-summary: Sets sampling rates based on HTTP status codes
+summary: Set sample rate by HTTP status code range
 description: |-
   Samples HTTP errors based on the http status of processes within the trace. Specify a range of
   HTTP status codes to match against.
