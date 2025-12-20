@@ -6,8 +6,7 @@ status: development
 version: v0.1.0
 summary: Set sample rate by HTTP status code range
 description: |-
-  Samples HTTP errors based on the http status of processes within the trace. Specify a range of
-  HTTP status codes to match against.
+  Sample based on the http status of processes within a trace. If any spans of a trace have a status code within the selected min and max, the condition will evaluate to true. 
 tags:
   - category:refinery_rule
   - service:refinery
