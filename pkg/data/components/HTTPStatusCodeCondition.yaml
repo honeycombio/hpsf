@@ -36,7 +36,7 @@ properties:
       - positive
   - name: Maximum
     display: Maximum
-    summary: The maximum HTTP status code to compare against.
+    summary: The upper bound of the target status code range (inclusive)
     description: |
       The maximum HTTP status code to compare against. This is often 499 or 599.
     type: int
