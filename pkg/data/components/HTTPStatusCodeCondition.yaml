@@ -45,7 +45,7 @@ properties:
       - positive
   - name: Fields
     display: Fields
-    summary: The HTTP status code fields to check.
+    summary: The name of the field(s) to check for HTTP status code values
     description: |
       The HTTP status code fields to check. Typically these are "http.status_code" and "http.response.status_code".
     type: stringarray
