@@ -27,7 +27,7 @@ ports:
 properties:
   - name: Minimum
     display: Minimum
-    summary: The minimum HTTP status code to compare against.
+    summary: The lower bound of the target status code range (inclusive)
     description: |
       The minimum HTTP status code to compare against. This is often 400 or 500.
     type: int
