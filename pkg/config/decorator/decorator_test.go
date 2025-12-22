@@ -1,11 +1,11 @@
-package config
+package decorator
 
 import (
 	"strings"
 	"testing"
 )
 
-func Test_encodeAsInt(t *testing.T) {
+func Test_EncodeAsInt(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  any
@@ -43,14 +43,14 @@ func Test_encodeAsInt(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeAsInt(tt.arg); got != tt.want {
-				t.Errorf("encodeAsInt() = %v, want %v", got, tt.want)
+			if got := EncodeAsInt(tt.arg); got != tt.want {
+				t.Errorf("EncodeAsInt() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_encodeAsFloat(t *testing.T) {
+func Test_EncodeAsFloat(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  any
@@ -87,14 +87,14 @@ func Test_encodeAsFloat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeAsFloat(tt.arg); got != tt.want {
-				t.Errorf("encodeAsFloat() = %v, want %v", got, tt.want)
+			if got := EncodeAsFloat(tt.arg); got != tt.want {
+				t.Errorf("EncodeAsFloat() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_encodeAsBool(t *testing.T) {
+func Test_EncodeAsBool(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  any
@@ -132,14 +132,14 @@ func Test_encodeAsBool(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeAsBool(tt.arg); got != tt.want {
-				t.Errorf("encodeAsBool() = %v, want %v", got, tt.want)
+			if got := EncodeAsBool(tt.arg); got != tt.want {
+				t.Errorf("EncodeAsBool() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_encodeAsArray(t *testing.T) {
+func Test_EncodeAsArray(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  any
@@ -166,14 +166,14 @@ func Test_encodeAsArray(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeAsArray(tt.arg); got != tt.want {
-				t.Errorf("encodeAsArray() = %v, want %v", got, tt.want)
+			if got := EncodeAsArray(tt.arg); got != tt.want {
+				t.Errorf("EncodeAsArray() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_encodeAsMap(t *testing.T) {
+func Test_EncodeAsMap(t *testing.T) {
 	tests := []struct {
 		name string
 		arg  map[string]any
@@ -197,34 +197,34 @@ func Test_encodeAsMap(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := encodeAsMap(tt.arg)
+			got := EncodeAsMap(tt.arg)
 			if got != tt.want {
-				t.Errorf("encodeAsMap() = %v, want %v", got, tt.want)
+				t.Errorf("EncodeAsMap() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_encodeAsMap_MultipleKeys(t *testing.T) {
+func Test_EncodeAsMap_MultipleKeys(t *testing.T) {
 	// Test multiple keys separately since JSON key ordering is not deterministic
 	testMap := map[string]any{"name": "test", "count": 42, "enabled": true}
-	got := encodeAsMap(testMap)
+	got := EncodeAsMap(testMap)
 
 	// Check that it starts with the correct prefix
 	if !strings.HasPrefix(got, MapPrefix) {
-		t.Errorf("encodeAsMap() = %v, expected to start with %v", got, MapPrefix)
+		t.Errorf("EncodeAsMap() = %v, expected to start with %v", got, MapPrefix)
 	}
 
 	// Check that all expected key-value pairs are present
 	expectedSubstrings := []string{`"count":42`, `"enabled":true`, `"name":"test"`}
 	for _, expected := range expectedSubstrings {
 		if !strings.Contains(got, expected) {
-			t.Errorf("encodeAsMap() = %v, expected to contain %v", got, expected)
+			t.Errorf("EncodeAsMap() = %v, expected to contain %v", got, expected)
 		}
 	}
 
 	// Check that it ends with newline
 	if got[len(got)-1] != '\n' {
-		t.Errorf("encodeAsMap() = %v, expected to end with newline", got)
+		t.Errorf("EncodeAsMap() = %v, expected to end with newline", got)
 	}
 }
