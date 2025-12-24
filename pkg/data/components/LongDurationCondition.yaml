@@ -1,13 +1,12 @@
 kind: LongDurationCondition
-name: Check Duration
+name: Check Span Duration
 style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Makes a decision based on root span duration
+summary: Checks for long-duration spans
 description: |-
-  This checks the duration of the root span in a trace. If the root span exceeds the specified
-  duration, the trace will be sampled at the specified rate (default 1).
+  This condition checks the duration of all spans in a trace. If any span exceeds the specified duration, the condition evaluates to true.
 tags:
   - category:condition
   - service:refinery
@@ -26,11 +25,6 @@ ports:
     type: SampleData
 properties:
   - name: Duration
-    summary: Traces longer than this duration (in milliseconds) will be sampled at the specified rate.
-    description: |
-      The duration (in milliseconds) that the root span must exceed for the trace
-      to be sampled. If the root span's duration is greater than this value, the
-      trace will be sampled at the specified rate.
     type: int
     default: 1000
     validations:
