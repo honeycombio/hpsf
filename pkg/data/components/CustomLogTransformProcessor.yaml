@@ -39,7 +39,8 @@ properties:
       - oneof(ignore, silent, propagate)
   - name: LogStatements
     display: Log Statements
-    type: stringarray
+    type: code
+    subtype: ottl
     summary: Enter one OTTL statement per item. All paths must include a valid prefix.
     description: |
       Array of OpenTelemetry Transformation Language (OTTL) statements to apply to log
@@ -63,4 +64,4 @@ templates:
       - key: "{{ .ComponentName }}.error_mode"
         value: "{{ .Values.ErrorMode }}"
       - key: "{{ .ComponentName }}.log_statements"
-        value: "{{ .Values.LogStatements | encodeAsArray }}"
+        value: "{{ .Values.LogStatements | processOTTL | encodeAsArray }}"

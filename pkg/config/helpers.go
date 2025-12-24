@@ -35,6 +35,7 @@ func helpers() template.FuncMap {
 		"meta":          meta,
 		"nonempty":      nonempty,
 		"now":           now,
+		"processOTTL":   processOTTL,
 		"split":         split,
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
@@ -107,6 +108,31 @@ func meta(s string) string {
 func now() string {
 	t := time.Now().UTC()
 	return fmt.Sprintf("on %s at %s UTC", t.Format("2006-01-02"), t.Format("15:04:05"))
+}
+
+// This accepts a block of text as a string, and splits it into an array of individual lines,
+// eliminating comments and blank lines, and also leading "-" characters that are used in
+// YAML lists that might be copy-pasted into the component. (These get put back on later.)
+func processOTTL(statements any) []string {
+	var lines, result []string
+	switch s := statements.(type) {
+	case string:
+		lines = strings.Split(s, "\n")
+	case []string:
+		lines = s
+	case []any:
+		lines = _getStringsFrom(s)
+	default:
+		return []string{fmt.Sprintf("expected a string in processOTTL, got %T", statements)}
+	}
+	for _, line := range lines {
+		line = strings.Trim(line, " \t\r-")
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		result = append(result, line)
+	}
+	return result
 }
 
 // splits a string into a slice of strings using the specified separator

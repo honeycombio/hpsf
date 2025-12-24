@@ -74,6 +74,7 @@ const (
 	PTYPE_COND   PropType = "conditions"  // for refinery conditions
 	PTYPE_DUR    PropType = "duration"    // has affordances for duration strings
 	PTYPE_CHECK  PropType = "checklist"   // for checklist properties
+	PTYPE_CODE   PropType = "code"        // for code properties
 	PTYPE_RULE   PropType = "rule"        // for refinery sampling rules (experimental!)
 )
 
@@ -89,6 +90,7 @@ func (p PropType) Validate() error {
 	case PTYPE_DUR:
 	case PTYPE_CHECK:
 	case PTYPE_RULE:
+	case PTYPE_CODE:
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
@@ -218,6 +220,24 @@ func (p PropType) ValueCoerce(a any, target *any) error {
 		default:
 			return errors.New("expected string array for checklist, got " + fmt.Sprint(a))
 		}
+	case PTYPE_CODE:
+		// we expect this to be a string or a slice of strings; in either case
+		// we convert it to one string
+		switch v := a.(type) {
+		case string:
+			*target = v
+		case []string:
+			*target = strings.Join(v, "\n")
+		case []any:
+			sa := make([]string, len(v))
+			for i, a := range v {
+				// whatever it was, make it a string
+				sa[i] = fmt.Sprint(a)
+			}
+			*target = strings.Join(sa, "\n")
+		default:
+			return errors.New("expected string or string array for code property, got " + fmt.Sprint(a))
+		}
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
 	}
@@ -257,6 +277,10 @@ func (p PropType) ValueConforms(a any) error {
 	case PTYPE_CHECK:
 		if _, ok := a.([]string); !ok {
 			return errors.New("expected []string for checklist, got " + fmt.Sprint(a))
+		}
+	case PTYPE_CODE:
+		if _, ok := a.(string); !ok {
+			return errors.New("expected string for code, got " + fmt.Sprint(a))
 		}
 	default:
 		return errors.New("invalid PropType '" + string(p) + "'")
