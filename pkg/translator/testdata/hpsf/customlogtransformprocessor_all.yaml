@@ -9,9 +9,9 @@ components:
       - name: ErrorMode
         value: propagate
       - name: LogStatements
-        value:
-          - 'set(log.attributes["processed"], "true")'
-          - 'set(log.severity_text, "INFO")'
+        value: |
+          set(log.attributes["processed"], "true")
+          set(log.severity_text, "INFO")
 connections:
   - source:
       component: otlp_in
