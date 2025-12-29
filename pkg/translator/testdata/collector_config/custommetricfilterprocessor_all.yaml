@@ -13,6 +13,10 @@ processors:
                 - attributes["service.name"] == "api"
             metric:
                 - name == "http.server.duration"
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlphttp/otlp_out:
@@ -32,5 +36,5 @@ service:
     pipelines:
         metrics/63a-77d:
             receivers: [otlp/otlp_in]
-            processors: [usage, filter/filter_1]
+            processors: [usage, memory_limiter/otlp_in, filter/filter_1]
             exporters: [otlphttp/otlp_out]

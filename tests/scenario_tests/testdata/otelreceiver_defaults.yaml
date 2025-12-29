@@ -1,0 +1,19 @@
+name: otelreceiver_defaults
+version: v0.1.0
+summary: Test OTelReceiver with default settings
+description: |
+  Test OTelReceiver with all default values for receiver and memory limiter settings.
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

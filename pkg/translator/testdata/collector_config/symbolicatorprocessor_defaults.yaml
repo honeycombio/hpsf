@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     symbolicator/symbolicator:
         s3_source_maps:
             bucket: my-bucket
@@ -30,5 +34,5 @@ service:
     pipelines:
         traces/0e6-66e:
             receivers: [otlp/otlp_in]
-            processors: [usage, symbolicator/symbolicator]
+            processors: [usage, memory_limiter/otlp_in, symbolicator/symbolicator]
             exporters: [otlphttp/otlp_out]
