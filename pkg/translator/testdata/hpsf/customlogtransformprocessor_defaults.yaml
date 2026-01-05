@@ -7,10 +7,10 @@ components:
     kind: CustomLogTransformProcessor
     properties:
       - name: LogStatements
-        value:
-          - 'set(log.attributes["processed"], "true")'
-          - 'set(log.body, Concat([log.body, " [processed]"], ""))'
-          - 'delete_key(log.attributes, "sensitive_field")'
+        value: |
+          set(log.attributes["processed"], "true")
+          set(log.body, Concat([log.body, " [processed]"], ""))
+          delete_key(log.attributes, "sensitive_field")
 connections:
   - source:
       component: otlp_in

@@ -278,7 +278,8 @@
             "conditions",
             "duration",
             "rule",
-            "checklist"
+            "checklist",
+            "code"
           ]
         },
         "subtype": {
