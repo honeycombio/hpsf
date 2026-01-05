@@ -1,0 +1,35 @@
+receivers:
+    otlp/otlp_in:
+        protocols:
+            grpc:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4317
+            http:
+                endpoint: ${HTP_COLLECTOR_POD_IP}:4318
+processors:
+    symbolicator/sourcemap_symbolicator:
+        s3_source_maps:
+            bucket: my-sourcemaps-bucket
+            prefix: source-maps/
+            region: us-west-2
+        source_map_store: s3_store
+    usage: {}
+exporters:
+    otlphttp/otlp_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        traces/260-90b:
+            receivers: [otlp/otlp_in]
+            processors: [usage, symbolicator/sourcemap_symbolicator]
+            exporters: [otlphttp/otlp_out]
