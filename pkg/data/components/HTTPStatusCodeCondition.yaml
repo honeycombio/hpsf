@@ -1,5 +1,5 @@
 kind: HTTPStatusCodeCondition
-name: Check HTTP Status
+name: Check HTTP Status Code
 style: condition
 type: base
 status: development
