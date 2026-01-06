@@ -13,6 +13,10 @@ processors:
                 - attributes["container.name"] == "container_1"
             spanevent:
                 - name == "exception"
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlphttp/otlp_out:
@@ -32,5 +36,5 @@ service:
     pipelines:
         traces/ea2-790:
             receivers: [otlp/otlp_in]
-            processors: [usage, filter/filter_1]
+            processors: [memory_limiter/otlp_in, usage, filter/filter_1]
             exporters: [otlphttp/otlp_out]

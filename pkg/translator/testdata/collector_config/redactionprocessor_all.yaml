@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     redaction/redaction_processor_1:
         allow_all_keys: true
         blocked_value_patterns:
@@ -35,5 +39,5 @@ service:
     pipelines:
         logs/2e6-4c3:
             receivers: [otlp/otlp_in]
-            processors: [usage, redaction/redaction_processor_1]
+            processors: [memory_limiter/otlp_in, usage, redaction/redaction_processor_1]
             exporters: [otlphttp/otlp_out]

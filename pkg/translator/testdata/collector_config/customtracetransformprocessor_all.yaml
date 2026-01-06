@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     transform/transform_1:
         error_mode: propagate
         trace_statements:
@@ -31,5 +35,5 @@ service:
     pipelines:
         traces/96c-3cf:
             receivers: [otlp/otlp_in]
-            processors: [usage, transform/transform_1]
+            processors: [memory_limiter/otlp_in, usage, transform/transform_1]
             exporters: [otlphttp/otlp_out]

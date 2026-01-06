@@ -9,6 +9,10 @@ processors:
     logdedup/DedupMyLogs:
         interval: 60s
         log_count_attribute: sampleRate
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlp/otlp_out:
@@ -28,5 +32,5 @@ service:
     pipelines:
         logs/567-c82:
             receivers: [otlp/otlp_in]
-            processors: [usage, logdedup/DedupMyLogs]
+            processors: [memory_limiter/otlp_in, usage, logdedup/DedupMyLogs]
             exporters: [otlp/otlp_out]

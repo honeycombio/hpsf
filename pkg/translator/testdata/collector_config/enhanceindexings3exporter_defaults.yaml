@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     enhance_indexing_s3_exporter/s3_out:
@@ -30,5 +34,5 @@ service:
     pipelines:
         traces/ae5-d11:
             receivers: [otlp/otlp_in]
-            processors: [usage]
+            processors: [memory_limiter/otlp_in, usage]
             exporters: [enhance_indexing_s3_exporter/s3_out]
