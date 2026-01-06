@@ -8,8 +8,7 @@ components:
     properties:
       - name: LogStatements
         value:
-          log_record:
-            - 'severity_number < SEVERITY_NUMBER_INFO'
+          - 'severity_number < SEVERITY_NUMBER_INFO'
 connections:
   - source:
       component: otlp_in

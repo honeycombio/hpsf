@@ -10,9 +10,8 @@ components:
         value: propagate
       - name: LogStatements
         value:
-          log_record:
-            - 'severity_number < SEVERITY_NUMBER_INFO'
-            - 'attributes["log.level"] == "debug"'
+          - 'severity_number < SEVERITY_NUMBER_INFO'
+          - 'attributes["log.level"] == "debug"'
 connections:
   - source:
       component: otlp_in
