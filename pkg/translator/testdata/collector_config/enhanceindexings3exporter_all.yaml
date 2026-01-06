@@ -39,5 +39,5 @@ service:
     pipelines:
         traces/ae5-d11:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in]
+            processors: [memory_limiter/otlp_in, usage]
             exporters: [enhance_indexing_s3_exporter/s3_out]

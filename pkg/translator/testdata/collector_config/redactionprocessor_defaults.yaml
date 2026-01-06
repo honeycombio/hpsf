@@ -36,5 +36,5 @@ service:
     pipelines:
         logs/2e6-4c3:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, redaction/redaction_processor_1]
+            processors: [memory_limiter/otlp_in, usage, redaction/redaction_processor_1]
             exporters: [otlphttp/otlp_out]

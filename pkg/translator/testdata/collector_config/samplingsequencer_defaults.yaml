@@ -31,5 +31,5 @@ service:
     pipelines:
         traces/6f9-af2:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in]
+            processors: [memory_limiter/otlp_in, usage]
             exporters: [otlphttp/Start_Sampling_1]

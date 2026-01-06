@@ -34,5 +34,5 @@ service:
     pipelines:
         traces/f7b-5aa:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in]
+            processors: [memory_limiter/otlp_in, usage]
             exporters: [otlphttp/otlp_out]

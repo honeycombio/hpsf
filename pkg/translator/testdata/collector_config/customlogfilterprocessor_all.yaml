@@ -35,5 +35,5 @@ service:
     pipelines:
         logs/e84-214:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, filter/filter_1]
+            processors: [memory_limiter/otlp_in, usage, filter/filter_1]
             exporters: [otlphttp/otlp_out]

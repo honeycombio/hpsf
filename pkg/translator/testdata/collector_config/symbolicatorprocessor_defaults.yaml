@@ -34,5 +34,5 @@ service:
     pipelines:
         traces/0e6-66e:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, symbolicator/symbolicator]
+            processors: [memory_limiter/otlp_in, usage, symbolicator/symbolicator]
             exporters: [otlphttp/otlp_out]

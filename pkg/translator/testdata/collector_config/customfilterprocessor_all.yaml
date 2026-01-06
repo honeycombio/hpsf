@@ -33,5 +33,5 @@ service:
     pipelines:
         traces/788-de3:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, filter/drop_container_1]
+            processors: [memory_limiter/otlp_in, usage, filter/drop_container_1]
             exporters: [otlphttp/otlp_out]

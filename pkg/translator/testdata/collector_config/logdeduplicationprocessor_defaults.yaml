@@ -32,5 +32,5 @@ service:
     pipelines:
         logs/567-c82:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, logdedup/DedupMyLogs]
+            processors: [memory_limiter/otlp_in, usage, logdedup/DedupMyLogs]
             exporters: [otlp/otlp_out]

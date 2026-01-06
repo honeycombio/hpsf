@@ -66,8 +66,31 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 		f.Processors = make(map[string]any)
 	}
 	f.Processors["usage"] = map[string]any{}
-	for _, x := range f.Service.Pipelines {
-		x.Processors = append([]string{"usage"}, x.Processors...)
+
+	// now we re-order the processors in each pipeline to:
+	// - have memory_limiter first
+	// - have usage second
+	// - have all others after that
+	for _, pipeline := range f.Service.Pipelines {
+		// Separate memory_limiter processors from others
+		memoryLimiters := []string{}
+		others := []string{}
+
+		for _, processor := range pipeline.Processors {
+			if strings.HasPrefix(processor, "memory_limiter/") {
+				memoryLimiters = append(memoryLimiters, processor)
+			} else if processor != "usage" {
+				others = append(others, processor)
+			}
+		}
+
+		// Build ordered list: memory_limiters, usage, others
+		orderedProcessors := make([]string, 0, len(memoryLimiters)+1+len(others))
+		orderedProcessors = append(orderedProcessors, memoryLimiters...)
+		orderedProcessors = append(orderedProcessors, "usage")
+		orderedProcessors = append(orderedProcessors, others...)
+
+		pipeline.Processors = dedup(orderedProcessors)
 	}
 }
 

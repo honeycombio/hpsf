@@ -38,5 +38,5 @@ service:
     pipelines:
         traces/4ed-e32:
             receivers: [otlp/otlp_in]
-            processors: [usage, memory_limiter/otlp_in, transform/json_parser_1]
+            processors: [memory_limiter/otlp_in, usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
