@@ -73,8 +73,7 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 	// - have all others after that
 	for _, pipeline := range f.Service.Pipelines {
 		// Separate memory_limiter processors from others
-		memoryLimiters := []string{}
-		others := []string{}
+		var memoryLimiters, others []string
 
 		for _, processor := range pipeline.Processors {
 			if strings.HasPrefix(processor, "memory_limiter/") {
