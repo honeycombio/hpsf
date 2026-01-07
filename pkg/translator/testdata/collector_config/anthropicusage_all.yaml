@@ -1,0 +1,54 @@
+receivers:
+    anthropicusage/anthropic_in:
+        admin_api_key: sk-ant-admin-test-key
+        cost:
+            bucket_width: 7d
+            collection_interval: 1h
+            enabled: true
+            group_by:
+                - workspace_id
+            lookback_window: 30d
+        usage:
+            bucket_width: 5m
+            collection_interval: 5m
+            enabled: true
+            group_by:
+                - model
+                - api_key_id
+            lookback_window: 1h
+processors:
+    usage: {}
+exporters:
+    otlphttp/logs_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+    otlphttp/metrics_out:
+        endpoint: https://api.honeycomb.io:443
+        sending_queue:
+            batch:
+                flush_timeout: 200ms
+                max_size: 8192
+                min_size: 8192
+            enabled: true
+            queue_size: 100000
+            sizer: items
+extensions:
+    honeycomb: {}
+service:
+    extensions: [honeycomb]
+    pipelines:
+        logs/b6c-ce2:
+            receivers: [anthropicusage/anthropic_in]
+            processors: [usage]
+            exporters: [otlphttp/logs_out]
+        metrics/5b4-e88:
+            receivers: [anthropicusage/anthropic_in]
+            processors: [usage]
+            exporters: [otlphttp/metrics_out]

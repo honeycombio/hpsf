@@ -1,0 +1,24 @@
+components:
+  - name: anthropic_in
+    kind: anthropicusage
+  - name: metrics_out
+    kind: OTelHTTPExporter
+  - name: logs_out
+    kind: OTelHTTPExporter
+connections:
+  - source:
+      component: anthropic_in
+      port: metrics
+      type: OTelMetrics
+    destination:
+      component: metrics_out
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: anthropic_in
+      port: logs
+      type: OTelLogs
+    destination:
+      component: logs_out
+      port: Logs
+      type: OTelLogs
