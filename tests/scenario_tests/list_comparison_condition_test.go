@@ -21,7 +21,8 @@ func TestListComparisonIn(t *testing.T) {
 	assert.Len(t, receivers, 1)
 	assert.Contains(t, receivers, "otlp/Receive_OTel_1")
 
-	assert.Len(t, processors, 1)
+	assert.Len(t, processors, 2)
+	assert.Contains(t, processors, "memory_limiter/Receive_OTel_1")
 	assert.Contains(t, processors, "usage")
 
 	assert.Len(t, exporters, 1)
@@ -58,7 +59,8 @@ func TestListComparisonNotIn(t *testing.T) {
 	assert.Len(t, receivers, 1)
 	assert.Contains(t, receivers, "otlp/Receive_OTel_1")
 
-	assert.Len(t, processors, 1)
+	assert.Len(t, processors, 2)
+	assert.Contains(t, processors, "memory_limiter/Receive_OTel_1")
 	assert.Contains(t, processors, "usage")
 
 	assert.Len(t, exporters, 1)

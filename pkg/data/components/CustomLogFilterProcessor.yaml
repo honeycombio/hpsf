@@ -44,8 +44,8 @@ properties:
       OpenTelemetry Transformation Language (OTTL) statements for filtering logs.
       Organize statements by context (log_record) to apply filters.
       Examples:
-      - log_record: ['severity_number < SEVERITY_NUMBER_INFO']
-      - log_record: ['attributes["log.level"] == "debug"']
+      - 'severity_number < SEVERITY_NUMBER_INFO'
+      - 'attributes["log.level"] == "debug"'
     validations:
       - noblanks
       - nonempty
@@ -60,5 +60,5 @@ templates:
     data:
       - key: "{{ .ComponentName }}.error_mode"
         value: "{{ .Values.ErrorMode }}"
-      - key: "{{ .ComponentName }}.logs"
-        value: "{{ .Values.LogStatements | encodeAsMap }}"
+      - key: "{{ .ComponentName }}.logs.log_record"
+        value: "{{ .Values.LogStatements | encodeAsArray }}"
