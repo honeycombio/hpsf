@@ -174,7 +174,7 @@
             "description": "conditional_require_together validation with condition property, condition value, and dependent properties"
           },
           {
-            "pattern": "^less_than_or_equal\\(.+\\)$",
+            "pattern": "^less_than_or_equal\\([^)]+\\)$",
             "description": "less_than_or_equal validation with two property names in parentheses, ensuring the first is less than or equal to the second"
           }
         ]

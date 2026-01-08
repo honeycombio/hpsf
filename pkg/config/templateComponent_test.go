@@ -449,7 +449,7 @@ func TestValidateLessThanOrEqual(t *testing.T) {
 	// Test case 6: Both missing - should pass (let other validations handle required fields)
 	t.Run("BothMissing", func(t *testing.T) {
 		component := &hpsf.Component{
-			Name: "TestComponent",
+			Name:       "TestComponent",
 			Properties: []hpsf.Property{},
 		}
 		err := tc.Validate(component)
