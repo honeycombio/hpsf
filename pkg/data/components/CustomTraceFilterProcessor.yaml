@@ -2,7 +2,7 @@ kind: CustomTraceFilterProcessor
 name: Filter Traces by Custom OTTL
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Filters traces using custom OTTL statements (advanced)
 description: |
