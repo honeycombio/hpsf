@@ -2,7 +2,7 @@ kind: BooleanValueCondition
 name: Check a Boolean Value
 style: condition
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Check a boolean field for a specified value
 description: |-
@@ -34,6 +34,7 @@ properties:
       - nonempty
       - noblanks
   - name: Value
+    display: Value is
     type: string
     subtype: oneof(true, false)
     default: "true"

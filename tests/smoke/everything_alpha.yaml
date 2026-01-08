@@ -137,6 +137,13 @@ components:
         value: "service.name"
       - name: Prefix
         value: "web"
+  - name: Check Boolean Value_1
+    kind: BooleanValueCondition
+    properties:
+      - name: Fields
+        value: ["enabled", "active"]
+      - name: Value
+        value: "true"
   - name: Sample at 123_1
     kind: DeterministicSampler
     properties:
@@ -147,6 +154,11 @@ components:
     properties:
       - name: SampleRate
         value: 456
+  - name: Sample at 789_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 789
   - name: Transform some attributes
     kind: CustomTransformProcessor
     properties:
@@ -381,6 +393,30 @@ connections:
       type: SampleData
   - source:
       component: Sample at 456_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 9
+      type: SampleData
+    destination:
+      component: Check Boolean Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Boolean Value_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 789_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 789_1
       port: Events
       type: HoneycombEvents
     destination:
@@ -625,3 +661,11 @@ layout:
       position:
         x: 60
         y: 180
+    - name: Check Boolean Value_1
+      position:
+        x: -60
+        y: 240
+    - name: Sample at 789_1
+      position:
+        x: 120
+        y: 240
