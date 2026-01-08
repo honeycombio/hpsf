@@ -4,39 +4,37 @@ This directory contains component definitions for the Honeycomb Pipeline Specifi
 
 ## Directory Structure
 
-Components are organized in a 3-level hierarchy: **target** → **style** → **component**
+Components are organized by **style** (component type):
 
 ```
 components/
 ├── README.md                  # This file
 ├── _templates/                # Scaffolding templates for new components
-├── collector/                 # OTel Collector components
-│   ├── receivers/
-│   │   └── otel_receiver/
-│   │       ├── component.yaml
-│   │       └── README.md
-│   ├── processors/
-│   │   └── custom_transform_processor/
-│   │       ├── component.yaml
-│   │       └── README.md
-│   └── exporters/
-│       └── honeycomb_exporter/
-│           ├── component.yaml
-│           └── README.md
-└── refinery/                  # Refinery components
-    ├── samplers/
-    │   └── deterministic_sampler/
-    │       ├── component.yaml
-    │       └── README.md
-    ├── conditions/
-    │   └── field_exists_condition/
-    │       ├── component.yaml
-    │       └── README.md
-    └── startsampling/
-        └── sampling_sequencer/
-            ├── component.yaml
-            ├── README.md
-            └── MIGRATIONS.md      # Optional: version migration docs
+├── receivers/                 # Ingest telemetry
+│   └── otel_receiver/
+│       ├── component.yaml
+│       └── README.md
+├── processors/                # Transform, filter, enrich
+│   └── custom_transform_processor/
+│       ├── component.yaml
+│       └── README.md
+├── exporters/                 # Send to destinations
+│   └── honeycomb_exporter/
+│       ├── component.yaml
+│       └── README.md
+├── samplers/                  # Sampling strategies (Refinery)
+│   └── deterministic_sampler/
+│       ├── component.yaml
+│       └── README.md
+├── conditions/                # Boolean expressions (Refinery)
+│   └── field_exists_condition/
+│       ├── component.yaml
+│       └── README.md
+└── startsampling/             # Start sampling triggers (Refinery)
+    └── sampling_sequencer/
+        ├── component.yaml
+        ├── README.md
+        └── MIGRATIONS.md      # Optional: version migration docs
 ```
 
 **Directory naming:** lowercase, underscores (e.g., `OTelReceiver` → `otel_receiver/`)
@@ -55,60 +53,55 @@ make validate-components
 
 ### Manual Creation
 
-1. Choose target: `collector/` (OTel Collector components) or `refinery/` (Refinery components)
-2. Choose style: `receivers/`, `processors/`, `exporters/`, `samplers/`, `conditions/`, `startsampling/`
-3. Create directory: `mkdir -p components/{target}/{style}/my_new_component/`
-4. Add `component.yaml` (see anatomy below)
-5. Add `README.md` with usage examples
-6. Validate: `make validate-components`
+1. Choose style: `receivers/`, `processors/`, `exporters/`, `samplers/`, `conditions/`, `startsampling/`
+2. Create directory: `mkdir -p components/{style}/my_new_component/`
+3. Add `component.yaml` (see anatomy below)
+4. Add `README.md` with usage examples
+5. Validate: `make validate-components`
 
 ## Component Index
 
-### Collector Components
+### Receivers (Input)
+- [OTelReceiver](receivers/otel_receiver/) - Receive OTel signals (gRPC/HTTP)
+- [NopReceiver](receivers/nop_receiver/) - No-op for testing
 
-**Receivers** (Input)
-- [OTelReceiver](collector/receivers/otel_receiver/) - Receive OTel signals (gRPC/HTTP)
-- [NopReceiver](collector/receivers/nop_receiver/) - No-op for testing
+### Processors (Transform/Filter)
+- [CustomTransformProcessor](processors/custom_transform_processor/) - OTTL transformations
+- [CustomFilterProcessor](processors/custom_filter_processor/) - OTTL filtering
+- [RedactionProcessor](processors/redaction_processor/) - Redact sensitive data
+- [LogBodyJSONParsingProcessor](processors/log_body_json_parsing_processor/) - Parse JSON in log bodies
+- [SymbolicatorProcessor](processors/symbolicator_processor/) - Symbolicate stack traces
+- [AttributeJSONParsingProcessor](processors/attribute_json_parsing_processor/) - Parse JSON in attributes
+- [LogAttrJSONParsingProcessor](processors/log_attr_json_parsing_processor/) - Parse JSON in log attributes
+- [SpanAttrJSONParsingProcessor](processors/span_attr_json_parsing_processor/) - Parse JSON in span attributes
 
-**Processors** (Transform/Filter)
-- [CustomTransformProcessor](collector/processors/custom_transform_processor/) - OTTL transformations
-- [CustomFilterProcessor](collector/processors/custom_filter_processor/) - OTTL filtering
-- [RedactionProcessor](collector/processors/redaction_processor/) - Redact sensitive data
-- [LogBodyJSONParsingProcessor](collector/processors/log_body_json_parsing_processor/) - Parse JSON in log bodies
-- [SymbolicatorProcessor](collector/processors/symbolicator_processor/) - Symbolicate stack traces
-- [AttributeJSONParsingProcessor](collector/processors/attribute_json_parsing_processor/) - Parse JSON in attributes
-- [LogAttrJSONParsingProcessor](collector/processors/log_attr_json_parsing_processor/) - Parse JSON in log attributes
-- [SpanAttrJSONParsingProcessor](collector/processors/span_attr_json_parsing_processor/) - Parse JSON in span attributes
+### Exporters (Output)
+- [HoneycombExporter](exporters/honeycomb_exporter/) - Send to Honeycomb
+- [OTelGRPCExporter](exporters/otel_grpc_exporter/) - Export via gRPC
+- [OTelHTTPExporter](exporters/otel_http_exporter/) - Export via HTTP
+- [S3ArchiveExporter](exporters/s3_archive_exporter/) - Archive to S3
+- [DebugExporter](exporters/debug_exporter/) - Debug output to stdout
+- [NopExporter](exporters/nop_exporter/) - No-op for testing
 
-**Exporters** (Output)
-- [HoneycombExporter](collector/exporters/honeycomb_exporter/) - Send to Honeycomb
-- [OTelGRPCExporter](collector/exporters/otel_grpc_exporter/) - Export via gRPC
-- [OTelHTTPExporter](collector/exporters/otel_http_exporter/) - Export via HTTP
-- [S3ArchiveExporter](collector/exporters/s3_archive_exporter/) - Archive to S3
-- [DebugExporter](collector/exporters/debug_exporter/) - Debug output to stdout
-- [NopExporter](collector/exporters/nop_exporter/) - No-op for testing
+### Samplers
+- [DeterministicSampler](samplers/deterministic_sampler/) - Fixed-rate sampling
+- [EMADynamicSampler](samplers/ema_dynamic_sampler/) - Dynamic EMA-based sampling
+- [EMAThroughputSampler](samplers/ema_throughput_sampler/) - Throughput-based EMA sampling
+- [KeepAllSampler](samplers/keep_all_sampler/) - Keep all spans
+- [Dropper](samplers/dropper/) - Drop all spans
 
-### Refinery Components
+### Conditions
+- [FieldExistsCondition](conditions/field_exists_condition/) - Check field presence
+- [CompareIntegerFieldCondition](conditions/compare_integer_field_condition/) - Integer comparisons
+- [HTTPStatusCondition](conditions/http_status_condition/) - HTTP status code checks
+- [ErrorExistsCondition](conditions/error_exists_condition/) - Check for errors
+- [RootSpanCondition](conditions/root_span_condition/) - Root span detection
+- [FieldContainsCondition](conditions/field_contains_condition/) - String contains check
+- [BooleanValueCondition](conditions/boolean_value_condition/) - Boolean value check
 
-**Samplers**
-- [DeterministicSampler](refinery/samplers/deterministic_sampler/) - Fixed-rate sampling
-- [EMADynamicSampler](refinery/samplers/ema_dynamic_sampler/) - Dynamic EMA-based sampling
-- [EMAThroughputSampler](refinery/samplers/ema_throughput_sampler/) - Throughput-based EMA sampling
-- [KeepAllSampler](refinery/samplers/keep_all_sampler/) - Keep all spans
-- [Dropper](refinery/samplers/dropper/) - Drop all spans
-
-**Conditions**
-- [FieldExistsCondition](refinery/conditions/field_exists_condition/) - Check field presence
-- [CompareIntegerFieldCondition](refinery/conditions/compare_integer_field_condition/) - Integer comparisons
-- [HTTPStatusCondition](refinery/conditions/http_status_condition/) - HTTP status code checks
-- [ErrorExistsCondition](refinery/conditions/error_exists_condition/) - Check for errors
-- [RootSpanCondition](refinery/conditions/root_span_condition/) - Root span detection
-- [FieldContainsCondition](refinery/conditions/field_contains_condition/) - String contains check
-- [BooleanValueCondition](refinery/conditions/boolean_value_condition/) - Boolean value check
-
-**Start Sampling**
-- [SamplingSequencer](refinery/startsampling/sampling_sequencer/) - Route to samplers based on conditions
-- [ForceSpanScope](refinery/startsampling/force_span_scope/) - Force condition eval at span level
+### Start Sampling
+- [SamplingSequencer](startsampling/sampling_sequencer/) - Route to samplers based on conditions
+- [ForceSpanScope](startsampling/force_span_scope/) - Force condition eval at span level
 
 ## Component Versioning
 
@@ -125,7 +118,7 @@ make validate-components
 When introducing breaking changes, create new directory with version suffix:
 
 ```
-collector/receivers/
+receivers/
 ├── otel_receiver/          # kind: OTelReceiver, status: deprecated
 └── otel_receiver_v2/       # kind: OTelReceiverV2, status: stable
 ```

@@ -23,7 +23,7 @@ Here's an example that exercises a separate data table:
 
 ## Component Library
 
-HPSF includes 50+ pre-built components for telemetry processing. Components are organized in a 3-level hierarchy (target/style/component) for easy exploration and extension.
+HPSF includes 53 pre-built components for telemetry processing. Components are organized by style (receivers/processors/exporters/samplers/conditions/startsampling) for easy exploration and extension.
 
 **Browse Components:** [pkg/data/components/](./pkg/data/components/)
 

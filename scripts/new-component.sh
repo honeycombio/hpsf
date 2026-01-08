@@ -13,65 +13,32 @@ if [ -z "$COMPONENT_KIND" ]; then
     exit 1
 fi
 
-# Prompt for target
-echo "Select target system:"
-echo "  1) collector (OTel Collector components)"
-echo "  2) refinery (Refinery components)"
-read -p "Enter choice [1-2]: " target_choice
+# Prompt for style
+echo "Select component style:"
+echo "  1) receivers    - Ingest telemetry data"
+echo "  2) processors   - Transform, filter, enrich data"
+echo "  3) exporters    - Send to destinations"
+echo "  4) samplers     - Sampling strategies (Refinery)"
+echo "  5) conditions   - Boolean expressions (Refinery)"
+echo "  6) startsampling - Start sampling triggers (Refinery)"
+read -p "Enter choice [1-6]: " style_choice
 
-case $target_choice in
-    1)
-        TARGET="collector"
-        ;;
-    2)
-        TARGET="refinery"
-        ;;
+case $style_choice in
+    1) STYLE="receivers" ;;
+    2) STYLE="processors" ;;
+    3) STYLE="exporters" ;;
+    4) STYLE="samplers" ;;
+    5) STYLE="conditions" ;;
+    6) STYLE="startsampling" ;;
     *)
         echo "Error: Invalid choice"
         exit 1
         ;;
 esac
 
-# Prompt for style based on target
-if [ "$TARGET" = "collector" ]; then
-    echo ""
-    echo "Select component style:"
-    echo "  1) receivers"
-    echo "  2) processors"
-    echo "  3) exporters"
-    read -p "Enter choice [1-3]: " style_choice
-
-    case $style_choice in
-        1) STYLE="receivers" ;;
-        2) STYLE="processors" ;;
-        3) STYLE="exporters" ;;
-        *)
-            echo "Error: Invalid choice"
-            exit 1
-            ;;
-    esac
-else
-    echo ""
-    echo "Select component style:"
-    echo "  1) samplers"
-    echo "  2) conditions"
-    echo "  3) startsampling"
-    read -p "Enter choice [1-3]: " style_choice
-
-    case $style_choice in
-        1) STYLE="samplers" ;;
-        2) STYLE="conditions" ;;
-        3) STYLE="startsampling" ;;
-        *)
-            echo "Error: Invalid choice"
-            exit 1
-            ;;
-    esac
-fi
-
 # Convert PascalCase to snake_case lowercase for directory name
 DIR_NAME=$(echo "$COMPONENT_KIND" | sed 's/\([A-Z]\)/_\1/g' | sed 's/^_//' | tr '[:upper:]' '[:lower:]')
-TARGET_DIR="$COMPONENTS_DIR/$TARGET/$STYLE/$DIR_NAME"
+TARGET_DIR="$COMPONENTS_DIR/$STYLE/$DIR_NAME"
 
 if [ -d "$TARGET_DIR" ]; then
     echo "Error: Component directory already exists: $TARGET_DIR"
@@ -80,7 +47,6 @@ fi
 
 echo ""
 echo "Creating new component: $COMPONENT_KIND"
-echo "Target: $TARGET"
 echo "Style: $STYLE"
 echo "Directory: $TARGET_DIR"
 echo ""

@@ -26,7 +26,7 @@ if [ "$flat_yamls" -gt 0 ]; then
     echo ""
 fi
 
-# Find all component directories (3-level structure: target/style/component)
+# Find all component directories (2-level structure: style/component)
 component_dirs=()
 for level1_dir in "$COMPONENTS_DIR"/*/; do
     level1_name=$(basename "$level1_dir")
@@ -37,18 +37,11 @@ for level1_dir in "$COMPONENTS_DIR"/*/; do
     fi
 
     if [ -d "$level1_dir" ]; then
-        # Level 2: style directories
+        # Level 2: component directories
         for level2_dir in "$level1_dir"/*/; do
-            if [ ! -d "$level2_dir" ]; then
-                continue
+            if [ -d "$level2_dir" ] && [ -f "$level2_dir/component.yaml" ]; then
+                component_dirs+=("$level2_dir")
             fi
-
-            # Level 3: component directories
-            for level3_dir in "$level2_dir"/*/; do
-                if [ -d "$level3_dir" ] && [ -f "$level3_dir/component.yaml" ]; then
-                    component_dirs+=("$level3_dir")
-                fi
-            done
         done
     fi
 done
@@ -108,7 +101,7 @@ for dir in "${component_dirs[@]}"; do
     # Check README.md exists
     if [ ! -f "$dir/README.md" ]; then
         echo "  ! WARN: Missing README.md"
-        ((WARNINGS++))
+        WARNINGS=$((WARNINGS + 1))
     else
         echo "  ✓ README.md exists"
     fi

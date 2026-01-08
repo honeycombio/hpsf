@@ -32,7 +32,7 @@ func TestComponentsValidateAgainstSchema(t *testing.T) {
 	schema, err := compiler.Compile("component-schema.json")
 	require.NoError(t, err, "Failed to compile JSON schema")
 
-	// Get all component YAML files (3-level structure: target/style/component)
+	// Get all component YAML files (2-level structure: style/component)
 	componentsDir := filepath.Join("components")
 	entries, err := os.ReadDir(componentsDir)
 	require.NoError(t, err, "Failed to read components directory")
@@ -52,7 +52,7 @@ func TestComponentsValidateAgainstSchema(t *testing.T) {
 			continue
 		}
 
-		// Level 1: target (collector/refinery)
+		// Level 1: style (receivers/processors/exporters/samplers/conditions/startsampling)
 		level1Path := filepath.Join(componentsDir, entry.Name())
 		level1Entries, err := os.ReadDir(level1Path)
 		if err != nil {
@@ -64,26 +64,13 @@ func TestComponentsValidateAgainstSchema(t *testing.T) {
 				continue
 			}
 
-			// Level 2: style (receivers/processors/exporters/samplers/conditions/startsampling)
-			level2Path := filepath.Join(level1Path, level1Entry.Name())
-			level2Entries, err := os.ReadDir(level2Path)
-			if err != nil {
-				continue
-			}
-
-			for _, level2Entry := range level2Entries {
-				if !level2Entry.IsDir() {
-					continue
-				}
-
-				// Level 3: component directory
-				componentYaml := filepath.Join(level2Path, level2Entry.Name(), "component.yaml")
-				if _, err := os.Stat(componentYaml); err == nil {
-					componentPaths = append(componentPaths, struct {
-						name string
-						path string
-					}{entry.Name() + "/" + level1Entry.Name() + "/" + level2Entry.Name(), componentYaml})
-				}
+			// Level 2: component directory
+			componentYaml := filepath.Join(level1Path, level1Entry.Name(), "component.yaml")
+			if _, err := os.Stat(componentYaml); err == nil {
+				componentPaths = append(componentPaths, struct {
+					name string
+					path string
+				}{entry.Name() + "/" + level1Entry.Name(), componentYaml})
 			}
 		}
 	}
