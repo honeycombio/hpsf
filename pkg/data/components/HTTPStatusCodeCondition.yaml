@@ -2,7 +2,7 @@ kind: HTTPStatusCodeCondition
 name: Check HTTP Status Code
 style: condition
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Set sample rate by HTTP status code range
 description: |-
