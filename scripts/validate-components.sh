@@ -22,7 +22,7 @@ if [ "$flat_yamls" -gt 0 ]; then
     echo "ERROR: Found $flat_yamls flat YAML file(s) in $COMPONENTS_DIR"
     echo "       All components must be in subdirectories with component.yaml"
     ls "$COMPONENTS_DIR"/*.yaml 2>/dev/null | sed 's/^/       - /'
-    ((ERRORS++))
+    ERRORS=$((ERRORS + 1))
     echo ""
 fi
 
@@ -70,7 +70,7 @@ for dir in "${component_dirs[@]}"; do
     # Check component.yaml exists
     if [ ! -f "$dir/component.yaml" ]; then
         echo "  ✗ ERROR: Missing component.yaml"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
         continue
     else
         echo "  ✓ component.yaml exists"
@@ -81,7 +81,7 @@ for dir in "${component_dirs[@]}"; do
         if python3 -c "import yaml" 2>/dev/null; then
             if ! python3 -c "import yaml; yaml.safe_load(open('$dir/component.yaml'))" 2>/dev/null; then
                 echo "  ✗ ERROR: Invalid YAML syntax in component.yaml"
-                ((ERRORS++))
+                ERRORS=$((ERRORS + 1))
             else
                 echo "  ✓ Valid YAML syntax"
             fi
@@ -96,7 +96,7 @@ for dir in "${component_dirs[@]}"; do
     kind=$(grep "^kind:" "$dir/component.yaml" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '\r\n')
     if [ -z "$kind" ]; then
         echo "  ✗ ERROR: No 'kind' field found in component.yaml"
-        ((ERRORS++))
+        ERRORS=$((ERRORS + 1))
     else
         echo "  ✓ Kind: $kind"
 
@@ -104,7 +104,7 @@ for dir in "${component_dirs[@]}"; do
         expected_dir=$(echo "$kind" | sed 's/\([A-Z]\)/_\1/g' | sed 's/^_//' | tr '[:upper:]' '[:lower:]')
         if [ "$dir_name" != "$expected_dir" ]; then
             echo "  ! WARN: Directory name '$dir_name' doesn't match kind '$kind' (expected '$expected_dir')"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS + 1))
         fi
     fi
 
@@ -121,7 +121,7 @@ for dir in "${component_dirs[@]}"; do
     if [[ "$status" == "deprecated" || "$status" == "archived" ]]; then
         if [ ! -f "$dir/MIGRATIONS.md" ] && [ ! -d "$dir/migrations" ]; then
             echo "  ✗ ERROR: Status is '$status' but no MIGRATIONS.md or migrations/ directory found"
-            ((ERRORS++))
+            ERRORS=$((ERRORS + 1))
         else
             echo "  ✓ Migration documentation exists"
         fi
@@ -131,7 +131,7 @@ for dir in "${component_dirs[@]}"; do
     for field in "name" "version" "status" "summary"; do
         if ! grep -q "^$field:" "$dir/component.yaml" 2>/dev/null; then
             echo "  ! WARN: Missing required field '$field'"
-            ((WARNINGS++))
+            WARNINGS=$((WARNINGS + 1))
         fi
     done
 
