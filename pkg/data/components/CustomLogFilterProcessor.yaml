@@ -2,7 +2,7 @@ kind: CustomLogFilterProcessor
 name: Filter Logs by Custom OTTL
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Filters logs using custom OTTL statements (advanced)
 description: |
