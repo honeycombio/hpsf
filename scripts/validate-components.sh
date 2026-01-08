@@ -76,20 +76,17 @@ for dir in "${component_dirs[@]}"; do
         echo "  ✓ component.yaml exists"
     fi
 
-    # Validate YAML syntax (using Python if available)
-    if command -v python3 &> /dev/null; then
-        if python3 -c "import yaml" 2>/dev/null; then
-            if ! python3 -c "import yaml; yaml.safe_load(open('$dir/component.yaml'))" 2>/dev/null; then
-                echo "  ✗ ERROR: Invalid YAML syntax in component.yaml"
-                ERRORS=$((ERRORS + 1))
-            else
-                echo "  ✓ Valid YAML syntax"
-            fi
+    # Validate YAML syntax using yq
+    if command -v yq &> /dev/null; then
+        if ! yq eval '.' "$dir/component.yaml" > /dev/null 2>&1; then
+            echo "  ✗ ERROR: Invalid YAML syntax in component.yaml"
+            ERRORS=$((ERRORS + 1))
         else
-            echo "  - Skipping YAML validation (pyyaml module not installed)"
+            echo "  ✓ Valid YAML syntax"
         fi
     else
-        echo "  - Skipping YAML validation (python3 not available)"
+        echo "  ✗ ERROR: yq not found (required for YAML validation)"
+        ERRORS=$((ERRORS + 1))
     fi
 
     # Extract and validate kind field
