@@ -15,36 +15,60 @@ const DefaultConfigurationKind = "TemplateDefault"
 
 // LoadEmbeddedComponents reads a set of components from the local embedded filesystem (in the source, this is the
 // data/components directory) and loads them into a map of TemplateComponent by name.
+// Components are organized in a 2-level structure: components/{style}/{component_name}/component.yaml
+// where style is receivers/processors/exporters/samplers/conditions/startsampling
 func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 	// Read the components from the filesystem
-	comps, err := EmbeddedFS.ReadDir("components")
+	entries, err := EmbeddedFS.ReadDir("components")
 	if err != nil {
 		return nil, err
 	}
 
-	// Load each template
 	components := make(map[string]config.TemplateComponent)
-	for _, comp := range comps {
-		// skip non-yaml files
-		if !strings.HasSuffix(comp.Name(), ".yaml") {
+
+	for _, entry := range entries {
+		// Skip non-directories and special directories (starting with _ or .)
+		if !entry.IsDir() || strings.HasPrefix(entry.Name(), "_") || strings.HasPrefix(entry.Name(), ".") {
 			continue
 		}
-		templateData, err := EmbeddedFS.ReadFile(path.Join("components", comp.Name()))
+
+		// Level 1: style directory (receivers, processors, exporters, samplers, conditions, startsampling)
+		styleDir := entry.Name()
+		stylePath := path.Join("components", styleDir)
+
+		// Read component directories within style
+		componentEntries, err := EmbeddedFS.ReadDir(stylePath)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
-		var component config.TemplateComponent
-		err = y.Unmarshal(templateData, &component)
-		if err != nil {
-			return nil, err
-		}
+		for _, componentEntry := range componentEntries {
+			if !componentEntry.IsDir() {
+				continue
+			}
 
-		if _, ok := components[component.Kind]; ok {
-			return nil, fmt.Errorf("duplicate component kind %s in %s and %s",
-				component.Kind, components[component.Kind].Name, component.Name)
+			// Level 2: component directory
+			// Component YAML file matches directory name (e.g., my_component/my_component.yaml)
+			componentName := componentEntry.Name()
+			componentPath := path.Join(stylePath, componentName, componentName+".yaml")
+			componentData, err := EmbeddedFS.ReadFile(componentPath)
+			if err != nil {
+				continue // Skip if component yaml doesn't exist
+			}
+
+			var component config.TemplateComponent
+			if err := y.Unmarshal(componentData, &component); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal %s: %w", componentPath, err)
+			}
+
+			// Check for duplicate Kind
+			if _, ok := components[component.Kind]; ok {
+				return nil, fmt.Errorf("duplicate component kind %s in %s and %s",
+					component.Kind, components[component.Kind].Name, component.Name)
+			}
+
+			components[component.Kind] = component
 		}
-		components[component.Kind] = component
 	}
 
 	return components, nil

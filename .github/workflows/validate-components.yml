@@ -1,0 +1,84 @@
+name: Validate Components
+
+on:
+  pull_request:
+    paths:
+      - 'pkg/data/components/**'
+      - 'pkg/data/loadEmbedded.go'
+      - 'pkg/data/data.go'
+      - 'scripts/validate-components.sh'
+      - 'component-schema.json'
+  push:
+    branches:
+      - main
+    paths:
+      - 'pkg/data/components/**'
+      - 'pkg/data/loadEmbedded.go'
+      - 'pkg/data/data.go'
+
+permissions:
+  contents: read
+
+jobs:
+  validate-structure:
+    name: Validate Component Structure
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Make scripts executable
+        run: chmod +x scripts/*.sh
+
+      - name: Validate component directory structure
+        run: make validate-components
+
+      - name: Run component loading tests
+        run: go test ./pkg/data/... -v
+
+  validate-schema:
+    name: Validate Against JSON Schema
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install ajv-cli
+        run: npm install -g ajv-cli
+
+      - name: Validate components against schema
+        run: |
+          for comp_yaml in pkg/data/components/*/component.yaml; do
+            if [ -f "$comp_yaml" ]; then
+              echo "Validating $comp_yaml..."
+              ajv validate -s component-schema.json -d "$comp_yaml" --strict=false
+            fi
+          done
+
+  check-no-flat-files:
+    name: Check No Flat YAML Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for flat YAML files in components/
+        run: |
+          if ls pkg/data/components/*.yaml 2>/dev/null; then
+            echo "❌ Error: Found flat YAML files in pkg/data/components/"
+            echo "All components must be in subdirectories with component.yaml"
+            ls -l pkg/data/components/*.yaml
+            exit 1
+          else
+            echo "✅ No flat YAML files found - structure is correct"
+          fi
