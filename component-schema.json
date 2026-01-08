@@ -54,9 +54,9 @@
     },
     "status": {
       "type": "string",
-      "description": "The development status of the component. alpha, stable, and archived are public; use development if you don't want people to see it without a feature flag",
+      "description": "The development status of the component. Lifecycle: development (feature-flagged, open to changes) -> beta (public, stable API, ready for users) -> stable (production-ready, guaranteed stability) -> deprecated (planned for removal) -> archived (removed from active use). Use 'development' to hide components without feature flag.",
       "enum": [
-        "alpha",
+        "beta",
         "stable",
         "archived",
         "development",

@@ -2,7 +2,7 @@ kind: CompareBoolFieldCondition
 name: Compare a bool field
 style: condition
 type: base
-status: alpha
+status: beta
 version: v0.1.0
 summary: Compares a bool field to a specified value
 description: |-
