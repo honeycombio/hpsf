@@ -41,11 +41,13 @@ properties:
     type: stringarray
     summary: OTTL log filter statements
     description: |
-      OpenTelemetry Transformation Language (OTTL) statements for filtering logs.
-      Organize statements by context (log_record) to apply filters.
+      OpenTelemetry Transformation Language (OTTL) statements that define conditions for filtering log records.
+      Each statement evaluates to true or false for each log record. Only records where all statements evaluate to true will be kept.
+      Statements operate on the log_record context and can access log attributes, body, severity, and other log record fields.
       Examples:
-      - 'severity_number < SEVERITY_NUMBER_INFO'
-      - 'attributes["log.level"] == "debug"'
+      - 'severity_number < SEVERITY_NUMBER_INFO' - Keep logs with severity below INFO
+      - 'attributes["log.level"] == "debug"' - Keep only debug level logs
+      - 'IsMatch(body, ".*error.*")' - Keep logs containing "error" in the body
     validations:
       - noblanks
       - nonempty

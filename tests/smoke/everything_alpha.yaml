@@ -41,6 +41,12 @@ components:
           - error
   - name: Filter Logs by Severity_1
     kind: LogSeverityFilterProcessor
+  - name: Filter Logs by Custom OTTL_1
+    kind: CustomLogFilterProcessor
+    properties:
+      - name: LogStatements
+        value:
+          - 'severity_number < SEVERITY_NUMBER_INFO'
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Parse Log Body As JSON_1
@@ -492,6 +498,22 @@ connections:
       port: Logs
       type: OTelLogs
   - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Filter Logs by Custom OTTL_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Custom OTTL_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to Honeycomb_1
+      port: Logs
+      type: OTelLogs
+  - source:
       component: Receive OTel_1
       port: Traces
       type: OTelTraces
@@ -544,6 +566,10 @@ layout:
     - name: Filter Logs by Severity_1
       position:
         x: -480
+        y: -60
+    - name: Filter Logs by Custom OTTL_1
+      position:
+        x: -280
         y: -60
     - name: Keep All_1
       position:
