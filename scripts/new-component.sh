@@ -83,7 +83,7 @@ case $STYLE in
         ;;
 esac
 
-# Copy and customize component.yaml from template
+# Copy and customize component YAML from template (named after directory)
 if [ -f "$COMPONENTS_DIR/_templates/component.yaml.tmpl" ]; then
     sed -e "s/{{KIND}}/$COMPONENT_KIND/g" \
         -e "s/{{NAME}}/$COMPONENT_KIND/g" \
@@ -96,8 +96,8 @@ if [ -f "$COMPONENTS_DIR/_templates/component.yaml.tmpl" ]; then
         -e "s/{{COMPONENT_SECTION}}/$COMPONENT_SECTION/g" \
         -e "s/{{SIGNAL_TYPES}}/$SIGNAL_TYPES/g" \
         -e "s/{{COLLECTOR_NAME}}/$COLLECTOR_NAME/g" \
-        "$COMPONENTS_DIR/_templates/component.yaml.tmpl" > "$TARGET_DIR/component.yaml"
-    echo "✓ Created component.yaml"
+        "$COMPONENTS_DIR/_templates/component.yaml.tmpl" > "$TARGET_DIR/${DIR_NAME}.yaml"
+    echo "✓ Created ${DIR_NAME}.yaml"
 else
     echo "Error: Template not found at $COMPONENTS_DIR/_templates/component.yaml.tmpl"
     rm -rf "$TARGET_DIR"
@@ -129,7 +129,7 @@ echo "=========================================="
 echo "Component scaffolded successfully!"
 echo ""
 echo "Next steps:"
-echo "1. Edit $TARGET_DIR/component.yaml"
+echo "1. Edit $TARGET_DIR/${DIR_NAME}.yaml"
 echo "   - Define ports (input/output)"
 echo "   - Add properties with validations"
 echo "   - Configure templates for target systems"

@@ -48,10 +48,12 @@ func LoadEmbeddedComponents() (map[string]config.TemplateComponent, error) {
 			}
 
 			// Level 2: component directory
-			componentPath := path.Join(stylePath, componentEntry.Name(), "component.yaml")
+			// Component YAML file matches directory name (e.g., my_component/my_component.yaml)
+			componentName := componentEntry.Name()
+			componentPath := path.Join(stylePath, componentName, componentName+".yaml")
 			componentData, err := EmbeddedFS.ReadFile(componentPath)
 			if err != nil {
-				continue // Skip if component.yaml doesn't exist
+				continue // Skip if component yaml doesn't exist
 			}
 
 			var component config.TemplateComponent

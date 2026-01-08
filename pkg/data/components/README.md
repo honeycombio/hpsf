@@ -12,32 +12,34 @@ components/
 ├── _templates/                # Scaffolding templates for new components
 ├── receivers/                 # Ingest telemetry
 │   └── otel_receiver/
-│       ├── component.yaml
+│       ├── {component_name}.yaml
 │       └── README.md
 ├── processors/                # Transform, filter, enrich
 │   └── custom_transform_processor/
-│       ├── component.yaml
+│       ├── {component_name}.yaml
 │       └── README.md
 ├── exporters/                 # Send to destinations
 │   └── honeycomb_exporter/
-│       ├── component.yaml
+│       ├── {component_name}.yaml
 │       └── README.md
 ├── samplers/                  # Sampling strategies (Refinery)
 │   └── deterministic_sampler/
-│       ├── component.yaml
+│       ├── {component_name}.yaml
 │       └── README.md
 ├── conditions/                # Boolean expressions (Refinery)
 │   └── field_exists_condition/
-│       ├── component.yaml
+│       ├── {component_name}.yaml
 │       └── README.md
 └── startsampling/             # Start sampling triggers (Refinery)
     └── sampling_sequencer/
-        ├── component.yaml
+        ├── {component_name}.yaml
         ├── README.md
         └── MIGRATIONS.md      # Optional: version migration docs
 ```
 
-**Directory naming:** lowercase, underscores (e.g., `OTelReceiver` → `otel_receiver/`)
+**Naming conventions:**
+- **Directory**: lowercase, underscores (e.g., `OTelReceiver` → `otel_receiver/`)
+- **YAML file**: matches directory name (e.g., `otel_receiver/otel_receiver.yaml`)
 - Common abbreviations kept together: `json`, `otel`, `http`, `grpc`, `ema` (not `j_s_o_n`, `o_tel`, etc.)
 
 ## Creating a New Component
@@ -55,7 +57,7 @@ make validate-components
 
 1. Choose style: `receivers/`, `processors/`, `exporters/`, `samplers/`, `conditions/`, `startsampling/`
 2. Create directory: `mkdir -p components/{style}/my_new_component/`
-3. Add `component.yaml` (see anatomy below)
+3. Add `{component_name}.yaml` (see anatomy below)
 4. Add `README.md` with usage examples
 5. Validate: `make validate-components`
 
@@ -132,7 +134,7 @@ Both load into component registry and can be used simultaneously.
 make validate-components
 
 # Validate against JSON schema
-npx ajv-cli validate -s ../../component-schema.json -d */component.yaml
+npx ajv-cli validate -s ../../component-schema.json -d */{component_name}.yaml
 
 # Run full test suite
 make test

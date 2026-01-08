@@ -39,8 +39,11 @@ for level1_dir in "$COMPONENTS_DIR"/*/; do
     if [ -d "$level1_dir" ]; then
         # Level 2: component directories
         for level2_dir in "$level1_dir"/*/; do
-            if [ -d "$level2_dir" ] && [ -f "$level2_dir/component.yaml" ]; then
-                component_dirs+=("$level2_dir")
+            if [ -d "$level2_dir" ]; then
+                comp_name=$(basename "$level2_dir")
+                if [ -f "$level2_dir/${comp_name}.yaml" ]; then
+                    component_dirs+=("$level2_dir")
+                fi
             fi
         done
     fi
@@ -60,19 +63,20 @@ for dir in "${component_dirs[@]}"; do
 
     echo "Validating: $dir_name"
 
-    # Check component.yaml exists
-    if [ ! -f "$dir/component.yaml" ]; then
-        echo "  ✗ ERROR: Missing component.yaml"
+    # Check component YAML exists (should match directory name)
+    component_yaml="$dir/${dir_name}.yaml"
+    if [ ! -f "$component_yaml" ]; then
+        echo "  ✗ ERROR: Missing ${dir_name}.yaml"
         ERRORS=$((ERRORS + 1))
         continue
     else
-        echo "  ✓ component.yaml exists"
+        echo "  ✓ ${dir_name}.yaml exists"
     fi
 
     # Validate YAML syntax using yq
     if command -v yq &> /dev/null; then
-        if ! yq eval '.' "$dir/component.yaml" > /dev/null 2>&1; then
-            echo "  ✗ ERROR: Invalid YAML syntax in component.yaml"
+        if ! yq eval '.' "$component_yaml" > /dev/null 2>&1; then
+            echo "  ✗ ERROR: Invalid YAML syntax in ${dir_name}.yaml"
             ERRORS=$((ERRORS + 1))
         else
             echo "  ✓ Valid YAML syntax"
@@ -83,7 +87,7 @@ for dir in "${component_dirs[@]}"; do
     fi
 
     # Extract and validate kind field
-    kind=$(grep "^kind:" "$dir/component.yaml" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '\r\n')
+    kind=$(grep "^kind:" "$component_yaml" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '\r\n')
     if [ -z "$kind" ]; then
         echo "  ✗ ERROR: No 'kind' field found in component.yaml"
         ERRORS=$((ERRORS + 1))
@@ -107,7 +111,7 @@ for dir in "${component_dirs[@]}"; do
     fi
 
     # Check for MIGRATIONS.md if deprecated/archived
-    status=$(grep "^status:" "$dir/component.yaml" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '\r\n')
+    status=$(grep "^status:" "$component_yaml" 2>/dev/null | head -1 | awk '{print $2}' | tr -d '\r\n')
     if [[ "$status" == "deprecated" || "$status" == "archived" ]]; then
         if [ ! -f "$dir/MIGRATIONS.md" ] && [ ! -d "$dir/migrations" ]; then
             echo "  ✗ ERROR: Status is '$status' but no MIGRATIONS.md or migrations/ directory found"
@@ -119,7 +123,7 @@ for dir in "${component_dirs[@]}"; do
 
     # Check for required fields
     for field in "name" "version" "status" "summary"; do
-        if ! grep -q "^$field:" "$dir/component.yaml" 2>/dev/null; then
+        if ! grep -q "^$field:" "$component_yaml" 2>/dev/null; then
             echo "  ! WARN: Missing required field '$field'"
             WARNINGS=$((WARNINGS + 1))
         fi

@@ -65,12 +65,14 @@ func TestComponentsValidateAgainstSchema(t *testing.T) {
 			}
 
 			// Level 2: component directory
-			componentYaml := filepath.Join(level1Path, level1Entry.Name(), "component.yaml")
+			// Component YAML file matches directory name (e.g., my_component/my_component.yaml)
+			componentName := level1Entry.Name()
+			componentYaml := filepath.Join(level1Path, componentName, componentName+".yaml")
 			if _, err := os.Stat(componentYaml); err == nil {
 				componentPaths = append(componentPaths, struct {
 					name string
 					path string
-				}{entry.Name() + "/" + level1Entry.Name(), componentYaml})
+				}{entry.Name() + "/" + componentName, componentYaml})
 			}
 		}
 	}
