@@ -2,7 +2,7 @@ kind: NumericValueCondition
 name: Check a Numeric Field
 style: condition
 type: base
-status: development
+status: alpha
 version: v0.1.0
 summary: Compare an int or num type field to a specified value
 description: |-
@@ -42,7 +42,7 @@ properties:
     type: float
     default: 0
   - name: ForceIntegerCompare
-    display: Force integer comparison
+    display: Force Integer Comparison
     summary: The field value will be converted to an integer if it isn’t one already.
     type: bool
     default: false
