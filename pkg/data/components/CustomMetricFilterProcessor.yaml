@@ -2,7 +2,7 @@ kind: CustomMetricFilterProcessor
 name: Filter Metrics by Custom OTTL
 style: processor
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Filters metrics using custom OTTL statements (advanced)
 description: |
