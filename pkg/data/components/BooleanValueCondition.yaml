@@ -2,7 +2,7 @@ kind: BooleanValueCondition
 name: Check a Boolean Value
 style: condition
 type: base
-status: alpha
+status: development
 version: v0.1.0
 summary: Check a boolean field for a specified value
 description: |-
