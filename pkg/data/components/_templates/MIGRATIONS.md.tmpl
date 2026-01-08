@@ -1,0 +1,77 @@
+# Migration Guide: {{KIND}}
+
+## Version History
+
+### v2.0.0 → v3.0.0 (Breaking Changes)
+
+**Status:** Current
+**Released:** {{DATE}}
+**Deprecation Timeline:** v2.0.0 deprecated {{DEPRECATION_DATE}}, removed {{REMOVAL_DATE}}
+
+#### Breaking Changes
+
+1. **Property Rename:** `OldProperty` → `NewProperty`
+   - **Impact:** All configurations using `OldProperty` must update
+   - **Reason:** [Explanation of why this change was made]
+
+2. **Port Type Change:** `Input` port changed from `OldType` → `NewType`
+   - **Impact:** Connections from components outputting `OldType` will break
+   - **Reason:** [Explanation]
+
+#### Migration Steps
+
+**Automated Migration (Recommended):**
+```bash
+hpsf migrate component --from {{KIND}}V2 --to {{KIND}}V3 workflow.yaml
+```
+
+**Manual Migration:**
+
+Before (v2.0.0):
+```yaml
+components:
+  - name: my-component
+    kind: {{KIND}}V2
+    properties:
+      - name: OldProperty
+        value: 100
+```
+
+After (v3.0.0):
+```yaml
+components:
+  - name: my-component
+    kind: {{KIND}}V3
+    properties:
+      - name: NewProperty
+        value: 100
+```
+
+#### Deprecation Warnings
+
+Starting v2.1.0, using `OldProperty` will emit:
+```
+WARN: Property 'OldProperty' deprecated, use 'NewProperty' (removed in v3.0.0)
+```
+
+#### Backward Compatibility
+
+v3.0.0 includes temporary compatibility shim:
+- Set `__enable_v2_compat: true` to auto-map old properties
+- Compatibility layer removed in v4.0.0
+
+---
+
+### v1.0.0 → v2.0.0 (Non-Breaking)
+
+**Released:** {{PREVIOUS_DATE}}
+
+#### New Features
+- Added `NewFeature` property for enhanced functionality
+- Performance improvements: [details]
+
+#### Deprecated Features
+- `LegacyProperty` property deprecated (no functional changes)
+
+#### Migration
+No action required. Existing v1.0.0 configurations fully compatible.

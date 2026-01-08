@@ -1,6 +1,151 @@
-# Creating components
+# HPSF Components
 
-## Anatomy of a component
+This directory contains component definitions for the Honeycomb Pipeline Specification Format (HPSF).
+
+## Directory Structure
+
+Components are organized in a 3-level hierarchy: **target** → **style** → **component**
+
+```
+components/
+├── README.md                  # This file
+├── _templates/                # Scaffolding templates for new components
+├── collector/                 # OTel Collector components
+│   ├── receivers/
+│   │   └── otel_receiver/
+│   │       ├── component.yaml
+│   │       └── README.md
+│   ├── processors/
+│   │   └── custom_transform_processor/
+│   │       ├── component.yaml
+│   │       └── README.md
+│   └── exporters/
+│       └── honeycomb_exporter/
+│           ├── component.yaml
+│           └── README.md
+└── refinery/                  # Refinery components
+    ├── samplers/
+    │   └── deterministic_sampler/
+    │       ├── component.yaml
+    │       └── README.md
+    ├── conditions/
+    │   └── field_exists_condition/
+    │       ├── component.yaml
+    │       └── README.md
+    └── startsampling/
+        └── sampling_sequencer/
+            ├── component.yaml
+            ├── README.md
+            └── MIGRATIONS.md      # Optional: version migration docs
+```
+
+**Directory naming:** lowercase, underscores (e.g., `OTelReceiver` → `otel_receiver/`)
+- Common abbreviations kept together: `json`, `otel`, `http`, `grpc`, `ema` (not `j_s_o_n`, `o_tel`, etc.)
+
+## Creating a New Component
+
+### Quick Start
+
+```bash
+make new-component
+# Enter component kind when prompted (e.g., "MyNewProcessor")
+# Edit generated files
+make validate-components
+```
+
+### Manual Creation
+
+1. Choose target: `collector/` (OTel Collector components) or `refinery/` (Refinery components)
+2. Choose style: `receivers/`, `processors/`, `exporters/`, `samplers/`, `conditions/`, `startsampling/`
+3. Create directory: `mkdir -p components/{target}/{style}/my_new_component/`
+4. Add `component.yaml` (see anatomy below)
+5. Add `README.md` with usage examples
+6. Validate: `make validate-components`
+
+## Component Index
+
+### Collector Components
+
+**Receivers** (Input)
+- [OTelReceiver](collector/receivers/otel_receiver/) - Receive OTel signals (gRPC/HTTP)
+- [NopReceiver](collector/receivers/nop_receiver/) - No-op for testing
+
+**Processors** (Transform/Filter)
+- [CustomTransformProcessor](collector/processors/custom_transform_processor/) - OTTL transformations
+- [CustomFilterProcessor](collector/processors/custom_filter_processor/) - OTTL filtering
+- [RedactionProcessor](collector/processors/redaction_processor/) - Redact sensitive data
+- [LogBodyJSONParsingProcessor](collector/processors/log_body_json_parsing_processor/) - Parse JSON in log bodies
+- [SymbolicatorProcessor](collector/processors/symbolicator_processor/) - Symbolicate stack traces
+- [AttributeJSONParsingProcessor](collector/processors/attribute_json_parsing_processor/) - Parse JSON in attributes
+- [LogAttrJSONParsingProcessor](collector/processors/log_attr_json_parsing_processor/) - Parse JSON in log attributes
+- [SpanAttrJSONParsingProcessor](collector/processors/span_attr_json_parsing_processor/) - Parse JSON in span attributes
+
+**Exporters** (Output)
+- [HoneycombExporter](collector/exporters/honeycomb_exporter/) - Send to Honeycomb
+- [OTelGRPCExporter](collector/exporters/otel_grpc_exporter/) - Export via gRPC
+- [OTelHTTPExporter](collector/exporters/otel_http_exporter/) - Export via HTTP
+- [S3ArchiveExporter](collector/exporters/s3_archive_exporter/) - Archive to S3
+- [DebugExporter](collector/exporters/debug_exporter/) - Debug output to stdout
+- [NopExporter](collector/exporters/nop_exporter/) - No-op for testing
+
+### Refinery Components
+
+**Samplers**
+- [DeterministicSampler](refinery/samplers/deterministic_sampler/) - Fixed-rate sampling
+- [EMADynamicSampler](refinery/samplers/ema_dynamic_sampler/) - Dynamic EMA-based sampling
+- [EMAThroughputSampler](refinery/samplers/ema_throughput_sampler/) - Throughput-based EMA sampling
+- [KeepAllSampler](refinery/samplers/keep_all_sampler/) - Keep all spans
+- [Dropper](refinery/samplers/dropper/) - Drop all spans
+
+**Conditions**
+- [FieldExistsCondition](refinery/conditions/field_exists_condition/) - Check field presence
+- [CompareIntegerFieldCondition](refinery/conditions/compare_integer_field_condition/) - Integer comparisons
+- [HTTPStatusCondition](refinery/conditions/http_status_condition/) - HTTP status code checks
+- [ErrorExistsCondition](refinery/conditions/error_exists_condition/) - Check for errors
+- [RootSpanCondition](refinery/conditions/root_span_condition/) - Root span detection
+- [FieldContainsCondition](refinery/conditions/field_contains_condition/) - String contains check
+- [BooleanValueCondition](refinery/conditions/boolean_value_condition/) - Boolean value check
+
+**Start Sampling**
+- [SamplingSequencer](refinery/startsampling/sampling_sequencer/) - Route to samplers based on conditions
+- [ForceSpanScope](refinery/startsampling/force_span_scope/) - Force condition eval at span level
+
+## Component Versioning
+
+### Version Lifecycle
+
+1. **development** - Internal testing, requires feature flag
+2. **alpha** - Public preview, breaking changes allowed
+3. **stable** - Production-ready, follows semver
+4. **deprecated** - Marked for removal, migration path documented
+5. **archived** - Read-only, historical reference
+
+### Multiple Version Coexistence
+
+When introducing breaking changes, create new directory with version suffix:
+
+```
+collector/receivers/
+├── otel_receiver/          # kind: OTelReceiver, status: deprecated
+└── otel_receiver_v2/       # kind: OTelReceiverV2, status: stable
+```
+
+Both load into component registry and can be used simultaneously.
+
+## Validation
+
+```bash
+# Validate directory structure
+make validate-components
+
+# Validate against JSON schema
+npx ajv-cli validate -s ../../component-schema.json -d */component.yaml
+
+# Run full test suite
+make test
+```
+
+## Anatomy of a Component
 
 ```yaml
 # kind is the unique type of the component;
@@ -108,7 +253,7 @@ templates:
         value: "{{ .Values.Verbosity }}"
 ```
 
-## The template section
+## The Template Section
 
 As noted above, the template section is what does the work to generate
 configurations from the data specified in each component.

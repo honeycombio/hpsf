@@ -20,3 +20,37 @@ Here are some sample commands:
 Here's an example that exercises a separate data table:
 
 `go run ./cmd/hpsf -d API_Key=hello -i examples/hpsf2.yaml rConfig`
+
+## Component Library
+
+HPSF includes 50+ pre-built components for telemetry processing. Components are organized in a 3-level hierarchy (target/style/component) for easy exploration and extension.
+
+**Browse Components:** [pkg/data/components/](./pkg/data/components/)
+
+### Component Categories
+
+- **Receivers** - Ingest telemetry (OTel, HTTP, etc.)
+- **Processors** - Transform, filter, enrich data
+- **Exporters** - Send to destinations (Honeycomb, S3, etc.)
+- **Samplers** - Refinery sampling strategies
+- **Conditions** - Boolean expressions for sampling rules
+
+### Creating Custom Components
+
+```bash
+make new-component
+# Follow prompts, edit component.yaml and README.md
+make validate-components
+```
+
+See [Component Creation Guide](./pkg/data/components/README.md#creating-a-new-component) for:
+- Component anatomy and properties
+- Property validation and types
+- Port configuration
+- Template rendering for multiple targets
+
+### Versioning & Migration
+
+Components follow semantic versioning. Major version changes handled via kind suffixes (e.g., `OTelReceiverV2`) to allow coexistence.
+
+See [Migration Guide](./pkg/data/components/MIGRATION_GUIDE.md) for deprecation lifecycle and migration standards.

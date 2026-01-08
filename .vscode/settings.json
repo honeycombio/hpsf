@@ -1,5 +1,5 @@
 {
     "yaml.schemas": {
-        "component-schema.json": "pkg/data/components/*.yaml"
+        "component-schema.json": "pkg/data/components/**/component.yaml"
     }
 }

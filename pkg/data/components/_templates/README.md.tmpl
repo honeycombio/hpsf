@@ -1,0 +1,77 @@
+# {{NAME}}
+
+**Kind:** `{{KIND}}` | **Version:** `{{VERSION}}` | **Status:** {{STATUS}}
+
+## Overview
+
+[Describe what this component does, its purpose, and when to use it]
+
+## Use Cases
+
+- [Use case 1]
+- [Use case 2]
+- [Use case 3]
+
+## Configuration
+
+### Properties
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| Property1 | string | No | value | Description of property |
+
+### Ports
+
+**Input:**
+- `Input` ({{INPUT_TYPE}}) - Description of input
+
+**Output:**
+- `Output` ({{OUTPUT_TYPE}}) - Description of output
+
+## Examples
+
+### Basic Usage
+
+```yaml
+components:
+  - name: my-{{KIND_LOWER}}
+    kind: {{KIND}}
+    properties:
+      - name: Property1
+        value: example-value
+```
+
+### Advanced Configuration
+
+```yaml
+components:
+  - name: advanced-{{KIND_LOWER}}
+    kind: {{KIND}}
+    properties:
+      - name: Property1
+        value: custom-value
+      - name: Property2
+        value: another-value
+```
+
+## Generated Configuration
+
+### OpenTelemetry Collector
+
+This component generates the following OTel Collector configuration:
+
+```yaml
+{{COMPONENT_SECTION}}:
+  {{COLLECTOR_NAME}}:
+    # Configuration here
+```
+
+## See Also
+
+- [Related Component 1](../relatedcomponent/README.md)
+- [OTel {{COLLECTOR_NAME}} Documentation](https://opentelemetry.io/docs/collector/)
+
+## Changelog
+
+### {{VERSION}} ({{DATE}})
+- Initial release
