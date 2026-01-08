@@ -361,6 +361,134 @@ func TestNonExistentProperty(t *testing.T) {
 	}
 }
 
+// TestValidateLessThanOrEqual tests the less_than_or_equal validation type
+func TestValidateLessThanOrEqual(t *testing.T) {
+	tc := &TemplateComponent{
+		Properties: []TemplateProperty{
+			{Name: "Minimum", Type: hpsf.PTYPE_INT},
+			{Name: "Maximum", Type: hpsf.PTYPE_INT},
+		},
+		Validations: []string{
+			"less_than_or_equal(Minimum, Maximum)",
+		},
+	}
+
+	// Test case 1: Minimum < Maximum - should pass
+	t.Run("MinLessThanMax", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: 400},
+				{Name: "Maximum", Value: 599},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when Minimum < Maximum, got: %v", err)
+		}
+	})
+
+	// Test case 2: Minimum == Maximum - should pass
+	t.Run("MinEqualsMax", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: 500},
+				{Name: "Maximum", Value: 500},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when Minimum == Maximum, got: %v", err)
+		}
+	})
+
+	// Test case 3: Minimum > Maximum - should fail
+	t.Run("MinGreaterThanMax", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: 599},
+				{Name: "Maximum", Value: 400},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when Minimum > Maximum")
+		}
+	})
+
+	// Test case 4: Minimum missing - should pass (let other validations handle required fields)
+	t.Run("MinMissing", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Maximum", Value: 599},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when Minimum is missing (empty values skipped), got: %v", err)
+		}
+	})
+
+	// Test case 5: Maximum missing - should pass (let other validations handle required fields)
+	t.Run("MaxMissing", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: 400},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when Maximum is missing (empty values skipped), got: %v", err)
+		}
+	})
+
+	// Test case 6: Both missing - should pass (let other validations handle required fields)
+	t.Run("BothMissing", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass when both are missing (empty values skipped), got: %v", err)
+		}
+	})
+
+	// Test case 7: Float values - should work
+	t.Run("FloatValues", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: 400.0},
+				{Name: "Maximum", Value: 599.0},
+			},
+		}
+		err := tc.Validate(component)
+		if err != nil {
+			t.Errorf("Expected validation to pass with float values, got: %v", err)
+		}
+	})
+
+	// Test case 8: Non-numeric values - should fail
+	t.Run("NonNumericValues", func(t *testing.T) {
+		component := &hpsf.Component{
+			Name: "TestComponent",
+			Properties: []hpsf.Property{
+				{Name: "Minimum", Value: "not a number"},
+				{Name: "Maximum", Value: 599},
+			},
+		}
+		err := tc.Validate(component)
+		if err == nil {
+			t.Error("Expected validation to fail when Minimum is non-numeric")
+		}
+	})
+}
+
 // TestParseComponentValidation tests the validation string parsing
 func TestParseComponentValidation(t *testing.T) {
 	tests := []struct {
@@ -404,6 +532,12 @@ func TestParseComponentValidation(t *testing.T) {
 			name:          "invalid format",
 			validationStr: "invalid_format",
 			expectError:   true,
+		},
+		{
+			name:          "less_than_or_equal",
+			validationStr: "less_than_or_equal(Minimum, Maximum)",
+			expectType:    "less_than_or_equal",
+			expectProps:   []string{"Minimum", "Maximum"},
 		},
 	}
 

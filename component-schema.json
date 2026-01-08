@@ -149,7 +149,7 @@
     },
     "validations": {
       "type": "array",
-      "description": "Component-level validations that apply across properties. Permitted validations: at_least_one_of, exactly_one_of, mutually_exclusive, require_together, conditional_require_together",
+      "description": "Component-level validations that apply across properties. Permitted validations: at_least_one_of, exactly_one_of, mutually_exclusive, require_together, conditional_require_together, less_than_or_equal",
       "items": {
         "type": "string",
         "oneOf": [
@@ -172,6 +172,10 @@
           {
             "pattern": "^conditional_require_together\\(.+\\)$",
             "description": "conditional_require_together validation with condition property, condition value, and dependent properties"
+          },
+          {
+            "pattern": "^less_than_or_equal\\(.+\\)$",
+            "description": "less_than_or_equal validation with two property names in parentheses, ensuring the first is less than or equal to the second"
           }
         ]
       }
