@@ -7,7 +7,7 @@ components:
     kind: SymbolicatorProcessor
     properties:
       - name: SourceMapStore
-        value: AWSS3
+        value: AWS S3
       - name: Bucket
         value: my-bucket
       - name: Region
