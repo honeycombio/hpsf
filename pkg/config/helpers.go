@@ -34,7 +34,6 @@ func helpers() template.FuncMap {
 		"join":          join,
 		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
-		"mapKeys":       mapKeys,
 		"mapValues":     mapValues,
 		"meta":          meta,
 		"nonempty":      nonempty,
@@ -101,23 +100,6 @@ func join(a []string, sep string) string {
 // creates a slice of strings from the arguments
 func makeSlice(a ...string) []string {
 	return a
-}
-
-// mapKeys extracts keys from a map and returns them as a slice
-func mapKeys(m any) []any {
-	result := make([]any, 0)
-
-	if mapVal, ok := m.(map[string]any); ok {
-		for k := range mapVal {
-			result = append(result, k)
-		}
-	} else if mapVal, ok := m.(map[string]string); ok {
-		for k := range mapVal {
-			result = append(result, k)
-		}
-	}
-
-	return result
 }
 
 // mapValues extracts values from a map and returns them as a slice
