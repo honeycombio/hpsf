@@ -469,7 +469,7 @@ tags:
   - service:refinery
 type: base
 style: exporter
-status: alpha
+status: beta
 metadata:
   foo: bar
 ports:
@@ -528,7 +528,7 @@ templates:
 	assert.Equal(t, []string{"category:output", "service:refinery"}, component.Tags)
 	assert.Equal(t, ComponentTypeBase, component.Type)
 	assert.Equal(t, "exporter", component.Style)
-	assert.Equal(t, ComponentStatusAlpha, component.Status)
+	assert.Equal(t, ComponentStatusBeta, component.Status)
 	require.NotNil(t, component.Metadata)
 	assert.Equal(t, "bar", component.Metadata["foo"])
 	require.Len(t, component.Ports, 1)

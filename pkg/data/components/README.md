@@ -20,9 +20,13 @@ style: exporter
 logo: opentelemetry
 # type is 'base', 'meta', or 'template'
 type: base
-# status: alpha, stable, and archived are public
-# use development if you don't want people to see it without a feature flag
-status: alpha
+# status lifecycle: development -> beta -> stable -> deprecated -> archived
+# development: feature-flagged, open to changes
+# beta: public, stable API, ready for users
+# stable: production-ready, guaranteed stability
+# deprecated: planned for removal
+# archived: removed from active use
+status: beta
 # version should be bumped when the component is updated
 version: v0.1.0
 # summary is the short description, easily visible in the UI
