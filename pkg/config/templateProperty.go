@@ -96,7 +96,7 @@ func getValidationRule(validation string) func(val any) bool {
 		// inRange will check if the value is within a specified range
 		return inRange(args...)
 	case "regex":
-		// regex will check if the value is a valid regular expression (string, array, or map keys/values)
+		// regex will check if the value is a valid regular expression (string, array, or map values)
 		return isValidRegex
 	case "enhancepartitionformat":
 		// enhancepartitionformat will check if the value is a valid enhance partition format string
@@ -359,7 +359,7 @@ func inRange(options ...string) func(val any) bool {
 }
 
 // isValidRegex checks if the value can be interpreted as a valid regular expression,
-// or a slice of valid regular expressions, or a map where the keys and values are valid regular expressions.
+// or a slice of valid regular expressions, or a map where the values are valid regular expressions.
 func isValidRegex(val any) bool {
 	switch v := val.(type) {
 	case string:
@@ -391,12 +391,8 @@ func isValidRegex(val any) bool {
 		}
 		return true
 	case map[string]any:
-		// For maps, validate both keys and values are valid regex patterns
-		for k, mapVal := range v {
-			if !isValidRegexString(k) {
-				fmt.Printf("isValidRegex: invalid regex key %q\n", k)
-				return false
-			}
+		// For maps, validate that all values are valid regex patterns
+		for _, mapVal := range v {
 			if s, ok := mapVal.(string); ok {
 				if !isValidRegexString(s) {
 					fmt.Printf("isValidRegex: invalid regex value %q\n", s)
@@ -406,12 +402,8 @@ func isValidRegex(val any) bool {
 		}
 		return true
 	case map[string]string:
-		// For string maps, validate both keys and values are valid regex patterns
-		for k, v := range v {
-			if !isValidRegexString(k) {
-				fmt.Printf("isValidRegex: invalid regex key %q\n", k)
-				return false
-			}
+		// For string maps, validate that all values are valid regex patterns
+		for _, v := range v {
 			if !isValidRegexString(v) {
 				fmt.Printf("isValidRegex: invalid regex value %q\n", v)
 				return false
