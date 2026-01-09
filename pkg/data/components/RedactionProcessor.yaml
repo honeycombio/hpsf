@@ -1,16 +1,13 @@
 kind: RedactionProcessor
-name: Mask sensitive values
+name: Redact Sensitive Values
 style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Redacts (masks) sensitive values in trace and log attributes.
+summary: Mask sensitive data patterns in telemetry values
 description: |-
-  This processor is used to redact (mask) sensitive values in trace and log
-  attributes based on predefined patterns or custom regular expressions. It
-  helps ensure that sensitive information such as phone numbers, credit card
-  numbers, and other personally identifiable information is not sent with telemetry.
-  Note that it masks only the matching parts within values, not the entire attribute.
+  Select common patterns or specify custom regex patterns for string replacement in
+  body/attribute values. Matching strings are replaced with a fixed number of asterisks.
 tags:
   - category:processor
   - service:collector
@@ -45,12 +42,11 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: Patterns
+  - name: Presets
     type: checklist
-    summary: Predefined patterns to redact from fields.
+    summary: Available presets for redacting sensitive attribute values
     description: |
-      The predefined patterns to redact from fields.
-      You can select multiple patterns to redact.
+      Available presets for redacting sensitive attribute values
     subtype:
       - id: ssn
         displayName: 'Social Security number'
@@ -101,16 +97,13 @@ properties:
         value: '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
         tooltipText: 'Matches UUIDs/GUIDs in the 8-444-12 pattern, like 123e4567-e89b-12d3-a456-426614174000'
     default: ["ssn", "credit_card", "email", "us_phone"]
-  - name: OtherPatterns
-    display: Other Patterns
-    summary: Additional regular expression patterns to redact from fields.
+  - name: CustomPatterns
+    display: Custom Attribute Value Pattern
+    summary: Regular expression patterns of attribute values to redact.
     description: |
-      A list of additional patterns to redact from fields. These patterns
-      must conform to the regular expression syntax of the Go programming
-      language. To avoid matching too broadly, patterns should usually
-      include word boundary markers (`\b`) where appropriate.
-    type: stringarray
-    default: []
+      Regular expression patterns of attribute values to redact.
+    type: map
+    default: {}
     validations:
       - regex
   - name: ReplacementStrategy
@@ -151,8 +144,8 @@ templates:
       - key: "{{ .ComponentName }}.allow_all_keys"
         value: "{{ true | encodeAsBool }}"
       - key: "{{ .ComponentName }}.blocked_value_patterns"
-        value: "{{ appendSlices (getChecked .Props.Patterns .Values.Patterns) .Values.OtherPatterns | encodeAsArray }}"
-        suppress_if: "{{ and (not .Values.Patterns) (not .Values.OtherPatterns) }}"
+        value: "{{ appendSlices (getChecked .Props.Presets .Values.Presets) (mapValues .Values.CustomPatterns) | encodeAsArray }}"
+        suppress_if: "{{ and (not .Values.Presets) (not .Values.CustomPatterns) }}"
       - key: "{{ .ComponentName }}.hash_function"
         value: "{{ .Values.ReplacementStrategy | lower }}"
         suppress_if: "{{ eq .Values.ReplacementStrategy \"Fixed\" }}"
