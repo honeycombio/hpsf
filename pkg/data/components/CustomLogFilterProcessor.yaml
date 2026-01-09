@@ -39,7 +39,7 @@ properties:
   - name: LogStatements
     display: Log Filter Statements
     type: stringarray
-    summary: OTTL log filter statements
+    summary: Logs that match any of the OTTL statements will be dropped.
     description: |
       OpenTelemetry Transformation Language (OTTL) statements for filtering logs.
       Organize statements by context (log_record) to apply filters.
