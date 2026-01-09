@@ -105,7 +105,7 @@ properties:
     type: map
     default: {}
     validations:
-      - mapregexvalues
+      - regex
   - name: ReplacementStrategy
     display: Replacement Strategy
     summary: The strategy to use when replacing redacted values.

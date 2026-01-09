@@ -345,7 +345,6 @@
                   "duration",
                   "hostorip",
                   "regex",
-                  "mapregexvalues",
                   "enhancepartitionformat"
                 ]
               },

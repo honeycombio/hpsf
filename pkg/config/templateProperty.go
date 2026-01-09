@@ -96,11 +96,8 @@ func getValidationRule(validation string) func(val any) bool {
 		// inRange will check if the value is within a specified range
 		return inRange(args...)
 	case "regex":
-		// regex will check if the value is a valid regular expression (string, array, or map keys)
+		// regex will check if the value is a valid regular expression (string, array, or map keys/values)
 		return isValidRegex
-	case "mapregexvalues":
-		// mapregexvalues will check if map values are valid regular expressions
-		return isValidRegexValues
 	case "enhancepartitionformat":
 		// enhancepartitionformat will check if the value is a valid enhance partition format string
 		return enhancePartitionFormat
@@ -362,7 +359,7 @@ func inRange(options ...string) func(val any) bool {
 }
 
 // isValidRegex checks if the value can be interpreted as a valid regular expression,
-// or a slice of valid regular expressions, or a map where the keys are valid regular expressions.
+// or a slice of valid regular expressions, or a map where the keys and values are valid regular expressions.
 func isValidRegex(val any) bool {
 	switch v := val.(type) {
 	case string:
@@ -394,19 +391,29 @@ func isValidRegex(val any) bool {
 		}
 		return true
 	case map[string]any:
-		// For maps, validate that keys are valid regex patterns
-		for k := range v {
+		// For maps, validate both keys and values are valid regex patterns
+		for k, mapVal := range v {
 			if !isValidRegexString(k) {
 				fmt.Printf("isValidRegex: invalid regex key %q\n", k)
 				return false
 			}
+			if s, ok := mapVal.(string); ok {
+				if !isValidRegexString(s) {
+					fmt.Printf("isValidRegex: invalid regex value %q\n", s)
+					return false
+				}
+			}
 		}
 		return true
 	case map[string]string:
-		// For string maps, validate that keys are valid regex patterns
-		for k := range v {
+		// For string maps, validate both keys and values are valid regex patterns
+		for k, v := range v {
 			if !isValidRegexString(k) {
 				fmt.Printf("isValidRegex: invalid regex key %q\n", k)
+				return false
+			}
+			if !isValidRegexString(v) {
+				fmt.Printf("isValidRegex: invalid regex value %q\n", v)
 				return false
 			}
 		}
@@ -426,39 +433,6 @@ func isValidRegexString(val string) bool {
 
 	_, err := regexp.Compile(val)
 	return err == nil
-}
-
-// isValidRegexValues checks if map values are valid regular expressions.
-// This is used when the map keys are descriptions and values are regex patterns.
-func isValidRegexValues(val any) bool {
-	switch v := val.(type) {
-	case map[string]any:
-		// For maps, validate that values are valid regex patterns
-		for _, mapVal := range v {
-			s, ok := mapVal.(string)
-			if !ok {
-				fmt.Printf("isValidRegexValues: value is not a string %v\n", mapVal)
-				return false
-			}
-			if !isValidRegexString(s) {
-				fmt.Printf("isValidRegexValues: invalid regex value %q\n", s)
-				return false
-			}
-		}
-		return true
-	case map[string]string:
-		// For string maps, validate that values are valid regex patterns
-		for _, s := range v {
-			if !isValidRegexString(s) {
-				fmt.Printf("isValidRegexValues: invalid regex value %q\n", s)
-				return false
-			}
-		}
-		return true
-	default:
-		fmt.Printf("isValidRegexValues: unsupported type %T\n", val)
-		return false // unsupported type
-	}
 }
 
 // enhancePartitionFormat validates that a value is a string representing a valid date format.
