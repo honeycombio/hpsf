@@ -113,6 +113,17 @@ components:
         value: "="
       - name: Value
         value: "error"
+  - name: Check Numeric Value_1
+    kind: NumericValueCondition
+    properties:
+      - name: Fields
+        value: ["response_time"]
+      - name: Operator
+        value: ">"
+      - name: Value
+        value: 1.5
+      - name: ForceIntegerCompare
+        value: false
   - name: Sample at 42_1
     kind: DeterministicSampler
     properties:
@@ -309,6 +320,14 @@ connections:
       type: SampleData
   - source:
       component: Compare String Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Numeric Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Numeric Value_1
       port: And
       type: SampleData
     destination:
@@ -600,6 +619,10 @@ layout:
     - name: Compare String Field_1
       position:
         x: 180
+        y: 60
+    - name: Check Numeric Value_1
+      position:
+        x: 240
         y: 60
     - name: Sample at 42_1
       position:
