@@ -162,6 +162,15 @@ components:
         value:
           - set(resource.attributes["custom.field"], "value")
           - delete_key(resource.attributes, "unwanted_field")
+  - name: Filter Metrics by Custom OTTL_1
+    kind: CustomMetricFilterProcessor
+    properties:
+      - name: MetricStatements
+        value:
+          - 'name == "http.server.duration"'
+      - name: DataPointStatements
+        value:
+          - 'attributes["service.name"] == "api"'
   - name: Send to Enhance S3 Archive
     kind: EnhanceIndexingS3Exporter
     version: v0.1.0
@@ -429,6 +438,14 @@ connections:
       type: OTelMetrics
   - source:
       component: Transform some attributes
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Filter Metrics by Custom OTTL_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Filter Metrics by Custom OTTL_1
       port: Metrics
       type: OTelMetrics
     destination:
