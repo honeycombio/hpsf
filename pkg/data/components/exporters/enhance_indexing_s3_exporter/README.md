@@ -1,6 +1,6 @@
 # Send to Enhance S3 Archive
 
-**Kind:** `EnhanceIndexingS3Exporter` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `EnhanceIndexingS3Exporter` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

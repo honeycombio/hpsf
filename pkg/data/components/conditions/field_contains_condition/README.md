@@ -1,6 +1,6 @@
 # Check That Field Contains a Substring
 
-**Kind:** `FieldContainsCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `FieldContainsCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Parse Attribute As JSON
 
-**Kind:** `AttributeJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** alpha
+**Kind:** `AttributeJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** beta
 
 ## Overview
 

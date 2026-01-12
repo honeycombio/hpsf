@@ -1,6 +1,6 @@
 # Compare a numeric field
 
-**Kind:** `CompareDecimalFieldCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `CompareDecimalFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

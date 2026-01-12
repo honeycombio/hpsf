@@ -1,6 +1,6 @@
 # Send to Honeycomb
 
-**Kind:** `HoneycombExporter` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `HoneycombExporter` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

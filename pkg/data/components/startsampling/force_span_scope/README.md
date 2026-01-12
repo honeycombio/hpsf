@@ -1,6 +1,6 @@
 # Set Span Scope
 
-**Kind:** `ForceSpanScope` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `ForceSpanScope` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

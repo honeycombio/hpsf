@@ -110,7 +110,7 @@ make validate-components
 ### Version Lifecycle
 
 1. **development** - Internal testing, requires feature flag
-2. **alpha** - Public preview, breaking changes allowed
+2. **beta** - Public preview, breaking changes allowed
 3. **stable** - Production-ready, follows semver
 4. **deprecated** - Marked for removal, migration path documented
 5. **archived** - Read-only, historical reference

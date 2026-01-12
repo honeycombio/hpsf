@@ -1,6 +1,6 @@
 # Sample at a Fixed Rate
 
-**Kind:** `DeterministicSampler` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `DeterministicSampler` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

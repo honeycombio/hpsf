@@ -1,6 +1,6 @@
 # Compare an integer field
 
-**Kind:** `CompareIntegerFieldCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `CompareIntegerFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

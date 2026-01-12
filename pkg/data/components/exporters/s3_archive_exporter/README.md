@@ -1,6 +1,6 @@
 # Send to S3 Archive
 
-**Kind:** `S3ArchiveExporter` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `S3ArchiveExporter` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 
