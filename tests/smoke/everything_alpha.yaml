@@ -198,6 +198,15 @@ components:
         value:
           - set(resource.attributes["custom.field"], "value")
           - delete_key(resource.attributes, "unwanted_field")
+  - name: Filter Traces by Custom OTTL_1
+    kind: CustomTraceFilterProcessor
+    properties:
+      - name: SpanStatements
+        value:
+          - 'attributes["container.name"] == "container_1"'
+      - name: SpanEventStatements
+        value:
+          - 'name == "exception"'
   - name: Filter Metrics by Custom OTTL_1
     kind: CustomMetricFilterProcessor
     properties:
@@ -250,6 +259,14 @@ connections:
       type: OTelTraces
   - source:
       component: Transform some attributes
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Filter Traces by Custom OTTL_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Filter Traces by Custom OTTL_1
       port: Traces
       type: OTelTraces
     destination:

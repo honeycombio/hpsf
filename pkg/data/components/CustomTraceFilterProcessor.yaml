@@ -39,18 +39,20 @@ properties:
   - name: SpanStatements
     display: Span Filter Statements
     type: stringarray
-    summary: OTTL span filter statements
+    summary: Spans that match any of the OTTL statements will be dropped.
     description: |
       OpenTelemetry Transformation Language (OTTL) statements for filtering spans.
+      Spans that match any of these statements will be dropped.
       Examples:
       - 'attributes["container.name"] == "container_1"'
       - 'name == "HTTP GET"'
   - name: SpanEventStatements
     display: Span Event Filter Statements
     type: stringarray
-    summary: OTTL span event filter statements
+    summary: Span events that match any of the OTTL statements will be dropped.
     description: |
       OpenTelemetry Transformation Language (OTTL) statements for filtering span events.
+      Span events that match any of these statements will be dropped.
       Examples:
       - 'name == "exception"'
       - 'attributes["event.type"] == "error"'
