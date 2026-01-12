@@ -6,12 +6,12 @@ components:
   - name: redaction_processor_1
     kind: RedactionProcessor
     properties:
-      - name: Patterns
+      - name: Presets
         value: ["ssn", "credit_card"]
-      - name: OtherPatterns
+      - name: CustomPatterns
         value:
-          - ".*api_key.*"
-          - ".*token.*"
+          "API Key": ".*api_key.*"
+          "Token": ".*token.*"
       - name: ReplacementStrategy
         value: Fixed
       - name: IgnoredAttributes

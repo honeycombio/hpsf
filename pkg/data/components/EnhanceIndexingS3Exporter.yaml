@@ -3,7 +3,7 @@ name: Send to Enhance S3 Archive
 type: base
 style: exporter
 logo: awss3
-status: alpha
+status: beta
 version: v0.1.0
 minimum:
   collector_config: v0.1.1

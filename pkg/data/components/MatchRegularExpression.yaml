@@ -2,7 +2,7 @@ kind: MatchRegularExpression
 name: Match a regular expression
 style: condition
 type: base
-status: alpha
+status: beta
 version: v0.1.0
 summary: Checks if a field matches a regular expression
 description: This checks if any span in a trace has a specific field that matches a given regular expression.
