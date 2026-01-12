@@ -12,7 +12,7 @@ processors:
         spike_limit_percentage: 20
     redaction/redaction_processor_1:
         allow_all_keys: true
-        blocked_value_patterns:
+        blocked_values:
             - \b[0-9]{3}[.-]?[0-9]{2}[.-]?[0-9]{4}\b
             - \b(?:[0-9][ -]*?){13,16}\b
             - .*api_key.*
