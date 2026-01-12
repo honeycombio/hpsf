@@ -4,6 +4,8 @@ style: processor
 type: base
 status: development
 version: v0.1.0
+minimum:
+  collector_config: v0.1.2
 summary: Symbolicate stack traces from iOS/Swift applications using dSYM symbol files
 description: |
   Symbolicate iOS/Swift stack traces using dSYM symbol files.
@@ -11,18 +13,18 @@ description: |
 tags:
   - category:processor
   - service:collector
-  - signal:OTelTraces
-  - input:Traces
-  - output:Traces
+  - signal:OTelLogs
+  - input:Logs
+  - output:Logs
 ports:
   # inputs
-  - name: Traces
+  - name: Logs
     direction: input
-    type: OTelTraces
+    type: OTelLogs
   # outputs
-  - name: Traces
+  - name: Logs
     direction: output
-    type: OTelTraces
+    type: OTelLogs
 properties:
   - name: SymbolStore
     display: Symbol Store
@@ -72,8 +74,8 @@ templates:
     format: collector
     meta:
       componentSection: processors
-      signalTypes: [traces]
-      collectorComponentName: symbolicator
+      signalTypes: [logs]
+      collectorComponentName: dsym_symbolicator
     data:
       # AWS S3
       - key: "{{ .ComponentName }}.dsym_store"

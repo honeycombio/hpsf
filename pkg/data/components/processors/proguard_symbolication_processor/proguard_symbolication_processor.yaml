@@ -4,6 +4,8 @@ style: processor
 type: base
 status: development
 version: v0.1.0
+minimum:
+  collector_config: v0.1.2
 summary: Symbolicate stack traces from Android applications using ProGuard mapping files
 description: |
   Symbolicate Java/Kotlin stack traces from Android applications using ProGuard mapping files.
@@ -11,18 +13,18 @@ description: |
 tags:
   - category:processor
   - service:collector
-  - signal:OTelTraces
-  - input:Traces
-  - output:Traces
+  - signal:OTelLogs
+  - input:Logs
+  - output:Logs
 ports:
   # inputs
-  - name: Traces
+  - name: Logs
     direction: input
-    type: OTelTraces
+    type: OTelLogs
   # outputs
-  - name: Traces
+  - name: Logs
     direction: output
-    type: OTelTraces
+    type: OTelLogs
 properties:
   - name: SymbolStore
     display: Symbol Store
@@ -72,20 +74,20 @@ templates:
     format: collector
     meta:
       componentSection: processors
-      signalTypes: [traces]
-      collectorComponentName: symbolicator
+      signalTypes: [logs]
+      collectorComponentName: proguard_symbolicator
     data:
       # AWS S3
       - key: "{{ .ComponentName }}.proguard_store"
         value: "s3_store"
         suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
-      - key: "{{ .ComponentName }}.s3_proguard_maps.region"
+      - key: "{{ .ComponentName }}.s3_store.region"
         value: "{{ .Values.Region }}"
         suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Region "") }}'
-      - key: "{{ .ComponentName }}.s3_proguard_maps.bucket"
+      - key: "{{ .ComponentName }}.s3_store.bucket"
         value: "{{ .Values.BucketName }}"
         suppress_if: '{{ not (eq "AWS S3" .Values.SymbolStore) }}'
-      - key: "{{ .ComponentName }}.s3_proguard_maps.prefix"
+      - key: "{{ .ComponentName }}.s3_store.prefix"
         value: "{{ .Values.Prefix }}"
         suppress_if: '{{ or (not (eq "AWS S3" .Values.SymbolStore)) (eq .Values.Prefix "") }}'
       # Google Cloud Storage
