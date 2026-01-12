@@ -76,6 +76,13 @@ components:
         value: span
   - name: Check HTTP Status_1
     kind: HTTPStatusCondition
+  - name: Check HTTP Status Code_1
+    kind: HTTPStatusCodeCondition
+    properties:
+      - name: Minimum
+        value: 400
+      - name: Maximum
+        value: 599
   - name: Check Root Span_1
     kind: RootSpanCondition
   - name: Check for Errors Rule 4_1
@@ -400,6 +407,14 @@ connections:
       port: And
       type: SampleData
     destination:
+      component: Check HTTP Status Code_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check HTTP Status Code_1
+      port: And
+      type: SampleData
+    destination:
       component: Check Root Span_1
       port: Match
       type: SampleData
@@ -577,6 +592,10 @@ layout:
       position:
         x: -60
         y: -160
+    - name: Check HTTP Status Code_1
+      position:
+        x: -60
+        y: -140
     - name: Check Root Span_1
       position:
         x: -60

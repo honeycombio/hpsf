@@ -627,6 +627,8 @@ func (t *TemplateComponent) executeComponentValidation(validationStr string, pro
 		return t.validateRequireTogether(properties, propertyValues, componentName)
 	case "conditional_require_together":
 		return t.validateConditionalRequireTogether(properties, conditionProperty, conditionValue, propertyValues, componentName)
+	case "less_than_or_equal":
+		return t.validateLessThanOrEqual(properties, propertyValues, componentName)
 	default:
 		return hpsf.NewError("unknown component validation type: " + validationType).
 			WithComponent(componentName)
@@ -658,6 +660,11 @@ func generateValidationErrorMessage(validationType string, properties []string, 
 		return fmt.Sprintf("Either all or none of [%s] must be provided", propsStr)
 	case "conditional_require_together":
 		return fmt.Sprintf("When %s is %v, all of [%s] must be provided", conditionProperty, conditionValue, propsStr)
+	case "less_than_or_equal":
+		if len(properties) >= 2 {
+			return fmt.Sprintf("%s must be less than or equal to %s", properties[0], properties[1])
+		}
+		return fmt.Sprintf("First property must be less than or equal to second property")
 	default:
 		return fmt.Sprintf("Validation failed for properties [%s]", propsStr)
 	}
@@ -794,6 +801,55 @@ func (t *TemplateComponent) validateConditionalRequireTogether(properties []stri
 		if !exists || isPropertyEmpty(value) {
 			return hpsf.NewError(generateValidationErrorMessage("conditional_require_together", properties, conditionProperty, conditionValue)).WithComponent(componentName)
 		}
+	}
+
+	return nil
+}
+
+// validateLessThanOrEqual ensures that the first property value is less than or equal to the second property value
+func (t *TemplateComponent) validateLessThanOrEqual(properties []string, propertyValues map[string]any, componentName string) error {
+	if len(properties) != 2 {
+		return hpsf.NewError("less_than_or_equal validation requires exactly two properties").
+			WithComponent(componentName)
+	}
+
+	firstProp := properties[0]
+	secondProp := properties[1]
+
+	firstValue, firstExists := propertyValues[firstProp]
+	secondValue, secondExists := propertyValues[secondProp]
+
+	// If either property is missing or empty, skip validation (let other validations handle required fields)
+	if !firstExists || isPropertyEmpty(firstValue) || !secondExists || isPropertyEmpty(secondValue) {
+		return nil
+	}
+
+	// Convert values to numeric types for comparison
+	var firstNum, secondNum float64
+
+	switch v := firstValue.(type) {
+	case int:
+		firstNum = float64(v)
+	case float64:
+		firstNum = v
+	default:
+		return hpsf.NewError(fmt.Sprintf("less_than_or_equal validation requires numeric values for %s and %s", firstProp, secondProp)).
+			WithComponent(componentName)
+	}
+
+	switch v := secondValue.(type) {
+	case int:
+		secondNum = float64(v)
+	case float64:
+		secondNum = v
+	default:
+		return hpsf.NewError(fmt.Sprintf("less_than_or_equal validation requires numeric values for %s and %s", firstProp, secondProp)).
+			WithComponent(componentName)
+	}
+
+	if firstNum > secondNum {
+		return hpsf.NewError(generateValidationErrorMessage("less_than_or_equal", properties, "", nil)).
+			WithComponent(componentName)
 	}
 
 	return nil

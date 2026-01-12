@@ -32,7 +32,7 @@ properties:
     type: int
     default: 400
     validations:
-      - positive
+      - inrange(100, 599)
   - name: Maximum
     display: Maximum
     summary: The upper bound of the target status code range (inclusive)
@@ -41,7 +41,7 @@ properties:
     type: int
     default: 599
     validations:
-      - positive
+      - inrange(100, 599)
   - name: Fields
     display: Fields
     summary: The name of the field(s) to check for HTTP status code values
@@ -51,8 +51,9 @@ properties:
     default: ["http.status_code", "http.response.status_code"]
     validations:
       - nonempty
-      - noblanks
     advanced: true
+validations:
+  - less_than_or_equal(Minimum, Maximum)
 templates:
   - kind: refinery_rules
     name: HTTPStatusCodeCondition
