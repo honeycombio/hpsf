@@ -1,6 +1,6 @@
 # Sample Proportionally by Key
 
-**Kind:** `EMADynamicSampler` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `EMADynamicSampler` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

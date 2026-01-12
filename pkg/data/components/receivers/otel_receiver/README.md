@@ -1,6 +1,6 @@
 # Receive OTel
 
-**Kind:** `OTelReceiver` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `OTelReceiver` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

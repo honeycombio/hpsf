@@ -1,6 +1,6 @@
 # Send OTel via HTTP
 
-**Kind:** `OTelHTTPExporter` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `OTelHTTPExporter` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

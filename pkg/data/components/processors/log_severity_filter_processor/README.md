@@ -1,6 +1,6 @@
 # Filter Logs by Severity
 
-**Kind:** `LogSeverityFilterProcessor` | **Version:** `v0.0.1` | **Status:** alpha
+**Kind:** `LogSeverityFilterProcessor` | **Version:** `v0.0.1` | **Status:** beta
 
 ## Overview
 

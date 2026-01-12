@@ -1,6 +1,6 @@
 # Check That Field Starts With
 
-**Kind:** `FieldStartsWithCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `FieldStartsWithCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

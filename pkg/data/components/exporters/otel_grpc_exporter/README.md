@@ -1,6 +1,6 @@
 # Send OTel via gRPC
 
-**Kind:** `OTelGRPCExporter` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `OTelGRPCExporter` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

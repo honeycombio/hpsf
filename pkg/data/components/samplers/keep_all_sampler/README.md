@@ -1,6 +1,6 @@
 # Keep All
 
-**Kind:** `KeepAllSampler` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `KeepAllSampler` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 
