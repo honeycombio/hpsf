@@ -36,6 +36,7 @@ properties:
     validations:
       - noblanks
   - name: Signal
+    display: signal
     type: string
     subtype: oneof(span, log)
     default: log

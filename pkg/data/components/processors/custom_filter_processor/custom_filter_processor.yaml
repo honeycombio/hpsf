@@ -43,6 +43,7 @@ properties:
   - name: Rules
     type: rule
   - name: Signal
+    display: signal
     type: string
     subtype: oneof(traces, metrics, logs)
     validations:
