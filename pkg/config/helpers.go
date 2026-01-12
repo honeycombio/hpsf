@@ -2,7 +2,9 @@ package config
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
@@ -32,6 +34,7 @@ func helpers() template.FuncMap {
 		"join":          join,
 		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
+		"mapValues":     mapValues,
 		"meta":          meta,
 		"nonempty":      nonempty,
 		"now":           now,
@@ -97,6 +100,28 @@ func join(a []string, sep string) string {
 // creates a slice of strings from the arguments
 func makeSlice(a ...string) []string {
 	return a
+}
+
+// mapValues extracts values from a map and returns them as a slice
+// Values are returned in sorted order by key for deterministic output
+func mapValues(m any) []any {
+	result := make([]any, 0)
+
+	if mapVal, ok := m.(map[string]any); ok {
+		keys := slices.Collect(maps.Keys(mapVal))
+		slices.Sort(keys)
+		for _, k := range keys {
+			result = append(result, mapVal[k])
+		}
+	} else if mapVal, ok := m.(map[string]string); ok {
+		keys := slices.Collect(maps.Keys(mapVal))
+		slices.Sort(keys)
+		for _, k := range keys {
+			result = append(result, mapVal[k])
+		}
+	}
+
+	return result
 }
 
 // wraps a string in "{{" and "}}" to indicate that it's a template variable
