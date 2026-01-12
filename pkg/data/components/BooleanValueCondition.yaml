@@ -34,6 +34,7 @@ properties:
       - nonempty
       - noblanks
   - name: Value
+    display: Value is
     type: string
     subtype: oneof(true, false)
     default: "true"
