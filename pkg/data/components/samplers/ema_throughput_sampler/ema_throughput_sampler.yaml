@@ -3,7 +3,7 @@ name: Sample by Events per Second
 version: v0.1.0
 style: sampler
 type: base
-status: alpha
+status: beta
 summary: |-
   An Exponential Moving Average (EMA) sampler designed to achieve a target throughput (in events per
   second).

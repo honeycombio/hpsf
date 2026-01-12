@@ -2,7 +2,7 @@ kind: LogBodyJSONParsingProcessor
 name: Parse Log Body As JSON
 style: processor
 type: base
-status: alpha
+status: beta
 version: v0.0.1
 summary: Parses log.body as JSON and flattens it into individual log attributes
 description: |-

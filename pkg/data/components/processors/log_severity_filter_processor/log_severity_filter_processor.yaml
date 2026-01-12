@@ -2,7 +2,7 @@ kind: LogSeverityFilterProcessor
 name: Filter Logs by Severity
 style: processor
 type: base
-status: alpha
+status: beta
 version: v0.0.1
 summary: Filter Logs by their severity level.
 description: Filters logs using the `severity_number` attribute supplied on the logs.

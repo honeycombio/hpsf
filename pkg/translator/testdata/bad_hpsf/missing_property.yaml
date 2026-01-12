@@ -6,7 +6,7 @@ components:
   - name: redaction_processor_1
     kind: RedactionProcessor
     properties:
-      - name: Patterns
+      - name: Presets
         value: []
       - name: ReplacementStrategy
         value: Fixed

@@ -41,6 +41,12 @@ components:
           - error
   - name: Filter Logs by Severity_1
     kind: LogSeverityFilterProcessor
+  - name: Filter Logs by Custom OTTL_1
+    kind: CustomLogFilterProcessor
+    properties:
+      - name: LogStatements
+        value:
+          - 'severity_number < SEVERITY_NUMBER_INFO'
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Parse Log Body As JSON_1
@@ -76,6 +82,13 @@ components:
         value: span
   - name: Check HTTP Status_1
     kind: HTTPStatusCondition
+  - name: Check HTTP Status Code_1
+    kind: HTTPStatusCodeCondition
+    properties:
+      - name: Minimum
+        value: 400
+      - name: Maximum
+        value: 599
   - name: Check Root Span_1
     kind: RootSpanCondition
   - name: Check for Errors Rule 4_1
@@ -113,6 +126,17 @@ components:
         value: "="
       - name: Value
         value: "error"
+  - name: Check Numeric Value_1
+    kind: NumericValueCondition
+    properties:
+      - name: Fields
+        value: ["response_time"]
+      - name: Operator
+        value: ">"
+      - name: Value
+        value: 1.5
+      - name: ForceIntegerCompare
+        value: false
   - name: Sample at 42_1
     kind: DeterministicSampler
     properties:
@@ -137,6 +161,13 @@ components:
         value: "service.name"
       - name: Prefix
         value: "web"
+  - name: Check Boolean Value_1
+    kind: BooleanValueCondition
+    properties:
+      - name: Fields
+        value: ["enabled", "active"]
+      - name: Value
+        value: "true"
   - name: Sample at 123_1
     kind: DeterministicSampler
     properties:
@@ -147,6 +178,11 @@ components:
     properties:
       - name: SampleRate
         value: 456
+  - name: Sample at 789_1
+    kind: DeterministicSampler
+    properties:
+      - name: SampleRate
+        value: 789
   - name: Transform some attributes
     kind: CustomTransformProcessor
     properties:
@@ -162,6 +198,24 @@ components:
         value:
           - set(resource.attributes["custom.field"], "value")
           - delete_key(resource.attributes, "unwanted_field")
+  - name: Filter Traces by Custom OTTL_1
+    kind: CustomTraceFilterProcessor
+    properties:
+      - name: SpanStatements
+        value:
+          - 'attributes["container.name"] == "container_1"'
+      - name: SpanEventStatements
+        value:
+          - 'name == "exception"'
+  - name: Filter Metrics by Custom OTTL_1
+    kind: CustomMetricFilterProcessor
+    properties:
+      - name: MetricStatements
+        value:
+          - 'name == "http.server.duration"'
+      - name: DataPointStatements
+        value:
+          - 'attributes["service.name"] == "api"'
   - name: Send to Enhance S3 Archive
     kind: EnhanceIndexingS3Exporter
     version: v0.1.0
@@ -205,6 +259,14 @@ connections:
       type: OTelTraces
   - source:
       component: Transform some attributes
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Filter Traces by Custom OTTL_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Filter Traces by Custom OTTL_1
       port: Traces
       type: OTelTraces
     destination:
@@ -312,6 +374,14 @@ connections:
       port: And
       type: SampleData
     destination:
+      component: Check Numeric Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Numeric Value_1
+      port: And
+      type: SampleData
+    destination:
       component: Sample at 42_1
       port: Sample
       type: SampleData
@@ -389,6 +459,30 @@ connections:
       type: HoneycombEvents
   - source:
       component: Start Sampling_1
+      port: Rule 9
+      type: SampleData
+    destination:
+      component: Check Boolean Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Boolean Value_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 789_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 789_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
       port: Rule 3
       type: SampleData
     destination:
@@ -397,6 +491,14 @@ connections:
       type: SampleData
   - source:
       component: Check HTTP Status_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check HTTP Status Code_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check HTTP Status Code_1
       port: And
       type: SampleData
     destination:
@@ -429,6 +531,14 @@ connections:
       type: OTelMetrics
   - source:
       component: Transform some attributes
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Filter Metrics by Custom OTTL_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Filter Metrics by Custom OTTL_1
       port: Metrics
       type: OTelMetrics
     destination:
@@ -492,6 +602,22 @@ connections:
       port: Logs
       type: OTelLogs
   - source:
+      component: Filter Logs by Severity_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Filter Logs by Custom OTTL_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Logs by Custom OTTL_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to Honeycomb_1
+      port: Logs
+      type: OTelLogs
+  - source:
       component: Receive OTel_1
       port: Traces
       type: OTelTraces
@@ -545,6 +671,10 @@ layout:
       position:
         x: -480
         y: -60
+    - name: Filter Logs by Custom OTTL_1
+      position:
+        x: -280
+        y: -60
     - name: Keep All_1
       position:
         x: 280
@@ -577,6 +707,10 @@ layout:
       position:
         x: -60
         y: -160
+    - name: Check HTTP Status Code_1
+      position:
+        x: -60
+        y: -140
     - name: Check Root Span_1
       position:
         x: -60
@@ -600,6 +734,10 @@ layout:
     - name: Compare String Field_1
       position:
         x: 180
+        y: 60
+    - name: Check Numeric Value_1
+      position:
+        x: 240
         y: 60
     - name: Sample at 42_1
       position:
@@ -625,3 +763,11 @@ layout:
       position:
         x: 60
         y: 180
+    - name: Check Boolean Value_1
+      position:
+        x: -60
+        y: 240
+    - name: Sample at 789_1
+      position:
+        x: 120
+        y: 240

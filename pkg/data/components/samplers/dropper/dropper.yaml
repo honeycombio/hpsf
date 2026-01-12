@@ -2,7 +2,7 @@ kind: Dropper
 name: Drop
 style: dropper
 type: base
-status: alpha
+status: beta
 version: v0.1.0
 summary: Drops all traces
 description: This sampler drops all traces.

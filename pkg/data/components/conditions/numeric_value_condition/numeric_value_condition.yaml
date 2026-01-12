@@ -42,7 +42,7 @@ properties:
     type: float
     default: 0
   - name: ForceIntegerCompare
-    display: Force integer comparison
+    display: Force Integer Comparison
     summary: The field value will be converted to an integer if it isn’t one already.
     type: bool
     default: false
