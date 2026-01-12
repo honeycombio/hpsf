@@ -95,3 +95,52 @@ func TestDefaultConfigurationIsValidYAML(t *testing.T) {
 	err = hpsf.EnsureHPSFYAML(data)
 	require.NoError(t, err)
 }
+
+func TestLoadEmbeddedComponentsFromDirectories(t *testing.T) {
+	components, err := LoadEmbeddedComponents()
+	require.NoError(t, err)
+	require.Greater(t, len(components), 50, "Should have loaded all 53+ components")
+
+	// Verify specific components loaded correctly
+	testCases := []struct {
+		kind       string
+		name       string
+		minVersion string
+	}{
+		{"DebugExporter", "Send to stdout", "v0.1.0"},
+		{"OTelReceiver", "Receive OTel", "v0.1.0"},
+		{"DeterministicSampler", "Sample at a Fixed Rate", "v0.1.0"},
+		{"HoneycombExporter", "Send to Honeycomb", "v1.0.0"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.kind, func(t *testing.T) {
+			comp, ok := components[tc.kind]
+			require.True(t, ok, "Component %s should be loaded", tc.kind)
+			require.Equal(t, tc.name, comp.Name)
+			require.NotEmpty(t, comp.Version)
+			require.NotEmpty(t, comp.Status)
+		})
+	}
+}
+
+func TestLoadEmbeddedComponentsSkipsSpecialDirectories(t *testing.T) {
+	components, err := LoadEmbeddedComponents()
+	require.NoError(t, err)
+
+	// Should not have loaded _templates directory as a component
+	_, ok := components["_templates"]
+	require.False(t, ok, "_templates directory should be skipped")
+}
+
+func TestLoadEmbeddedComponentsNoDuplicates(t *testing.T) {
+	components, err := LoadEmbeddedComponents()
+	require.NoError(t, err)
+
+	// Track all kinds to ensure no duplicates
+	kinds := make(map[string]bool)
+	for kind := range components {
+		require.False(t, kinds[kind], "Duplicate kind found: %s", kind)
+		kinds[kind] = true
+	}
+}

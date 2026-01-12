@@ -261,3 +261,15 @@ rewrite_components:
 	go run ./cmd/component2csv --import=rewrite.csv pkg/data/components/*.yaml
 	rm -f rewrite.csv
 
+.PHONY: validate-components
+#: validate component directory structure
+validate-components:
+	@./scripts/validate-components.sh
+
+.PHONY: new-component
+#: create new component from template (interactive)
+new-component:
+	@read -p "Component Kind (e.g., MyNewProcessor): " kind; \
+	./scripts/new-component.sh $$kind
+
+

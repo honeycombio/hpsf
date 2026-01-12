@@ -1,0 +1,47 @@
+kind: {{KIND}}
+name: {{NAME}}
+type: base
+style: {{STYLE}}  # receiver|processor|exporter|sampler|condition|startsampling
+logo: {{LOGO}}  # optional, e.g., opentelemetry, honeycomb
+status: development  # development|alpha|stable|deprecated|archived
+version: v0.0.1
+summary: |
+  Brief description of what this component does
+description: |
+  Detailed description of the component's functionality, use cases, and behavior.
+
+  This can span multiple paragraphs and should provide enough context for users
+  to understand when and how to use this component.
+tags:
+  - category:{{CATEGORY}}  # observability, filtering, transformation, etc.
+  - signal:{{SIGNAL}}  # traces, logs, metrics, events
+ports:
+  - name: Input
+    direction: input
+    type: {{INPUT_TYPE}}  # OTelTraces|OTelLogs|OTelMetrics|HoneycombEvents|SampleData
+  - name: Output
+    direction: output
+    type: {{OUTPUT_TYPE}}
+properties:
+  - name: ExampleProperty
+    display: Example Property
+    summary: Brief description
+    description: |
+      Detailed description of this property
+    type: string  # string|int|float|bool|stringarray|map|duration|code|rule|checklist
+    default: "default-value"
+    validations:
+      - noblanks
+    advanced: false
+templates:
+  - kind: collector_config
+    name: {{KIND}}
+    format: collector
+    meta:
+      componentSection: {{COMPONENT_SECTION}}  # receivers|processors|exporters|extensions
+      signalTypes: [{{SIGNAL_TYPES}}]  # traces, metrics, logs
+      collectorComponentName: {{COLLECTOR_NAME}}
+    data:
+      - key: "{{COMPONENT_SECTION}}.{{COLLECTOR_NAME}}"
+        value: |
+          # Component configuration

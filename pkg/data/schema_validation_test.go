@@ -32,56 +32,88 @@ func TestComponentsValidateAgainstSchema(t *testing.T) {
 	schema, err := compiler.Compile("component-schema.json")
 	require.NoError(t, err, "Failed to compile JSON schema")
 
-	// Get all component YAML files
+	// Get all component YAML files (2-level structure: style/component)
 	componentsDir := filepath.Join("components")
 	entries, err := os.ReadDir(componentsDir)
 	require.NoError(t, err, "Failed to read components directory")
 
-	var yamlFiles []string
+	var componentPaths []struct {
+		name string
+		path string
+	}
+
 	for _, entry := range entries {
-		if !entry.IsDir() && filepath.Ext(entry.Name()) == ".yaml" {
-			yamlFiles = append(yamlFiles, entry.Name())
+		// Skip special directories
+		if entry.Name() == "_templates" || entry.Name()[0] == '.' {
+			continue
+		}
+
+		if !entry.IsDir() {
+			continue
+		}
+
+		// Level 1: style (receivers/processors/exporters/samplers/conditions/startsampling)
+		level1Path := filepath.Join(componentsDir, entry.Name())
+		level1Entries, err := os.ReadDir(level1Path)
+		if err != nil {
+			continue
+		}
+
+		for _, level1Entry := range level1Entries {
+			if !level1Entry.IsDir() {
+				continue
+			}
+
+			// Level 2: component directory
+			// Component YAML file matches directory name (e.g., my_component/my_component.yaml)
+			componentName := level1Entry.Name()
+			componentYaml := filepath.Join(level1Path, componentName, componentName+".yaml")
+			if _, err := os.Stat(componentYaml); err == nil {
+				componentPaths = append(componentPaths, struct {
+					name string
+					path string
+				}{entry.Name() + "/" + componentName, componentYaml})
+			}
 		}
 	}
 
-	require.NotEmpty(t, yamlFiles, "No YAML files found in components directory")
+	require.NotEmpty(t, componentPaths, "No component files found in components directory")
 
 	// Validate each component file
-	for _, filename := range yamlFiles {
-		t.Run(filename, func(t *testing.T) {
+	for _, comp := range componentPaths {
+		t.Run(comp.name, func(t *testing.T) {
 			// Read the YAML file
-			yamlPath := filepath.Join(componentsDir, filename)
-			yamlData, err := os.ReadFile(yamlPath)
-			require.NoError(t, err, "Failed to read %s", filename)
+			yamlData, err := os.ReadFile(comp.path)
+			require.NoError(t, err, "Failed to read %s", comp.name)
 
 			// Parse YAML to a map
 			var component map[string]interface{}
 			err = yaml.Unmarshal(yamlData, &component)
-			require.NoError(t, err, "Failed to parse YAML in %s", filename)
+			require.NoError(t, err, "Failed to parse YAML in %s", comp.name)
 
 			// Convert to JSON for validation (jsonschema library works with JSON)
 			jsonData, err := json.Marshal(component)
-			require.NoError(t, err, "Failed to convert to JSON for %s", filename)
+			require.NoError(t, err, "Failed to convert to JSON for %s", comp.name)
 
 			// Parse back to interface{} for validation
 			var jsonComponent interface{}
 			err = json.Unmarshal(jsonData, &jsonComponent)
-			require.NoError(t, err, "Failed to parse JSON for %s", filename)
+			require.NoError(t, err, "Failed to parse JSON for %s", comp.name)
 
 			// Validate against schema
 			err = schema.Validate(jsonComponent)
 			if err != nil {
 				// Provide detailed validation error
 				if ve, ok := err.(*jsonschema.ValidationError); ok {
-					t.Errorf("Schema validation failed for %s:\n%s", filename, formatValidationError(ve, ""))
+					t.Errorf("Schema validation failed for %s:\n%s", comp.name, formatValidationError(ve, ""))
 				} else {
-					t.Errorf("Schema validation failed for %s: %v", filename, err)
+					t.Errorf("Schema validation failed for %s: %v", comp.name, err)
 				}
 			}
 		})
 	}
 
-	t.Logf("Successfully validated %d component files against schema", len(yamlFiles))
+	t.Logf("Successfully validated %d component files against schema", len(componentPaths))
 }
 
 // formatValidationError recursively formats validation errors for better readability
