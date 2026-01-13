@@ -4,10 +4,8 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Compares a bool field to a specified value
-description: |-
-  This checks if any span in a trace has a specific bool field that compares appropriately to the
-  specified value.
+summary: Compares a bool field against a specified value using an operator
+description: Checks if any span in a trace has a bool field that matches the specified value using the comparison operator.
 tags:
   - category:condition
   - service:refinery
