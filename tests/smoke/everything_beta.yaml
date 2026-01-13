@@ -29,16 +29,8 @@ components:
         value: test
       - name: Prefix
         value: test
-  - name: Send to stdout_1
-    kind: DebugExporter
   - name: Check Duration_1
     kind: LongDurationCondition
-  - name: Check for Errors_1
-    kind: ErrorExistsCondition
-    properties:
-      - name: ErrorFields
-        value:
-          - error
   - name: Filter Logs by Severity_1
     kind: LogSeverityFilterProcessor
   - name: Filter Logs by Custom OTTL_1
@@ -46,13 +38,11 @@ components:
     properties:
       - name: LogStatements
         value:
-          - 'severity_number < SEVERITY_NUMBER_INFO'
+          - severity_number < SEVERITY_NUMBER_INFO
   - name: Keep All_1
     kind: KeepAllSampler
   - name: Parse Log Body As JSON_1
     kind: LogBodyJSONParsingProcessor
-  - name: Sample at a Fixed Rate_1
-    kind: DeterministicSampler
   - name: Sample by Events per Second_1
     kind: EMAThroughputSampler
     properties:
@@ -91,52 +81,38 @@ components:
         value: 599
   - name: Check Root Span_1
     kind: RootSpanCondition
-  - name: Check for Errors Rule 4_1
-    kind: ErrorExistsCondition
-    properties:
-      - name: ErrorFields
-        value:
-          - error
   - name: Drop All_1
     kind: Dropper
   - name: Compare Decimal Field_1
     kind: CompareDecimalFieldCondition
     properties:
       - name: Fields
-        value: ["response_time"]
+        value:
+          - response_time
       - name: Operator
         value: ">"
       - name: Value
         value: 1.5
-  - name: Compare Integer Field_1
-    kind: CompareIntegerFieldCondition
-    properties:
-      - name: Fields
-        value: ["status_code"]
-      - name: Operator
-        value: "="
-      - name: Value
-        value: 500
   - name: Compare String Field_1
     kind: CompareStringFieldCondition
     properties:
       - name: Fields
-        value: ["status_message"]
+        value:
+          - status_message
       - name: Operator
-        value: "="
+        value: =
       - name: Value
-        value: "error"
+        value: error
   - name: Check Numeric Value_1
     kind: NumericValueCondition
     properties:
       - name: Fields
-        value: ["response_time"]
+        value:
+          - response_time
       - name: Operator
         value: ">"
       - name: Value
         value: 1.5
-      - name: ForceIntegerCompare
-        value: false
   - name: Sample at 42_1
     kind: DeterministicSampler
     properties:
@@ -146,26 +122,28 @@ components:
     kind: MatchRegularExpression
     properties:
       - name: Field
-        value: "status_message"
+        value: status_message
       - name: RegularExpression
-        value: "^[A-Z][a-z]+$"
+        value: ^[A-Z][a-z]+$
   - name: Check Field Exists_1
     kind: FieldExistsCondition
     properties:
-      - name: Fields
-        value: ["status_message"]
+      - name: Field
+        value: status_message
   - name: Check Field Starts With_1
     kind: FieldStartsWithCondition
     properties:
       - name: Field
-        value: "service.name"
+        value: service.name
       - name: Prefix
-        value: "web"
+        value: web
   - name: Check Boolean Value_1
     kind: BooleanValueCondition
     properties:
       - name: Fields
-        value: ["enabled", "active"]
+        value:
+          - enabled
+          - active
       - name: Value
         value: "true"
   - name: Sample at 123_1
@@ -173,49 +151,24 @@ components:
     properties:
       - name: SampleRate
         value: 123
-  - name: Sample at 456_1
-    kind: DeterministicSampler
-    properties:
-      - name: SampleRate
-        value: 456
-  - name: Sample at 789_1
-    kind: DeterministicSampler
-    properties:
-      - name: SampleRate
-        value: 789
-  - name: Transform some attributes
-    kind: CustomTransformProcessor
-    properties:
-      - name: TraceStatements
-        value:
-          - set(span.attributes["custom.field"], "value")
-          - delete_key(span.attributes, "unwanted_field")
-      - name: LogStatements
-        value:
-          - set(log.attributes["processed"], "true")
-          - delete_key(log.attributes, "sensitive_field")
-      - name: MetricStatements
-        value:
-          - set(resource.attributes["custom.field"], "value")
-          - delete_key(resource.attributes, "unwanted_field")
   - name: Filter Traces by Custom OTTL_1
     kind: CustomTraceFilterProcessor
     properties:
       - name: SpanStatements
         value:
-          - 'attributes["container.name"] == "container_1"'
+          - attributes["container.name"] == "container_1"
       - name: SpanEventStatements
         value:
-          - 'name == "exception"'
+          - name == "exception"
   - name: Filter Metrics by Custom OTTL_1
     kind: CustomMetricFilterProcessor
     properties:
       - name: MetricStatements
         value:
-          - 'name == "http.server.duration"'
+          - name == "http.server.duration"
       - name: DataPointStatements
         value:
-          - 'attributes["service.name"] == "api"'
+          - attributes["service.name"] == "api"
   - name: Send to Enhance S3 Archive
     kind: EnhanceIndexingS3Exporter
     version: v0.1.0
@@ -240,6 +193,91 @@ components:
         value: 4997
       - name: APIEndpoint
         value: https://api-dogfood.honeycomb.io
+  - name: Deduplicate Logs_1
+    kind: LogDeduplicationProcessor
+  - name: Transform Metrics with OTTL_1
+    kind: CustomMetricTransformProcessor
+    properties:
+      - name: MetricStatements
+        value:
+          - set(datapoint.attributes["processed"], "true")
+  - name: Parse Log Attribute as JSON_1
+    kind: LogAttrJSONParsingProcessor
+    properties:
+      - name: Attribute
+        value: data
+  - name: Parse Span Attribute as JSON_1
+    kind: SpanAttrJSONParsingProcessor
+    properties:
+      - name: Attribute
+        value: metadata
+  - name: Symbolicate JavaScript Web Errors_1
+    kind: SourcemapSymbolicationProcessor
+    properties:
+      - name: BucketName
+        value: sourcemap-bucket
+      - name: Region
+        value: us-east-1
+  - name: Symbolicate Java Android Errors_1
+    kind: ProguardSymbolicationProcessor
+    properties:
+      - name: BucketName
+        value: proguard-bucket
+      - name: Region
+        value: us-east-1
+  - name: Symbolicate Swift iOS Errors_1
+    kind: DsymSymbolicationProcessor
+    properties:
+      - name: BucketName
+        value: dsym-bucket
+      - name: Region
+        value: us-east-1
+  - name: Redact Sensitive Values_1
+    kind: RedactionProcessor
+  - name: Transform Logs with OTTL_1
+    kind: CustomLogTransformProcessor
+    properties:
+      - name: LogStatements
+        value:
+          - set(log.attributes["processed"], "true")
+  - name: Filter All Signals by OTTL_1
+    kind: CustomFilterProcessor
+    properties:
+      - name: Signal
+        value: traces
+  - name: Transform Traces with OTTL_1
+    kind: CustomTraceTransformProcessor
+    properties:
+      - name: TraceStatements
+        value:
+          - set(span.attributes["processed"], "true")
+  - name: Check Field Existence_1
+    kind: FieldExistenceCondition
+    properties:
+      - name: Fields
+        value:
+          - request_id
+  - name: Check String Value_1
+    kind: StringValueCondition
+    properties:
+      - name: Fields
+        value:
+          - environment
+      - name: Value
+        value: production
+  - name: Check List Comparison_1
+    kind: ListComparisonCondition
+    properties:
+      - name: Fields
+        value:
+          - status
+      - name: Values
+        value:
+          - success
+          - ok
+          - complete
+  - name: Send to stdout_1
+    kind: DebugExporter
 connections:
   - source:
       component: Receive OTel_1
@@ -254,23 +292,7 @@ connections:
       port: Traces
       type: OTelTraces
     destination:
-      component: Transform some attributes
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Transform some attributes
-      port: Traces
-      type: OTelTraces
-    destination:
       component: Filter Traces by Custom OTTL_1
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Filter Traces by Custom OTTL_1
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: Start Sampling_1
       port: Traces
       type: OTelTraces
   - source:
@@ -282,14 +304,6 @@ connections:
       port: Match
       type: SampleData
   - source:
-      component: Check Duration_1
-      port: And
-      type: SampleData
-    destination:
-      component: Keep All_1
-      port: Sample
-      type: SampleData
-  - source:
       component: Keep All_1
       port: Events
       type: HoneycombEvents
@@ -298,183 +312,7 @@ connections:
       port: Events
       type: HoneycombEvents
   - source:
-      component: Start Sampling_1
-      port: Rule 2
-      type: SampleData
-    destination:
-      component: Check for Errors_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check for Errors_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at a Fixed Rate_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample at a Fixed Rate_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 4
-      type: SampleData
-    destination:
-      component: Check for Errors Rule 4_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check for Errors Rule 4_1
-      port: And
-      type: SampleData
-    destination:
       component: Sample Proportionally by Key_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample Proportionally by Key_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 5
-      type: SampleData
-    destination:
-      component: Compare Decimal Field_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Compare Decimal Field_1
-      port: And
-      type: SampleData
-    destination:
-      component: Compare Integer Field_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Compare Integer Field_1
-      port: And
-      type: SampleData
-    destination:
-      component: Compare String Field_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Compare String Field_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check Numeric Value_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Numeric Value_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at 42_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample at 42_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 6
-      type: SampleData
-    destination:
-      component: Match Regular Expression_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Match Regular Expression_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check Field Exists_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Field Exists_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at 123_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample at 123_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 7
-      type: SampleData
-    destination:
-      component: Drop All_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Start Sampling_1
-      port: Rule 8
-      type: SampleData
-    destination:
-      component: Check Field Starts With_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Field Starts With_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at 456_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample at 456_1
-      port: Events
-      type: HoneycombEvents
-    destination:
-      component: Send to Honeycomb_1
-      port: Events
-      type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 9
-      type: SampleData
-    destination:
-      component: Check Boolean Value_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Boolean Value_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at 789_1
-      port: Sample
-      type: SampleData
-  - source:
-      component: Sample at 789_1
       port: Events
       type: HoneycombEvents
     destination:
@@ -486,6 +324,70 @@ connections:
       port: Rule 3
       type: SampleData
     destination:
+      component: Compare Decimal Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Compare String Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Numeric Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Numeric Value_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 42_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 42_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 4
+      type: SampleData
+    destination:
+      component: Match Regular Expression_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Match Regular Expression_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Field Exists_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Field Exists_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 123_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Sample at 123_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
       component: Check HTTP Status_1
       port: Match
       type: SampleData
@@ -526,23 +428,7 @@ connections:
       port: Metrics
       type: OTelMetrics
     destination:
-      component: Transform some attributes
-      port: Metrics
-      type: OTelMetrics
-  - source:
-      component: Transform some attributes
-      port: Metrics
-      type: OTelMetrics
-    destination:
       component: Filter Metrics by Custom OTTL_1
-      port: Metrics
-      type: OTelMetrics
-  - source:
-      component: Filter Metrics by Custom OTTL_1
-      port: Metrics
-      type: OTelMetrics
-    destination:
-      component: Send to stdout_1
       port: Metrics
       type: OTelMetrics
   - source:
@@ -558,14 +444,6 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: Transform some attributes
-      port: Metrics
-      type: OTelLogs
-  - source:
-      component: Transform some attributes
-      port: Metrics
-      type: OTelLogs
-    destination:
       component: Parse Log Body As JSON_1
       port: Logs
       type: OTelLogs
@@ -574,27 +452,107 @@ connections:
       port: Logs
       type: OTelLogs
     destination:
-      component: Send to Honeycomb_1
+      component: Filter Logs by Custom OTTL_1
       port: Logs
       type: OTelLogs
   - source:
-      component: Filter Logs by Severity_1
+      component: Filter Logs by Custom OTTL_1
       port: Logs
       type: OTelLogs
     destination:
-      component: Send OTel via gRPC_1
+      component: Parse Log Attribute as JSON_1
       port: Logs
       type: OTelLogs
   - source:
-      component: Filter Logs by Severity_1
+      component: Parse Log Attribute as JSON_1
       port: Logs
       type: OTelLogs
     destination:
-      component: Send OTel via HTTP_1
+      component: Deduplicate Logs_1
       port: Logs
       type: OTelLogs
   - source:
-      component: Filter Logs by Severity_1
+      component: Deduplicate Logs_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Symbolicate Swift iOS Errors_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Symbolicate Swift iOS Errors_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Symbolicate Java Android Errors_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Symbolicate Java Android Errors_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Transform Logs with OTTL_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Transform Logs with OTTL_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Send to Enhance S3 Archive
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Filter Metrics by Custom OTTL_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Transform Metrics with OTTL_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Filter Traces by Custom OTTL_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Parse Span Attribute as JSON_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Symbolicate JavaScript Web Errors_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Redact Sensitive Values_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Redact Sensitive Values_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Filter All Signals by OTTL_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Filter All Signals by OTTL_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Transform Traces with OTTL_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Check String Value_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check List Comparison_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Transform Logs with OTTL_1
       port: Logs
       type: OTelLogs
     destination:
@@ -602,172 +560,423 @@ connections:
       port: Logs
       type: OTelLogs
   - source:
-      component: Filter Logs by Severity_1
-      port: Logs
-      type: OTelLogs
+      component: Transform Metrics with OTTL_1
+      port: Metrics
+      type: OTelMetrics
     destination:
-      component: Filter Logs by Custom OTTL_1
-      port: Logs
-      type: OTelLogs
+      component: Send OTel via HTTP_1
+      port: Metrics
+      type: OTelMetrics
   - source:
-      component: Filter Logs by Custom OTTL_1
-      port: Logs
-      type: OTelLogs
+      component: Transform Metrics with OTTL_1
+      port: Metrics
+      type: OTelMetrics
     destination:
-      component: Send to Honeycomb_1
-      port: Logs
-      type: OTelLogs
+      component: Send OTel via gRPC_1
+      port: Metrics
+      type: OTelMetrics
   - source:
-      component: Receive OTel_1
+      component: Transform Traces with OTTL_1
       port: Traces
       type: OTelTraces
     destination:
-      component: Send to Enhance S3 Archive
+      component: Start Sampling_1
       port: Traces
       type: OTelTraces
   - source:
-      component: Receive OTel_1
-      port: Logs
-      type: OTelLogs
+      component: Transform Metrics with OTTL_1
+      port: Metrics
+      type: OTelMetrics
     destination:
-      component: Send to Enhance S3 Archive
-      port: Logs
-      type: OTelLogs
+      component: Send to stdout_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: Start Sampling_1
+      port: Rule 5
+      type: SampleData
+    destination:
+      component: Check Field Existence_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 6
+      type: SampleData
+    destination:
+      component: Drop All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Compare Decimal Field_1
+      port: And
+      type: SampleData
+    destination:
+      component: Compare String Field_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check List Comparison_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample Proportionally by Key_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Check Field Existence_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Field Starts With_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Field Starts With_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check String Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Duration_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check Boolean Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Check Boolean Value_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Parse Span Attribute as JSON_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Symbolicate JavaScript Web Errors_1
+      port: Traces
+      type: OTelTraces
 layout:
   components:
     - name: Receive OTel_1
       position:
-        x: -1360
-        y: -100
+        x: 0
+        y: 780
+      size:
+        w: 177
+        h: 167
     - name: Send OTel via gRPC_1
       position:
-        x: 560
-        y: 500
+        x: 940
+        y: 720
+      size:
+        w: 219
+        h: 167
     - name: Send OTel via HTTP_1
       position:
-        x: 560
-        y: 640
+        x: 940
+        y: 500
+      size:
+        w: 220
+        h: 167
     - name: Send to Honeycomb_1
       position:
-        x: 580
-        y: 160
+        x: 4960
+        y: 280
+      size:
+        w: 222
+        h: 187
     - name: Send to S3 Archive_1
       position:
-        x: 560
-        y: 780
-    - name: Send to stdout_1
-      position:
-        x: -760
-        y: 500
+        x: 2280
+        y: 1100
+      size:
+        w: 214
+        h: 167
     - name: Check Duration_1
       position:
-        x: -140
-        y: -420
-    - name: Check for Errors_1
-      position:
-        x: -140
-        y: -300
+        x: 4080
+        y: 0
+      size:
+        w: 161
+        h: 123
     - name: Filter Logs by Severity_1
       position:
-        x: -480
-        y: -60
+        x: 620
+        y: 1120
+      size:
+        w: 185
+        h: 123
     - name: Filter Logs by Custom OTTL_1
       position:
-        x: -280
-        y: -60
+        x: 940
+        y: 1120
+      size:
+        w: 206
+        h: 123
     - name: Keep All_1
       position:
-        x: 280
-        y: -440
+        x: 4680
+        y: 0
+      size:
+        w: 145
+        h: 123
     - name: Parse Log Body As JSON_1
       position:
-        x: -780
-        y: -100
-    - name: Sample at a Fixed Rate_1
-      position:
-        x: 160
-        y: -280
+        x: 280
+        y: 1120
+      size:
+        w: 219
+        h: 123
     - name: Sample by Events per Second_1
       position:
-        x: 160
-        y: -160
+        x: 4640
+        y: 480
+      size:
+        w: 217
+        h: 123
     - name: Sample Proportionally by Key_1
       position:
-        x: 180
-        y: -20
+        x: 4640
+        y: 660
+      size:
+        w: 215
+        h: 123
     - name: Start Sampling_1
       position:
-        x: -600
-        y: -380
+        x: 3240
+        y: 280
+      size:
+        w: 142
+        h: 243
     - name: Parse Attribute As JSON_1
       position:
-        x: -1080
-        y: -180
+        x: 280
+        y: 340
+      size:
+        w: 218
+        h: 143
     - name: Check HTTP Status_1
       position:
-        x: -60
-        y: -160
+        x: 3780
+        y: 480
+      size:
+        w: 154
+        h: 123
     - name: Check HTTP Status Code_1
       position:
-        x: -60
-        y: -140
+        x: 4060
+        y: 480
+      size:
+        w: 190
+        h: 123
     - name: Check Root Span_1
       position:
-        x: -60
-        y: -120
-    - name: Check for Errors Rule 4_1
-      position:
-        x: -60
-        y: -40
+        x: 4380
+        y: 480
+      size:
+        w: 139
+        h: 123
     - name: Drop All_1
       position:
-        x: 180
-        y: 100
+        x: 3480
+        y: 820
+      size:
+        w: 145
+        h: 123
     - name: Compare Decimal Field_1
       position:
-        x: -60
-        y: 60
-    - name: Compare Integer Field_1
-      position:
-        x: 60
-        y: 60
+        x: 3740
+        y: 160
+      size:
+        w: 215
+        h: 123
     - name: Compare String Field_1
       position:
-        x: 180
-        y: 60
+        x: 4060
+        y: 160
+      size:
+        w: 201
+        h: 123
     - name: Check Numeric Value_1
       position:
-        x: 240
-        y: 60
+        x: 4360
+        y: 160
+      size:
+        w: 166
+        h: 123
     - name: Sample at 42_1
       position:
-        x: 300
-        y: 60
+        x: 4680
+        y: 160
+      size:
+        w: 152
+        h: 123
     - name: Match Regular Expression_1
       position:
-        x: -60
-        y: 120
+        x: 4060
+        y: 320
+      size:
+        w: 195
+        h: 123
     - name: Check Field Exists_1
       position:
-        x: 0
-        y: 120
+        x: 4380
+        y: 320
+      size:
+        w: 146
+        h: 123
     - name: Check Field Starts With_1
       position:
-        x: -60
-        y: 180
-    - name: Sample at 123_1
-      position:
-        x: 120
-        y: 120
-    - name: Sample at 456_1
-      position:
-        x: 60
-        y: 180
+        x: 3760
+        y: 660
+      size:
+        w: 178
+        h: 123
     - name: Check Boolean Value_1
       position:
-        x: -60
-        y: 240
-    - name: Sample at 789_1
+        x: 4360
+        y: 0
+      size:
+        w: 164
+        h: 123
+    - name: Sample at 123_1
       position:
-        x: 120
-        y: 240
+        x: 4680
+        y: 320
+      size:
+        w: 152
+        h: 123
+    - name: Filter Traces by Custom OTTL_1
+      position:
+        x: 600
+        y: 340
+      size:
+        w: 217
+        h: 123
+    - name: Filter Metrics by Custom OTTL_1
+      position:
+        x: 280
+        y: 800
+      size:
+        w: 223
+        h: 123
+    - name: Send to Enhance S3 Archive
+      position:
+        x: 2260
+        y: 720
+      size:
+        w: 257
+        h: 147
+    - name: Deduplicate Logs_1
+      position:
+        x: 1620
+        y: 1120
+      size:
+        w: 190
+        h: 123
+    - name: Transform Metrics with OTTL_1
+      position:
+        x: 600
+        y: 800
+      size:
+        w: 234
+        h: 123
+    - name: Parse Log Attribute as JSON_1
+      position:
+        x: 1280
+        y: 1120
+      size:
+        w: 211
+        h: 123
+    - name: Parse Span Attribute as JSON_1
+      position:
+        x: 940
+        y: 340
+      size:
+        w: 219
+        h: 123
+    - name: Symbolicate JavaScript Web Errors_1
+      position:
+        x: 1260
+        y: 340
+      size:
+        w: 251
+        h: 123
+    - name: Symbolicate Java Android Errors_1
+      position:
+        x: 1600
+        y: 340
+      size:
+        w: 236
+        h: 123
+    - name: Symbolicate Swift iOS Errors_1
+      position:
+        x: 1940
+        y: 340
+      size:
+        w: 211
+        h: 123
+    - name: Redact Sensitive Values_1
+      position:
+        x: 2300
+        y: 320
+      size:
+        w: 182
+        h: 163
+    - name: Transform Logs with OTTL_1
+      position:
+        x: 1940
+        y: 1120
+      size:
+        w: 218
+        h: 123
+    - name: Filter All Signals by OTTL_1
+      position:
+        x: 2620
+        y: 320
+      size:
+        w: 189
+        h: 163
+    - name: Transform Traces with OTTL_1
+      position:
+        x: 2900
+        y: 340
+      size:
+        w: 229
+        h: 123
+    - name: Check Field Existence_1
+      position:
+        x: 3480
+        y: 660
+      size:
+        w: 169
+        h: 123
+    - name: Check String Value_1
+      position:
+        x: 4080
+        y: 660
+      size:
+        w: 150
+        h: 123
+    - name: Check List Comparison_1
+      position:
+        x: 4360
+        y: 660
+      size:
+        w: 177
+        h: 123
+    - name: Send to stdout_1
+      position:
+        x: 960
+        y: 920
+      size:
+        w: 187
+        h: 167

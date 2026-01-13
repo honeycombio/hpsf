@@ -10,9 +10,9 @@ processors:
         check_interval: 1s
         limit_percentage: 80
         spike_limit_percentage: 20
-    symbolicator/proguard_symbolicator:
+    proguard_symbolicator/proguard_symbolicator:
         proguard_store: s3_store
-        s3_proguard_maps:
+        s3_store:
             bucket: my-proguard-bucket
             prefix: proguard-maps/
             region: us-west-2
@@ -33,7 +33,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces/9aa-e9b:
+        logs/708-207:
             receivers: [otlp/otlp_in]
-            processors: [memory_limiter/otlp_in, usage, symbolicator/proguard_symbolicator]
+            processors: [memory_limiter/otlp_in, usage, proguard_symbolicator/proguard_symbolicator]
             exporters: [otlphttp/otlp_out]

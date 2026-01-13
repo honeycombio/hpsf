@@ -6,16 +6,16 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
-    memory_limiter/otlp_in:
-        check_interval: 1s
-        limit_percentage: 80
-        spike_limit_percentage: 20
-    symbolicator/dsym_symbolicator:
+    dsym_symbolicator/dsym_symbolicator:
         dsym_store: s3_store
         s3_dsyms:
             bucket: my-dsym-bucket
             prefix: dsyms/
             region: us-west-2
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     usage: {}
 exporters:
     otlphttp/otlp_out:
@@ -33,7 +33,7 @@ extensions:
 service:
     extensions: [honeycomb]
     pipelines:
-        traces/959-68a:
+        logs/251-b37:
             receivers: [otlp/otlp_in]
-            processors: [memory_limiter/otlp_in, usage, symbolicator/dsym_symbolicator]
+            processors: [memory_limiter/otlp_in, usage, dsym_symbolicator/dsym_symbolicator]
             exporters: [otlphttp/otlp_out]

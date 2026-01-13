@@ -4,6 +4,8 @@ style: processor
 type: base
 status: development
 version: v0.1.0
+minimum:
+  collector_config: v0.1.1
 summary: Symbolicate stack traces from web applications using source maps
 description: |
   Symbolicate JavaScript/TypeScript stack traces from web applications using source map files.
@@ -73,7 +75,7 @@ templates:
     meta:
       componentSection: processors
       signalTypes: [traces]
-      collectorComponentName: symbolicator
+      collectorComponentName: source_map_symbolicator
     data:
       # AWS S3
       - key: "{{ .ComponentName }}.source_map_store"

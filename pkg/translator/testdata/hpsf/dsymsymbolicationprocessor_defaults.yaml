@@ -15,17 +15,17 @@ components:
 connections:
   - source:
       component: otlp_in
-      port: Traces
-      type: OTelTraces
+      port: Logs
+      type: OTelLogs
     destination:
       component: dsym_symbolicator
-      port: Traces
-      type: OTelTraces
+      port: Logs
+      type: OTelLogs
   - source:
       component: dsym_symbolicator
-      port: Traces
-      type: OTelTraces
+      port: Logs
+      type: OTelLogs
     destination:
       component: otlp_out
-      port: Traces
-      type: OTelTraces
+      port: Logs
+      type: OTelLogs

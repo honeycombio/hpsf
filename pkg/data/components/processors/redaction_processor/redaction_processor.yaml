@@ -143,7 +143,7 @@ templates:
     data:
       - key: "{{ .ComponentName }}.allow_all_keys"
         value: "{{ true | encodeAsBool }}"
-      - key: "{{ .ComponentName }}.blocked_value_patterns"
+      - key: "{{ .ComponentName }}.blocked_values"
         value: "{{ appendSlices (getChecked .Props.Presets .Values.Presets) (mapValues .Values.CustomPatterns) | encodeAsArray }}"
         suppress_if: "{{ and (not .Values.Presets) (not .Values.CustomPatterns) }}"
       - key: "{{ .ComponentName }}.hash_function"
