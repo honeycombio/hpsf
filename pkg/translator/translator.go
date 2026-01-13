@@ -6,6 +6,7 @@ import (
 	"iter"
 	"maps"
 	"sort"
+	"strings"
 
 	"github.com/honeycombio/hpsf/pkg/config"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
@@ -768,6 +769,8 @@ type ComponentInfo struct {
 	// Version is the component version. If specified in the HPSF document, that version is returned.
 	// Otherwise, falls back to the template component's version.
 	Version string
+	// Status is the development status of the component (e.g., "stable", "development", "deprecated")
+	Status string
 	// Properties contains all component properties, merging explicit values with template defaults.
 	// Access values directly without type casting: properties["Region"]
 	Properties map[string]any
@@ -859,6 +862,7 @@ func (t *Translator) Inspect(h hpsf.HPSF) InspectionResult {
 			Style:      tc.Style,
 			Kind:       c.Kind,
 			Version:    version,
+			Status:     strings.ToLower(string(tc.Status)),
 			Properties: getProperties(c, tc),
 		}
 
