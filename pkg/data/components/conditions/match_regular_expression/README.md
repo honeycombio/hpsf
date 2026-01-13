@@ -1,6 +1,6 @@
 # Match a regular expression
 
-**Kind:** `MatchRegularExpression` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `MatchRegularExpression` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

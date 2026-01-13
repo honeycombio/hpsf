@@ -1,6 +1,6 @@
 # Sample by Events per Second
 
-**Kind:** `EMAThroughputSampler` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `EMAThroughputSampler` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

@@ -1,6 +1,6 @@
 # Check for Errors
 
-**Kind:** `ErrorExistsCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `ErrorExistsCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

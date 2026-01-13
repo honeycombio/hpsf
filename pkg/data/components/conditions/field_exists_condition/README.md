@@ -1,6 +1,6 @@
 # Check if field exists
 
-**Kind:** `FieldExistsCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `FieldExistsCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

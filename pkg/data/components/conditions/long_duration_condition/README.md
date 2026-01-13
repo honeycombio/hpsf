@@ -1,6 +1,6 @@
 # Check Span Duration
 
-**Kind:** `LongDurationCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `LongDurationCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

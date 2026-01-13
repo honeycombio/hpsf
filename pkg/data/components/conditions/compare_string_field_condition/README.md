@@ -1,6 +1,6 @@
 # Compare a string field
 
-**Kind:** `CompareStringFieldCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `CompareStringFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

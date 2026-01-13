@@ -131,7 +131,7 @@ Each file follows same template as above, focused on one version transition.
 
 ```yaml
 # component.yaml
-status: alpha  # or stable, depending on current status
+status: beta  # or stable, depending on current status
 version: v2.3.0
 ```
 
@@ -251,7 +251,7 @@ Every migration entry must include:
 ## Component Status Field Values
 
 - `development` - Internal only, requires feature flag
-- `alpha` - Public preview, expect breaking changes
+- `beta` - Public preview, expect breaking changes
 - `stable` - Production-ready, semver guarantees
 - `deprecated` - Scheduled for removal, migration path documented
 - `archived` - Removed from active use, read-only reference

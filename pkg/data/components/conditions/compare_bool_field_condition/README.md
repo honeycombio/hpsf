@@ -1,6 +1,6 @@
 # Compare a bool field
 
-**Kind:** `CompareBoolFieldCondition` | **Version:** `v0.1.0` | **Status:** alpha
+**Kind:** `CompareBoolFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
 
 ## Overview
 

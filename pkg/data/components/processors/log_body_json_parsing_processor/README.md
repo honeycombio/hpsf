@@ -1,6 +1,6 @@
 # Parse Log Body As JSON
 
-**Kind:** `LogBodyJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** alpha
+**Kind:** `LogBodyJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** beta
 
 ## Overview
 
