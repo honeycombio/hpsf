@@ -4,13 +4,8 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Force the scope of a Refinery rule to be "span" rather than "trace".
-description: |-
-  Normally, the scope of a Refinery rule is "trace", which means that when the rule has multiple
-  conditions, it will match when any condition is true for any span in the trace, even if the
-  conditions are not related to the same span. This component forces the scope of the rule to be
-  "span" rather than "trace", so that the rule will only match when all conditions are true for the
-  same span.
+summary: Forces Refinery rule scope to span level instead of trace level.
+description: Forces rule scope to span level, requiring all conditions to match on the same span rather than matching any condition across any span in the trace.
 tags:
   - category:condition
   - service:refinery
