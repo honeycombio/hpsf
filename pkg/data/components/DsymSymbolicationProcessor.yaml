@@ -4,10 +4,8 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Symbolicate stack traces from iOS/Swift applications using dSYM symbol files
-description: |
-  Symbolicate iOS/Swift stack traces using dSYM symbol files.
-  Supports dSYM files stored in AWS S3 or Google Cloud Storage.
+summary: Symbolicates iOS/Swift stack traces using dSYM files from S3 or GCS
+description: Symbolicates iOS/Swift stack traces using dSYM symbol files stored in AWS S3 or Google Cloud Storage.
 tags:
   - category:processor
   - service:collector
