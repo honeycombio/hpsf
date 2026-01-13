@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field exists or does not exist in a trace
-description: This checks if any span in a trace has a specific field that exists or does not exist.
+description: Checks if any span in a trace has a field that exists or does not exist based on the operator.
 tags:
   - category:condition
   - service:refinery
