@@ -4,9 +4,8 @@ style: condition
 type: base
 status: development
 version: v0.1.0
-summary: Compare an int or num type field to a specified value
-description: |-
-  Check if any span of a trace has a specific int or num field that compares appropriately to the specified value.
+summary: Compares an int or num field against a specified value using an operator
+description: Checks if any span in a trace has an int or num field that matches the specified value using the comparison operator.
 tags:
   - category:condition
   - service:refinery
