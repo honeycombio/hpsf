@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if an error exists in any span of a trace
-description: This checks if any span in a trace has an error.
+description: Checks if any span in a trace has an error field, returning true when an error is found.
 tags:
   - category:condition
   - service:refinery
