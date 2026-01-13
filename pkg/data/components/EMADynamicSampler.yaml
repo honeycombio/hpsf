@@ -4,11 +4,8 @@ version: v0.1.0
 style: sampler
 type: base
 status: alpha
-summary: An Exponential Moving Average (EMA) sampler designed to achieve a target Sample Rate.
-description: |-
-  This is an Exponential Moving Average (EMA) sampler designed to achieve a target sample rate based
-  on trying to achieve representative quantities of the specified sampling keys. The keys should be
-  chosen from fields with relatively low cardinality, such as HTTP method, status code, etc.
+summary: Samples traces proportionally using Exponential Moving Average to reach target rate.
+description: Achieves target sample rate by tracking key field values with relatively low cardinality, such as HTTP method or status code, ensuring representative sampling across traffic patterns.
 tags:
   - category:sampler
   - service:refinery
