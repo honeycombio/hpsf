@@ -4,11 +4,8 @@ style: startsampling
 type: base
 status: alpha
 version: v0.1.0
-summary: Converts traces and logs to a format for sampling
-description: |-
-  Converts traces and logs to a format for advanced tail-based sampling with Refinery. Also contains
-  some advanced configuration options for sending data to Refinery; most installations will not need
-  to change these.
+summary: Converts traces and logs to SampleData format for tail-based sampling.
+description: Converts OpenTelemetry traces and logs to SampleData format for tail-based sampling with Refinery, including configuration for HTTP export.
 tags:
   - category:startsampling
   - service:refinery
