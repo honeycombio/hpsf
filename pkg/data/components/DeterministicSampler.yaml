@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Samples traces deterministically at a fixed rate based on trace ID.
-description: Samples a fixed fraction of traces deterministically using trace ID to ensure consistent sampling decisions across distributed systems.
+description: Uses trace ID to ensure consistent sampling decisions across distributed systems. Same trace always gets same decision regardless of entry point.
 tags:
   - category:sampler
   - service:refinery

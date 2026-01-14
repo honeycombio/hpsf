@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field starts with a specific prefix
-description: Checks if any span in a trace has a field value starting with the specified prefix, returning true when found.
+description: Performs case-sensitive prefix matching across span fields. Useful for routing by service namespaces, endpoint patterns, or environment prefixes.
 tags:
   - category:condition
   - service:refinery

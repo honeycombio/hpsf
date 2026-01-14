@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field contains a specific substring
-description: Checks if any span in a trace has a field value containing the specified substring, returning true when found.
+description: Performs case-sensitive substring matching across span fields. Useful for pattern matching within string values like URLs, messages, or service names.
 tags:
   - category:condition
   - service:refinery

@@ -4,8 +4,8 @@ version: v0.1.0
 style: sampler
 type: base
 status: alpha
-summary: Samples events using EMA algorithm to achieve target throughput per second.
-description: Samples events using Exponential Moving Average to maintain target throughput while ensuring representative quantities of specified low-cardinality sampling keys.
+summary: Samples events using Exponential Moving Average to achieve target throughput.
+description: Dynamically adjusts sampling rates to hit target events per second. Tracks low-cardinality keys to ensure representative sampling across traffic patterns.
 tags:
   - category:sampler
   - service:refinery

@@ -118,8 +118,8 @@ properties:
     summary: The strategy to use when replacing redacted values.
     description: |
       The strategy to use when replacing redacted values. Fixed replaces the
-      redacted value with '****'; the other options use the specified hash
-      function to consistently hash the redacted value.
+      redacted value with '****'. MD5, SHA1, and SHA3 options will hash the
+      redacted value using the specified algorithm for consistent replacement.
     type: string
     subtype: oneof(Fixed, MD5, SHA1, SHA3)
     default: Fixed

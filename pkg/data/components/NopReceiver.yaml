@@ -6,7 +6,7 @@ logo: opentelemetry
 type: base
 status: development
 summary: Receives no signals and performs no operations (no-op receiver for testing)
-description: Performs no operations on input signals. Required for minimal collector configurations and useful for testing receiver functionality.
+description: Satisfies collector configuration requirements without actually receiving data. Useful for testing minimal collector setups where a receiver is required but not functionally needed.
 tags:
   - category:input
   - service:collector

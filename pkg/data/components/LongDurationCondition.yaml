@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if any span duration exceeds a specified threshold
-description: Checks the duration of all spans in a trace, returning true if any span exceeds the specified duration threshold.
+description: Evaluates duration_ms field across spans to identify slow operations. Useful for sampling long-running requests at higher rates to debug performance issues.
 tags:
   - category:condition
   - service:refinery

@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Keeps all traces without sampling by setting SampleRate to 1.
-description: Retains all traces without sampling, setting SampleRate to 1 for complete trace collection.
+description: Bypasses sampling logic entirely for complete trace collection. Use for low-volume environments, debugging, or when downstream sampling is preferred.
 tags:
   - category:sampler
   - service:refinery

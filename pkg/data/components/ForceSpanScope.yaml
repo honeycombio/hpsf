@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Forces Refinery rule scope to span level instead of trace level.
-description: Forces rule scope to span level, requiring all conditions to match on the same span rather than matching any condition across any span in the trace.
+description: Changes evaluation from trace-wide to per-span, requiring all conditions match on a single span. Use when filtering specific span types within multi-span traces.
 tags:
   - category:condition
   - service:refinery

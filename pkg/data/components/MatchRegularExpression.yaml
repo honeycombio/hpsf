@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a field matches a regular expression
-description: Checks if any span in a trace has a field value matching the specified regular expression, returning true when found.
+description: Applies Go regex pattern matching across span fields. More flexible than simple contains or starts-with for complex string pattern requirements.
 tags:
   - category:condition
   - service:refinery

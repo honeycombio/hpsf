@@ -5,7 +5,7 @@ type: base
 status: development
 version: v0.0.1
 summary: Parses log attribute JSON string values into individual attributes
-description: Parses specified log attribute containing JSON string into individual attributes on the log record.
+description: Flattens nested JSON structures in log attributes into top-level fields for easier querying. Applies to single specified attribute per processor instance.
 tags:
   - category:processor
   - service:collector

@@ -5,7 +5,7 @@ type: base
 status: development
 version: v0.1.0
 summary: Symbolicates Java/Kotlin stack traces using ProGuard mapping files
-description: Symbolicates Java/Kotlin stack traces from Android applications using ProGuard mapping files stored in AWS S3 or Google Cloud Storage.
+description: De-obfuscates ProGuard-minified Android stack traces to readable class and method names. Retrieves mapping files from cloud storage based on build metadata.
 tags:
   - category:processor
   - service:collector
