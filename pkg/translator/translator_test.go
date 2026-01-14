@@ -1504,6 +1504,8 @@ components:
 	assert.Equal(t, "HoneycombExporter", exp.Kind)
 	// Verify version falls back to template version when not specified in HPSF
 	assert.NotEmpty(t, exp.Version, "Version should be populated from template component")
+	// Verify status is populated from template component and is lowercase
+	assert.Equal(t, "beta", exp.Status, "Status should be lowercase and match component status")
 
 	// Verify properties contain actual component values
 	assert.NotNil(t, exp.Properties)
