@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Deprecated
-description: Evaluates boolean equality or inequality across spans. Returns true if any span contains matching field with specified true/false value and operator.
+description: Use the following component instead: Check a Boolean Value.
 tags:
   - category:condition
   - service:refinery

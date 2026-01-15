@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Deprecated
-description: Evaluates http.status_code and http.response.status_code fields using comparison operators. Commonly used to sample errors (>= 400) at higher rates.
+description: Use the following component instead: Check HTTP Status Code.
 tags:
   - category:refinery_rule
   - service:refinery

@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Deprecated
-description: Evaluates float comparisons (=, !=, >, >=, <, <=) across spans. Returns true if any span contains matching field with specified value and operator.
+description: Use the following component instead: Check a Numeric Field.
 tags:
   - category:condition
   - service:refinery
