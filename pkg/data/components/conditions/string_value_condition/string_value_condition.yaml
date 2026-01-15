@@ -2,7 +2,7 @@ kind: StringValueCondition
 name: Check a String Value
 style: condition
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Compares a string field to a specified value
 description: |-

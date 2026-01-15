@@ -2,7 +2,7 @@ kind: RedactionProcessor
 name: Redact Sensitive Values
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Mask sensitive data patterns in telemetry values
 description: |-

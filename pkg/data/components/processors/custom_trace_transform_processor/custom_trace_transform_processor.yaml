@@ -2,7 +2,7 @@ kind: CustomTraceTransformProcessor
 name: Transform Traces with Custom OTTL
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Transforms traces using custom OTTL statements (advanced)
 description: |

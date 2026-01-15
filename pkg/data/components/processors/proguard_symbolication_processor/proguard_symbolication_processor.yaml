@@ -2,7 +2,7 @@ kind: ProguardSymbolicationProcessor
 name: Symbolicate Java/Android Errors
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 minimum:
   collector_config: v0.1.2

@@ -2,7 +2,7 @@ kind: CustomMetricTransformProcessor
 name: Transform Metrics with Custom OTTL
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Transforms metrics using custom OTTL statements (advanced)
 description: |

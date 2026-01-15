@@ -2,7 +2,7 @@ kind: ListComparisonCondition
 name: Compare with a List of Values
 style: condition
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Check if a field value matches any value in a specified list
 description: |-

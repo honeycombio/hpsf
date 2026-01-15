@@ -2,7 +2,7 @@ kind: SymbolicatorProcessor
 name: Symbolicate JavaScript Stack Traces
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: A processor that will symbolicate JavaScript stack traces using source maps.
 description: This processor is used to symbolicate JavaScript stack traces using source maps.
