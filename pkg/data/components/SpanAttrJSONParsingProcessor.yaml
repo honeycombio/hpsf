@@ -5,7 +5,7 @@ type: base
 status: development
 version: v0.0.1
 summary: Parses span attribute JSON string value into individual attributes
-description: Parses a specified span attribute containing JSON string value into individual attributes on the span. Spans continue unchanged if attribute is missing or invalid JSON.
+description: Flattens a specified span attribute containing JSON string value into individual attributes on the span. Spans continue unchanged if attribute is missing or invalid JSON.
 tags:
   - category:processor
   - service:collector
@@ -39,10 +39,10 @@ templates:
       - key: "{{ .ComponentName }}.error_mode"
         value: "ignore"
       - key: "{{ .ComponentName }}.trace_statements[0].conditions[0]"
-        value: "span.attributes[\"{{ .Values.Attribute }}\"] != nil and HasPrefix(span.attributes[\"{{ .Values.Attribute }}\"], \"{\")"
+        value: 'span.attributes["{{ .Values.Attribute }}"] != nil and HasPrefix(span.attributes["{{ .Values.Attribute }}"], "{")'
       - key: "{{ .ComponentName }}.trace_statements[0].statements[0]"
-        value: "set(span.cache, ParseJSON(span.attributes[\"{{ .Values.Attribute }}\"]))"
+        value: 'set(span.cache, ParseJSON(span.attributes["{{ .Values.Attribute }}"]))'
       - key: "{{ .ComponentName }}.trace_statements[0].statements[1]"
         value: "flatten(span.cache)"
       - key: "{{ .ComponentName }}.trace_statements[0].statements[2]"
-        value: "merge_maps(span.attributes, span.cache, \"upsert\")"
+        value: 'merge_maps(span.attributes, span.cache, "upsert")'
