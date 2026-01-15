@@ -6,10 +6,9 @@ status: development
 version: v0.1.0
 minimum:
   collector_config: v0.1.2
-summary: Symbolicate stack traces from Android applications using ProGuard mapping files
+summary: Symbolicates Java/Kotlin stack traces using ProGuard mapping files
 description: |
-  Symbolicate Java/Kotlin stack traces from Android applications using ProGuard mapping files.
-  Supports ProGuard mapping files stored in AWS S3 or Google Cloud Storage.
+  De-obfuscates ProGuard-minified Android stack traces to readable class and method names. Retrieves mapping files from cloud storage based on build metadata.
 tags:
   - category:processor
   - service:collector

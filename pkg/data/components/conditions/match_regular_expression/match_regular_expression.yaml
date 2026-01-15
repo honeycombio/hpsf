@@ -1,11 +1,11 @@
 kind: MatchRegularExpression
-name: Match a regular expression
+name: Match a Regular Expression
 style: condition
 type: base
 status: beta
 version: v0.1.0
 summary: Checks if a field matches a regular expression
-description: This checks if any span in a trace has a specific field that matches a given regular expression.
+description: Applies Go regex pattern matching across span fields. More flexible than simple contains or starts-with for complex string pattern requirements.
 tags:
   - category:condition
   - service:refinery

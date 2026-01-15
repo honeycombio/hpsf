@@ -5,9 +5,8 @@ type: base
 status: development
 version: v0.1.0
 summary: Mask sensitive data patterns in telemetry values
-description: |-
-  Select common patterns or specify custom regex patterns for string replacement in
-  body/attribute values. Matching strings are replaced with a fixed number of asterisks.
+description: |
+  Targets attribute and body values across all signal types using preset patterns or custom regex. Replaces matches with asterisks or consistent hashes depending on strategy selected.
 tags:
   - category:processor
   - service:collector

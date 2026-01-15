@@ -4,9 +4,9 @@ style: condition
 type: base
 status: beta
 version: v0.1.0
-summary: Checks for long-duration spans
-description: |-
-  This condition checks the duration of all spans in a trace. If any span exceeds the specified duration, the condition evaluates to true.
+summary: Checks if any span duration exceeds a specified threshold
+description: |
+  Evaluates duration_ms field across spans to identify slow operations. Useful for sampling long-running requests at higher rates to debug performance issues.
 tags:
   - category:condition
   - service:refinery

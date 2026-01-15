@@ -4,8 +4,8 @@ style: sampler
 type: base
 status: beta
 version: v0.1.0
-summary: Keeps all traces that reach this sampler.
-description: This sampler keeps (samples) all traces, setting SampleRate to 1.
+summary: Keeps all traces without sampling by setting SampleRate to 1.
+description: Bypasses sampling logic entirely for complete trace collection. Use for low-volume environments, debugging, or when downstream sampling is preferred.
 tags:
   - category:sampler
   - service:refinery

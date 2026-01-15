@@ -6,10 +6,9 @@ status: development
 version: v0.1.0
 minimum:
   collector_config: v0.1.2
-summary: Symbolicate stack traces from iOS/Swift applications using dSYM symbol files
+summary: Symbolicates iOS/Swift stack traces using dSYM files
 description: |
-  Symbolicate iOS/Swift stack traces using dSYM symbol files.
-  Supports dSYM files stored in AWS S3 or Google Cloud Storage.
+  Converts memory addresses in iOS/Swift crashes to readable function names and line numbers. Retrieves dSYM files from cloud storage based on build UUID.
 tags:
   - category:processor
   - service:collector

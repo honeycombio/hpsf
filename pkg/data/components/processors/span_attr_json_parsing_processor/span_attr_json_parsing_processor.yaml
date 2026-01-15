@@ -4,11 +4,9 @@ style: processor
 type: base
 status: development
 version: v0.0.1
-summary: Converts a span attribute's JSON string value into individual attributes
+summary: Parses span attribute JSON string value into individual attributes
 description: |
-  Specify a span attribute with a JSON string value to parse into individual attributes
-  on the span. If the attribute is not found or cannot be parsed as JSON, the span will
-  continue through the pipeline unchanged.
+  Flattens a specified span attribute containing JSON string value into individual attributes on the span. Spans continue unchanged if attribute is missing or invalid JSON.
 tags:
   - category:processor
   - service:collector

@@ -6,7 +6,7 @@ logo: opentelemetry
 status: beta
 version: v0.1.0
 summary: Sends telemetry in OpenTelemetry (OTLP) format via gRPC.
-description: Exports OpenTelemetry signals using OTLP via gRPC.
+description: Uses binary protobuf encoding over gRPC for efficient transport.
 tags:
   - category:output
   - service:collector
