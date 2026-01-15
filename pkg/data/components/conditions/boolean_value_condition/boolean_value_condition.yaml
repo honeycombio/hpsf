@@ -1,0 +1,56 @@
+kind: BooleanValueCondition
+name: Check a Boolean Value
+style: condition
+type: base
+status: development
+version: v0.1.0
+summary: Check a boolean field for a specified value
+description: |-
+  Check if any span in a trace has a specific boolean field.
+  If the boolean field matches the specified value the condition will evaluate to true.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Fields
+    summary: The field(s) to check. If any of the specified fields exist in any span of a trace, and its value matches the specified value, the condition will evaluate to true.
+    description: |
+      The field names to check for the bool value.
+    type: stringarray
+    validations:
+      - nonempty
+      - noblanks
+  - name: Value
+    display: Value is
+    type: string
+    subtype: oneof(true, false)
+    default: "true"
+templates:
+  - kind: refinery_rules
+    name: BooleanValueCondition
+    format: rules
+    meta:
+      condition: true
+      scope: '{{ if eq .Values.Operator "!=" }}span{{ else }}trace{{ end }}'
+    data:
+      - key: Fields
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator
+        value: "="
+      - key: Value
+        value: "{{ .Values.Value | encodeAsBool }}"
+      - key: Datatype
+        value: bool

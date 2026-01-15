@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/collector/extension"
 	"go.opentelemetry.io/collector/otelcol"
 	"go.opentelemetry.io/collector/processor"
+	"go.opentelemetry.io/collector/processor/memorylimiterprocessor"
 	"go.opentelemetry.io/collector/receiver"
 	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 )
@@ -31,10 +32,11 @@ func defaultComponents() otelcol.Factories {
 			component.MustNewType("otlphttp"): otlphttpexporter.NewFactory(),
 		},
 		Processors: map[component.Type]processor.Factory{
-			component.MustNewType("filter"):       filterprocessor.NewFactory(),
-			component.MustNewType("groupbyattrs"): groupbyattrsprocessor.NewFactory(),
-			component.MustNewType("transform"):    transformprocessor.NewFactory(),
-			component.MustNewType("usage"):        usageprocessor.NewFactory(),
+			component.MustNewType("filter"):         filterprocessor.NewFactory(),
+			component.MustNewType("groupbyattrs"):   groupbyattrsprocessor.NewFactory(),
+			component.MustNewType("memory_limiter"): memorylimiterprocessor.NewFactory(),
+			component.MustNewType("transform"):      transformprocessor.NewFactory(),
+			component.MustNewType("usage"):          usageprocessor.NewFactory(),
 		},
 		Extensions: map[component.Type]extension.Factory{
 			component.MustNewType("honeycomb"): honeycombextension.NewFactory(),

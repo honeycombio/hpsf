@@ -2,13 +2,12 @@ package config
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"regexp"
-	"strconv"
 	"strings"
 	"text/template"
 
+	"github.com/honeycombio/hpsf/pkg/config/decorator"
 	"github.com/honeycombio/hpsf/pkg/config/tmpl"
 	"github.com/honeycombio/hpsf/pkg/hpsf"
 	"github.com/honeycombio/hpsf/pkg/hpsftypes"
@@ -92,7 +91,7 @@ func (c ComponentType) MarshalYAML() (any, error) {
 type ComponentStatus string
 
 const (
-	ComponentStatusAlpha       ComponentStatus = "ALPHA"
+	ComponentStatusBeta        ComponentStatus = "BETA"
 	ComponentStatusArchived    ComponentStatus = "ARCHIVED"
 	ComponentStatusDeprecated  ComponentStatus = "DEPRECATED"
 	ComponentStatusDevelopment ComponentStatus = "DEVELOPMENT"
@@ -109,7 +108,7 @@ func (c *ComponentStatus) UnmarshalYAML(value *y.Node) error {
 	}
 	cs := ComponentStatus(strings.ToUpper(s))
 	switch cs {
-	case ComponentStatusAlpha, ComponentStatusArchived, ComponentStatusDeprecated,
+	case ComponentStatusBeta, ComponentStatusArchived, ComponentStatusDeprecated,
 		ComponentStatusDevelopment, ComponentStatusStable:
 		*c = cs
 		return nil
@@ -204,12 +203,24 @@ func (t *TemplateComponent) Props() map[string]TemplateProperty {
 // templates. You can still use them individually for special cases.
 func (t *TemplateComponent) Values() map[string]any {
 	result := make(map[string]any)
+
+	// Get all properties that are explicitly set in the HPSF document
+	// Create a map to track which properties are explicitly set (even with empty values)
+	explicitlySet := make(map[string]bool)
 	for k, v := range t.HProps() {
 		if !_isZeroValue(v) {
-			// we only want to include non-zero values in the result
+			// Non-zero values are always included
 			result[k] = v
+			explicitlySet[k] = true
+		} else {
+			// For checklist properties, include empty slices if they're explicitly set
+			if prop := t.getPropertyByName(k); prop != nil && prop.Type.String() == "checklist" {
+				result[k] = v
+				explicitlySet[k] = true
+			}
 		}
 	}
+
 	for k, v := range t.User {
 		if !_isZeroValue(v) {
 			// don't overwrite existing values
@@ -217,15 +228,17 @@ func (t *TemplateComponent) Values() map[string]any {
 				continue
 			}
 			result[k] = v
+			explicitlySet[k] = true
 		}
 	}
+
+	// Only use defaults for properties that were not explicitly set
 	for _, prop := range t.Properties {
-		// don't overwrite existing values
-		if _, exists := result[prop.Name]; exists {
-			continue
+		if !explicitlySet[prop.Name] {
+			result[prop.Name] = prop.Default
 		}
-		result[prop.Name] = prop.Default
 	}
+
 	return result
 }
 
@@ -265,6 +278,16 @@ func (t *TemplateComponent) GetPortIndex(name string) int {
 		}
 	}
 	return 0
+}
+
+// getPropertyByName returns the template property with the given name, or nil if it doesn't exist
+func (t *TemplateComponent) getPropertyByName(name string) *TemplateProperty {
+	for _, prop := range t.Properties {
+		if prop.Name == name {
+			return &prop
+		}
+	}
+	return nil
 }
 
 // // ensure that TemplateComponent implements Component
@@ -385,59 +408,6 @@ func (t *TemplateComponent) expandTemplateVariable(tmplText string, userdata map
 	return b.String(), nil
 }
 
-// undecorate removes type decorations from strings and returns the desired type.
-// These decorations were placed there by the functions in helpers.go.
-// Since everything that comes out of a Go template is a string, for things that
-// needed to not be strings, we flagged them with a decoration indicating the
-// desired type. Now we need to do some extra work to make sure that we return
-// the indicated type. If it can't be converted to the desired type, we return
-// the string as is.
-func undecorate(s string) any {
-	switch {
-	case strings.HasPrefix(s, IntPrefix):
-		s = strings.TrimPrefix(s, IntPrefix)
-		i, err := strconv.Atoi(s)
-		if err == nil {
-			return i
-		}
-	case strings.HasPrefix(s, BoolPrefix):
-		s = strings.TrimPrefix(s, BoolPrefix)
-		b, err := strconv.ParseBool(s)
-		if err == nil {
-			return b
-		}
-	case strings.HasPrefix(s, FloatPrefix):
-		s = strings.TrimPrefix(s, FloatPrefix)
-		f, err := strconv.ParseFloat(s, 64)
-		if err == nil {
-			return f
-		}
-	case strings.HasPrefix(s, ArrPrefix):
-		s = strings.TrimPrefix(s, ArrPrefix)
-		items := strings.Split(s, FieldSeparator)
-		// we need to trim the spaces from the items and we don't want blanks
-		// in the array
-		var arr []string
-		for _, item := range items {
-			item = strings.TrimSpace(item)
-			if item != "" {
-				arr = append(arr, item)
-			}
-		}
-		return arr
-	case strings.HasPrefix(s, MapPrefix):
-		s = strings.TrimPrefix(s, MapPrefix)
-		// s is encoded as a JSON map, so we need to decode it
-		var m map[string]any
-		// we ignore the error here because the input string
-		// was marshaled by us and we know it's valid JSON,
-		// and there's nothing we can do with it anyway.
-		json.Unmarshal([]byte(s), &m)
-		return m
-	}
-	return s
-}
-
 func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) (any, error) {
 	switch k := tmplVal.(type) {
 	case string:
@@ -452,7 +422,7 @@ func (t *TemplateComponent) applyTemplate(tmplVal any, userdata map[string]any) 
 			return nil, err
 		}
 
-		result := undecorate(value)
+		result := decorator.Undecorate(value)
 		return result, nil
 	// right now this is dealing with nop receiver/exporter case
 	case map[string]string:
@@ -657,6 +627,8 @@ func (t *TemplateComponent) executeComponentValidation(validationStr string, pro
 		return t.validateRequireTogether(properties, propertyValues, componentName)
 	case "conditional_require_together":
 		return t.validateConditionalRequireTogether(properties, conditionProperty, conditionValue, propertyValues, componentName)
+	case "less_than_or_equal":
+		return t.validateLessThanOrEqual(properties, propertyValues, componentName)
 	default:
 		return hpsf.NewError("unknown component validation type: " + validationType).
 			WithComponent(componentName)
@@ -688,6 +660,11 @@ func generateValidationErrorMessage(validationType string, properties []string, 
 		return fmt.Sprintf("Either all or none of [%s] must be provided", propsStr)
 	case "conditional_require_together":
 		return fmt.Sprintf("When %s is %v, all of [%s] must be provided", conditionProperty, conditionValue, propsStr)
+	case "less_than_or_equal":
+		if len(properties) >= 2 {
+			return fmt.Sprintf("%s must be less than or equal to %s", properties[0], properties[1])
+		}
+		return fmt.Sprintf("First property must be less than or equal to second property")
 	default:
 		return fmt.Sprintf("Validation failed for properties [%s]", propsStr)
 	}
@@ -824,6 +801,55 @@ func (t *TemplateComponent) validateConditionalRequireTogether(properties []stri
 		if !exists || isPropertyEmpty(value) {
 			return hpsf.NewError(generateValidationErrorMessage("conditional_require_together", properties, conditionProperty, conditionValue)).WithComponent(componentName)
 		}
+	}
+
+	return nil
+}
+
+// validateLessThanOrEqual ensures that the first property value is less than or equal to the second property value
+func (t *TemplateComponent) validateLessThanOrEqual(properties []string, propertyValues map[string]any, componentName string) error {
+	if len(properties) != 2 {
+		return hpsf.NewError("less_than_or_equal validation requires exactly two properties").
+			WithComponent(componentName)
+	}
+
+	firstProp := properties[0]
+	secondProp := properties[1]
+
+	firstValue, firstExists := propertyValues[firstProp]
+	secondValue, secondExists := propertyValues[secondProp]
+
+	// If either property is missing or empty, skip validation (let other validations handle required fields)
+	if !firstExists || isPropertyEmpty(firstValue) || !secondExists || isPropertyEmpty(secondValue) {
+		return nil
+	}
+
+	// Convert values to numeric types for comparison
+	var firstNum, secondNum float64
+
+	switch v := firstValue.(type) {
+	case int:
+		firstNum = float64(v)
+	case float64:
+		firstNum = v
+	default:
+		return hpsf.NewError(fmt.Sprintf("less_than_or_equal validation requires numeric values for %s and %s", firstProp, secondProp)).
+			WithComponent(componentName)
+	}
+
+	switch v := secondValue.(type) {
+	case int:
+		secondNum = float64(v)
+	case float64:
+		secondNum = v
+	default:
+		return hpsf.NewError(fmt.Sprintf("less_than_or_equal validation requires numeric values for %s and %s", firstProp, secondProp)).
+			WithComponent(componentName)
+	}
+
+	if firstNum > secondNum {
+		return hpsf.NewError(generateValidationErrorMessage("less_than_or_equal", properties, "", nil)).
+			WithComponent(componentName)
 	}
 
 	return nil

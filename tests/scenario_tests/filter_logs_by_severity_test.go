@@ -24,8 +24,9 @@ func TestFilterLogsBySeverityDefaults(t *testing.T) {
 	assert.Len(t, receivers, 1, "Expected 1 receiver")
 	assert.Contains(t, receivers, "otlp/OTel_Receiver_1", "Expected OTel receiver")
 
-	assert.Len(t, processors, 2, "Expected 2 processors (usage + filter)")
+	assert.Len(t, processors, 3, "Expected 3 processors (usage + memory_limiter + filter)")
 	assert.Contains(t, processors, "usage", "Expected usage processor")
+	assert.Contains(t, processors, "memory_limiter/OTel_Receiver_1", "Expected memory_limiter processor")
 	assert.Contains(t, processors, "filter/Log_Severity_Filter", "Expected filter processor")
 
 	assert.Len(t, exporters, 1, "Expected 1 exporter")
@@ -47,8 +48,9 @@ func TestFilterLogsBySeverityCustomSeverity(t *testing.T) {
 	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found, "Expected logs pipeline to be found")
 
-	assert.Len(t, processors, 2, "Expected 2 processors (usage + filter)")
+	assert.Len(t, processors, 3, "Expected 3 processors (usage + memory_limiter + filter)")
 	assert.Contains(t, processors, "usage", "Expected usage processor")
+	assert.Contains(t, processors, "memory_limiter/OTel_Receiver_1", "Expected memory_limiter processor")
 	assert.Contains(t, processors, "filter/Error_Log_Filter", "Expected filter processor")
 
 	// Verify the filter processor configuration exists

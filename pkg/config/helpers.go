@@ -1,33 +1,16 @@
 package config
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
+	"maps"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"text/template"
 	"time"
-)
 
-// We use GroupSeparator, FieldSeparator, and RecordSeparator as delimiters so
-// that we are unlikely to see a false positive with user data. We probably
-// could have done this with a more sophisticated encoding/decoding but we don't
-// think it matters in the context of templated configuration files.
-const (
-	GroupSeparator  = "\x1d" // ASCII code 29, the group separator
-	RecordSeparator = "\x1e" // ASCII code 30, the record separator
-	FieldSeparator  = "\x1f" // ASCII code 31, the unit (field) separator
-)
-
-// Prefixes we support:
-const (
-	IntPrefix   = "int" + GroupSeparator
-	BoolPrefix  = "bool" + GroupSeparator
-	FloatPrefix = "float" + GroupSeparator
-	ArrPrefix   = "arr" + GroupSeparator
-	MapPrefix   = "map" + GroupSeparator
+	"github.com/honeycombio/hpsf/pkg/config/decorator"
 )
 
 // This file contains template helper functions, which must be listed in this
@@ -38,23 +21,33 @@ const (
 // The functions are listed below in alphabetical order; please keep them that way.
 func helpers() template.FuncMap {
 	return map[string]any{
+		"appendSlices":  appendSlices,
 		"buildurl":      buildurl,
 		"comment":       comment,
-		"encodeAsArray": encodeAsArray,
-		"encodeAsBool":  encodeAsBool,
-		"encodeAsInt":   encodeAsInt,
-		"encodeAsFloat": encodeAsFloat,
-		"encodeAsMap":   encodeAsMap,
+		"encodeAsArray": decorator.EncodeAsArray,
+		"encodeAsBool":  decorator.EncodeAsBool,
+		"encodeAsInt":   decorator.EncodeAsInt,
+		"encodeAsFloat": decorator.EncodeAsFloat,
+		"encodeAsMap":   decorator.EncodeAsMap,
+		"getChecked":    getChecked,
 		"indent":        indent,
 		"join":          join,
+		"lower":         strings.ToLower,
 		"makeSlice":     makeSlice,
+		"mapValues":     mapValues,
 		"meta":          meta,
 		"nonempty":      nonempty,
 		"now":           now,
+		"processOTTL":   processOTTL,
 		"split":         split,
 		"upper":         strings.ToUpper,
 		"yamlf":         yamlf,
 	}
+}
+
+// appendSlices combines two slices into one.
+func appendSlices(slice1 []any, slice2 []any) []any {
+	return append(slice1, slice2...)
 }
 
 // buildurl constructs a URL based on the provided parameters. A path is optional.
@@ -94,98 +87,6 @@ func comment(s string) string {
 	return strings.TrimRight("## "+strings.Replace(s, "\n", "\n## ", -1), " ")
 }
 
-// encodeAsArray takes a slice and returns a string intended to be expanded
-// later into an array when it's rendered to YAML.
-// The result looks like "arr\x1dA:1\x1fB:2"
-func encodeAsArray(arr any) string {
-	switch a := arr.(type) {
-	case []string:
-		return ArrPrefix + strings.Join(a, FieldSeparator)
-	case []any:
-		return ArrPrefix + strings.Join(_getStringsFrom(arr), FieldSeparator)
-	default:
-		return ""
-	}
-}
-
-// encodeAsBool takes any value and returns a string with the appropriate marker
-// so that it will be expanded later into a bool when it's rendered to YAML.
-// Numbers are interpreted as true if they are not zero.
-func encodeAsBool(a any) string {
-	value := "false"
-	switch v := a.(type) {
-	case bool:
-		if v {
-			value = "true"
-		}
-	case int:
-		if v != 0 {
-			value = "true"
-		}
-	case float64:
-		if v != 0 {
-			value = "true"
-		}
-	case string:
-		if v == "true" {
-			value = "true"
-		}
-	}
-	return BoolPrefix + value
-}
-
-// encodeAsFloat takes a string and returns a string with the appropriate marker
-// so that it will be expanded later into a float when it's rendered to YAML.
-func encodeAsFloat(a any) string {
-	value := "0"
-	switch v := a.(type) {
-	case int:
-		value = strconv.Itoa(v)
-	case float64:
-		value = fmt.Sprintf("%f", v)
-	case string:
-		value = v
-	case bool:
-		if v {
-			value = "1"
-		}
-	}
-	return FloatPrefix + value
-}
-
-// encodeAsInt takes a string and returns a string with the appropriate marker
-// so that it will be expanded later into an integer when it's rendered to YAML.
-func encodeAsInt(a any) string {
-	value := "0"
-	switch v := a.(type) {
-	case int:
-		value = strconv.Itoa(v)
-	case float64:
-		value = fmt.Sprintf("%f", v)
-	case string:
-		value = v
-	case bool:
-		if v {
-			value = "1"
-		}
-	}
-	return IntPrefix + value
-}
-
-// encodeAsMap takes a map (which may contain nested maps) and returns a string
-// intended to be expanded later into the same map when it's rendered to YAML.
-// We encode to JSON because it's fast and easy.
-func encodeAsMap(a map[string]any) string {
-	buf := bytes.Buffer{}
-	j := json.NewEncoder(&buf)
-	// There's no model for returning an error, but also...
-	// we know the data we're encoding was valid YAML and we're writing
-	// to a buffer, so there doesn't seem to be an error we
-	// could encounter that would be meaningful.
-	_ = j.Encode(a)
-	return MapPrefix + buf.String()
-}
-
 // indents a string by the specified number of spaces
 func indent(count int, s string) string {
 	return strings.Repeat(" ", count) + _indentRest(count, s)
@@ -201,6 +102,28 @@ func makeSlice(a ...string) []string {
 	return a
 }
 
+// mapValues extracts values from a map and returns them as a slice
+// Values are returned in sorted order by key for deterministic output
+func mapValues(m any) []any {
+	result := make([]any, 0)
+
+	if mapVal, ok := m.(map[string]any); ok {
+		keys := slices.Collect(maps.Keys(mapVal))
+		slices.Sort(keys)
+		for _, k := range keys {
+			result = append(result, mapVal[k])
+		}
+	} else if mapVal, ok := m.(map[string]string); ok {
+		keys := slices.Collect(maps.Keys(mapVal))
+		slices.Sort(keys)
+		for _, k := range keys {
+			result = append(result, mapVal[k])
+		}
+	}
+
+	return result
+}
+
 // wraps a string in "{{" and "}}" to indicate that it's a template variable
 func meta(s string) string {
 	return "{{ " + s + " }}"
@@ -210,6 +133,31 @@ func meta(s string) string {
 func now() string {
 	t := time.Now().UTC()
 	return fmt.Sprintf("on %s at %s UTC", t.Format("2006-01-02"), t.Format("15:04:05"))
+}
+
+// This accepts a block of text as a string, and splits it into an array of individual lines,
+// eliminating comments and blank lines, and also leading "-" characters that are used in
+// YAML lists that might be copy-pasted into the component. (These get put back on later.)
+func processOTTL(statements any) []string {
+	var lines, result []string
+	switch s := statements.(type) {
+	case string:
+		lines = strings.Split(s, "\n")
+	case []string:
+		lines = s
+	case []any:
+		lines = _getStringsFrom(s)
+	default:
+		return []string{fmt.Sprintf("expected a string in processOTTL, got %T", statements)}
+	}
+	for _, line := range lines {
+		line = strings.Trim(line, " \t\r-")
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		result = append(result, line)
+	}
+	return result
 }
 
 // splits a string into a slice of strings using the specified separator
@@ -326,4 +274,64 @@ func _asInt(a any) int {
 		}
 	}
 	return 0
+}
+
+// ChecklistItem represents an item in a checklist property definition
+type ChecklistItem struct {
+	ID          string `yaml:"id"`
+	DisplayName string `yaml:"displayName"`
+	Value       string `yaml:"value"`
+	TooltipText string `yaml:"tooltipText"`
+}
+
+// getChecked takes a TemplateProperty (checklist type) and a list of checked IDs,
+// and returns the values from the subtype definition for the checked items.
+// This is used in templates to get the actual regex patterns for selected checklist items.
+func getChecked(prop TemplateProperty, checkedIDs any) []any {
+	if prop.Type.String() != "checklist" {
+		return []any{}
+	}
+
+	// Handle subtype as []any containing checklist items
+	subtypeSlice, ok := prop.Subtype.([]any)
+	if !ok {
+		return []any{}
+	}
+
+	// Convert []any to []ChecklistItem
+	var items []ChecklistItem
+	for _, item := range subtypeSlice {
+		if itemMap, ok := item.(map[string]any); ok {
+			checklistItem := ChecklistItem{}
+			if id, ok := itemMap["id"].(string); ok {
+				checklistItem.ID = id
+			}
+			if displayName, ok := itemMap["displayName"].(string); ok {
+				checklistItem.DisplayName = displayName
+			}
+			if value, ok := itemMap["value"].(string); ok {
+				checklistItem.Value = value
+			}
+			if tooltipText, ok := itemMap["tooltipText"].(string); ok {
+				checklistItem.TooltipText = tooltipText
+			}
+			items = append(items, checklistItem)
+		}
+	}
+
+	// Convert checkedIDs to a map for quick lookup
+	checkedMap := make(map[string]bool)
+	for _, id := range _getStringsFrom(checkedIDs) {
+		checkedMap[id] = true
+	}
+
+	// Extract values for checked items
+	var result []any
+	for _, item := range items {
+		if checkedMap[item.ID] {
+			result = append(result, item.Value)
+		}
+	}
+
+	return result
 }

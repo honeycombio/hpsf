@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: testtest:1234
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 2s
+        limit_percentage: 75
+        spike_limit_percentage: 25
     usage: {}
 exporters:
     otlp/otlp_out:
@@ -25,5 +29,5 @@ service:
     pipelines:
         traces/f7b-5aa:
             receivers: [otlp/otlp_in]
-            processors: [usage]
+            processors: [memory_limiter/otlp_in, usage]
             exporters: [otlp/otlp_out]

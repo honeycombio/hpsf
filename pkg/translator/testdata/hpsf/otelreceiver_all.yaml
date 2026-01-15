@@ -8,6 +8,12 @@ components:
         value: 9922
       - name: HTTPPort
         value: 1234
+      - name: MemoryCheckInterval
+        value: 2s
+      - name: MemoryLimitPercentage
+        value: 75
+      - name: MemorySpikeLimitPercentage
+        value: 25
   - name: otlp_out
     kind: OTelGRPCExporter
 connections:

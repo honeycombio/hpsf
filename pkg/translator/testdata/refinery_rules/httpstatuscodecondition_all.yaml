@@ -1,0 +1,20 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Conditions:
+                    - Fields:
+                        - foo
+                        - bar
+                      Operator: '>='
+                      Value: 333
+                      Datatype: int
+                    - Fields:
+                        - foo
+                        - bar
+                      Operator: <=
+                      Value: 444
+                      Datatype: int

@@ -297,10 +297,10 @@ func (g *Graph) assignColumns(order []*Node) map[*Node]int {
 
 // assignUnconnectedColumns assigns column indices to unconnected nodes based on their style.
 // Rules:
-// - All receivers go in column 0
-// - All exporters go in the same column (either with existing exporters, or after all other columns)
-// - Other components go in the first existing column containing components of the same style,
-//   or in a new column between receivers and exporters if no matching style exists
+//   - All receivers go in column 0
+//   - All exporters go in the same column (either with existing exporters, or after all other columns)
+//   - Other components go in the first existing column containing components of the same style,
+//     or in a new column between receivers and exporters if no matching style exists
 func (g *Graph) assignUnconnectedColumns(unconnectedNodes []*Node, colIndex map[*Node]int) {
 	if len(unconnectedNodes) == 0 {
 		return

@@ -1,0 +1,14 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Scope: trace
+                  Conditions:
+                    - Fields:
+                        - status_message
+                      Operator: =
+                      Value: error
+                      Datatype: string

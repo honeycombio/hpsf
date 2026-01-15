@@ -1,0 +1,31 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: sourcemap_symbolicator
+    kind: SourcemapSymbolicationProcessor
+    properties:
+      - name: SymbolStore
+        value: Google Cloud Storage
+      - name: BucketName
+        value: my-sourcemaps-bucket
+      - name: Prefix
+        value: source-maps/
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: sourcemap_symbolicator
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: sourcemap_symbolicator
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

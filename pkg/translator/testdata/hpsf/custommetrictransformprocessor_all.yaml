@@ -1,0 +1,31 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: CustomMetricTransformProcessor
+    properties:
+      - name: ErrorMode
+        value: propagate
+      - name: MetricStatements
+        value:
+          - 'set(datapoint.attributes["processed"], "true")'
+          - 'set(metric.description, Concat([metric.description, " (processed)"], ""))'
+connections:
+  - source:
+      component: otlp_in
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: transform_1
+      port: Metrics
+      type: OTelMetrics
+  - source:
+      component: transform_1
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: otlp_out
+      port: Metrics
+      type: OTelMetrics

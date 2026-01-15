@@ -1,0 +1,18 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Scope: span
+                  Conditions:
+                    - Fields:
+                        - http.status_code
+                        - status
+                      Operator: not-in
+                      Value:
+                        - "200"
+                        - "201"
+                        - "204"
+                      Datatype: string

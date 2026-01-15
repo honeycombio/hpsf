@@ -1,0 +1,51 @@
+components:
+  - name: OTel Receiver_1
+    kind: OTelReceiver
+  - name: Start Sampling_1
+    kind: SamplingSequencer
+  - name: String Value Condition_1
+    kind: StringValueCondition
+    properties:
+      - name: Fields
+        value: ["field1", "field2"]
+      - name: Operator
+        value: "contains"
+      - name: Value
+        value: "test"
+  - name: Keep All_1
+    kind: KeepAllSampler
+  - name: Send to Honeycomb_1
+    kind: HoneycombExporter
+connections:
+  - source:
+      component: OTel Receiver_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: String Value Condition_1
+      port: Match
+      type: SampleData
+  - source:
+      component: String Value Condition_1
+      port: And
+      type: SampleData
+    destination:
+      component: Keep All_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All_1
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Send to Honeycomb_1
+      port: Events
+      type: HoneycombEvents

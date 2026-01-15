@@ -8,6 +8,55 @@ import (
 	y "gopkg.in/yaml.v3"
 )
 
+// groupKeysByNumericSuffix groups key-value pairs by numeric suffixes (e.g., "Fields.1", "Fields.2")
+// Returns a slice of maps, where each map contains the keys for one condition group.
+// Keys without numeric suffixes are ignored (handled by legacy logic).
+func groupKeysByNumericSuffix(kvs map[string]any) []map[string]any {
+	groups := make(map[int]map[string]any)
+	hasNumericSuffixes := false
+
+	for key, value := range kvs {
+		// Check if key has a numeric suffix (e.g., "Fields.1")
+		parts := strings.Split(key, ".")
+		if len(parts) >= 2 {
+			// Get the last part and check if it's a number
+			if suffix, err := strconv.Atoi(parts[len(parts)-1]); err == nil {
+				hasNumericSuffixes = true
+				// Remove the numeric suffix to get the base key
+				baseKey := strings.Join(parts[:len(parts)-1], ".")
+
+				// Create group if it doesn't exist
+				if groups[suffix] == nil {
+					groups[suffix] = make(map[string]any)
+				}
+				groups[suffix][baseKey] = value
+			}
+		}
+	}
+
+	if !hasNumericSuffixes {
+		return nil // Return nil to indicate no numeric suffixes found
+	}
+
+	// Convert map to sorted slice
+	result := make([]map[string]any, 0)
+	maxSuffix := -1
+	for suffix := range groups {
+		if suffix > maxSuffix {
+			maxSuffix = suffix
+		}
+	}
+
+	// Create slice with proper ordering (1, 2, 3, etc.)
+	for i := 1; i <= maxSuffix; i++ {
+		if group, exists := groups[i]; exists {
+			result = append(result, group)
+		}
+	}
+
+	return result
+}
+
 type RulesMergeType int
 
 // RulesMergeType represents the types of entities that can be combined to generate rules.
@@ -200,17 +249,35 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 	case StartSampling:
 		rc.compType = Output // we will now treat this as an output
 		sampler := &V2SamplerChoice{}
+		var conditionGroups []map[string]any // Track if we used grouped conditions
 
 		var keyPrefix string
 		switch otherRC.compType {
 		case Condition:
 			// condition always has a rule-based sampler attached to it
 			// so we can write it into the startsampling at the pipeline index
-			keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
 
-			for key, value := range otherRC.kvs {
-				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
-					return err
+			// Group keys by numeric suffix to support multiple conditions
+			conditionGroups = groupKeysByNumericSuffix(otherRC.kvs)
+
+			if len(conditionGroups) == 0 {
+				// No numeric suffixes found, use legacy approach
+				keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.0.", rc.meta[MetaPipelineIndex])
+				for key, value := range otherRC.kvs {
+					if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+						return err
+					}
+				}
+			} else {
+				// Numeric suffixes found, create multiple conditions
+				for conditionIndex, group := range conditionGroups {
+					keyPrefix = fmt.Sprintf("RulesBasedSampler.Rules.%s.Conditions.%d.", rc.meta[MetaPipelineIndex], conditionIndex)
+					for key, value := range group {
+						fullKey := keyPrefix + key
+						if err := setMemberValue(fullKey, sampler, value); err != nil {
+							return err
+						}
+					}
 				}
 			}
 
@@ -253,9 +320,13 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 			return fmt.Errorf("cannot merge %T with RulesConfig because it is not valid start merge type", other)
 		}
 
-		for key, value := range otherRC.kvs {
-			if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
-				return err
+		// Only process otherRC.kvs if we're not in a Condition case, or if we used the legacy approach (no numeric suffixes)
+		// If we processed conditionGroups, we already handled all the kvs, so skip this loop
+		if otherRC.compType != Condition || len(conditionGroups) == 0 {
+			for key, value := range otherRC.kvs {
+				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -300,12 +371,30 @@ func (rc *RulesConfig) Merge(other TemplateConfig) error {
 				}
 			}
 
-			conditionIndex := len(sampler.RulesBasedSampler.Rules[ruleIndex].Conditions)
-			keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.Conditions.%d.", ruleIndex, conditionIndex)
+			// Group keys by numeric suffix to support multiple conditions
+			conditionGroups := groupKeysByNumericSuffix(otherRC.kvs)
 
-			for key, value := range otherRC.kvs {
-				if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
-					return err
+			if len(conditionGroups) == 0 {
+				// No numeric suffixes found, use legacy approach
+				conditionIndex := len(sampler.RulesBasedSampler.Rules[ruleIndex].Conditions)
+				keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.Conditions.%d.", ruleIndex, conditionIndex)
+
+				for key, value := range otherRC.kvs {
+					if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+						return err
+					}
+				}
+			} else {
+				// Numeric suffixes found, create multiple conditions
+				startingConditionIndex := len(sampler.RulesBasedSampler.Rules[ruleIndex].Conditions)
+				for groupIndex, group := range conditionGroups {
+					conditionIndex := startingConditionIndex + groupIndex
+					keyPrefix := fmt.Sprintf("RulesBasedSampler.Rules.%d.Conditions.%d.", ruleIndex, conditionIndex)
+					for key, value := range group {
+						if err := setMemberValue(keyPrefix+key, sampler, value); err != nil {
+							return err
+						}
+					}
 				}
 			}
 

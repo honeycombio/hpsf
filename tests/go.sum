@@ -396,6 +396,8 @@ go.opentelemetry.io/collector/featuregate v1.44.0 h1:/GeGhTD8f+FNWS7C4w1Dj0Ui9Jp
 go.opentelemetry.io/collector/featuregate v1.44.0/go.mod h1:d0tiRzVYrytB6LkcYgz2ESFTv7OktRPQe0QEQcPt1L4=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.138.0 h1:/kngt0FhbxanEBGdhe2yGgmvGXES1gzRubQFzivOKGU=
 go.opentelemetry.io/collector/internal/fanoutconsumer v0.138.0/go.mod h1:HWy0CDMrNvomfIz4uzs+eEOx5pt8xeacdPQzMMY83jU=
+go.opentelemetry.io/collector/internal/memorylimiter v0.138.0 h1:amYHkJFxubyVh5clLgU05/aOVk+ZybHW+608nR90AXc=
+go.opentelemetry.io/collector/internal/memorylimiter v0.138.0/go.mod h1:J3gU6fZe4pH2fK8TvacmcB3VMmeqQpzSHwPlcPfiNZ8=
 go.opentelemetry.io/collector/internal/sharedcomponent v0.138.0 h1:jVuz4ZvF8rw1NQ+up6eCyZE5w1bGQf7qV9AGGDkWTps=
 go.opentelemetry.io/collector/internal/sharedcomponent v0.138.0/go.mod h1:VDLlLDAyGAhMsVhpZKZAtfxXvmJlUZO4IiQe58Ftixg=
 go.opentelemetry.io/collector/internal/telemetry v0.138.0 h1:xHHYlPh1vVvr+ip0ct288l1joc4bsEeHh0rcY3WVXJo=
@@ -418,6 +420,8 @@ go.opentelemetry.io/collector/pipeline/xpipeline v0.138.0 h1:Y8blByFwDqhnEa4kOTA
 go.opentelemetry.io/collector/pipeline/xpipeline v0.138.0/go.mod h1:TOtck/PIWC89dI9+aYouX39boc7d+rGHP82SuH0xxN0=
 go.opentelemetry.io/collector/processor v1.44.0 h1:jB+vfkYSR9f7HJlGJrtncld9dmnPWndCoTHZ0Wz4nvg=
 go.opentelemetry.io/collector/processor v1.44.0/go.mod h1:BV0s5J7TH2YrVErfYAXvq3Z2ChJZdE84pY+sk1X55kw=
+go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.138.0 h1:CP5kjFaI/xIU14g7wd9AC60NNCnpdW73SHWXq0kNViA=
+go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.138.0/go.mod h1:EEZQh1Ti2k9ntPRRCCgKevM9zCNAhs5KGZRElpkXAjg=
 go.opentelemetry.io/collector/processor/processorhelper v0.138.0 h1:Affdz4mJdjE6iJMWO6IpLcorBr1E+HFbo3/ok194Qc4=
 go.opentelemetry.io/collector/processor/processorhelper v0.138.0/go.mod h1:QS6FzV/0/4kN3VPIYA+FPMuKkJnXnxvGKdllz2Fuopw=
 go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.138.0 h1:JojL1OHoKQpqZ5dyi4sJ44+sk9hbmwkV8WIElI3XJ+I=
@@ -574,6 +578,8 @@ golang.org/x/sys v0.20.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/sys v0.28.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/sys v0.37.0 h1:fdNQudmxPjkdUTPnLn5mdQv7Zwvbvpaxqs831goi9kQ=
 golang.org/x/sys v0.37.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+golang.org/x/sys v0.39.0 h1:CvCKL8MeisomCi6qNZ+wbb0DN9E5AATixKsvNtMoMFk=
+golang.org/x/sys v0.39.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/telemetry v0.0.0-20240228155512-f48c80bd79b2/go.mod h1:TeRTkGYfJXctD9OcfyVLyj2J3IxLnKwHJR8f4D8a3YE=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.0.0-20210927222741-03fcf44c2211/go.mod h1:jbD1KX2456YbFQfuXm/mYQcufACuNUgVhRMnK/tPxf8=

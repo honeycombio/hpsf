@@ -1,0 +1,30 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: transform_1
+    kind: CustomTraceTransformProcessor
+    properties:
+      - name: TraceStatements
+        value:
+          - set(span.attributes["custom.field"], "value")
+          - delete_key(span.attributes, "unwanted_field")
+          - set(span.name, Concat([span.name, " - processed"], ""))
+connections:
+  - source:
+      component: otlp_in
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: transform_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: otlp_out
+      port: Traces
+      type: OTelTraces

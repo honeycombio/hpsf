@@ -1253,7 +1253,7 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "specific agent type supported",
-			wantErr:   "",
+			wantErr:         "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
@@ -1268,14 +1268,14 @@ func TestArtifactVersionSupported(t *testing.T) {
 		},
 		{
 			name:            "expected agent type not specified",
-			wantErr:   "",
+			wantErr:         "",
 			artifactVersion: "v0.150.0",
 			component: config.TemplateComponent{
 				Minimum: map[hpsftypes.Type]string{
-					hpsftypes.RefineryRules:   "v0.151.0",
+					hpsftypes.RefineryRules: "v0.151.0",
 				},
 				Maximum: map[hpsftypes.Type]string{
-					hpsftypes.RefineryRules:   "v0.152.0",
+					hpsftypes.RefineryRules: "v0.152.0",
 				},
 			},
 		},
@@ -1504,6 +1504,8 @@ components:
 	assert.Equal(t, "HoneycombExporter", exp.Kind)
 	// Verify version falls back to template version when not specified in HPSF
 	assert.NotEmpty(t, exp.Version, "Version should be populated from template component")
+	// Verify status is populated from template component and is lowercase
+	assert.Equal(t, "beta", exp.Status, "Status should be lowercase and match component status")
 
 	// Verify properties contain actual component values
 	assert.NotNil(t, exp.Properties)
@@ -2030,13 +2032,11 @@ components:
         value: 4317
       - name: HTTPPort
         value: 4318
-  - name: Memory Limiter
-    kind: MemoryLimiterProcessor
+  - name: Custom Filter
+    kind: CustomFilterProcessor
     properties:
-      - name: CheckInterval
-        value: 1s
-      - name: LimitPercentage
-        value: 50
+      - name: Signal
+        value: traces
   - name: Honeycomb Export
     kind: HoneycombExporter
     properties:
@@ -2071,11 +2071,9 @@ components:
 	// Verify processors
 	processors := result.Filter(Processors).Components
 	require.Len(t, processors, 1)
-	assert.Equal(t, "Memory Limiter", processors[0].Name)
-	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
-	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
-	assert.Equal(t, 50, processors[0].Properties["LimitPercentage"])
-	assert.Equal(t, 20, processors[0].Properties["SpikeLimitPercentage"])
+	assert.Equal(t, "Custom Filter", processors[0].Name)
+	assert.Equal(t, "CustomFilterProcessor", processors[0].Kind)
+	assert.Equal(t, "traces", processors[0].Properties["Signal"])
 
 	// Verify exporters
 	exporters := result.Filter(Exporters).Components
@@ -2664,11 +2662,11 @@ version: 1.0
 components:
   - name: OTLP Receiver
     kind: OTelReceiver
-  - name: Memory Limiter
-    kind: MemoryLimiterProcessor
+  - name: Custom Filter
+    kind: CustomFilterProcessor
     properties:
-      - name: CheckInterval
-        value: 1s
+      - name: Signal
+        value: traces
   - name: Honeycomb Export
     kind: HoneycombExporter
 `
@@ -2681,10 +2679,10 @@ components:
 	// Processors() should return only processors
 	processors := result.Filter(Processors).Components
 	require.Len(t, processors, 1)
-	assert.Equal(t, "Memory Limiter", processors[0].Name)
+	assert.Equal(t, "Custom Filter", processors[0].Name)
 	assert.Equal(t, "processor", processors[0].Style)
-	assert.Equal(t, "MemoryLimiterProcessor", processors[0].Kind)
-	assert.Equal(t, "1s", processors[0].Properties["CheckInterval"])
+	assert.Equal(t, "CustomFilterProcessor", processors[0].Kind)
+	assert.Equal(t, "traces", processors[0].Properties["Signal"])
 }
 
 func TestInspectionResult_DirectComponentsAccess(t *testing.T) {
@@ -2705,8 +2703,6 @@ version: 1.0
 components:
   - name: OTLP Receiver
     kind: OTelReceiver
-  - name: Memory Limiter
-    kind: MemoryLimiterProcessor
   - name: Honeycomb Export
     kind: HoneycombExporter
   - name: S3 Archive
@@ -2722,20 +2718,17 @@ components:
 	result := tlater.Inspect(h)
 
 	// Can access all components directly
-	require.Len(t, result.Components, 4)
+	require.Len(t, result.Components, 3)
 
 	// Verify all components are present with correct styles
 	assert.Equal(t, "OTLP Receiver", result.Components[0].Name)
 	assert.Equal(t, "receiver", result.Components[0].Style)
 
-	assert.Equal(t, "Memory Limiter", result.Components[1].Name)
-	assert.Equal(t, "processor", result.Components[1].Style)
+	assert.Equal(t, "Honeycomb Export", result.Components[1].Name)
+	assert.Equal(t, "exporter", result.Components[1].Style)
 
-	assert.Equal(t, "Honeycomb Export", result.Components[2].Name)
+	assert.Equal(t, "S3 Archive", result.Components[2].Name)
 	assert.Equal(t, "exporter", result.Components[2].Style)
-
-	assert.Equal(t, "S3 Archive", result.Components[3].Name)
-	assert.Equal(t, "exporter", result.Components[3].Style)
 
 	// Can iterate through all components
 	styleCount := make(map[string]int)
@@ -2743,7 +2736,7 @@ components:
 		styleCount[comp.Style]++
 	}
 	assert.Equal(t, 1, styleCount["receiver"])
-	assert.Equal(t, 1, styleCount["processor"])
+	assert.Equal(t, 0, styleCount["processor"])
 	assert.Equal(t, 2, styleCount["exporter"])
 }
 
@@ -2796,8 +2789,6 @@ version: 1.0
 components:
   - name: OTLP Receiver
     kind: OTelReceiver
-  - name: Memory Limiter
-    kind: MemoryLimiterProcessor
   - name: Start Sampling
     kind: SamplingSequencer
   - name: Check Errors
@@ -2841,7 +2832,7 @@ components:
 
 	// Verify non-sampling components are excluded
 	allComponents := result.Components
-	assert.Len(t, allComponents, 7)
+	assert.Len(t, allComponents, 6)
 
 	// Count styles to ensure all 4 sampling styles are represented
 	styleCount := make(map[string]int)

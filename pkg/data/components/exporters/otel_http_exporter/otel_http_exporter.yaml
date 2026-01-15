@@ -1,0 +1,129 @@
+kind: OTelHTTPExporter
+name: Send OTel via HTTP
+style: exporter
+logo: opentelemetry
+type: base
+status: beta
+version: v0.1.0
+summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
+description: Exports OpenTelemetry signals using OTLP via HTTP.
+tags:
+  - category:output
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - input:Traces
+  - input:Logs
+  - input:Metrics
+ports:
+  # inputs
+  - name: Traces
+    direction: input
+    type: OTelTraces
+  - name: Logs
+    direction: input
+    type: OTelLogs
+  - name: Metrics
+    direction: input
+    type: OTelMetrics
+properties:
+  - name: Headers
+    summary: Headers to emit when sending HTTP traffic.
+    description: |
+      Sending data to a backend may require additional headers to be
+      configured. This properties supports sending a map of header keys and
+      values.
+    type: map
+    subtype: header
+  - name: Host
+    summary: The hostname or IP address to send data to.
+    description: |
+      Hostname or IP address on which to send outgoing HTTP traffic.
+    type: string
+    validations:
+      - noblanks
+      - hostorip
+    default: api.honeycomb.io
+    advanced: true
+  - name: Port
+    summary: The port on which to send HTTP traffic.
+    description: |
+      The port on which to send outgoing HTTP traffic. Default is 443, which is
+      the value expected by Honeycomb. The OTel standard for HTTP is 4318.
+    type: int
+    validations:
+      - inrange(1, 65535)
+    default: 443
+    advanced: true
+  - name: Insecure
+    summary: Provide a way to disable TLS export.
+    description: |
+      Can be used to send data without TLS.
+    type: bool
+    subtype: label("Disable TLS export")
+    default: false
+    advanced: true
+  - name: BatchTimeout
+    display: Batch Timeout
+    summary: How long to wait to before sending a batch, regardless of size.
+    description: |
+      Configure how long to wait before sending a batch. The batch will be sent after
+      this timeout.
+    type: duration
+    default: 200ms
+    validations:
+      - duration
+      - nonempty
+    advanced: true
+  - name: BatchSize
+    display: Batch Size
+    summary: The size of a batch.
+    description: |
+      The size of a batch, measured by span/datapoint/log record count. Once a batch reaches this size it will be sent.
+    type: int
+    default: 8192
+    validations:
+      - nonempty
+    advanced: true
+  - name: QueueSize
+    display: Queue Size
+    summary: The size of a exporting queue.
+    description: |
+      The size of the exporting queue, measured by span/datapoint/log record count.
+      Items will be kept in the queue while the batch is being created.
+    type: int
+    default: 100_000
+    validations:
+      - nonempty
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_http_exporter_collector
+    format: collector
+    meta:
+      componentSection: exporters
+      signalTypes: [traces, metrics, logs] # we'll generate a name for each pipeline if there's more than 1
+      collectorComponentName: otlphttp
+    data:
+      - key: "{{ .ComponentName }}.endpoint"
+        value: "{{ buildurl .Values.Insecure .Values.Host .Values.Port }}"
+      - key: "{{ .ComponentName }}.tls.insecure"
+        value: "{{ .Values.Insecure | encodeAsBool }}"
+        suppress_if: "{{ not .Values.Insecure }}"
+      - key: "{{ .ComponentName }}.headers"
+        value: "{{ .Values.Headers | encodeAsMap }}"
+        suppress_if: "{{ not .Values.Headers }}"
+      - key: "{{ .ComponentName }}.sending_queue.queue_size"
+        value: "{{ .Values.QueueSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.enabled"
+        value: "{{ true | encodeAsBool}}"
+      - key: "{{ .ComponentName }}.sending_queue.sizer"
+        value: "items"
+      - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
+        value: "{{ .Values.BatchTimeout }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.min_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+      - key: "{{ .ComponentName }}.sending_queue.batch.max_size"
+        value: "{{ .Values.BatchSize | encodeAsInt }}"
+    # service is not part of the template, it's generated automatically by the collectorConfig

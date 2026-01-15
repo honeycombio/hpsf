@@ -1,0 +1,67 @@
+kind: ListComparisonCondition
+name: Compare with a List of Values
+style: condition
+type: base
+status: development
+version: v0.1.0
+summary: Check if a field value matches any value in a specified list
+description: |-
+  Check if any span in a trace has a field value that is contained in (or excluded from) a list of specified values.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:field
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Fields
+    summary: The name(s) of the field(s) to check against the list of values.
+    description: |
+      The field names to check. If any of these fields exist in any span of a trace, and its value matches (or doesn't match) any value in the Values list based on the Operator, the condition will match.
+    type: stringarray
+    validations:
+      - nonempty
+      - noblanks
+  - name: Operator
+    summary: Whether to match or exclude values in the list.
+    description: |
+      The comparison operator. "in" matches if the field value is in the Values list. "not-in" matches if the field value is not in the Values list.
+    type: string
+    subtype: oneof(in, not-in)
+    validations:
+      - oneof(in, not-in)
+    default: in
+  - name: Values
+    summary: The list of values to compare against.
+    description: |
+      The list of values to check. All values will be converted to strings for comparison. For "in" operator, condition is true if field value matches ANY value in this list. For "not-in" operator, condition is true if field value matches NONE of the values.
+    type: stringarray
+    validations:
+      - nonempty
+      - noblanks
+templates:
+  - kind: refinery_rules
+    name: ListComparisonCondition
+    format: rules
+    meta:
+      condition: true
+      scope: '{{ if eq .Values.Operator "not-in" }}span{{ else }}trace{{ end }}'
+    data:
+      - key: Fields
+        value: "{{ .Values.Fields | encodeAsArray }}"
+      - key: Operator
+        value: "{{ .Values.Operator }}"
+      - key: Value
+        value: "{{ .Values.Values | encodeAsArray }}"
+      - key: Datatype
+        value: string

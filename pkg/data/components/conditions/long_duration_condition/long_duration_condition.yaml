@@ -1,0 +1,46 @@
+kind: LongDurationCondition
+name: Check Span Duration
+style: condition
+type: base
+status: beta
+version: v0.1.0
+summary: Checks for long-duration spans
+description: |-
+  This condition checks the duration of all spans in a trace. If any span exceeds the specified duration, the condition evaluates to true.
+tags:
+  - category:condition
+  - service:refinery
+  - vendor:Honeycomb
+  - type:error
+  - input:SampleData
+  - output:SampleData
+ports:
+  # inputs
+  - name: Match
+    direction: input
+    type: SampleData
+  # outputs
+  - name: And
+    direction: output
+    type: SampleData
+properties:
+  - name: Duration
+    type: int
+    default: 1000
+    validations:
+      - positive
+templates:
+  - kind: refinery_rules
+    name: LongDurationCondition
+    format: rules
+    meta:
+      condition: true
+    data:
+      - key: Field
+        value: duration_ms
+      - key: Operator
+        value: ">="
+      - key: Value
+        value: "{{ .Values.Duration | encodeAsInt }}"
+      - key: Datatype
+        value: int

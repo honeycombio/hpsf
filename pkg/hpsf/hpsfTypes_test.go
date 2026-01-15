@@ -198,6 +198,11 @@ func TestPropType_ValueCoerce(t *testing.T) {
 		{PTYPE_BOOL, true, true, false},
 		{PTYPE_BOOL, false, false, false},
 		{PTYPE_BOOL, []string{"true"}, nil, true},
+		{PTYPE_CHECK, []string{"item1", "item2"}, []string{"item1", "item2"}, false},
+		{PTYPE_CHECK, []any{"item1", "item2"}, []string{"item1", "item2"}, false},
+		{PTYPE_CHECK, []any{123, "item2"}, []string{"123", "item2"}, false},
+		{PTYPE_CHECK, "not a slice", nil, true},
+		{PTYPE_CHECK, []string{}, []string{}, false},
 	}
 	for _, tt := range tests {
 		name := fmt.Sprintf("%s_%#v", tt.p, tt.v)

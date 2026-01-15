@@ -119,10 +119,12 @@ require (
 	go.opentelemetry.io/collector/extension/extensiontest v0.138.0 // indirect
 	go.opentelemetry.io/collector/extension/xextension v0.138.0 // indirect
 	go.opentelemetry.io/collector/internal/fanoutconsumer v0.138.0 // indirect
+	go.opentelemetry.io/collector/internal/memorylimiter v0.138.0 // indirect
 	go.opentelemetry.io/collector/internal/sharedcomponent v0.138.0 // indirect
 	go.opentelemetry.io/collector/pdata/testdata v0.138.0 // indirect
 	go.opentelemetry.io/collector/pdata/xpdata v0.138.0 // indirect
 	go.opentelemetry.io/collector/pipeline/xpipeline v0.138.0 // indirect
+	go.opentelemetry.io/collector/processor/memorylimiterprocessor v0.138.0 // indirect
 	go.opentelemetry.io/collector/processor/processorhelper/xprocessorhelper v0.138.0 // indirect
 	go.opentelemetry.io/collector/processor/processortest v0.138.0 // indirect
 	go.opentelemetry.io/collector/processor/xprocessor v0.138.0 // indirect
@@ -219,7 +221,7 @@ require (
 	go.uber.org/zap v1.27.0
 	golang.org/x/exp v0.0.0-20251017212417-90e834f514db // indirect
 	golang.org/x/net v0.46.0 // indirect
-	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/sys v0.39.0 // indirect
 	golang.org/x/text v0.30.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 	google.golang.org/grpc v1.76.0 // indirect

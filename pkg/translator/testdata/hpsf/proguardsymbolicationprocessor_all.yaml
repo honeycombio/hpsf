@@ -1,0 +1,31 @@
+components:
+  - name: otlp_in
+    kind: OTelReceiver
+  - name: otlp_out
+    kind: OTelHTTPExporter
+  - name: proguard_symbolicator
+    kind: ProguardSymbolicationProcessor
+    properties:
+      - name: SymbolStore
+        value: Google Cloud Storage
+      - name: BucketName
+        value: my-proguard-bucket
+      - name: Prefix
+        value: proguard-maps/
+connections:
+  - source:
+      component: otlp_in
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: proguard_symbolicator
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: proguard_symbolicator
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: otlp_out
+      port: Logs
+      type: OTelLogs

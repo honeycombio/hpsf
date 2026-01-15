@@ -1,0 +1,20 @@
+RulesVersion: 2
+Samplers:
+    __default__:
+        RulesBasedSampler:
+            Rules:
+                - Name: Keep_All_1
+                  SampleRate: 1
+                  Conditions:
+                    - Fields:
+                        - http.status_code
+                        - http.response.status_code
+                      Operator: '>='
+                      Value: 400
+                      Datatype: int
+                    - Fields:
+                        - http.status_code
+                        - http.response.status_code
+                      Operator: <=
+                      Value: 599
+                      Datatype: int

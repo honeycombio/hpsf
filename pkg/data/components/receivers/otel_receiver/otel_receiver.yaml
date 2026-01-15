@@ -1,0 +1,133 @@
+kind: OTelReceiver
+name: Receive OTel
+style: receiver
+logo: opentelemetry
+type: base
+status: beta
+version: v0.1.0
+summary: Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both.
+description: |-
+  Imports OTLP signals from OpenTelemetry via gRPC or HTTP. This receiver can be configured to listen
+  on both gRPC and HTTP, or just one.
+tags:
+  - category:input
+  - service:collector
+  - signal:OTelTraces
+  - signal:OTelMetrics
+  - signal:OTelLogs
+  - output:Traces
+  - output:Logs
+  - output:Metrics
+ports:
+  # outputs
+  - name: Traces
+    direction: output
+    type: OTelTraces
+  - name: Logs
+    direction: output
+    type: OTelLogs
+  - name: Metrics
+    direction: output
+    type: OTelMetrics
+properties:
+  - name: Host
+    summary: The hostname or IP address on which to listen
+    description: |
+      Hostname or IP address on which to listen for incoming traffic.
+      It is recommended not to change the default unless
+      you know what you're doing.
+    type: string
+    validations:
+      - noblanks
+      - hostorip
+    default: ${HTP_COLLECTOR_POD_IP}
+    advanced: true
+  - name: GRPCPort
+    display: gRPC Port
+    summary: The port on which to listen for gRPC traffic.
+    description: |
+      The port on which to listen for incoming gRPC traffic.
+      The OTel default is 4317. Set to 0 to disable gRPC.
+    type: int
+    validations:
+      - inrange(0, 65535)
+    default: 4317
+    advanced: true
+  - name: HTTPPort
+    display: HTTP Port
+    summary: The port on which to listen for HTTP traffic.
+    description: |
+      The port on which to listen for incoming HTTP traffic.
+      The OTel default is 4318. Set to 0 to disable HTTP.
+    type: int
+    validations:
+      - inrange(0, 65535)
+    default: 4318
+    advanced: true
+  - name: MemoryCheckInterval
+    display: Memory Check Interval
+    summary: Time between memory usage measurements
+    description: |
+      Time between measurements of memory usage. Recommended value is 1s.
+      If expected traffic is very spiky, decrease this value or increase
+      spike limit to avoid memory usage exceeding hard limit.
+    type: duration
+    default: 1s
+    validations:
+      - duration
+    advanced: true
+  - name: MemoryLimitPercentage
+    display: Memory Limit Percentage
+    summary: Maximum percentage of total memory for process heap
+    description: |
+      Maximum percentage of total memory targeted to be allocated by process heap.
+      Intended for dynamic platforms like Docker. Only supported on Linux systems
+      with cgroups.
+    type: int
+    default: 80
+    validations:
+      - inrange(0, 100)
+    advanced: true
+  - name: MemorySpikeLimitPercentage
+    display: Memory Spike Limit Percentage
+    summary: Maximum memory spike percentage expected between measurements
+    description: |
+      Maximum spike percentage expected between measurements of memory usage.
+      Used to calculate spike limit from total available memory.
+    type: int
+    default: 20
+    validations:
+      - inrange(0, 100)
+    advanced: true
+templates:
+  - kind: collector_config
+    name: otel_receiver_collector
+    format: collector
+    meta:
+      componentSection: receivers
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: otlp
+    data:
+      - key: "{{ .ComponentName }}.protocols.grpc.endpoint"
+        value: "{{ .Values.Host }}:{{ .Values.GRPCPort }}"
+        suppress_if: "{{ eq .HProps.GRPCPort 0 }}"
+      - key: "{{ .ComponentName }}.protocols.http.endpoint"
+        value: "{{ .Values.Host }}:{{ .Values.HTTPPort }}"
+        suppress_if: "{{ eq .HProps.HTTPPort 0 }}"
+    # service is not part of the template, it's generated automatically by the collectorConfig
+  - kind: collector_config
+    name: otel_receiver_memory_limiter
+    format: collector
+    meta:
+      componentSection: processors
+      signalTypes: [traces, metrics, logs]
+      collectorComponentName: memory_limiter
+    data:
+      - key: "{{ .ComponentName }}.check_interval"
+        value: "{{ .Values.MemoryCheckInterval }}"
+      - key: "{{ .ComponentName }}.limit_percentage"
+        value: "{{ .Values.MemoryLimitPercentage | encodeAsInt }}"
+        suppress_if: "{{ not .Values.MemoryLimitPercentage }}"
+      - key: "{{ .ComponentName }}.spike_limit_percentage"
+        value: "{{ .Values.MemorySpikeLimitPercentage | encodeAsInt }}"
+        suppress_if: "{{ not .Values.MemorySpikeLimitPercentage }}"

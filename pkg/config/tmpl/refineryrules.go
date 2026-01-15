@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/honeycombio/hpsf/pkg/config/decorator"
 )
 
 // In order to be able to unmarshal "15s" etc. into time.Duration, we need to
@@ -192,6 +194,7 @@ func setMemberValue(key string, member any, value any) error {
 		memberValue = memberValue.Elem()
 	}
 	if memberValue.Kind() != reflect.Struct {
+		fmt.Printf("ERROR: setMemberValue expected struct for key %s, got %s. value=%v\n", key, memberValue.Kind(), value)
 		return fmt.Errorf("expected struct, got %s for key %s", memberValue.Kind(), key)
 	}
 
@@ -239,6 +242,10 @@ func setMemberValue(key string, member any, value any) error {
 		field = field.Elem()
 	}
 	// At the end of the path, set the value with type conversion if needed
+	// First, undecorate the value if it's a string with type encoding
+	if strValue, ok := value.(string); ok {
+		value = decorator.Undecorate(strValue)
+	}
 	v := reflect.ValueOf(value)
 	if v.Type() != field.Type() {
 		// Special handling for Duration type

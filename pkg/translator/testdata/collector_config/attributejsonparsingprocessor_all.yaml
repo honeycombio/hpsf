@@ -6,6 +6,10 @@ receivers:
             http:
                 endpoint: ${HTP_COLLECTOR_POD_IP}:4318
 processors:
+    memory_limiter/otlp_in:
+        check_interval: 1s
+        limit_percentage: 80
+        spike_limit_percentage: 20
     transform/json_parser_1:
         error_mode: ignore
         trace_statements:
@@ -34,9 +38,9 @@ service:
     pipelines:
         logs/88b-e5a:
             receivers: [otlp/otlp_in]
-            processors: [usage, transform/json_parser_1]
+            processors: [memory_limiter/otlp_in, usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
         traces/4ed-e32:
             receivers: [otlp/otlp_in]
-            processors: [usage, transform/json_parser_1]
+            processors: [memory_limiter/otlp_in, usage, transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
