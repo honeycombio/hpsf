@@ -1,6 +1,10 @@
 # Check for Errors
 
-**Kind:** `ErrorExistsCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `ErrorExistsCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [FieldExistenceCondition](../field_existence_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 
