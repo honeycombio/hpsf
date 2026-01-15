@@ -1,16 +1,11 @@
 kind: RedactionProcessor
-name: Mask sensitive values
+name: Redact Sensitive Values
 style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Redacts (masks) sensitive values in trace and log attributes.
-description: |-
-  This processor is used to redact (mask) sensitive values in trace and log
-  attributes based on predefined patterns or custom regular expressions. It
-  helps ensure that sensitive information such as phone numbers, credit card
-  numbers, and other personally identifiable information is not sent with telemetry.
-  Note that it masks only the matching parts within values, not the entire attribute.
+summary: Mask sensitive data patterns in telemetry values
+description: Select common patterns or specify custom regex patterns for string replacement in body/attribute values. Matching strings are replaced with a fixed number of asterisks.
 tags:
   - category:processor
   - service:collector
@@ -45,65 +40,65 @@ ports:
     direction: output
     type: OTelMetrics
 properties:
-  - name: Patterns
+  - name: Presets
     type: checklist
-    summary: Predefined patterns to redact from fields.
+    summary: Available presets for redacting sensitive attribute values
     description: |
-      The predefined patterns to redact from fields.
-      You can select multiple patterns to redact.
+      The predefined presets to redact from fields.
+      You can select multiple presets to redact.
     subtype:
       - id: ssn
-        displayName: 'Social Security number'
+        displayName: "Social Security number"
         value: '\b[0-9]{3}[.-]?[0-9]{2}[.-]?[0-9]{4}\b'
-        tooltipText: 'Matches US Social Security numbers in formats like 123-45-6789 or 123.45.6789'
+        tooltipText: "Matches US Social Security numbers in formats like 123-45-6789 or 123.45.6789"
       - id: credit_card
-        displayName: 'Credit card number'
+        displayName: "Credit card number"
         value: '\b(?:[0-9][ -]*?){13,16}\b'
-        tooltipText: 'Matches credit card numbers with optional spaces or dashes, supporting 13-16 digit cards'
+        tooltipText: "Matches credit card numbers with optional spaces or dashes, supporting 13-16 digit cards"
       - id: email
-        displayName: 'Email'
+        displayName: "Email"
         value: '\b[a-zA-Z0-9._+-]+@[A-Za-z0-9.-]+\.[a-zA-Z]{2,6}\b'
-        tooltipText: 'Matches email addresses in standard format like user@domain.com'
+        tooltipText: "Matches email addresses in standard format like user@domain.com"
       - id: us_phone
-        displayName: 'US Phone number'
+        displayName: "US Phone number"
         value: '\b\(?[0-9]{3}\)?[. -]?[0-9]{3}[. -]?[0-9]{4}\b'
-        tooltipText: 'Matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567'
+        tooltipText: "Matches US phone numbers in formats like (555) 123-4567, 555-123-4567, or 555.123.4567"
       - id: intl_phone
-        displayName: 'International Phone Number'
+        displayName: "International Phone Number"
         value: '\b\+[1-9][0-9]{0,2}(?:[-.\s]?(?:\([0-9]+\))?(?:[-.\s]?[0-9]+)*)\b'
-        tooltipText: 'Matches international phone numbers like +1 555-123-4567 or +44 20 1234 5678'
+        tooltipText: "Matches international phone numbers like +1 555-123-4567 or +44 20 1234 5678"
       - id: iban
-        displayName: 'International Bank Account Number (IBAN)'
+        displayName: "International Bank Account Number (IBAN)"
         value: '\b[A-Z]{2}[0-9]{2}(?: ?[A-Z0-9]){11,31}(?:\s[A-Z0-9])*\b'
-        tooltipText: 'Matches IBAN numbers like GB82 WEST 1234 5698 7654 32'
+        tooltipText: "Matches IBAN numbers like GB82 WEST 1234 5698 7654 32"
       - id: ipv4
-        displayName: 'IPv4 Address'
+        displayName: "IPv4 Address"
         value: '\b(?:(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\.){3}(?:25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9]?[0-9])\b'
-        tooltipText: 'Matches IPv4 addresses like 192.168.1.1 or 10.0.0.255'
+        tooltipText: "Matches IPv4 addresses like 192.168.1.1 or 10.0.0.255"
       - id: ipv6
-        displayName: 'IPv6 Address'
+        displayName: "IPv6 Address"
         value: '\b(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}\b'
-        tooltipText: 'Matches IPv6 addresses like 2001:0db8:85a3:0000:0000:8a2e:0370:7334'
+        tooltipText: "Matches IPv6 addresses like 2001:0db8:85a3:0000:0000:8a2e:0370:7334"
       - id: mac_address
-        displayName: 'MAC Address'
+        displayName: "MAC Address"
         value: '\b([0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}\b'
-        tooltipText: 'Matches MAC addresses like AA:BB:CC:DD:EE:FF or AA-BB-CC-DD-EE-FF'
+        tooltipText: "Matches MAC addresses like AA:BB:CC:DD:EE:FF or AA-BB-CC-DD-EE-FF"
       - id: us_city_state
-        displayName: 'US City, State'
+        displayName: "US City, State"
         value: '\b[A-Z][A-Za-z\s\.]+,\s{0,1}[A-Z]{2}\b'
-        tooltipText: 'Matches US city and state combinations like New York, NY'
+        tooltipText: "Matches US city and state combinations like New York, NY"
       - id: us_zip_code
-        displayName: 'US Zip Code'
+        displayName: "US Zip Code"
         value: '\b[0-9]{5}(?:[-\s][0-9]{4})?\b'
-        tooltipText: 'Matches US 5-digit and 9-digit zip codes'
+        tooltipText: "Matches US 5-digit and 9-digit zip codes"
       - id: uuid
-        displayName: 'UUID/GUID'
+        displayName: "UUID/GUID"
         value: '\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b'
-        tooltipText: 'Matches UUIDs/GUIDs in the 8-444-12 pattern, like 123e4567-e89b-12d3-a456-426614174000'
+        tooltipText: "Matches UUIDs/GUIDs in the 8-444-12 pattern, like 123e4567-e89b-12d3-a456-426614174000"
     default: ["ssn", "credit_card", "email", "us_phone"]
   - name: OtherPatterns
-    display: Other Patterns
-    summary: Additional regular expression patterns to redact from fields.
+    display: Custom Attribute Value Pattern
+    summary: Regular expression patterns of attribute values to redact.
     description: |
       A list of additional patterns to redact from fields. These patterns
       must conform to the regular expression syntax of the Go programming
@@ -155,7 +150,7 @@ templates:
         suppress_if: "{{ and (not .Values.Patterns) (not .Values.OtherPatterns) }}"
       - key: "{{ .ComponentName }}.hash_function"
         value: "{{ .Values.ReplacementStrategy | lower }}"
-        suppress_if: "{{ eq .Values.ReplacementStrategy \"Fixed\" }}"
+        suppress_if: '{{ eq .Values.ReplacementStrategy "Fixed" }}'
       - key: "{{ .ComponentName }}.ignored_keys"
         value: "{{ .Values.IgnoredAttributes | encodeAsArray }}"
         suppress_if: "{{ not .Values.IgnoredAttributes }}"
