@@ -6,7 +6,7 @@ status: development
 version: v0.1.0
 summary: Filters metrics using custom OpenTelemetry Transformation Language (OTTL) statements
 description:
-  Applies OpenTelemetry Transformation Language (OTTL) conditions at metric or datapoint context to drop unwanted metrics. Use for complex filtering logic beyond standard attribute filters. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
+  Applies OpenTelemetry Transformation Language (OTTL) conditions at metric or datapoint context to drop unwanted metrics. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
   - category:processor
   - service:collector
   - signal:OTelMetrics
