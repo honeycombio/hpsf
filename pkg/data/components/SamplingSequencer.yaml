@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Converts traces and logs to SampleData format for tail-based sampling.
-description: Bridges OTel Collector to Refinery by transforming signals into SampleData format. Enables tail-based sampling decisions after complete trace collection.
+description: Bridges OTel Collector to Refinery by transforming signals into a format for tail-based sampling. Enables tail-based sampling decisions after complete trace collection.
 tags:
   - category:startsampling
   - service:refinery
