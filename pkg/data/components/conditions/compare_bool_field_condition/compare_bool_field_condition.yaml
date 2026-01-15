@@ -4,10 +4,9 @@ style: condition
 type: base
 status: beta
 version: v0.1.0
-summary: Compares a bool field to a specified value
-description: |-
-  This checks if any span in a trace has a specific bool field that compares appropriately to the
-  specified value.
+summary: Deprecated
+description: |
+  Use the following component instead: Check a Boolean Value.
 tags:
   - category:condition
   - service:refinery

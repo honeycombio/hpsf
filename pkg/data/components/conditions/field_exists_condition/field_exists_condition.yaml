@@ -4,8 +4,9 @@ style: condition
 type: base
 status: beta
 version: v0.1.0
-summary: Checks if a field exists or does not exist in a trace
-description: This checks if any span in a trace has a specific field that exists or does not exist.
+summary: Deprecated
+description: |
+  Use the following component instead: Check Field Existence.
 tags:
   - category:condition
   - service:refinery
