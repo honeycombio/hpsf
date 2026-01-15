@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Checks if a trace has or does not have a root span
-description: Identifies traces with or without a root span (span with no parent). Useful for filtering incomplete traces or isolating orphaned spans during debugging.
+description: Identifies traces with or without a root span (span with no parent).
 tags:
   - category:condition
   - service:refinery

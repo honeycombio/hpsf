@@ -5,7 +5,7 @@ type: base
 status: alpha
 version: v0.1.0
 summary: Drops all traces
-description: Drops all incoming traces without sampling. Useful for testing pipeline configuration without generating events.
+description: Drops all incoming traces without sampling.
 tags:
   - category:sampler
   - service:refinery

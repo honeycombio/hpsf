@@ -5,7 +5,7 @@ type: base
 status: development
 version: v0.1.0
 summary: Checks if HTTP status code falls within a specified range
-description: Evaluates HTTP status codes using inclusive min/max bounds. Useful for targeting specific error ranges like 4xx client errors or 5xx server errors separately.
+description: Evaluates HTTP status codes using inclusive min/max bounds.
 tags:
   - category:refinery_rule
   - service:refinery
