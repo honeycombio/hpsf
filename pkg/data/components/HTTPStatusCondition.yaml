@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks HTTP status codes against a specified value using an operator
+summary: Deprecated
 description: Evaluates http.status_code and http.response.status_code fields using comparison operators. Commonly used to sample errors (>= 400) at higher rates.
 tags:
   - category:refinery_rule

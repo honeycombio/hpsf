@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks if an error exists in any span of a trace
+summary: Deprecated
 description: Evaluates error field presence across all spans in a trace. Useful for filtering error traces for deeper sampling or alerting purposes.
 tags:
   - category:condition

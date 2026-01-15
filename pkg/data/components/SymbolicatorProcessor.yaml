@@ -4,7 +4,7 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Symbolicates JavaScript stack traces using source maps
+summary: Deprecated
 description: Converts minified JavaScript stack traces to original source locations. Retrieves source map files from cloud storage for readable error debugging.
 tags:
   - category:processor

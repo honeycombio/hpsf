@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Compares an integer field against a specified value using an operator
+summary: Deprecated
 description: Evaluates integer comparisons (=, !=, >, >=, <, <=) across spans. Returns true if any span contains matching field with specified value and operator.
 tags:
   - category:condition

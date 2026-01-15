@@ -4,7 +4,7 @@ style: processor
 type: base
 status: development
 version: v0.0.0
-summary: Filters telemetry data using custom OTTL rules
+summary: Deprecated
 description: Applies OpenTelemetry Transformation Language conditions to drop unwanted signals. Advanced component requiring OTTL expertise and no validation provided.
 tags:
   - category:processor

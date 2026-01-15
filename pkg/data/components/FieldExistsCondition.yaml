@@ -4,7 +4,7 @@ style: condition
 type: base
 status: alpha
 version: v0.1.0
-summary: Checks if a field exists or does not exist in a trace
+summary: Deprecated
 description: Evaluates field presence across all spans using exists or does-not-exist operators. Useful for filtering incomplete traces or verifying instrumentation.
 tags:
   - category:condition
