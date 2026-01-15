@@ -5,7 +5,7 @@ type: base
 status: development
 version: v0.0.0
 summary: Deprecated
-description: Applies OpenTelemetry Transformation Language conditions to drop unwanted signals. Advanced component requiring OTTL expertise and no validation provided.
+description: This is currently a development-only component and will be removed from Pipeline Builder.
 tags:
   - category:processor
   - service:collector

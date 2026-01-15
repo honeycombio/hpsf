@@ -5,10 +5,7 @@ type: base
 status: development
 version: v0.1.0
 summary: Deprecated
-description: |
-  Perform custom modifications to your telemetry data using configuration statements
-  written in OpenTelemetry Transformation Language (OTTL). This is an advanced component.
-  No OTTL validation is provided.
+description: This is currently a development-only component and will be removed from Pipeline Builder.
 tags:
   - category:processor
   - service:collector
