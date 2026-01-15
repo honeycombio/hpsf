@@ -1,5 +1,5 @@
 kind: MatchRegularExpression
-name: Match a regular expression
+name: Match a Regular Expression
 style: condition
 type: base
 status: alpha
