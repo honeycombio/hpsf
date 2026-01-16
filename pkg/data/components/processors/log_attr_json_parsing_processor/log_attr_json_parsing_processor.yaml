@@ -2,7 +2,7 @@ kind: LogAttrJSONParsingProcessor
 name: Parse Log Attribute as JSON
 style: processor
 type: base
-status: development
+status: beta
 version: v0.0.1
 summary: Parses log attribute JSON string values into individual attributes
 description: |

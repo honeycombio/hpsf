@@ -2,7 +2,7 @@ kind: NumericValueCondition
 name: Check a Numeric Field
 style: condition
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Compares an int or num field against a specified value using an operator
 description: |

@@ -2,7 +2,7 @@ kind: FieldExistsCondition
 name: Check if field exists
 style: condition
 type: base
-status: beta
+status: deprecated
 version: v0.1.0
 summary: Deprecated
 description: |

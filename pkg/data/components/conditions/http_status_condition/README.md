@@ -1,6 +1,10 @@
 # Check HTTP Status
 
-**Kind:** `HTTPStatusCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `HTTPStatusCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [HTTPStatusCodeCondition](../http_status_code_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 

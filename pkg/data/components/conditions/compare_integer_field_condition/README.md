@@ -1,6 +1,10 @@
 # Compare an integer field
 
-**Kind:** `CompareIntegerFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `CompareIntegerFieldCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [NumericValueCondition](../numeric_value_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 

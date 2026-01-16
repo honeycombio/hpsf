@@ -2,7 +2,7 @@ kind: LogDeduplicationProcessor
 name: Deduplicate Logs
 style: processor
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Removes duplicate log entries within a configurable time window
 description: |

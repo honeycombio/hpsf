@@ -2,7 +2,7 @@ kind: AttributeJSONParsingProcessor
 name: Parse Attribute As JSON
 style: processor
 type: base
-status: beta
+status: deprecated
 version: v0.0.1
 summary: Deprecated
 description: |

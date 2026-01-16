@@ -2,6 +2,67 @@
 
 This directory contains component definitions for the Honeycomb Pipeline Specification Format (HPSF).
 
+## Component Index
+
+| Component | Status | Description |
+|-----------|--------|-------------|
+| **Receivers** | | |
+| [OTelReceiver](receivers/otel_receiver/) | beta | Receives OTLP (OpenTelemetry) traffic via gRPC or HTTP or both |
+| [NopReceiver](receivers/nop_receiver/) | development | Receives no signals and performs no operations (no-op receiver for testing) |
+| **Processors** | | |
+| [AttributeJSONParsingProcessor](processors/attribute_json_parsing_processor/) | deprecated | Deprecated - Use Parse Log/Span Attribute as JSON |
+| [CustomLogFilterProcessor](processors/custom_log_filter_processor/) | beta | Filters logs using custom OTTL statements |
+| [CustomLogTransformProcessor](processors/custom_log_transform_processor/) | beta | Transforms logs using custom OTTL statements |
+| [CustomMetricFilterProcessor](processors/custom_metric_filter_processor/) | beta | Filters metrics using custom OTTL statements |
+| [CustomMetricTransformProcessor](processors/custom_metric_transform_processor/) | beta | Transforms metrics using custom OTTL statements |
+| [CustomTraceFilterProcessor](processors/custom_trace_filter_processor/) | beta | Filters traces using custom OTTL statements |
+| [CustomTraceTransformProcessor](processors/custom_trace_transform_processor/) | beta | Transforms traces using custom OTTL statements |
+| [DsymSymbolicationProcessor](processors/dsym_symbolication_processor/) | beta | Symbolicates iOS/Swift stack traces using dSYM files |
+| [LogAttrJSONParsingProcessor](processors/log_attr_json_parsing_processor/) | beta | Parses log attribute JSON string values into individual attributes |
+| [LogBodyJSONParsingProcessor](processors/log_body_json_parsing_processor/) | beta | Parses log body as JSON and flattens it into individual log attributes |
+| [LogDeduplicationProcessor](processors/log_deduplication_processor/) | beta | Removes duplicate log entries within a configurable time window |
+| [LogSeverityFilterProcessor](processors/log_severity_filter_processor/) | beta | Filters logs by severity level using configurable minimum threshold |
+| [ProguardSymbolicationProcessor](processors/proguard_symbolication_processor/) | beta | Symbolicates Java/Kotlin stack traces using ProGuard mapping files |
+| [RedactionProcessor](processors/redaction_processor/) | beta | Mask sensitive data patterns in telemetry values |
+| [SourcemapSymbolicationProcessor](processors/sourcemap_symbolication_processor/) | beta | Symbolicates JavaScript/TypeScript stack traces using source maps |
+| [SpanAttrJSONParsingProcessor](processors/span_attr_json_parsing_processor/) | beta | Parses span attribute JSON string value into individual attributes |
+| **Exporters** | | |
+| [DebugExporter](exporters/debug_exporter/) | beta | Sends pipeline signal traffic to stdout for debugging |
+| [EnhanceIndexingS3Exporter](exporters/enhance_indexing_s3_exporter/) | beta | Exports traces and logs to AWS S3 with automatic field indexing for querying |
+| [HoneycombExporter](exporters/honeycomb_exporter/) | beta | Sends telemetry to Honeycomb for real-time analysis |
+| [NopExporter](exporters/nop_exporter/) | development | Exports nothing, useful for testing minimal collector configurations |
+| [OTelGRPCExporter](exporters/otel_grpc_exporter/) | beta | Sends telemetry in OpenTelemetry (OTLP) format via gRPC |
+| [OTelHTTPExporter](exporters/otel_http_exporter/) | beta | Sends telemetry in OpenTelemetry (OTLP) format via HTTP |
+| [S3ArchiveExporter](exporters/s3_archive_exporter/) | beta | Sends telemetry to AWS S3 without indexing |
+| **Samplers** | | |
+| [DeterministicSampler](samplers/deterministic_sampler/) | beta | Samples traces deterministically at a fixed rate based on trace ID |
+| [Dropper](samplers/dropper/) | beta | Drops all traces |
+| [EMADynamicSampler](samplers/ema_dynamic_sampler/) | beta | Samples traces proportionally using EMA to reach target rate |
+| [EMAThroughputSampler](samplers/ema_throughput_sampler/) | beta | Samples events using EMA to achieve target throughput |
+| [KeepAllSampler](samplers/keep_all_sampler/) | beta | Keeps all traces without sampling |
+| **Conditions** | | |
+| [BooleanValueCondition](conditions/boolean_value_condition/) | beta | Checks if a boolean field matches a specified value |
+| [CompareBoolFieldCondition](conditions/compare_bool_field_condition/) | deprecated | Deprecated - Use Check a Boolean Value |
+| [CompareDecimalFieldCondition](conditions/compare_decimal_field_condition/) | deprecated | Deprecated - Use Check a Numeric Field |
+| [CompareIntegerFieldCondition](conditions/compare_integer_field_condition/) | deprecated | Deprecated - Use Check a Numeric Field |
+| [CompareStringFieldCondition](conditions/compare_string_field_condition/) | deprecated | Deprecated - Use Check a String Value |
+| [ErrorExistsCondition](conditions/error_exists_condition/) | deprecated | Deprecated - Use Check Field Existence |
+| [FieldContainsCondition](conditions/field_contains_condition/) | deprecated | Deprecated - Use Check a String Value |
+| [FieldExistenceCondition](conditions/field_existence_condition/) | beta | Checks traces for existence of specified field(s) |
+| [FieldExistsCondition](conditions/field_exists_condition/) | deprecated | Deprecated - Use Check Field Existence |
+| [FieldStartsWithCondition](conditions/field_starts_with_condition/) | deprecated | Deprecated - Use Check a String Value |
+| [HTTPStatusCodeCondition](conditions/http_status_code_condition/) | beta | Checks if HTTP status code falls within a specified range |
+| [HTTPStatusCondition](conditions/http_status_condition/) | deprecated | Deprecated - Use Check HTTP Status Code |
+| [ListComparisonCondition](conditions/list_comparison_condition/) | beta | Checks if a field value matches any value in a specified list |
+| [LongDurationCondition](conditions/long_duration_condition/) | beta | Checks if any span duration exceeds a specified threshold |
+| [MatchRegularExpression](conditions/match_regular_expression/) | beta | Checks if a field matches a regular expression |
+| [NumericValueCondition](conditions/numeric_value_condition/) | beta | Compares an int or num field against a specified value using an operator |
+| [RootSpanCondition](conditions/root_span_condition/) | beta | Checks if a trace has or does not have a root span |
+| [StringValueCondition](conditions/string_value_condition/) | beta | Compares a string field against a specified value using an operator |
+| **Start Sampling** | | |
+| [ForceSpanScope](startsampling/force_span_scope/) | beta | Forces Refinery rule scope to span level instead of trace level |
+| [SamplingSequencer](startsampling/sampling_sequencer/) | beta | Prepares traces and logs for sampling and sequences the order of sampling rule evaluation |
+
 ## Directory Structure
 
 Components are organized by **style** (component type):
@@ -60,50 +121,6 @@ make validate-components
 3. Add `{component_name}.yaml` (see anatomy below)
 4. Add `README.md` with usage examples
 5. Validate: `make validate-components`
-
-## Component Index
-
-### Receivers (Input)
-- [OTelReceiver](receivers/otel_receiver/) - Receive OTel signals (gRPC/HTTP)
-- [NopReceiver](receivers/nop_receiver/) - No-op for testing
-
-### Processors (Transform/Filter)
-- [CustomTransformProcessor](processors/custom_transform_processor/) - OTTL transformations
-- [CustomFilterProcessor](processors/custom_filter_processor/) - OTTL filtering
-- [RedactionProcessor](processors/redaction_processor/) - Redact sensitive data
-- [LogBodyJSONParsingProcessor](processors/log_body_json_parsing_processor/) - Parse JSON in log bodies
-- [SymbolicatorProcessor](processors/symbolicator_processor/) - Symbolicate stack traces
-- [AttributeJSONParsingProcessor](processors/attribute_json_parsing_processor/) - Parse JSON in attributes
-- [LogAttrJSONParsingProcessor](processors/log_attr_json_parsing_processor/) - Parse JSON in log attributes
-- [SpanAttrJSONParsingProcessor](processors/span_attr_json_parsing_processor/) - Parse JSON in span attributes
-
-### Exporters (Output)
-- [HoneycombExporter](exporters/honeycomb_exporter/) - Send to Honeycomb
-- [OTelGRPCExporter](exporters/otel_grpc_exporter/) - Export via gRPC
-- [OTelHTTPExporter](exporters/otel_http_exporter/) - Export via HTTP
-- [S3ArchiveExporter](exporters/s3_archive_exporter/) - Archive to S3
-- [DebugExporter](exporters/debug_exporter/) - Debug output to stdout
-- [NopExporter](exporters/nop_exporter/) - No-op for testing
-
-### Samplers
-- [DeterministicSampler](samplers/deterministic_sampler/) - Fixed-rate sampling
-- [EMADynamicSampler](samplers/ema_dynamic_sampler/) - Dynamic EMA-based sampling
-- [EMAThroughputSampler](samplers/ema_throughput_sampler/) - Throughput-based EMA sampling
-- [KeepAllSampler](samplers/keep_all_sampler/) - Keep all spans
-- [Dropper](samplers/dropper/) - Drop all spans
-
-### Conditions
-- [FieldExistsCondition](conditions/field_exists_condition/) - Check field presence
-- [CompareIntegerFieldCondition](conditions/compare_integer_field_condition/) - Integer comparisons
-- [HTTPStatusCondition](conditions/http_status_condition/) - HTTP status code checks
-- [ErrorExistsCondition](conditions/error_exists_condition/) - Check for errors
-- [RootSpanCondition](conditions/root_span_condition/) - Root span detection
-- [FieldContainsCondition](conditions/field_contains_condition/) - String contains check
-- [BooleanValueCondition](conditions/boolean_value_condition/) - Boolean value check
-
-### Start Sampling
-- [SamplingSequencer](startsampling/sampling_sequencer/) - Route to samplers based on conditions
-- [ForceSpanScope](startsampling/force_span_scope/) - Force condition eval at span level
 
 ## Component Versioning
 

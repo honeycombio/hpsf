@@ -2,7 +2,7 @@ kind: FieldExistenceCondition
 name: Check Field Existence
 style: condition
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Checks traces for existence of specified field(s)
 description: |

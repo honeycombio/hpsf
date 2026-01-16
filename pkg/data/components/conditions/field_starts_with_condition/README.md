@@ -1,6 +1,10 @@
 # Check That Field Starts With
 
-**Kind:** `FieldStartsWithCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `FieldStartsWithCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [StringValueCondition](../string_value_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 

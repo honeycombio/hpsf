@@ -2,7 +2,7 @@ kind: HTTPStatusCodeCondition
 name: Check HTTP Status Code
 style: condition
 type: base
-status: development
+status: beta
 version: v0.1.0
 summary: Checks if HTTP status code falls within a specified range
 description: |

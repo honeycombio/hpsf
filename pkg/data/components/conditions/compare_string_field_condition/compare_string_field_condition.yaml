@@ -2,7 +2,7 @@ kind: CompareStringFieldCondition
 name: Compare a string field
 style: condition
 type: base
-status: beta
+status: deprecated
 version: v0.1.0
 summary: Deprecated
 description: |

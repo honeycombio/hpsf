@@ -63,15 +63,6 @@ components:
           test: header
       - name: UseTLS
         value: true
-  - name: Parse Attribute As JSON_1
-    kind: AttributeJSONParsingProcessor
-    properties:
-      - name: Attribute
-        value: test
-      - name: Signal
-        value: span
-  - name: Check HTTP Status_1
-    kind: HTTPStatusCondition
   - name: Check HTTP Status Code_1
     kind: HTTPStatusCodeCondition
     properties:
@@ -83,26 +74,6 @@ components:
     kind: RootSpanCondition
   - name: Drop All_1
     kind: Dropper
-  - name: Compare Decimal Field_1
-    kind: CompareDecimalFieldCondition
-    properties:
-      - name: Fields
-        value:
-          - response_time
-      - name: Operator
-        value: ">"
-      - name: Value
-        value: 1.5
-  - name: Compare String Field_1
-    kind: CompareStringFieldCondition
-    properties:
-      - name: Fields
-        value:
-          - status_message
-      - name: Operator
-        value: =
-      - name: Value
-        value: error
   - name: Check Numeric Value_1
     kind: NumericValueCondition
     properties:
@@ -125,18 +96,6 @@ components:
         value: status_message
       - name: RegularExpression
         value: ^[A-Z][a-z]+$
-  - name: Check Field Exists_1
-    kind: FieldExistsCondition
-    properties:
-      - name: Field
-        value: status_message
-  - name: Check Field Starts With_1
-    kind: FieldStartsWithCondition
-    properties:
-      - name: Field
-        value: service.name
-      - name: Prefix
-        value: web
   - name: Check Boolean Value_1
     kind: BooleanValueCondition
     properties:
@@ -275,22 +234,6 @@ components:
     kind: DebugExporter
 connections:
   - source:
-      component: Receive OTel_1
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: Parse Attribute As JSON_1
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Parse Attribute As JSON_1
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: Filter Traces by Custom OTTL_1
-      port: Traces
-      type: OTelTraces
-  - source:
       component: Start Sampling_1
       port: Rule 1
       type: SampleData
@@ -314,22 +257,6 @@ connections:
       component: Send to Honeycomb_1
       port: Events
       type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 3
-      type: SampleData
-    destination:
-      component: Compare Decimal Field_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Compare String Field_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check Numeric Value_1
-      port: Match
-      type: SampleData
   - source:
       component: Check Numeric Value_1
       port: And
@@ -355,22 +282,6 @@ connections:
       port: Match
       type: SampleData
   - source:
-      component: Match Regular Expression_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check Field Exists_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Field Exists_1
-      port: And
-      type: SampleData
-    destination:
-      component: Sample at 123_1
-      port: Sample
-      type: SampleData
-  - source:
       component: Sample at 123_1
       port: Events
       type: HoneycombEvents
@@ -378,22 +289,6 @@ connections:
       component: Send to Honeycomb_1
       port: Events
       type: HoneycombEvents
-  - source:
-      component: Start Sampling_1
-      port: Rule 2
-      type: SampleData
-    destination:
-      component: Check HTTP Status_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check HTTP Status_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check HTTP Status Code_1
-      port: Match
-      type: SampleData
   - source:
       component: Check HTTP Status Code_1
       port: And
@@ -563,36 +458,12 @@ connections:
       port: Sample
       type: SampleData
   - source:
-      component: Compare Decimal Field_1
-      port: And
-      type: SampleData
-    destination:
-      component: Compare String Field_1
-      port: Match
-      type: SampleData
-  - source:
       component: Check List Comparison_1
       port: And
       type: SampleData
     destination:
       component: Sample Proportionally by Key_1
       port: Sample
-      type: SampleData
-  - source:
-      component: Check Field Existence_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check Field Starts With_1
-      port: Match
-      type: SampleData
-  - source:
-      component: Check Field Starts With_1
-      port: And
-      type: SampleData
-    destination:
-      component: Check String Value_1
-      port: Match
       type: SampleData
   - source:
       component: Check Duration_1
@@ -650,313 +521,311 @@ connections:
       component: Transform Traces with OTTL_1
       port: Traces
       type: OTelTraces
+  - source:
+      component: Receive OTel_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Filter Traces by Custom OTTL_1
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Start Sampling_1
+      port: Rule 2
+      type: SampleData
+    destination:
+      component: Check HTTP Status Code_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Match Regular Expression_1
+      port: And
+      type: SampleData
+    destination:
+      component: Sample at 123_1
+      port: Sample
+      type: SampleData
+  - source:
+      component: Check Field Existence_1
+      port: And
+      type: SampleData
+    destination:
+      component: Check String Value_1
+      port: Match
+      type: SampleData
+  - source:
+      component: Start Sampling_1
+      port: Rule 3
+      type: SampleData
+    destination:
+      component: Check Numeric Value_1
+      port: Match
+      type: SampleData
 layout:
   components:
     - name: Receive OTel_1
       position:
         x: 0
-        y: 780
+        y: 600
       size:
         w: 177
         h: 167
     - name: Send OTel via gRPC_1
       position:
-        x: 940
-        y: 780
+        x: 960
+        y: 200
       size:
         w: 219
         h: 167
     - name: Send OTel via HTTP_1
       position:
         x: 940
-        y: 580
+        y: 0
       size:
         w: 220
         h: 167
     - name: Send to Honeycomb_1
       position:
-        x: 4120
-        y: 180
+        x: 3560
+        y: 1200
       size:
         w: 222
         h: 187
     - name: Send to S3 Archive_1
       position:
-        x: 2880
-        y: 1200
+        x: 2920
+        y: 700
       size:
         w: 214
         h: 167
     - name: Check Duration_1
       position:
-        x: 3240
-        y: 0
+        x: 2600
+        y: 900
       size:
         w: 161
         h: 123
     - name: Filter Logs by Severity_1
       position:
         x: 620
-        y: 1200
+        y: 620
       size:
         w: 185
         h: 123
     - name: Filter Logs by Custom OTTL_1
       position:
-        x: 940
-        y: 1200
+        x: 960
+        y: 620
       size:
         w: 206
         h: 123
     - name: Keep All_1
       position:
-        x: 3840
-        y: 0
+        x: 3280
+        y: 900
       size:
         w: 145
         h: 123
     - name: Parse Log Body As JSON_1
       position:
         x: 280
-        y: 1200
+        y: 620
       size:
         w: 219
         h: 123
     - name: Sample by Events per Second_1
       position:
-        x: 3800
-        y: 480
+        x: 3240
+        y: 1480
       size:
         w: 217
         h: 123
     - name: Sample Proportionally by Key_1
       position:
-        x: 3800
-        y: 660
+        x: 3240
+        y: 1240
       size:
         w: 215
         h: 123
     - name: Start Sampling_1
       position:
-        x: 2260
-        y: 340
+        x: 1980
+        y: 1260
       size:
         w: 142
         h: 243
-    - name: Parse Attribute As JSON_1
-      position:
-        x: 280
-        y: 400
-      size:
-        w: 218
-        h: 143
-    - name: Check HTTP Status_1
-      position:
-        x: 2920
-        y: 480
-      size:
-        w: 154
-        h: 123
     - name: Check HTTP Status Code_1
       position:
-        x: 3220
-        y: 480
+        x: 2580
+        y: 1480
       size:
         w: 190
         h: 123
     - name: Check Root Span_1
       position:
-        x: 3540
-        y: 480
+        x: 2940
+        y: 1480
       size:
         w: 139
         h: 123
     - name: Drop All_1
       position:
-        x: 2580
-        y: 820
+        x: 2300
+        y: 1400
       size:
         w: 145
         h: 123
-    - name: Compare Decimal Field_1
-      position:
-        x: 2880
-        y: 160
-      size:
-        w: 215
-        h: 123
-    - name: Compare String Field_1
-      position:
-        x: 3220
-        y: 160
-      size:
-        w: 201
-        h: 123
     - name: Check Numeric Value_1
       position:
-        x: 3520
-        y: 160
+        x: 2940
+        y: 1640
       size:
         w: 166
         h: 123
     - name: Sample at 42_1
       position:
-        x: 3820
-        y: 160
+        x: 3280
+        y: 1640
       size:
         w: 152
         h: 123
     - name: Match Regular Expression_1
       position:
-        x: 3220
-        y: 320
+        x: 2920
+        y: 1060
       size:
         w: 195
         h: 123
-    - name: Check Field Exists_1
-      position:
-        x: 3540
-        y: 320
-      size:
-        w: 146
-        h: 123
-    - name: Check Field Starts With_1
-      position:
-        x: 2900
-        y: 660
-      size:
-        w: 178
-        h: 123
     - name: Check Boolean Value_1
       position:
-        x: 3520
-        y: 0
+        x: 2940
+        y: 900
       size:
         w: 164
         h: 123
     - name: Sample at 123_1
       position:
-        x: 3820
-        y: 320
+        x: 3280
+        y: 1060
       size:
         w: 152
         h: 123
     - name: Filter Traces by Custom OTTL_1
       position:
-        x: 600
-        y: 400
+        x: 280
+        y: 1320
       size:
         w: 217
         h: 123
     - name: Filter Metrics by Custom OTTL_1
       position:
         x: 280
-        y: 800
+        y: 220
       size:
         w: 223
         h: 123
     - name: Send to Enhance S3 Archive
       position:
-        x: 2860
-        y: 900
+        x: 2900
+        y: 520
       size:
         w: 257
         h: 147
     - name: Deduplicate Logs_1
       position:
-        x: 1600
-        y: 1200
+        x: 1620
+        y: 620
       size:
         w: 190
         h: 123
     - name: Transform Metrics with OTTL_1
       position:
         x: 600
-        y: 800
+        y: 220
       size:
         w: 234
         h: 123
     - name: Parse Log Attribute as JSON_1
       position:
         x: 1280
-        y: 1200
+        y: 620
       size:
         w: 211
         h: 123
     - name: Parse Span Attribute as JSON_1
       position:
-        x: 940
-        y: 400
+        x: 600
+        y: 1320
       size:
         w: 219
         h: 123
     - name: Symbolicate JavaScript Web Errors_1
       position:
-        x: 1260
-        y: 400
+        x: 940
+        y: 1320
       size:
         w: 251
         h: 123
     - name: Symbolicate Java Android Errors_1
       position:
-        x: 1900
-        y: 1200
+        x: 1920
+        y: 620
       size:
         w: 236
         h: 123
     - name: Symbolicate Swift iOS Errors_1
       position:
-        x: 2240
-        y: 1200
+        x: 2260
+        y: 620
       size:
         w: 211
         h: 123
     - name: Redact Sensitive Values_1
       position:
-        x: 1600
-        y: 380
+        x: 1300
+        y: 1300
       size:
         w: 182
         h: 163
     - name: Transform Logs with OTTL_1
       position:
-        x: 2540
-        y: 1200
+        x: 2580
+        y: 620
       size:
         w: 218
         h: 123
     - name: Transform Traces with OTTL_1
       position:
-        x: 1900
-        y: 400
+        x: 1600
+        y: 1320
       size:
         w: 229
         h: 123
     - name: Check Field Existence_1
       position:
-        x: 2560
-        y: 660
+        x: 2280
+        y: 1240
       size:
         w: 169
         h: 123
     - name: Check String Value_1
       position:
-        x: 3240
-        y: 660
+        x: 2600
+        y: 1240
       size:
         w: 150
         h: 123
     - name: Check List Comparison_1
       position:
-        x: 3520
-        y: 660
+        x: 2940
+        y: 1240
       size:
         w: 177
         h: 123
     - name: Send to stdout_1
       position:
         x: 960
-        y: 980
+        y: 420
       size:
         w: 187
         h: 167

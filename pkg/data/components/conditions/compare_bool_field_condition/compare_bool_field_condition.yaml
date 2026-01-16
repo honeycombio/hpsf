@@ -2,7 +2,7 @@ kind: CompareBoolFieldCondition
 name: Compare a bool field
 style: condition
 type: base
-status: beta
+status: deprecated
 version: v0.1.0
 summary: Deprecated
 description: |
