@@ -5,7 +5,7 @@ type: base
 status: beta
 version: v0.1.0
 summary: Keeps all traces without sampling.
-description: Bypasses sampling logic entirely for complete trace collection. Use for low-volume environments, debugging, or when downstream sampling is preferred.
+description: Sets SamplingRate to 1 for complete trace collection. Use for low-volume, high-value telemetry such as errors.
 tags:
   - category:sampler
   - service:refinery
