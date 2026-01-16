@@ -6,7 +6,7 @@ type: base
 status: beta
 version: v0.1.0
 summary: Sends telemetry in OpenTelemetry (OTLP) format via HTTP.
-description: Uses HTTP/1.1 or HTTP/2 transport with optional compression.
+description: Exports OpenTelemetry-formatted traces, logs, and metrics to the destination of your choice, via HTTP.
 tags:
   - category:output
   - service:collector

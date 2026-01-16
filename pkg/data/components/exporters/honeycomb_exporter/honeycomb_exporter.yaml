@@ -7,7 +7,7 @@ status: beta
 version: v0.1.0
 summary: Sends telemetry to Honeycomb for real-time analysis.
 description: |
-  Exports traces, logs, metrics, and Honeycomb-formatted events to Honeycomb's data store using the configured API key and dataset settings.
+  Exports traces, logs, metrics, and Honeycomb-formatted events to Honeycomb's data store.
 tags:
   - category:output
   - service:refinery
