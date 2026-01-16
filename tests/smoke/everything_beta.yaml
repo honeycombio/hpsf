@@ -1,10 +1,8 @@
 components:
   - name: Receive OTel_1
     kind: OTelReceiver
-    version: ""
   - name: Send OTel via gRPC_1
     kind: OTelGRPCExporter
-    version: ""
     properties:
       - name: Headers
         value:
@@ -13,7 +11,6 @@ components:
         value: true
   - name: Send OTel via HTTP_1
     kind: OTelHTTPExporter
-    version: ""
     properties:
       - name: Headers
         value:
@@ -22,13 +19,11 @@ components:
         value: true
   - name: Send to Honeycomb_1
     kind: HoneycombExporter
-    version: ""
     properties:
       - name: Insecure
         value: true
   - name: Send to S3 Archive_1
     kind: S3ArchiveExporter
-    version: ""
     properties:
       - name: Bucket
         value: test
@@ -36,40 +31,32 @@ components:
         value: test
   - name: Check Duration_1
     kind: LongDurationCondition
-    version: ""
   - name: Filter Logs by Severity_1
     kind: LogSeverityFilterProcessor
-    version: ""
   - name: Filter Logs by Custom OTTL_1
     kind: CustomLogFilterProcessor
-    version: ""
     properties:
       - name: LogStatements
         value:
           - severity_number < SEVERITY_NUMBER_INFO
   - name: Keep All_1
     kind: KeepAllSampler
-    version: ""
   - name: Parse Log Body As JSON_1
     kind: LogBodyJSONParsingProcessor
-    version: ""
   - name: Sample by Events per Second_1
     kind: EMAThroughputSampler
-    version: ""
     properties:
       - name: FieldList
         value:
           - test
   - name: Sample Proportionally by Key_1
     kind: EMADynamicSampler
-    version: ""
     properties:
       - name: FieldList
         value:
           - test
   - name: Start Sampling_1
     kind: SamplingSequencer
-    version: ""
     properties:
       - name: Headers
         value:
@@ -78,7 +65,6 @@ components:
         value: true
   - name: Check HTTP Status Code_1
     kind: HTTPStatusCodeCondition
-    version: ""
     properties:
       - name: Minimum
         value: 400
@@ -86,13 +72,10 @@ components:
         value: 599
   - name: Check Root Span_1
     kind: RootSpanCondition
-    version: ""
   - name: Drop All_1
     kind: Dropper
-    version: ""
   - name: Check Numeric Value_1
     kind: NumericValueCondition
-    version: ""
     properties:
       - name: Fields
         value:
@@ -103,13 +86,11 @@ components:
         value: 1.5
   - name: Sample at 42_1
     kind: DeterministicSampler
-    version: ""
     properties:
       - name: SampleRate
         value: 42
   - name: Match Regular Expression_1
     kind: MatchRegularExpression
-    version: ""
     properties:
       - name: Field
         value: status_message
@@ -117,7 +98,6 @@ components:
         value: ^[A-Z][a-z]+$
   - name: Check Boolean Value_1
     kind: BooleanValueCondition
-    version: ""
     properties:
       - name: Fields
         value:
@@ -127,13 +107,11 @@ components:
         value: "true"
   - name: Sample at 123_1
     kind: DeterministicSampler
-    version: ""
     properties:
       - name: SampleRate
         value: 123
   - name: Filter Traces by Custom OTTL_1
     kind: CustomTraceFilterProcessor
-    version: ""
     properties:
       - name: SpanStatements
         value:
@@ -143,7 +121,6 @@ components:
           - name == "exception"
   - name: Filter Metrics by Custom OTTL_1
     kind: CustomMetricFilterProcessor
-    version: ""
     properties:
       - name: MetricStatements
         value:
@@ -177,29 +154,24 @@ components:
         value: https://api-dogfood.honeycomb.io
   - name: Deduplicate Logs_1
     kind: LogDeduplicationProcessor
-    version: ""
   - name: Transform Metrics with OTTL_1
     kind: CustomMetricTransformProcessor
-    version: ""
     properties:
       - name: MetricStatements
         value:
           - set(datapoint.attributes["processed"], "true")
   - name: Parse Log Attribute as JSON_1
     kind: LogAttrJSONParsingProcessor
-    version: ""
     properties:
       - name: Attribute
         value: data
   - name: Parse Span Attribute as JSON_1
     kind: SpanAttrJSONParsingProcessor
-    version: ""
     properties:
       - name: Attribute
         value: metadata
   - name: Symbolicate JavaScript Web Errors_1
     kind: SourcemapSymbolicationProcessor
-    version: ""
     properties:
       - name: BucketName
         value: sourcemap-bucket
@@ -207,7 +179,6 @@ components:
         value: us-east-1
   - name: Symbolicate Java Android Errors_1
     kind: ProguardSymbolicationProcessor
-    version: ""
     properties:
       - name: BucketName
         value: proguard-bucket
@@ -215,7 +186,6 @@ components:
         value: us-east-1
   - name: Symbolicate Swift iOS Errors_1
     kind: DsymSymbolicationProcessor
-    version: ""
     properties:
       - name: BucketName
         value: dsym-bucket
@@ -223,31 +193,26 @@ components:
         value: us-east-1
   - name: Redact Sensitive Values_1
     kind: RedactionProcessor
-    version: ""
   - name: Transform Logs with OTTL_1
     kind: CustomLogTransformProcessor
-    version: ""
     properties:
       - name: LogStatements
         value:
           - set(log.attributes["processed"], "true")
   - name: Transform Traces with OTTL_1
     kind: CustomTraceTransformProcessor
-    version: ""
     properties:
       - name: TraceStatements
         value:
           - set(span.attributes["processed"], "true")
   - name: Check Field Existence_1
     kind: FieldExistenceCondition
-    version: ""
     properties:
       - name: Fields
         value:
           - request_id
   - name: Check String Value_1
     kind: StringValueCondition
-    version: ""
     properties:
       - name: Fields
         value:
@@ -256,7 +221,6 @@ components:
         value: production
   - name: Check List Comparison_1
     kind: ListComparisonCondition
-    version: ""
     properties:
       - name: Fields
         value:
@@ -268,7 +232,6 @@ components:
           - complete
   - name: Send to stdout_1
     kind: DebugExporter
-    version: ""
 connections:
   - source:
       component: Start Sampling_1
