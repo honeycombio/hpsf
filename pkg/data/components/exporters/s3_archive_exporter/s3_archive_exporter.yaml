@@ -137,7 +137,7 @@ templates:
       - key: "{{ .ComponentName }}.sending_queue.queue_size"
         value: "{{ .Values.QueueSize | encodeAsInt }}"
       - key: "{{ .ComponentName }}.sending_queue.enabled"
-        value: "{{ true | encodeAsBool}}"
+        value: "{{ true | encodeAsBool }}"
       - key: "{{ .ComponentName }}.sending_queue.sizer"
         value: "items"
       - key: "{{ .ComponentName }}.sending_queue.batch.flush_timeout"
