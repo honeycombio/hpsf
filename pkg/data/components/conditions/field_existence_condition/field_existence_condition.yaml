@@ -6,7 +6,7 @@ status: development
 version: v0.1.0
 summary: Checks traces for existence of specified field(s)
 description: |
-  Evaluates field presence across all spans. Useful for filtering incomplete traces, verifying instrumentation coverage, or detecting missing required fields.
+  Evaluates field presence across all spans.
 tags:
   - category:condition
   - service:refinery
