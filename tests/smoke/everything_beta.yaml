@@ -240,11 +240,6 @@ components:
       - name: LogStatements
         value:
           - set(log.attributes["processed"], "true")
-  - name: Filter All Signals by OTTL_1
-    kind: CustomFilterProcessor
-    properties:
-      - name: Signal
-        value: traces
   - name: Transform Traces with OTTL_1
     kind: CustomTraceTransformProcessor
     properties:
@@ -472,30 +467,6 @@ connections:
       port: Logs
       type: OTelLogs
   - source:
-      component: Deduplicate Logs_1
-      port: Logs
-      type: OTelLogs
-    destination:
-      component: Symbolicate Swift iOS Errors_1
-      port: Logs
-      type: OTelLogs
-  - source:
-      component: Symbolicate Swift iOS Errors_1
-      port: Logs
-      type: OTelLogs
-    destination:
-      component: Symbolicate Java Android Errors_1
-      port: Logs
-      type: OTelLogs
-  - source:
-      component: Symbolicate Java Android Errors_1
-      port: Logs
-      type: OTelLogs
-    destination:
-      component: Transform Logs with OTTL_1
-      port: Logs
-      type: OTelLogs
-  - source:
       component: Transform Logs with OTTL_1
       port: Logs
       type: OTelLogs
@@ -525,22 +496,6 @@ connections:
       type: OTelTraces
     destination:
       component: Redact Sensitive Values_1
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Redact Sensitive Values_1
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: Filter All Signals by OTTL_1
-      port: Traces
-      type: OTelTraces
-  - source:
-      component: Filter All Signals by OTTL_1
-      port: Traces
-      type: OTelTraces
-    destination:
-      component: Transform Traces with OTTL_1
       port: Traces
       type: OTelTraces
   - source:
@@ -663,6 +618,38 @@ connections:
       component: Symbolicate JavaScript Web Errors_1
       port: Traces
       type: OTelTraces
+  - source:
+      component: Deduplicate Logs_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Symbolicate Java Android Errors_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Symbolicate Java Android Errors_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Symbolicate Swift iOS Errors_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Symbolicate Swift iOS Errors_1
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Transform Logs with OTTL_1
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Redact Sensitive Values_1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Transform Traces with OTTL_1
+      port: Traces
+      type: OTelTraces
 layout:
   components:
     - name: Receive OTel_1
@@ -675,34 +662,34 @@ layout:
     - name: Send OTel via gRPC_1
       position:
         x: 940
-        y: 720
+        y: 780
       size:
         w: 219
         h: 167
     - name: Send OTel via HTTP_1
       position:
         x: 940
-        y: 500
+        y: 580
       size:
         w: 220
         h: 167
     - name: Send to Honeycomb_1
       position:
-        x: 4960
-        y: 280
+        x: 4120
+        y: 180
       size:
         w: 222
         h: 187
     - name: Send to S3 Archive_1
       position:
-        x: 2280
-        y: 1100
+        x: 2880
+        y: 1200
       size:
         w: 214
         h: 167
     - name: Check Duration_1
       position:
-        x: 4080
+        x: 3240
         y: 0
       size:
         w: 161
@@ -710,20 +697,20 @@ layout:
     - name: Filter Logs by Severity_1
       position:
         x: 620
-        y: 1120
+        y: 1200
       size:
         w: 185
         h: 123
     - name: Filter Logs by Custom OTTL_1
       position:
         x: 940
-        y: 1120
+        y: 1200
       size:
         w: 206
         h: 123
     - name: Keep All_1
       position:
-        x: 4680
+        x: 3840
         y: 0
       size:
         w: 145
@@ -731,125 +718,125 @@ layout:
     - name: Parse Log Body As JSON_1
       position:
         x: 280
-        y: 1120
+        y: 1200
       size:
         w: 219
         h: 123
     - name: Sample by Events per Second_1
       position:
-        x: 4640
+        x: 3800
         y: 480
       size:
         w: 217
         h: 123
     - name: Sample Proportionally by Key_1
       position:
-        x: 4640
+        x: 3800
         y: 660
       size:
         w: 215
         h: 123
     - name: Start Sampling_1
       position:
-        x: 3240
-        y: 280
+        x: 2260
+        y: 340
       size:
         w: 142
         h: 243
     - name: Parse Attribute As JSON_1
       position:
         x: 280
-        y: 340
+        y: 400
       size:
         w: 218
         h: 143
     - name: Check HTTP Status_1
       position:
-        x: 3780
+        x: 2920
         y: 480
       size:
         w: 154
         h: 123
     - name: Check HTTP Status Code_1
       position:
-        x: 4060
+        x: 3220
         y: 480
       size:
         w: 190
         h: 123
     - name: Check Root Span_1
       position:
-        x: 4380
+        x: 3540
         y: 480
       size:
         w: 139
         h: 123
     - name: Drop All_1
       position:
-        x: 3480
+        x: 2580
         y: 820
       size:
         w: 145
         h: 123
     - name: Compare Decimal Field_1
       position:
-        x: 3740
+        x: 2880
         y: 160
       size:
         w: 215
         h: 123
     - name: Compare String Field_1
       position:
-        x: 4060
+        x: 3220
         y: 160
       size:
         w: 201
         h: 123
     - name: Check Numeric Value_1
       position:
-        x: 4360
+        x: 3520
         y: 160
       size:
         w: 166
         h: 123
     - name: Sample at 42_1
       position:
-        x: 4680
+        x: 3820
         y: 160
       size:
         w: 152
         h: 123
     - name: Match Regular Expression_1
       position:
-        x: 4060
+        x: 3220
         y: 320
       size:
         w: 195
         h: 123
     - name: Check Field Exists_1
       position:
-        x: 4380
+        x: 3540
         y: 320
       size:
         w: 146
         h: 123
     - name: Check Field Starts With_1
       position:
-        x: 3760
+        x: 2900
         y: 660
       size:
         w: 178
         h: 123
     - name: Check Boolean Value_1
       position:
-        x: 4360
+        x: 3520
         y: 0
       size:
         w: 164
         h: 123
     - name: Sample at 123_1
       position:
-        x: 4680
+        x: 3820
         y: 320
       size:
         w: 152
@@ -857,7 +844,7 @@ layout:
     - name: Filter Traces by Custom OTTL_1
       position:
         x: 600
-        y: 340
+        y: 400
       size:
         w: 217
         h: 123
@@ -870,15 +857,15 @@ layout:
         h: 123
     - name: Send to Enhance S3 Archive
       position:
-        x: 2260
-        y: 720
+        x: 2860
+        y: 900
       size:
         w: 257
         h: 147
     - name: Deduplicate Logs_1
       position:
-        x: 1620
-        y: 1120
+        x: 1600
+        y: 1200
       size:
         w: 190
         h: 123
@@ -892,83 +879,76 @@ layout:
     - name: Parse Log Attribute as JSON_1
       position:
         x: 1280
-        y: 1120
+        y: 1200
       size:
         w: 211
         h: 123
     - name: Parse Span Attribute as JSON_1
       position:
         x: 940
-        y: 340
+        y: 400
       size:
         w: 219
         h: 123
     - name: Symbolicate JavaScript Web Errors_1
       position:
         x: 1260
-        y: 340
+        y: 400
       size:
         w: 251
         h: 123
     - name: Symbolicate Java Android Errors_1
       position:
-        x: 1600
-        y: 340
+        x: 1900
+        y: 1200
       size:
         w: 236
         h: 123
     - name: Symbolicate Swift iOS Errors_1
       position:
-        x: 1940
-        y: 340
+        x: 2240
+        y: 1200
       size:
         w: 211
         h: 123
     - name: Redact Sensitive Values_1
       position:
-        x: 2300
-        y: 320
+        x: 1600
+        y: 380
       size:
         w: 182
         h: 163
     - name: Transform Logs with OTTL_1
       position:
-        x: 1940
-        y: 1120
+        x: 2540
+        y: 1200
       size:
         w: 218
         h: 123
-    - name: Filter All Signals by OTTL_1
-      position:
-        x: 2620
-        y: 320
-      size:
-        w: 189
-        h: 163
     - name: Transform Traces with OTTL_1
       position:
-        x: 2900
-        y: 340
+        x: 1900
+        y: 400
       size:
         w: 229
         h: 123
     - name: Check Field Existence_1
       position:
-        x: 3480
+        x: 2560
         y: 660
       size:
         w: 169
         h: 123
     - name: Check String Value_1
       position:
-        x: 4080
+        x: 3240
         y: 660
       size:
         w: 150
         h: 123
     - name: Check List Comparison_1
       position:
-        x: 4360
+        x: 3520
         y: 660
       size:
         w: 177
@@ -976,7 +956,7 @@ layout:
     - name: Send to stdout_1
       position:
         x: 960
-        y: 920
+        y: 980
       size:
         w: 187
         h: 167
