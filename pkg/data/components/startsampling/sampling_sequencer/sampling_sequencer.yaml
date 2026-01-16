@@ -4,7 +4,7 @@ style: startsampling
 type: base
 status: beta
 version: v0.1.0
-summary: Converts traces and logs to SampleData format for tail-based sampling
+summary: Prepares traces and logs for sampling and sequences the order of sampling rule evaluation.
 description: |-
   Evaluates configured sampling rules in sequence, applying the first matching rule for each span or log received. Logs without trace IDs pass through without evaluation.
 tags:
