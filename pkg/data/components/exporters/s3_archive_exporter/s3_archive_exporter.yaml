@@ -5,8 +5,8 @@ style: exporter
 logo: awss3
 status: beta
 version: v0.1.0
-summary: Sends telemetry to AWS S3 for long-term storage
-description: Exports telemetry data to AWS S3 buckets for archival and long-term storage at your specified location.
+summary: Sends telemetry to AWS S3 without indexing.
+description: Standard, non-indexed export to AWS S3. For Enhance, use: Send to Enhance S3 Archive.
 tags:
   - category:output
   - service:collector
