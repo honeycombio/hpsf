@@ -9,7 +9,7 @@ minimum:
   collector_config: v0.1.1
 summary: Exports traces and logs to AWS S3 with automatic field indexing for querying.
 description: |
-  Writes telemetry data to S3 while generating field-based indexes for efficient querying of unsampled data. Automatically indexes trace.trace_id, service.name, and session.id with custom field support.
+  Writes telemetry data to S3 while generating field-based indexes for efficient querying of unsampled data. Automatically indexes trace.trace_id, service.name, and session.id with support for additional custom fields.
 tags:
   - category:output
   - service:collector
