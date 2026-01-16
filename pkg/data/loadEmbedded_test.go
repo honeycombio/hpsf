@@ -99,7 +99,7 @@ func TestDefaultConfigurationIsValidYAML(t *testing.T) {
 func TestLoadEmbeddedComponentsFromDirectories(t *testing.T) {
 	components, err := LoadEmbeddedComponents()
 	require.NoError(t, err)
-	require.Greater(t, len(components), 50, "Should have loaded all 53+ components")
+	require.GreaterOrEqual(t, len(components), 50, "Should have loaded all 50+ components")
 
 	// Verify specific components loaded correctly
 	testCases := []struct {

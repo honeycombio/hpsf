@@ -2033,10 +2033,10 @@ components:
       - name: HTTPPort
         value: 4318
   - name: Custom Filter
-    kind: CustomFilterProcessor
+    kind: CustomTraceFilterProcessor
     properties:
-      - name: Signal
-        value: traces
+      - name: SpanStatements
+        value: 'attributes["test"] == "value"'
   - name: Honeycomb Export
     kind: HoneycombExporter
     properties:
@@ -2072,8 +2072,8 @@ components:
 	processors := result.Filter(Processors).Components
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Custom Filter", processors[0].Name)
-	assert.Equal(t, "CustomFilterProcessor", processors[0].Kind)
-	assert.Equal(t, "traces", processors[0].Properties["Signal"])
+	assert.Equal(t, "CustomTraceFilterProcessor", processors[0].Kind)
+	assert.Equal(t, "attributes[\"test\"] == \"value\"", processors[0].Properties["SpanStatements"])
 
 	// Verify exporters
 	exporters := result.Filter(Exporters).Components
@@ -2663,10 +2663,10 @@ components:
   - name: OTLP Receiver
     kind: OTelReceiver
   - name: Custom Filter
-    kind: CustomFilterProcessor
+    kind: CustomTraceFilterProcessor
     properties:
-      - name: Signal
-        value: traces
+      - name: SpanStatements
+        value: 'attributes["test"] == "value"'
   - name: Honeycomb Export
     kind: HoneycombExporter
 `
@@ -2681,8 +2681,8 @@ components:
 	require.Len(t, processors, 1)
 	assert.Equal(t, "Custom Filter", processors[0].Name)
 	assert.Equal(t, "processor", processors[0].Style)
-	assert.Equal(t, "CustomFilterProcessor", processors[0].Kind)
-	assert.Equal(t, "traces", processors[0].Properties["Signal"])
+	assert.Equal(t, "CustomTraceFilterProcessor", processors[0].Kind)
+	assert.Equal(t, "attributes[\"test\"] == \"value\"", processors[0].Properties["SpanStatements"])
 }
 
 func TestInspectionResult_DirectComponentsAccess(t *testing.T) {

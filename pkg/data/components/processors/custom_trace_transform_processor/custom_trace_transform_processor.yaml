@@ -4,10 +4,9 @@ style: processor
 type: base
 status: beta
 version: v0.1.0
-summary: Transforms traces using custom OTTL statements (advanced)
+summary: Transforms traces using custom OTTL statements
 description: |
-  Perform custom modifications to trace spans using configuration statements written in OpenTelemetry
-  Transformation Language (OTTL). This is an advanced component. No OTTL validation is provided.
+  Modifies span attributes, names, status, and events using OpenTelemetry Transformation Language (OTTL) statements. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
 tags:
   - category:processor
   - service:collector

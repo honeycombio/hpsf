@@ -6,10 +6,9 @@ status: beta
 version: v0.1.0
 minimum:
   collector_config: v0.1.1
-summary: Symbolicate stack traces from web applications using source maps
+summary: Symbolicates JavaScript/TypeScript stack traces using source maps
 description: |
-  Symbolicate JavaScript/TypeScript stack traces from web applications using source map files.
-  Supports source maps stored in AWS S3 or Google Cloud Storage.
+  Symbolicates JavaScript/TypeScript stack traces from web applications using source map files stored in AWS S3 or Google Cloud Storage.
 tags:
   - category:processor
   - service:collector

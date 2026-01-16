@@ -4,9 +4,9 @@ style: condition
 type: base
 status: beta
 version: v0.1.0
-summary: Set sample rate by HTTP status code range
-description: |-
-  Sample based on the http status of processes within a trace. If any spans of a trace have a status code within the selected min and max, the condition will evaluate to true. 
+summary: Checks if HTTP status code falls within a specified range
+description: |
+  Evaluates HTTP status codes using inclusive min/max bounds.
 tags:
   - category:refinery_rule
   - service:refinery

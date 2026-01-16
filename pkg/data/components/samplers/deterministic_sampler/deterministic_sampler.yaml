@@ -4,8 +4,9 @@ style: sampler
 type: base
 status: beta
 version: v0.1.0
-summary: Deterministically samples a fixed fraction of traces based on trace ID.
-description: A sampler that deterministically samples a fixed fraction of traces based on trace ID.
+summary: Samples traces deterministically at a fixed rate based on trace ID.
+description: |
+  Uses trace ID to ensure consistent sampling decisions across distributed systems. Same trace always gets same decision regardless of entry point.
 tags:
   - category:sampler
   - service:refinery

@@ -4,11 +4,9 @@ style: processor
 type: base
 status: beta
 version: v0.0.1
-summary: Converts a log attribute's JSON string value into individual attributes
+summary: Parses log attribute JSON string values into individual attributes
 description: |
-  Specify a log attribute with a JSON string value to parse into individual attributes
-  on the log record. If the attribute is not found or cannot be parsed as JSON, the log
-  will continue through the pipeline unchanged.
+  Flattens a specified log attribute containing a JSON string value into individual attributes on the log. Logs continue unchanged if attribute is missing or invalid JSON.
 tags:
   - category:processor
   - service:collector

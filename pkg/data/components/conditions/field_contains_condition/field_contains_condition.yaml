@@ -4,8 +4,9 @@ style: condition
 type: base
 status: deprecated
 version: v0.1.0
-summary: Checks if a field contains a specific substring
-description: This checks if any span in a trace has a specific field that contains a given substring.
+summary: Deprecated
+description: |
+  Use the following component instead: Check a String Value.
 tags:
   - category:condition
   - service:refinery

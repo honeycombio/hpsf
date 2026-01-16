@@ -4,10 +4,9 @@ style: condition
 type: base
 status: beta
 version: v0.1.0
-summary: Check a boolean field for a specified value
-description: |-
-  Check if any span in a trace has a specific boolean field.
-  If the boolean field matches the specified value the condition will evaluate to true.
+summary: Checks if a boolean field matches a specified value
+description: |
+  Evaluates boolean fields across spans in a trace. Returns true if any span contains the field with the specified true/false value.
 tags:
   - category:condition
   - service:refinery

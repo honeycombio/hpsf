@@ -4,10 +4,9 @@ style: condition
 type: base
 status: deprecated
 version: v0.1.0
-summary: Compares a string field to a specified value
-description: |-
-  This checks if any span in a trace has a specific string field that compares appropriately to the
-  specified value.
+summary: Deprecated
+description: |
+  Use the following component instead: Check a String Value.
 tags:
   - category:condition
   - service:refinery
