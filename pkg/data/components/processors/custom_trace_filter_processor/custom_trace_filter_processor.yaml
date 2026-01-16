@@ -4,10 +4,9 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Filters traces using custom OTTL statements (advanced)
+summary: Filters traces using custom OTTL statements
 description: |
-  Apply custom filters to trace spans and span events using configuration statements written in OpenTelemetry
-  Transformation Language (OTTL). This is an advanced component. No OTTL validation is provided.
+  Applies OpenTelemetry Transformation Language (OTTL) conditions at span or spanevent context to drop unwanted trace spans. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
 tags:
   - category:processor
   - service:collector

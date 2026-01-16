@@ -5,8 +5,8 @@ style: exporter
 logo: opentelemetry
 type: base
 status: development
-summary: An "exporter" that does nothing, but might be useful for testing.
-description: A simple no-op exporter. This exporter does nothing. It is required for the minimal collector.
+summary: Exports nothing, useful for testing minimal collector configurations
+description: No-operation exporter that discards all telemetry. Required for minimal collector setups where signal processing is needed without data export.
 tags:
   - category:output
   - service:collector

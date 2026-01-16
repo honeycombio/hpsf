@@ -4,9 +4,9 @@ style: condition
 type: base
 status: development
 version: v0.1.0
-summary: Check if a field value matches any value in a specified list
-description: |-
-  Check if any span in a trace has a field value that is contained in (or excluded from) a list of specified values.
+summary: Checks if a field value matches any value in a specified list
+description: |
+  Performs membership testing with in/not-in operators against multiple values. More efficient than chaining multiple equality conditions for allowlists or denylists.
 tags:
   - category:condition
   - service:refinery

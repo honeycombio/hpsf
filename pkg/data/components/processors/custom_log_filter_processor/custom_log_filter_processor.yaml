@@ -4,10 +4,9 @@ style: processor
 type: base
 status: development
 version: v0.1.0
-summary: Filters logs using custom OTTL statements (advanced)
+summary: Filters logs using custom OTTL statements
 description: |
-  Apply custom filters to log records using configuration statements written in OpenTelemetry
-  Transformation Language (OTTL). This is an advanced component. No OTTL validation is provided.
+  Applies OpenTelemetry Transformation Language (OTTL) conditions at log_record context to drop unwanted logs. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
 tags:
   - category:processor
   - service:collector
