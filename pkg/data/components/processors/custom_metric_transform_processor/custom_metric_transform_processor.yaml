@@ -6,7 +6,7 @@ status: development
 version: v0.1.0
 summary: Transforms metrics using custom OpenTelemetry Transformation Language (OTTL) statements
 description: |
-  Modifies metric attributes, names, descriptions, and datapoint values using OpenTelemetry Transformation Language (OTTL) statements. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
+  Modifies metric attributes, names, descriptions, and data point values using OpenTelemetry Transformation Language (OTTL) statements. Requires advanced OTTL expertise. No validation is provided for correctness of OTTL statements.
 tags:
   - category:processor
   - service:collector
