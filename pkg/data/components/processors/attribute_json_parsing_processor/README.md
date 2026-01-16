@@ -1,6 +1,12 @@
 # Parse Attribute As JSON
 
-**Kind:** `AttributeJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** beta
+**Kind:** `AttributeJSONParsingProcessor` | **Version:** `v0.0.1` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use signal-specific processors instead:
+> - [LogAttrJSONParsingProcessor](../log_attr_json_parsing_processor/README.md) for logs
+> - [SpanAttrJSONParsingProcessor](../span_attr_json_parsing_processor/README.md) for spans
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 
