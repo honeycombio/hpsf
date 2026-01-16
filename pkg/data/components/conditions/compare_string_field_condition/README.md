@@ -1,6 +1,10 @@
 # Compare a string field
 
-**Kind:** `CompareStringFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `CompareStringFieldCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [StringValueCondition](../string_value_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 

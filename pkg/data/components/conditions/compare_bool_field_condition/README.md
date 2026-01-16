@@ -1,6 +1,10 @@
 # Compare a bool field
 
-**Kind:** `CompareBoolFieldCondition` | **Version:** `v0.1.0` | **Status:** beta
+**Kind:** `CompareBoolFieldCondition` | **Version:** `v0.1.0` | **Status:** deprecated
+
+> **⚠️ DEPRECATED:** This component is deprecated. Use [BooleanValueCondition](../boolean_value_condition/README.md) instead.
+>
+> See [MIGRATIONS.md](./MIGRATIONS.md) for migration guide.
 
 ## Overview
 
