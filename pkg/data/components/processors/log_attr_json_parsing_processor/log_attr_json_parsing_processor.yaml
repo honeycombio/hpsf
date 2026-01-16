@@ -6,7 +6,7 @@ status: development
 version: v0.0.1
 summary: Parses log attribute JSON string values into individual attributes
 description: |
-  Flattens a specified log attribute containing JSON string value into individual attributes on the span. Logs continue unchanged if attribute is missing or invalid JSON.
+  Flattens a specified log attribute containing a JSON string value into individual attributes on the log. Logs continue unchanged if attribute is missing or invalid JSON.
 tags:
   - category:processor
   - service:collector
