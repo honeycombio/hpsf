@@ -39,20 +39,34 @@ exporters:
             sizer: items
         tls:
             insecure: true
+connectors:
+    forward/otlp/otlp: {}
 extensions:
     honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:
         logs/b34-d67:
+            receivers: [forward/otlp/otlp]
+            processors: []
+            exporters: [otlphttp/honeycomb]
+        logs/ingress_otlp/otlp:
             receivers: [otlp/otlp]
             processors: [memory_limiter/otlp, usage]
-            exporters: [otlphttp/honeycomb]
+            exporters: [forward/otlp/otlp]
         metrics/c4b-9f0:
-            receivers: [otlp/otlp]
-            processors: [memory_limiter/otlp, usage]
+            receivers: [forward/otlp/otlp]
+            processors: []
             exporters: [otlphttp/honeycomb]
-        traces/abd-cdb:
+        metrics/ingress_otlp/otlp:
             receivers: [otlp/otlp]
             processors: [memory_limiter/otlp, usage]
+            exporters: [forward/otlp/otlp]
+        traces/abd-cdb:
+            receivers: [forward/otlp/otlp]
+            processors: []
             exporters: [otlphttp/refinery]
+        traces/ingress_otlp/otlp:
+            receivers: [otlp/otlp]
+            processors: [memory_limiter/otlp, usage]
+            exporters: [forward/otlp/otlp]

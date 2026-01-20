@@ -40,6 +40,7 @@ type collectorConfigFormat struct {
 	Receivers  map[string]any          `yaml:"receivers,omitempty"`
 	Processors map[string]any          `yaml:"processors,omitempty"`
 	Exporters  map[string]any          `yaml:"exporters,omitempty"`
+	Connectors map[string]any          `yaml:"connectors,omitempty"`
 	Extensions map[string]any          `yaml:"extensions,omitempty"`
 	Service    *collectorConfigService `yaml:"service"`
 }
@@ -67,12 +68,26 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 	}
 	f.Processors["usage"] = map[string]any{}
 
-	// now we re-order the processors in each pipeline to:
-	// - have memory_limiter first
-	// - have usage second
-	// - have all others after that
+	// For shared receivers, we generate ingress pipelines that handle resource protection
+	// and usage counting, then forward data to downstream pipelines via receiver-specific
+	// forward connectors. This ensures:
+	// 1. Each receiver gets unique ingress pipeline with memory_limiter + usage
+	// 2. Forward connector (e.g., forward/otlp/receiver1) distributes to downstream pipelines
+	// 3. Downstream pipelines only contain custom processors, samplers, and exporters
+	// 4. No cross-contamination between receivers (each has dedicated connector)
+	//
+	// We detect downstream pipelines by checking if they use forward connector as receiver.
 	for _, pipeline := range f.Service.Pipelines {
-		// Separate memory_limiter processors from others
+		// Downstream pipeline: receives from forward connector, no resource protection needed
+		usesForwardConnector := false
+		for _, receiver := range pipeline.Receivers {
+			if strings.HasPrefix(receiver, "forward/") || receiver == "forward" {
+				usesForwardConnector = true
+				break
+			}
+		}
+
+		// Separate memory_limiter processors from custom processors
 		var memoryLimiters, others []string
 
 		for _, processor := range pipeline.Processors {
@@ -83,11 +98,19 @@ func (f *collectorConfigFormat) injectHoneycombUsageComponents() {
 			}
 		}
 
-		// Build ordered list: memory_limiters, usage, others
-		orderedProcessors := make([]string, 0, len(memoryLimiters)+1+len(others))
-		orderedProcessors = append(orderedProcessors, memoryLimiters...)
-		orderedProcessors = append(orderedProcessors, "usage")
-		orderedProcessors = append(orderedProcessors, others...)
+		// Order processors based on pipeline type
+		var orderedProcessors []string
+		if usesForwardConnector {
+			// Downstream: only custom processors (resource protection in ingress)
+			orderedProcessors = make([]string, 0, len(others))
+			orderedProcessors = append(orderedProcessors, others...)
+		} else {
+			// Ingress or unique receiver: memory_limiter → usage → custom processors
+			orderedProcessors = make([]string, 0, len(memoryLimiters)+1+len(others))
+			orderedProcessors = append(orderedProcessors, memoryLimiters...)
+			orderedProcessors = append(orderedProcessors, "usage")
+			orderedProcessors = append(orderedProcessors, others...)
+		}
 
 		pipeline.Processors = dedup(orderedProcessors)
 	}
