@@ -1,6 +1,7 @@
 package tmpl
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -111,16 +112,17 @@ func (f *collectorConfigFormat) validatePipelines() error {
 		return nil
 	}
 
+	var errs []error
 	for pipelineName, pipeline := range f.Service.Pipelines {
 		if len(pipeline.Receivers) == 0 {
-			return fmt.Errorf("pipeline '%s' must have at least one receiver", pipelineName)
+			errs = append(errs, fmt.Errorf("pipeline '%s' must have at least one receiver", pipelineName))
 		}
 		if len(pipeline.Exporters) == 0 {
-			return fmt.Errorf("pipeline '%s' must have at least one exporter", pipelineName)
+			errs = append(errs, fmt.Errorf("pipeline '%s' must have at least one exporter", pipelineName))
 		}
 	}
 
-	return nil
+	return errors.Join(errs...)
 }
 
 // Set sets a key in the config to a value. If the key already exists, it will
