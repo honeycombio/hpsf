@@ -225,7 +225,7 @@ func TestTransformToIngressPipelines_Integration(t *testing.T) {
 	tests := []struct {
 		name           string
 		setupConfig    func() *tmpl.CollectorConfig
-		expectIngress   bool
+		expectIngress  bool
 		verifyPipeline string
 	}{
 		{
@@ -237,7 +237,7 @@ func TestTransformToIngressPipelines_Integration(t *testing.T) {
 				cfg.Set("service", "pipelines.traces/ghi-789.receivers", []string{"otlp/receiver1"})
 				return cfg
 			},
-			expectIngress:   true,
+			expectIngress:  true,
 			verifyPipeline: "pipelines.logs/ingress_otlp/receiver1.receivers",
 		},
 		{
@@ -248,7 +248,7 @@ func TestTransformToIngressPipelines_Integration(t *testing.T) {
 				cfg.Set("service", "pipelines.metrics/def-456.receivers", []string{"otlp/receiver2"})
 				return cfg
 			},
-			expectIngress:   false,
+			expectIngress:  false,
 			verifyPipeline: "",
 		},
 	}

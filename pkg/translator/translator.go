@@ -860,11 +860,11 @@ func (t *Translator) detectSharedReceiversFromConfig(cfg *tmpl.CollectorConfig) 
 // generateIngressPipelines creates ingress pipelines for shared receivers and rewires downstream pipelines.
 //
 // Naming conventions:
-// - Ingress pipelines: {signal}/ingress_{receiverName} (e.g., logs/ingress_otlp/receiver1)
-//   The ingress_ prefix distinguishes infrastructure pipelines from user data pipelines,
-//   prevents naming collisions, and aids debugging via collector metrics.
-// - Forward connectors: forward/{receiverName} (e.g., forward/otlp/receiver1)
-//   Dedicated connector per receiver ensures data isolation between receivers.
+//   - Ingress pipelines: {signal}/ingress_{receiverName} (e.g., logs/ingress_otlp/receiver1)
+//     The ingress_ prefix distinguishes infrastructure pipelines from user data pipelines,
+//     prevents naming collisions, and aids debugging via collector metrics.
+//   - Forward connectors: forward/{receiverName} (e.g., forward/otlp/receiver1)
+//     Dedicated connector per receiver ensures data isolation between receivers.
 //
 // Currently uses forward connector to broadcast data to all downstream pipelines.
 // Future: Could be extended to support routing connector for conditional routing based on attributes.
