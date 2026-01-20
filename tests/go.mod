@@ -104,6 +104,7 @@ require (
 	go.opentelemetry.io/collector/confmap/xconfmap v0.138.0 // indirect
 	go.opentelemetry.io/collector/connector v0.138.0 // indirect
 	go.opentelemetry.io/collector/connector/connectortest v0.138.0 // indirect
+	go.opentelemetry.io/collector/connector/forwardconnector v0.138.0 // indirect
 	go.opentelemetry.io/collector/connector/xconnector v0.138.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror v0.138.0 // indirect
 	go.opentelemetry.io/collector/consumer/consumererror/xconsumererror v0.138.0 // indirect

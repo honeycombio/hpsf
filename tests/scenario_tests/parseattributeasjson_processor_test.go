@@ -1,6 +1,7 @@
 package hpsftests
 
 import (
+	"strings"
 	"testing"
 
 	collectorprovider "github.com/honeycombio/hpsf/tests/providers/collector"
@@ -8,22 +9,34 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pipeline"
 )
+
+// filterDownstreamPipelines returns only non-ingress pipelines
+func filterDownstreamPipelines(pipelines []pipeline.ID) []pipeline.ID {
+	var downstream []pipeline.ID
+	for _, p := range pipelines {
+		if !strings.Contains(p.String(), "/ingress_") {
+			downstream = append(downstream, p)
+		}
+	}
+	return downstream
+}
 
 func TestAttributeJSONParsingProcessorDefaults(t *testing.T) {
 	rulesConfig, collectorConfig, _ := hpsfprovider.GetParsedConfigsFromFile(t, "testdata/parseattributeasjson_processor_defaults.yaml")
 
 	assert.Len(t, rulesConfig.Samplers, 1)
 
-	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
-	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline, got %v", tracesPipelineNames)
+	tracesPipelineNames := filterDownstreamPipelines(collectorprovider.GetPipelinesByType(collectorConfig, "traces"))
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 downstream traces pipeline, got %v", tracesPipelineNames)
 
 	_, processors, _, getResult := collectorprovider.GetPipelineConfig(collectorConfig, tracesPipelineNames[0].String())
 	require.True(t, getResult.Found)
 	assert.Contains(t, processors, "transform/json_parser_1")
 
-	logsPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "logs")
-	assert.Len(t, logsPipelineNames, 1, "Expected 1 logs pipeline, got %v", logsPipelineNames)
+	logsPipelineNames := filterDownstreamPipelines(collectorprovider.GetPipelinesByType(collectorConfig, "logs"))
+	assert.Len(t, logsPipelineNames, 1, "Expected 1 downstream logs pipeline, got %v", logsPipelineNames)
 
 	_, processors, _, getResult = collectorprovider.GetPipelineConfig(collectorConfig, logsPipelineNames[0].String())
 	require.True(t, getResult.Found)
