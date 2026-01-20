@@ -105,6 +105,24 @@ func dedup[T comparable](slice []T) []T {
 	return list
 }
 
+// validatePipelines checks that all collector pipelines have at least one receiver and one exporter
+func (f *collectorConfigFormat) validatePipelines() error {
+	if f.Service == nil {
+		return nil
+	}
+
+	for pipelineName, pipeline := range f.Service.Pipelines {
+		if len(pipeline.Receivers) == 0 {
+			return fmt.Errorf("pipeline '%s' must have at least one receiver", pipelineName)
+		}
+		if len(pipeline.Exporters) == 0 {
+			return fmt.Errorf("pipeline '%s' must have at least one exporter", pipelineName)
+		}
+	}
+
+	return nil
+}
+
 // Set sets a key in the config to a value. If the key already exists, it will
 // append the value to the existing value if it's a slice, or overwrite it if
 // it's not a slice.
@@ -184,6 +202,11 @@ func (cc *CollectorConfig) RenderYAML() ([]byte, error) {
 	}
 
 	f.injectHoneycombUsageComponents()
+
+	// Validate that all pipelines have receivers and exporters
+	if err = f.validatePipelines(); err != nil {
+		return nil, err
+	}
 
 	// now marshal from the struct to yaml
 	data, err = y.Marshal(f)

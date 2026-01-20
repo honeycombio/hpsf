@@ -401,6 +401,14 @@ func TestTranslator_ValidateBadConfigs(t *testing.T) {
 		{"missing port", "testdata/bad_hpsf/missing_port.yaml", "source component does not have a port,destination component does not have a port"},
 		{"missing condition on lower index", "testdata/bad_hpsf/missing_condition_on_lower_index.yaml", "Every path on a startsampler except the one with the highest index must connect to a condition"},
 		{"missing component for specified version", "testdata/bad_hpsf/invalid_component_version.yaml", "failed to locate corresponding template component for HoneycombExporter@v999999.1.0"},
+		{"pipeline without receiver", "testdata/bad_hpsf/pipeline_no_receiver.yaml", "pipeline must start with a receiver component"},
+		{"pipeline without exporter", "testdata/bad_hpsf/pipeline_no_exporter.yaml", "pipeline must end with an exporter or startsampling component"},
+		{"mixed collector and sampling with invalid metrics path", "testdata/bad_hpsf/mixed_collector_sampling.yaml", "pipeline must start with a receiver component"},
+		{"multiple signal types missing receivers", "testdata/bad_hpsf/multi_signal_no_receivers.yaml", "pipeline must start with a receiver component,pipeline must start with a receiver component"},
+		{"multiple signal types missing exporters", "testdata/bad_hpsf/multi_signal_no_exporters.yaml", "pipeline must end with an exporter or startsampling component,pipeline must end with an exporter or startsampling component"},
+		{"branching paths with one invalid", "testdata/bad_hpsf/branching_paths.yaml", "pipeline must end with an exporter or startsampling component"},
+		{"processor chain only", "testdata/bad_hpsf/processor_chain_only.yaml", "pipeline must start with a receiver component,pipeline must end with an exporter or startsampling component"},
+		{"path to startsampling without receiver", "testdata/bad_hpsf/path_to_startsampling_no_receiver.yaml", "pipeline must start with a receiver component"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -449,6 +457,8 @@ func TestTranslator_ValidateValidConfigs(t *testing.T) {
 		file string
 	}{
 		{"valid condition on lower index", "testdata/bad_hpsf/valid_condition_on_lower_index.yaml"},
+		{"valid direct receiver to exporter", "testdata/bad_hpsf/valid_pipeline_direct.yaml"},
+		{"valid path ending with startsampling", "testdata/bad_hpsf/valid_path_to_startsampling.yaml"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

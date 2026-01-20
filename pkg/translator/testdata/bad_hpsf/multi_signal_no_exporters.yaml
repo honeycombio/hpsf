@@ -1,0 +1,26 @@
+components:
+  - name: OTel Receiver
+    kind: OTelReceiver
+  - name: Processor Traces
+    kind: RedactionProcessor
+  - name: Processor Metrics
+    kind: RedactionProcessor
+connections:
+  # Invalid traces path: receiver -> processor (no exporter)
+  - source:
+      component: OTel Receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Processor Traces
+      port: Traces
+      type: OTelTraces
+  # Invalid metrics path: receiver -> processor (no exporter)
+  - source:
+      component: OTel Receiver
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Processor Metrics
+      port: Metrics
+      type: OTelMetrics

@@ -1,0 +1,40 @@
+components:
+  - name: Redaction Processor
+    kind: RedactionProcessor
+    version: v0.1.0
+  - name: Start Sampling
+    kind: SamplingSequencer
+    version: v0.1.0
+  - name: Deterministic Sampler
+    kind: DeterministicSampler
+    version: v0.1.0
+  - name: Honeycomb Exporter
+    kind: HoneycombExporter
+    version: v0.1.0
+connections:
+  # Invalid OTel path: processor -> startsampling (missing receiver)
+  - source:
+      component: Redaction Processor
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Start Sampling
+      port: Traces
+      type: OTelTraces
+  # Sampling configuration: startsampling -> sampler -> exporter
+  - source:
+      component: Start Sampling
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Deterministic Sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: Deterministic Sampler
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Honeycomb Exporter
+      port: Events
+      type: HoneycombEvents

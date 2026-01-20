@@ -1,0 +1,63 @@
+components:
+  - name: OTel Receiver
+    kind: OTelReceiver
+  - name: Redaction Processor
+    kind: RedactionProcessor
+  - name: Start Sampling
+    kind: SamplingSequencer
+  - name: Keep All Sampler
+    kind: KeepAllSampler
+  - name: Honeycomb Exporter
+    kind: HoneycombExporter
+connections:
+  # Valid collector path: receiver -> processor -> exporter (traces)
+  - source:
+      component: OTel Receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Redaction Processor
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Redaction Processor
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Honeycomb Exporter
+      port: Traces
+      type: OTelTraces
+  # Invalid collector path: processor -> exporter without receiver (metrics)
+  - source:
+      component: Redaction Processor
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Honeycomb Exporter
+      port: Metrics
+      type: OTelMetrics
+  # Sampling path
+  - source:
+      component: OTel Receiver
+      port: Logs
+      type: OTelLogs
+    destination:
+      component: Start Sampling
+      port: Logs
+      type: OTelLogs
+  - source:
+      component: Start Sampling
+      port: Rule 1
+      type: SampleData
+    destination:
+      component: Keep All Sampler
+      port: Sample
+      type: SampleData
+  - source:
+      component: Keep All Sampler
+      port: Events
+      type: HoneycombEvents
+    destination:
+      component: Honeycomb Exporter
+      port: Events
+      type: HoneycombEvents
