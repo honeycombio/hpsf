@@ -1,6 +1,7 @@
 package hpsftests
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -9,7 +10,19 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/exporter/awss3exporter"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/collector/pipeline"
 )
+
+// filterDownstreamPipelinesS3 returns only non-ingress pipelines
+func filterDownstreamPipelinesS3(pipelines []pipeline.ID) []pipeline.ID {
+	var downstream []pipeline.ID
+	for _, p := range pipelines {
+		if !strings.Contains(p.String(), "/ingress_") {
+			downstream = append(downstream, p)
+		}
+	}
+	return downstream
+}
 
 func TestS3ArchiveExporter(t *testing.T) {
 	// Test the HPSF parsing and template generation using typed configuration
@@ -18,8 +31,8 @@ func TestS3ArchiveExporter(t *testing.T) {
 	// First, verify that the refinery config was generated successfully
 	assert.Len(t, rulesConfig.Samplers, 1, "Expected 1 sampler in refinery config")
 
-	tracesPipelineNames := collectorprovider.GetPipelinesByType(collectorConfig, "traces")
-	assert.Len(t, tracesPipelineNames, 1, "Expected 1 traces pipeline, got %v", tracesPipelineNames)
+	tracesPipelineNames := filterDownstreamPipelinesS3(collectorprovider.GetPipelinesByType(collectorConfig, "traces"))
+	assert.Len(t, tracesPipelineNames, 1, "Expected 1 downstream traces pipeline, got %v", tracesPipelineNames)
 
 	// Verify the S3 exporter is present in the traces pipeline
 	_, _, exporters, getResult := collectorprovider.GetPipelineConfig(collectorConfig, tracesPipelineNames[0].String())

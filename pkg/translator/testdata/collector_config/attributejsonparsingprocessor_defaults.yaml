@@ -31,16 +31,26 @@ exporters:
             enabled: true
             queue_size: 100000
             sizer: items
+connectors:
+    forward/otlp/otlp_in: {}
 extensions:
     honeycomb: {}
 service:
     extensions: [honeycomb]
     pipelines:
         logs/88b-e5a:
-            receivers: [otlp/otlp_in]
-            processors: [memory_limiter/otlp_in, usage, transform/json_parser_1]
+            receivers: [forward/otlp/otlp_in]
+            processors: [transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
+        logs/ingress_otlp/otlp_in:
+            receivers: [otlp/otlp_in]
+            processors: [memory_limiter/otlp_in, usage]
+            exporters: [forward/otlp/otlp_in]
         traces/4ed-e32:
-            receivers: [otlp/otlp_in]
-            processors: [memory_limiter/otlp_in, usage, transform/json_parser_1]
+            receivers: [forward/otlp/otlp_in]
+            processors: [transform/json_parser_1]
             exporters: [otlphttp/otlp_out]
+        traces/ingress_otlp/otlp_in:
+            receivers: [otlp/otlp_in]
+            processors: [memory_limiter/otlp_in, usage]
+            exporters: [forward/otlp/otlp_in]

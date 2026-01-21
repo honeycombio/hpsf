@@ -8,6 +8,8 @@ import (
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbyattrsprocessor"
 	"github.com/open-telemetry/opentelemetry-collector-contrib/processor/transformprocessor"
 	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/connector"
+	"go.opentelemetry.io/collector/connector/forwardconnector"
 	"go.opentelemetry.io/collector/exporter"
 	"go.opentelemetry.io/collector/exporter/debugexporter"
 	"go.opentelemetry.io/collector/exporter/otlpexporter"
@@ -37,6 +39,9 @@ func defaultComponents() otelcol.Factories {
 			component.MustNewType("memory_limiter"): memorylimiterprocessor.NewFactory(),
 			component.MustNewType("transform"):      transformprocessor.NewFactory(),
 			component.MustNewType("usage"):          usageprocessor.NewFactory(),
+		},
+		Connectors: map[component.Type]connector.Factory{
+			component.MustNewType("forward"): forwardconnector.NewFactory(),
 		},
 		Extensions: map[component.Type]extension.Factory{
 			component.MustNewType("honeycomb"): honeycombextension.NewFactory(),

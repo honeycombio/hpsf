@@ -783,23 +783,177 @@ func (t *Translator) GenerateConfig(h *hpsf.HPSF, ct hpsftypes.Type, artifactVer
 		}
 	}
 	// If we have multiple pipelines, we need to merge them into a single config.
+	var finalConfig tmpl.TemplateConfig
 	if len(composites) > 1 {
 		// We can use the Merge method to combine all the configurations into one.
-		finalConfig := composites[0]
+		finalConfig = composites[0]
 		for _, comp := range composites[1:] {
 			if err := finalConfig.Merge(comp); err != nil {
 				return nil, fmt.Errorf("failed to merge pipeline configs: %w", err)
 			}
 		}
-		return finalConfig, nil
 	} else if len(composites) == 1 {
 		// If we only have one pipeline, we can return it directly.
-		return composites[0], nil
+		finalConfig = composites[0]
+	} else {
+		// Start with a base component so we always have a valid config
+		unconfigured := config.UnconfiguredComponent{Component: dummy}
+		return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
 	}
 
-	// Start with a base component so we always have a valid config
-	unconfigured := config.UnconfiguredComponent{Component: dummy}
-	return unconfigured.GenerateConfig(ct, hpsf.PathWithConnections{}, nil)
+	// Apply ingress pipeline transformation for shared receivers
+	finalConfig, err := t.transformToIngressPipelines(finalConfig, paths, receiverNames)
+	if err != nil {
+		return nil, fmt.Errorf("failed to transform to ingress pipelines: %w", err)
+	}
+
+	return finalConfig, nil
+}
+
+// transformToIngressPipelines detects shared receivers and creates ingress pipelines
+// with forward connectors to deduplicate usage counting.
+func (t *Translator) transformToIngressPipelines(cfg tmpl.TemplateConfig, paths []hpsf.PathWithConnections, receiverNames map[string]bool) (tmpl.TemplateConfig, error) {
+	collectorCfg, ok := cfg.(*tmpl.CollectorConfig)
+	if !ok {
+		// Not a collector config, return as-is
+		return cfg, nil
+	}
+
+	// Detect shared receivers per signal type from the generated config
+	sharedReceivers := t.detectSharedReceiversFromConfig(collectorCfg)
+	if len(sharedReceivers) == 0 {
+		// No shared receivers, return config unchanged
+		return cfg, nil
+	}
+
+	// Generate ingress pipelines and rewire downstream pipelines
+	if err := t.generateIngressPipelines(collectorCfg, sharedReceivers); err != nil {
+		return nil, err
+	}
+
+	return collectorCfg, nil
+}
+
+// detectSharedReceiversFromConfig analyzes the generated collector config to find
+// receivers used by multiple pipelines (across any signal types).
+// Returns map[receiverName]map[signalType][]pipelineKeys
+func (t *Translator) detectSharedReceiversFromConfig(cfg *tmpl.CollectorConfig) map[string]map[string][]string {
+	// Track which receivers are used by which pipelines
+	// receiverName -> signalType -> []pipelineKey
+	receiverUsage := make(map[string]map[string][]string)
+
+	// Extract pipeline information from the service section
+	serviceSections := cfg.Sections["service"]
+	if serviceSections == nil {
+		return nil
+	}
+
+	// Iterate through all pipeline configurations
+	for key, value := range serviceSections {
+		// Pipeline keys look like: "pipelines.logs/abc-123.receivers"
+		if !strings.HasPrefix(key, "pipelines.") {
+			continue
+		}
+		if !strings.HasSuffix(key, ".receivers") {
+			continue
+		}
+
+		// Extract signal type and pipeline ID from key: "pipelines.logs/abc-123.receivers"
+		parts := strings.Split(key, ".")
+		if len(parts) < 3 {
+			continue
+		}
+		pipelineKey := parts[1] // "logs/abc-123"
+
+		// Split signal type from pipeline ID
+		pipelineParts := strings.Split(pipelineKey, "/")
+		if len(pipelineParts) != 2 {
+			continue
+		}
+		signalType := pipelineParts[0] // "logs"
+
+		// Extract receiver names from the value (should be []string)
+		receivers, ok := value.([]string)
+		if !ok {
+			continue
+		}
+
+		// Track each receiver
+		for _, receiverName := range receivers {
+			if _, exists := receiverUsage[receiverName]; !exists {
+				receiverUsage[receiverName] = make(map[string][]string)
+			}
+			receiverUsage[receiverName][signalType] = append(receiverUsage[receiverName][signalType], pipelineKey)
+		}
+	}
+
+	// Filter to only receivers that are shared (used by more than one pipeline total)
+	sharedReceivers := make(map[string]map[string][]string)
+	for receiverName, signalTypes := range receiverUsage {
+		totalPipelines := 0
+		for _, pipelineKeys := range signalTypes {
+			totalPipelines += len(pipelineKeys)
+		}
+		// If receiver is used by more than one pipeline (across all signal types), it's shared
+		if totalPipelines > 1 {
+			sharedReceivers[receiverName] = signalTypes
+		}
+	}
+
+	return sharedReceivers
+}
+
+// generateIngressPipelines creates ingress pipelines for shared receivers and rewires downstream pipelines.
+//
+// Naming conventions:
+//   - Ingress pipelines: {signal}/ingress_{receiverName} (e.g., logs/ingress_otlp/receiver1)
+//     The ingress_ prefix distinguishes infrastructure pipelines from user data pipelines,
+//     prevents naming collisions, and aids debugging via collector metrics.
+//   - Forward connectors: forward/{receiverName} (e.g., forward/otlp/receiver1)
+//     Dedicated connector per receiver ensures data isolation between receivers.
+//
+// Currently uses forward connector to broadcast data to all downstream pipelines.
+// Future: Could be extended to support routing connector for conditional routing based on attributes.
+func (t *Translator) generateIngressPipelines(cfg *tmpl.CollectorConfig, sharedReceivers map[string]map[string][]string) error {
+	for receiverName, signalTypes := range sharedReceivers {
+		// Create dedicated forward connector for this receiver to isolate its data
+		connectorName := fmt.Sprintf("forward/%s", receiverName)
+		cfg.Set("connectors", connectorName, map[string]any{})
+
+		// Create one ingress pipeline per signal type for this receiver
+		for signalType, pipelineKeys := range signalTypes {
+			// Create ingress pipeline with ingress_ prefix for namespace separation
+			ingressPipelineID := fmt.Sprintf("ingress_%s", receiverName)
+			ingressPipelineKey := fmt.Sprintf("%s/%s", signalType, ingressPipelineID)
+
+			// Set ingress pipeline components
+			// Extract memory_limiter name from receiver name (e.g., "otlp/receiver" -> "memory_limiter/receiver")
+			receiverParts := strings.Split(receiverName, "/")
+			var memoryLimiterName string
+			if len(receiverParts) == 2 {
+				memoryLimiterName = fmt.Sprintf("memory_limiter/%s", receiverParts[1])
+			} else {
+				memoryLimiterName = fmt.Sprintf("memory_limiter/%s", receiverName)
+			}
+
+			cfg.Set("service", fmt.Sprintf("pipelines.%s.receivers", ingressPipelineKey), []string{receiverName})
+			cfg.Set("service", fmt.Sprintf("pipelines.%s.processors", ingressPipelineKey), []string{memoryLimiterName, "usage"})
+			cfg.Set("service", fmt.Sprintf("pipelines.%s.exporters", ingressPipelineKey), []string{connectorName})
+
+			// Rewire downstream pipelines to use this receiver's dedicated forward connector
+			for _, pipelineKey := range pipelineKeys {
+				// Replace receiver with receiver-specific forward connector (delete old key first)
+				receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineKey)
+				delete(cfg.Sections["service"], receiversKey)
+				cfg.Set("service", receiversKey, []string{connectorName})
+
+				// Remove usage processor from downstream pipelines (it's now only in ingress)
+				// We'll handle this in the injectHoneycombUsageComponents function
+			}
+		}
+	}
+
+	return nil
 }
 
 // ComponentInfo represents a component extracted from an HPSF configuration.
