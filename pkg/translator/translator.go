@@ -948,8 +948,8 @@ func (t *Translator) detectDuplicateDownstreams(cfg *tmpl.CollectorConfig) map[s
 			continue
 		}
 
-		pipelineKey := parts[1]      // "logs/abc-123"
-		componentType := parts[2]     // "receivers", "processors", or "exporters"
+		pipelineKey := parts[1]   // "logs/abc-123"
+		componentType := parts[2] // "receivers", "processors", or "exporters"
 
 		// Skip ingress pipelines
 		if strings.Contains(pipelineKey, "/ingress_") {
