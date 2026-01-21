@@ -785,6 +785,14 @@ func (t *Translator) transformToIngressPipelines(cfg tmpl.TemplateConfig, paths 
 		return nil, err
 	}
 
+	// Deduplicate downstream pipelines with identical processor+exporter configurations
+	duplicates := t.detectDuplicateDownstreams(collectorCfg)
+	if len(duplicates) > 0 {
+		if err := t.mergeDuplicateDownstreams(collectorCfg, duplicates); err != nil {
+			return nil, err
+		}
+	}
+
 	return collectorCfg, nil
 }
 
@@ -908,6 +916,127 @@ func (t *Translator) generateIngressPipelines(cfg *tmpl.CollectorConfig, sharedR
 	}
 
 	return nil
+}
+
+// detectDuplicateDownstreams identifies downstream pipelines with identical processor and exporter configurations.
+// Returns map[pipelineSignature][]pipelineKey where pipelines grouped together have the same processors+exporters.
+// Ignores ingress pipelines (identified by "/ingress_" in the pipeline name).
+func (t *Translator) detectDuplicateDownstreams(cfg *tmpl.CollectorConfig) map[string][]string {
+	// Group pipelines by their signature (signal + processors + exporters)
+	pipelinesBySignature := make(map[string][]string)
+
+	serviceSections := cfg.Sections["service"]
+	if serviceSections == nil {
+		return nil
+	}
+
+	// Build signatures for each pipeline
+	pipelineSignatures := make(map[string]string) // pipelineKey -> signature
+
+	// First pass: collect all pipeline components
+	pipelineComponents := make(map[string]map[string][]string) // pipelineKey -> {"receivers"|"processors"|"exporters" -> []componentNames}
+
+	for key, value := range serviceSections {
+		if !strings.HasPrefix(key, "pipelines.") {
+			continue
+		}
+
+		// Extract pipeline key and component type
+		// Format: "pipelines.logs/abc-123.processors"
+		parts := strings.Split(key, ".")
+		if len(parts) != 3 {
+			continue
+		}
+
+		pipelineKey := parts[1]      // "logs/abc-123"
+		componentType := parts[2]     // "receivers", "processors", or "exporters"
+
+		// Skip ingress pipelines
+		if strings.Contains(pipelineKey, "/ingress_") {
+			continue
+		}
+
+		if pipelineComponents[pipelineKey] == nil {
+			pipelineComponents[pipelineKey] = make(map[string][]string)
+		}
+
+		// Store component list
+		if componentList, ok := value.([]string); ok {
+			pipelineComponents[pipelineKey][componentType] = componentList
+		}
+	}
+
+	// Second pass: build signatures for downstream pipelines
+	for pipelineKey, components := range pipelineComponents {
+		// Extract signal type from pipeline key (e.g., "logs/abc-123" -> "logs")
+		signalType := strings.Split(pipelineKey, "/")[0]
+
+		// Build signature from signal type + processors + exporters (excluding receivers)
+		processors := components["processors"]
+		exporters := components["exporters"]
+
+		// Create signature string
+		signature := fmt.Sprintf("%s:%s:%s",
+			signalType,
+			strings.Join(processors, ","),
+			strings.Join(exporters, ","))
+
+		pipelineSignatures[pipelineKey] = signature
+		pipelinesBySignature[signature] = append(pipelinesBySignature[signature], pipelineKey)
+	}
+
+	// Filter to only return groups with duplicates (>1 pipeline with same signature)
+	duplicates := make(map[string][]string)
+	for signature, pipelineKeys := range pipelinesBySignature {
+		if len(pipelineKeys) > 1 {
+			duplicates[signature] = pipelineKeys
+		}
+	}
+
+	return duplicates
+}
+
+// mergeDuplicateDownstreams merges downstream pipelines with identical processor+exporter configurations.
+// For each group of duplicates, keeps the first pipeline and combines all receivers into it, then deletes the rest.
+func (t *Translator) mergeDuplicateDownstreams(cfg *tmpl.CollectorConfig, duplicates map[string][]string) error {
+	for _, pipelineGroup := range duplicates {
+		// Keep first pipeline as canonical
+		canonicalKey := pipelineGroup[0]
+
+		// Collect all receivers (forward connectors) from duplicates
+		allReceivers := []string{}
+		for _, pipelineKey := range pipelineGroup {
+			receiversKey := fmt.Sprintf("pipelines.%s.receivers", pipelineKey)
+			if receivers, ok := cfg.Sections["service"][receiversKey].([]string); ok {
+				allReceivers = append(allReceivers, receivers...)
+			}
+		}
+
+		// Update canonical pipeline with merged receivers
+		cfg.Set("service", fmt.Sprintf("pipelines.%s.receivers", canonicalKey), dedupStrings(allReceivers))
+
+		// Delete duplicate pipelines (skip the canonical one)
+		for _, dupKey := range pipelineGroup[1:] {
+			delete(cfg.Sections["service"], fmt.Sprintf("pipelines.%s.receivers", dupKey))
+			delete(cfg.Sections["service"], fmt.Sprintf("pipelines.%s.processors", dupKey))
+			delete(cfg.Sections["service"], fmt.Sprintf("pipelines.%s.exporters", dupKey))
+		}
+	}
+
+	return nil
+}
+
+// dedupStrings removes duplicate strings from a slice while preserving order.
+func dedupStrings(slice []string) []string {
+	seen := make(map[string]struct{})
+	result := []string{}
+	for _, item := range slice {
+		if _, exists := seen[item]; !exists {
+			seen[item] = struct{}{}
+			result = append(result, item)
+		}
+	}
+	return result
 }
 
 // ComponentInfo represents a component extracted from an HPSF configuration.
