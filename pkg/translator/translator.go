@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"maps"
+	"slices"
 	"sort"
 	"strings"
 
@@ -481,6 +482,50 @@ func (t *Translator) validateStartSampling(h *hpsf.HPSF, templateComps map[strin
 	return result
 }
 
+func (t *Translator) validateCollectorPipelines(h *hpsf.HPSF, templateComps map[string]config.TemplateComponent) validator.Result {
+	result := validator.NewResult("HPSF collector pipeline validation errors")
+
+	paths := h.FindAllPaths(nil)
+
+	for _, path := range paths {
+		// Only validate OTel signal paths (logs, metrics, traces)
+		// Skip non-collector paths
+		if !slices.Contains(hpsf.CollectorSignalTypes, path.ConnType) {
+			continue
+		}
+
+		if len(path.Path) == 0 {
+			continue
+		}
+
+		// Check first component is a receiver
+		firstComp := path.Path[0]
+		firstTemplate, ok := templateComps[firstComp.GetSafeName()]
+		if !ok {
+			continue
+		}
+		if firstTemplate.Style != "receiver" {
+			err := hpsf.NewErrorf("pipeline must start with a receiver component, but starts with %s component '%s'", firstTemplate.Style, firstComp.Name).
+				WithComponent(firstComp.Name)
+			result.Add(err)
+		}
+
+		// Check last component is an exporter or startsampling
+		lastComp := path.Path[len(path.Path)-1]
+		lastTemplate, ok := templateComps[lastComp.GetSafeName()]
+		if !ok {
+			continue
+		}
+		if lastTemplate.Style != "exporter" && lastTemplate.Style != "startsampling" {
+			err := hpsf.NewErrorf("pipeline must end with an exporter or startsampling component, but ends with %s component '%s'", lastTemplate.Style, lastComp.Name).
+				WithComponent(lastComp.Name)
+			result.Add(err)
+		}
+	}
+
+	return result
+}
+
 // ValidateConfig validates the configuration of the HPSF document as it stands with respect to the
 // components and templates installed in the translator.
 // Note that it returns a validation.Result so that the errors can be collected and reported in a
@@ -514,6 +559,7 @@ func (t *Translator) ValidateConfig(h *hpsf.HPSF) error {
 	result.Add(t.validateConnectionPorts(h, templateComps))
 	result.Add(t.validateStartSampling(h, templateComps))
 	result.Add(t.validateSamplerConnections(h, templateComps))
+	result.Add(t.validateCollectorPipelines(h, templateComps))
 
 	return result.ErrOrNil()
 }

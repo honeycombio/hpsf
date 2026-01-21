@@ -1,0 +1,15 @@
+components:
+  - name: Processor 1
+    kind: RedactionProcessor
+  - name: Processor 2
+    kind: RedactionProcessor
+connections:
+  # Invalid: processor chain with no receiver or exporter
+  - source:
+      component: Processor 1
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Processor 2
+      port: Traces
+      type: OTelTraces

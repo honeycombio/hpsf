@@ -1,0 +1,36 @@
+components:
+  - name: OTel Receiver
+    kind: OTelReceiver
+  - name: Processor Valid
+    kind: RedactionProcessor
+  - name: Processor Invalid
+    kind: RedactionProcessor
+  - name: Honeycomb Exporter
+    kind: HoneycombExporter
+connections:
+  # Valid path 1: receiver -> processor -> exporter (traces)
+  - source:
+      component: OTel Receiver
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Processor Valid
+      port: Traces
+      type: OTelTraces
+  - source:
+      component: Processor Valid
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Honeycomb Exporter
+      port: Traces
+      type: OTelTraces
+  # Invalid path 2: receiver -> processor (no exporter) (metrics)
+  - source:
+      component: OTel Receiver
+      port: Metrics
+      type: OTelMetrics
+    destination:
+      component: Processor Invalid
+      port: Metrics
+      type: OTelMetrics

@@ -1,0 +1,16 @@
+components:
+  - name: Receive OTel
+    kind: OTelReceiver
+    version: v0.1.0
+  - name: Mask sensitive values
+    kind: RedactionProcessor
+    version: v0.1.0
+connections:
+  - source:
+      component: Receive OTel
+      port: Traces
+      type: OTelTraces
+    destination:
+      component: Mask sensitive values
+      port: Traces
+      type: OTelTraces
